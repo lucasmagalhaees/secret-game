@@ -119,11 +119,11 @@ with sync_playwright() as p:
     pg.click('#phase [data-act=investigate][data-i="2"]')
     assert pg.locator('#party').count() == 0; pg.click('[data-act=open]'); assert 'FASCISTA' in txt('#party').upper() and 'Caio' in txt('#party')
     pg.click('[data-act=endpower]'); assert G()['phase'] == 'nominate' and G()['pres'] == 1
-    # 3rd: Bia sees the next 3 laws
-    stack('FFLFFL'); govern(3, 'F'); assert G()['phase'] == 'peek'
-    pg.click('[data-act=open]'); top = G()['deck'][:3]
-    assert [('L' if 'LIBERAL' in t.upper() else 'F') for t in pg.locator('#peek .law').all_inner_texts()] == top
-    pg.click('[data-act=endpower]'); assert G()['pres'] == 2
+    # 3rd, at a table of 7: Bia calls a special election and makes Edu president; then the order goes on after Bia
+    stack('FFLFFL'); govern(3, 'F'); assert G()['phase'] == 'special' and 'eleição especial' in txt('#phase')
+    assert pg.locator('#phase [data-act=special][data-i="1"]').count() == 0, 'not the president herself'
+    pg.click('#phase [data-act=special][data-i="4"]'); assert G()['pres'] == 4 and G()['back'] == 1 and 'Edu é o próximo presidente' in txt('#toast')
+    nominate(6); votes(False); assert G()['pres'] == 2 and G()['back'] is None
     # 4th: Caio eliminates Gil (Fê went back in at the end of the table)
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'execute'
     assert pg.locator('[data-act=execute]').is_disabled()
@@ -169,7 +169,25 @@ with sync_playwright() as p:
     assert G()['winner'] == 'L' and 'liberais venceram' in txt('#phase')
     pg.click('[data-act=table]'); assert G() is None and pg.locator('#table').count() == 1
 
+    # a table of 5: Hitler knows the fascist, and the 3rd fascist law lets the president see the next 3 laws
+    pg.locator('#names li', has_text='Fê').locator('[data-act=rmname]').click()
+    pg.locator('#names li', has_text='Gil').locator('[data-act=rmname]').click()
+    pg.click('[data-act=start]'); assert len(G()['players']) == 5
+    pg.evaluate('''() => { window.__APP.S.game.players.forEach((p, i) => { p.role = i === 0 ? 'hitler' : i === 1 ? 'fascista' : 'liberal'; }); }''')
+    pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
+    pg.click('[data-act=open]'); assert 'Seu fascista' in txt('#phase') and 'Bia' in txt('#phase'), txt('#phase')
+    for i in range(5):
+        if i: pg.click('[data-act=open]')
+        pg.click('[data-act=hiderole]')
+    assert 'espiar' in txt('#board') and 'partido' not in txt('#board') and 'eleição' not in txt('#board'), txt('#board')
+    pg.evaluate('''() => { const g = window.__APP.S.game; g.pres = 3; g.laws = { L: 0, F: 2 }; }''')
+    pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
+    stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'peek'
+    pg.click('[data-act=open]'); top = G()['deck'][:3]
+    assert [('L' if 'LIBERAL' in t.upper() else 'F') for t in pg.locator('#peek .law').all_inner_texts()] == top
+    pg.click('[data-act=endpower]'); assert G()['pres'] == 4
+
     cov.stop(pg, f'e2e-{THEME}')
     assert not errs, errs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

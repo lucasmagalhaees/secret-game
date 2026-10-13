@@ -63,6 +63,7 @@ export function initEvents(): void {
     else if (a === 'askveto') play(Core.askVeto(g));
     else if (a === 'veto') { const next = Core.answerVeto(g, d.v === '1', rand); play(next, d.v === '1' ? `Veto aceito.${lawMsg(g, next) ? ' ' + lawMsg(g, next) : ''}` : 'Veto recusado.'); }
     else if (a === 'investigate') play(Core.investigate(g, i));
+    else if (a === 'special') play(Core.specialElect(g, i), `${g.players[i].name} é o próximo presidente.`);
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) { const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick); play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`); }
     else if (a === 'again') start();

@@ -1,9 +1,9 @@
 /* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
    never breaks the page: the names and the theme still come back. */
-import { MAX_PLAYERS, NAME_MAX } from './game';
+import { MAX_PLAYERS, NAME_MAX, WIN } from './game';
 import type { AppState, Game, Law, Phase, Player } from './types';
 
-const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'execute', 'over'];
+const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'special', 'execute', 'over'];
 const isLaw = (x: unknown): x is Law => x === 'L' || x === 'F';
 const isLaws = (x: unknown): x is Law[] => Array.isArray(x) && x.every(isLaw);
 const isInt = (x: unknown, max: number): x is number => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= max;
@@ -18,10 +18,10 @@ export function readGame(x: unknown): Game | null {
   const g = x as Game;
   if (!g || typeof g !== 'object' || !Array.isArray(g.players) || g.players.length < 1 || g.players.length > MAX_PLAYERS || !g.players.every(isPlayer)) return null;
   const n = g.players.length;
-  if (!isLaws(g.deck) || !isLaws(g.discard) || !isLaws(g.hand) || !g.laws || !isInt(g.laws.L, 6) || !isInt(g.laws.F, 6)) return null;
+  if (!isLaws(g.deck) || !isLaws(g.discard) || !isLaws(g.hand) || !g.laws || !isInt(g.laws.L, WIN.L) || !isInt(g.laws.F, WIN.F)) return null;
   if (!PHASES.includes(g.phase) || !isIdx(g.pres, n) || !(g.chanc === null || isIdx(g.chanc, n)) || !(g.target === null || isIdx(g.target, n))) return null;
   if (!isInt(g.tracker, 2) || !isInt(g.reveal, n) || !(g.winner === null || isLaw(g.winner)) || typeof g.why !== 'string') return null;
-  if (!(g.lastPres === null || isIdx(g.lastPres, n)) || !(g.lastChanc === null || isIdx(g.lastChanc, n)) || typeof g.vetoed !== 'boolean') return null;
+  if (!(g.lastPres === null || isIdx(g.lastPres, n)) || !(g.lastChanc === null || isIdx(g.lastChanc, n)) || typeof g.vetoed !== 'boolean' || !(g.back === null || isIdx(g.back, n))) return null;
   if (!Array.isArray(g.seen) || !g.seen.every(i => isIdx(i, n))) return null;
   if (!Array.isArray(g.log) || !g.log.every(l => typeof l === 'string')) return null;
   if ((g.phase === 'vote' || g.phase === 'chancellor' || g.phase === 'veto') && g.chanc === null) return null;

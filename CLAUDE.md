@@ -18,7 +18,8 @@ Idioma da interface: português do Brasil, informal. Comentários no código: in
 
 - Não adicionar backend, login nem banco sem pedido. O app é uma página estática.
 - Um aparelho só, passando de mão: sem partida pela internet, sem um celular por jogador.
-- Fora por enquanto: eleição especial (poder do Secret Hitler que não foi pedido), poderes que mudam com o tamanho da mesa, histórico de partidas.
+- As regras são as do Secret Hitler original (D6). A única diferença é de meio: a votação é em voz alta e o celular só registra o resultado.
+- Fora por enquanto: histórico de partidas.
 
 ## Regras contra alucinação (valem para qualquer IA trabalhando aqui)
 
@@ -57,14 +58,14 @@ O que cada peça do harness cobre:
 
 1. Mesa de 5 a 10 jogadores (`MIN_PLAYERS`, `MAX_PLAYERS`), em ordem de assento, guardada no aparelho.
 2. Papéis sorteados: um Hitler e fascistas conforme a mesa (`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10); o resto liberal.
-3. Cada um vê o próprio papel em segredo. Os fascistas veem os outros fascistas e o Hitler; o Hitler não vê ninguém; os liberais não veem ninguém.
-4. Baralho de 17 leis: 9 fascistas (`DECK_F`) e 8 liberais (`DECK_L`). Com menos de 3 para tirar, o lixo volta e é embaralhado.
+3. Cada um vê o próprio papel em segredo. Os fascistas veem os outros fascistas e o Hitler; com 5 ou 6 jogadores (`HITLER_KNOWS_UPTO`) o Hitler também vê o fascista, com mais ele não vê ninguém; os liberais não veem ninguém.
+4. Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`). Com menos de 3 para tirar, o lixo volta e é embaralhado.
 5. Rodada: o presidente indica o chanceler, a mesa vota em voz alta (Ja! ou Nein!) e o celular só registra se o governo foi eleito (mais Ja! que Nein!) ou rejeitado. Eleito, o presidente tira 3 leis e descarta 1; o chanceler descarta 1 das 2 e a outra é aprovada.
 6. Limite de mandato: o último presidente e o último chanceler eleitos não podem ser chanceler; com 5 vivos ou menos (`SMALL_TABLE`), só o último chanceler.
 7. 3 governos seguidos sem lei (`TRACKER_MAX`, rejeição ou veto) aprovam a lei do topo, sem poder, e zeram o limite de mandato.
-8. Poderes do presidente pela lei fascista aprovada (`POWERS`): na 2ª investiga o partido de alguém (nunca o mesmo duas vezes; Hitler aparece como fascista), na 3ª olha as próximas 3 leis, na 4ª e na 5ª elimina alguém.
+8. Poderes do presidente pela lei fascista aprovada, pelo tabuleiro da mesa (`POWERS`, pelo número de jogadores que começaram): com 5 ou 6 jogadores, na 3ª olha as próximas 3 leis; com 7 ou 8, na 2ª investiga o partido de alguém e na 3ª convoca eleição especial; com 9 ou 10, na 1ª e na 2ª investiga e na 3ª convoca eleição especial; em toda mesa, na 4ª e na 5ª elimina alguém. Ninguém é investigado duas vezes; o Hitler aparece como fascista. Na eleição especial o presidente escolhe o próximo presidente (qualquer outro vivo, sem limite de mandato) e depois dessa rodada a ordem segue de quem convocou.
 9. Veto a partir da 5ª lei fascista (`VETO_FROM`): o chanceler pede, o presidente aceita (nenhuma lei, conta como governo sem lei) ou recusa (o chanceler aprova uma).
-10. Vitória: 6 leis do seu lado (`WIN`); fascistas também vencem elegendo o Hitler chanceler com 3 ou mais leis fascistas (`HITLER_ZONE`); liberais também vencem eliminando o Hitler.
+10. Vitória: 5 leis liberais ou 6 fascistas (`WIN`); fascistas também vencem elegendo o Hitler chanceler com 3 ou mais leis fascistas (`HITLER_ZONE`); liberais também vencem eliminando o Hitler.
 11. Todo segredo (papel, mão de leis, partido investigado, próximas leis) só aparece depois de "Passe o celular para X" e do toque de X. Recarregar a página fecha o segredo aberto.
 12. A partida em curso fica guardada no aparelho; dá para encerrar no meio (dois toques) e jogar de novo com a mesma mesa.
 
@@ -150,7 +151,7 @@ Os casos do núcleo ficam em `tests/unit.cases.mjs`. Regra nova entra ali primei
 
 **Cobertura:** com `APP_COVERAGE=1` (o `verify.sh` completo liga sozinho), cada suíte grava quais funções e trechos do script de `dist/index.html` executou. `python3 tests/cov.py` junta tudo e falha abaixo de 95% das funções e 90% do código. Teste que recarrega a página usa `cov.reload(pg)` em vez de `pg.reload()`.
 
-`e2e.py` abre a página num tamanho de celular, com a rede bloqueada, e joga partidas inteiras pela tela: monta a mesa (nome vazio, repetido, mesa cheia, nome com marcação aparecendo como texto), troca o tema, confere que cada papel só aparece depois do toque, empilha papéis e baralho por `window.__APP.S` para a partida ser sempre a mesma, e passa por rejeições e caos, limite de mandato, os três poderes, veto recusado e aceito, vitória fascista pelo Hitler chanceler e vitória liberal pelo Hitler eliminado. Confere também que a partida volta depois de recarregar, que nada passa da largura da tela e que não há erro de script. Capturas em `tests/shots/`.
+`e2e.py` abre a página num tamanho de celular, com a rede bloqueada, e joga partidas inteiras pela tela: monta a mesa (nome vazio, repetido, mesa cheia, nome com marcação aparecendo como texto), troca o tema, confere que cada papel só aparece depois do toque, empilha papéis e baralho por `window.__APP.S` para a partida ser sempre a mesma, e passa por rejeições e caos, limite de mandato, os poderes da mesa de 7 (investigar, eleição especial, eliminar), veto recusado e aceito, vitória fascista pelo Hitler chanceler vitória liberal pelo Hitler eliminado e uma mesa de 5 (o Hitler vê o fascista, a 3ª lei fascista deixa espiar). Confere também que a partida volta depois de recarregar, que nada passa da largura da tela e que não há erro de script. Capturas em `tests/shots/`.
 
 `pwa.py` publica o build e depois uma "versão seguinte" e confere: a página fica guardada, a primeira instalação não anuncia nada, o app abre com o site fora do ar, a versão nova é anunciada, o app em uso só troca depois do toque, a cópia antiga é apagada, publicar de novo sem mudar o app não avisa, e fechar e abrir de novo entra na versão que esperava. O build precisa estar num repositório git, porque a tela mostra o commit.
 

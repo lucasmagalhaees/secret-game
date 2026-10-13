@@ -47,14 +47,17 @@ for rel in set(re.findall(r'`((?:src|tests|docs|scripts|\.github|\.claude)/[\w./
 CONSTANTS = [
     (r'const CHECK_EVERY = 30 \* 60e3;', 'a cada 30 min com ele aberto (`CHECK_EVERY`)'),
     (r'MIN_PLAYERS = 5, MAX_PLAYERS = 10', 'Mesa de 5 a 10 jogadores (`MIN_PLAYERS`, `MAX_PLAYERS`)'),
-    (r'DECK_F = 9, DECK_L = 8', 'Baralho de 17 leis: 9 fascistas (`DECK_F`) e 8 liberais (`DECK_L`)'),
-    (r'WIN = 6;', 'Vitória: 6 leis do seu lado (`WIN`)'),
+    (r'DECK_F = 11, DECK_L = 6', 'Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`)'),
+    (r"WIN: Record<Law, number> = \{ L: 5, F: 6 \};", 'Vitória: 5 leis liberais ou 6 fascistas (`WIN`)'),
+    (r'HITLER_KNOWS_UPTO = 6;', 'com 5 ou 6 jogadores (`HITLER_KNOWS_UPTO`) o Hitler também vê o fascista'),
     (r'TRACKER_MAX = 3;', '3 governos seguidos sem lei (`TRACKER_MAX`'),
     (r'HITLER_ZONE = 3;', '3 ou mais leis fascistas (`HITLER_ZONE`)'),
     (r'VETO_FROM = 5;', 'Veto a partir da 5ª lei fascista (`VETO_FROM`)'),
     (r'SMALL_TABLE = 5;', 'com 5 vivos ou menos (`SMALL_TABLE`)'),
     (r"FASCISTS: Record<number, number> = \{ 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4 \}", '(`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10)'),
-    (r"POWERS: Record<number, 'investigate' \| 'peek' \| 'execute'> = \{ 2: 'investigate', 3: 'peek', 4: 'execute', 5: 'execute' \}", 'na 2ª investiga o partido de alguém'),
+    (r"small: \{ 3: 'peek', 4: 'execute', 5: 'execute' \}", 'com 5 ou 6 jogadores, na 3ª olha as próximas 3 leis'),
+    (r"medium: \{ 2: 'investigate', 3: 'special', 4: 'execute', 5: 'execute' \}", 'com 7 ou 8, na 2ª investiga o partido de alguém e na 3ª convoca eleição especial'),
+    (r"large: \{ 1: 'investigate', 2: 'investigate', 3: 'special', 4: 'execute', 5: 'execute' \}", 'com 9 ou 10, na 1ª e na 2ª investiga e na 3ª convoca eleição especial'),
 ]
 for pattern, phrase in CONSTANTS:
     check(f'code has {pattern}', re.search(pattern, code + read('src/sw.js')) is not None)
