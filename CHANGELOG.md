@@ -6,6 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 
 ### Alterado
 - Baralho do jogo original: 11 leis fascistas e 6 liberais (era 9 e 8).
+- Vitória do jogo original: liberais com 5 leis (era 6), fascistas com 6. O tabuleiro liberal tem 5 casas.
 
 ## [0.4.0]
 

@@ -68,7 +68,7 @@ export default function cases(Core) {
   eq('chancellor: a bad card changes nothing', [Core.chancellorDiscard(ch, 2, rand) === ch, Core.chancellorDiscard(el, 0, rand) === el], [true, true]);
   const fas = (c) => Core.chancellorDiscard({ ...ch, laws: { L: 0, F: c } }, 0, rand);
   eq('powers by fascist law: none, investigate, peek, execute, execute, win', [fas(0).phase, fas(1).phase, fas(2).phase, fas(3).phase, fas(4).phase, fas(5).phase, fas(5).winner], ['nominate', 'investigate', 'peek', 'execute', 'execute', 'over', 'F']);
-  eq('6 liberal laws: the liberals win', [Core.chancellorDiscard({ ...ch, laws: { L: 5, F: 0 } }, 1, rand).winner], ['L']);
+  eq('5 liberal laws win for the liberals; 6 fascist laws for the fascists', [Core.WIN, Core.chancellorDiscard({ ...ch, laws: { L: 4, F: 0 } }, 1, rand).winner, Core.chancellorDiscard({ ...ch, laws: { L: 3, F: 0 } }, 1, rand).phase], [{ L: 5, F: 6 }, 'L', 'nominate']);
   const low = Core.chancellorDiscard({ ...ch, deck: ['L', 'F'], discard: ['F', 'L', 'F'] }, 1, rand);
   eq('fewer than 3 to draw: the discards go back in', [low.deck.length, low.discard.length], [6, 0]);
 
@@ -108,7 +108,7 @@ export default function cases(Core) {
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));
   eq('read state: a damaged game is dropped, the names stay; an unknown theme is dropped', Core.readState({ names: ['a', 3, ' ', 'b'], game: { ...el, deck: ['X'] }, theme: 'pink' }), { v: 1, names: ['a', 'b'], game: null });
-  const broken = [{ ...el, players: [] }, { ...el, players: [{ name: 'a', role: 'rei', alive: true }] }, { ...el, phase: 'dance' }, { ...el, pres: 9 }, { ...el, tracker: 3 }, { ...el, log: [1] }, { ...el, phase: 'vote', chanc: null }, { ...el, phase: 'investigated', target: null }, { ...el, laws: { L: 7, F: 0 } }, { ...el, winner: 'X' }, { ...el, seen: [9] }, { ...el, vetoed: 1 }, { ...el, lastChanc: -1 }];
+  const broken = [{ ...el, players: [] }, { ...el, players: [{ name: 'a', role: 'rei', alive: true }] }, { ...el, phase: 'dance' }, { ...el, pres: 9 }, { ...el, tracker: 3 }, { ...el, log: [1] }, { ...el, phase: 'vote', chanc: null }, { ...el, phase: 'investigated', target: null }, { ...el, laws: { L: 6, F: 0 } }, { ...el, winner: 'X' }, { ...el, seen: [9] }, { ...el, vetoed: 1 }, { ...el, lastChanc: -1 }];
   eq('read game: what does not hold together is null', broken.map(Core.readGame), broken.map(() => null));
 
   /* the reader of the source: invented data here; real answers go in tests/fixtures/source/ and through tests/contract.py */

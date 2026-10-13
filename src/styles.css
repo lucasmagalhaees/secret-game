@@ -113,7 +113,7 @@ button.law.on .sym::after{content:"✕";position:absolute;font-size:64px;color:v
 .role-card.F{--c:#c4381f}
 
 /* the boards: one per party, the slots printed on them */
-.track{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:6px;border:3px solid var(--line)}
+.track{display:grid;grid-template-columns:repeat(var(--n,6),minmax(0,1fr));gap:4px;padding:6px;border:3px solid var(--line)}
 #board .track:nth-of-type(1){background:var(--lib-bg)}
 #board .track:nth-of-type(2){background:var(--fas-bg)}
 #board .label{margin-bottom:-6px}

@@ -13,7 +13,7 @@ export function render(): void {
   const view = part('view'), active = document.activeElement;
   if (active && view.contains(active) && active.matches('input, textarea')) return;
   const g = S.game;
-  part('score').innerHTML = g ? `<span class="chip L">${g.laws.L}/${Core.WIN}</span><span class="chip F">${g.laws.F}/${Core.WIN}</span>` : '';
+  part('score').innerHTML = g ? `<span class="chip L">${g.laws.L}/${Core.WIN.L}</span><span class="chip F">${g.laws.F}/${Core.WIN.F}</span>` : '';
   view.innerHTML = g ? vGame(g) : vTable() + vRules() + vSettings();
 }
 
@@ -40,7 +40,7 @@ function vTable(): string {
 }
 function vRules(): string {
   return `<section class="card" id="rules"><span class="label">Como joga</span><ul class="rules">
-    <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} fascistas e ${Core.DECK_L} liberais. Quem aprovar ${Core.WIN} leis do seu lado vence.</li>
+    <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} fascistas e ${Core.DECK_L} liberais. Os liberais vencem com ${Core.WIN.L} leis liberais; os fascistas, com ${Core.WIN.F} fascistas.</li>
     <li>Os fascistas se conhecem e sabem quem é o Hitler. O Hitler não sabe quem são eles. Os liberais não conhecem ninguém.</li>
     <li>A cada rodada o presidente indica o chanceler e a mesa vota. Eleito, o presidente tira 3 leis e descarta 1; o chanceler recebe 2, descarta 1 e a outra vira lei.</li>
     <li>O último presidente e o último chanceler eleitos não podem ser chanceler na rodada seguinte (com ${Core.SMALL_TABLE} vivos ou menos, só o último chanceler).</li>
@@ -56,13 +56,13 @@ function vGame(g: Game): string {
   return vPhase(g) + vBoard(g) + vPlayers(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
 }
 function vBoard(g: Game): string {
-  const slots = (p: Law): string => Array.from({ length: Core.WIN }, (_, i) => {
-    const filled = g.laws[p] > i, tag = i + 1 === Core.WIN ? 'vitória' : p === 'F' ? POWER_LABEL[Core.POWERS[i + 1]] || '' : '';
+  const slots = (p: Law): string => Array.from({ length: Core.WIN[p] }, (_, i) => {
+    const filled = g.laws[p] > i, tag = i + 1 === Core.WIN[p] ? 'vitória' : p === 'F' ? POWER_LABEL[Core.POWERS[i + 1]] || '' : '';
     return `<div class="slot ${p}${filled ? ' on' : ''}">${filled ? (p === 'L' ? '⚖' : '☠') : ''}<small>${tag}</small></div>`;
   }).join('');
   const dots = Array.from({ length: Core.TRACKER_MAX }, (_, i) => `<i class="${g.tracker > i ? 'on' : ''}"></i>`).join('');
-  return `<section class="card" id="board"><span class="label">Leis liberais</span><div class="track">${slots('L')}</div>
-    <span class="label">Leis fascistas</span><div class="track">${slots('F')}</div>
+  return `<section class="card" id="board"><span class="label">Leis liberais</span><div class="track" style="--n:${Core.WIN.L}">${slots('L')}</div>
+    <span class="label">Leis fascistas</span><div class="track" style="--n:${Core.WIN.F}">${slots('F')}</div>
     <div class="meta"><span>Rejeições seguidas <span class="dots" id="tracker">${dots}</span></span><span>Baralho: ${g.deck.length} · Lixo: ${g.discard.length}</span></div></section>`;
 }
 function vPlayers(g: Game): string {

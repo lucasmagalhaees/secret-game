@@ -6,8 +6,8 @@ import type { Game, Law, Party, Player, Role } from './types';
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
 /** The deck: 17 laws, 11 fascist and 6 liberal, as in the original game. */
 export const DECK_F = 11, DECK_L = 6;
-/** Laws of one kind needed to win. */
-export const WIN = 6;
+/** Laws of its own kind each side needs to win, as in the original game. */
+export const WIN: Record<Law, number> = { L: 5, F: 6 };
 /** Governments rejected in a row before the top law is enacted by itself. */
 export const TRACKER_MAX = 3;
 /** Fascist laws on the table from which electing Hitler chancellor wins the game for the fascists. */
@@ -115,8 +115,8 @@ function enact(g: Game, law: Law, rand: () => number, fromGov: boolean): Game {
   const laws = { ...g.laws, [law]: g.laws[law] + 1 };
   const who = fromGov ? `por ${g.players[g.pres].name} (presidente) e ${g.players[g.chanc as number].name} (chanceler)` : `pelo caos (${TRACKER_MAX} governos seguidos sem lei)`;
   const n: Game = refill({ ...g, laws, hand: [], log: [...g.log, `Lei ${lawName(law)} aprovada ${who}.`] }, rand);
-  if (laws.L >= WIN) return over(n, 'L', `${WIN} leis liberais aprovadas: os liberais vencem.`);
-  if (laws.F >= WIN) return over(n, 'F', `${WIN} leis fascistas aprovadas: os fascistas vencem.`);
+  if (laws.L >= WIN.L) return over(n, 'L', `${WIN.L} leis liberais aprovadas: os liberais vencem.`);
+  if (laws.F >= WIN.F) return over(n, 'F', `${WIN.F} leis fascistas aprovadas: os fascistas vencem.`);
   const power = law === 'F' && fromGov ? POWERS[laws.F] : undefined;
   if (power) return { ...n, phase: power, target: null };
   return newRound(n);

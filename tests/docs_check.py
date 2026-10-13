@@ -48,7 +48,7 @@ CONSTANTS = [
     (r'const CHECK_EVERY = 30 \* 60e3;', 'a cada 30 min com ele aberto (`CHECK_EVERY`)'),
     (r'MIN_PLAYERS = 5, MAX_PLAYERS = 10', 'Mesa de 5 a 10 jogadores (`MIN_PLAYERS`, `MAX_PLAYERS`)'),
     (r'DECK_F = 11, DECK_L = 6', 'Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`)'),
-    (r'WIN = 6;', 'Vitória: 6 leis do seu lado (`WIN`)'),
+    (r"WIN: Record<Law, number> = \{ L: 5, F: 6 \};", 'Vitória: 5 leis liberais ou 6 fascistas (`WIN`)'),
     (r'TRACKER_MAX = 3;', '3 governos seguidos sem lei (`TRACKER_MAX`'),
     (r'HITLER_ZONE = 3;', '3 ou mais leis fascistas (`HITLER_ZONE`)'),
     (r'VETO_FROM = 5;', 'Veto a partir da 5ª lei fascista (`VETO_FROM`)'),
