@@ -99,7 +99,7 @@ check('the two copies of the art deco dark palette are identical', c and e and n
 check('the page has the commit stamp the build fills in', '<meta name="app-commit" content="__APP_COMMIT__">' in read('index.html') and "replace('__APP_COMMIT__', commit())" in read('vite.config.js') and 'VERCEL_GIT_COMMIT_SHA' in read('vite.config.js'))
 prod = read('scripts/check_production.py')
 check('the production check reads that stamp', 'app-commit' in prod)
-url = re.search(r"APP_PROD_URL', '([^']+)'", prod)
+url = re.search(r"DEFAULT_URL = '([^']+)'", prod)
 check('the production address is the same in the check and in the spec', url and url.group(1).rstrip('/') in spec, url and url.group(1))
 
 # 11. what the app keeps on the device is documented
