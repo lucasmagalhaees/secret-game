@@ -88,7 +88,7 @@ Modelo de uma decisão:
   - modo escuro com sombra própria (preta) e contraste revisado;
   - animações: fase nova, segredo aberto e lei aprovada; nada com "reduzir movimento";
   - estilo art déco como opção, o pôster continua o padrão;
-  - desenhos próprios em SVG: pássaro, cobra de uniforme e uma carta do Hitler (fundo preto, faixa vermelha, cobra de casaco, quepe mais alto e braçadeira vermelha lisa), também nos selos das leis e do tabuleiro.
+  - desenhos próprios em SVG: pássaro de uniforme (quepe, gola e botões; pedido em seguida: "Os pássaros pode ter uniforme tbm e a cobra Hitler ter um design p diferenciar"), cobra de uniforme e uma carta do Hitler com outro contorno (fundo preto, faixa vermelha; naja de frente com o capelo aberto, quepe alto, casaco com dragonas de franja e braçadeira vermelha lisa, discursando num púlpito), também nos selos das leis e do tabuleiro.
 - **Interpretações que precisaram ser feitas:** "outra linha de estilo" virou um segundo estilo escolhível, não uma troca do pôster. O partido investigado mostra o desenho do partido, nunca a carta do Hitler.
 - **Não sei:** como as animações e a Didot ficam no iPhone de verdade (os testes rodam no Chromium).
 
