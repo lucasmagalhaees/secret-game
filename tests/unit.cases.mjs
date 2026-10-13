@@ -33,7 +33,9 @@ export default function cases(Core) {
 
   /* who knows whom */
   eq('knows: a fascist sees the other fascist and Hitler', Core.knows(base, 1), [{ name: 'Ana', role: 'hitler' }, { name: 'Caio', role: 'fascista' }]);
-  eq('knows: Hitler and the liberals see no one', [Core.knows(base, 0), Core.knows(base, 4)], [[], []]);
+  eq('knows: at a table of 7 Hitler and the liberals see no one', [Core.knows(base, 0), Core.knows(base, 4)], [[], []]);
+  const five = { ...base, players: base.players.slice(0, 5).map((p, i) => i === 2 ? { ...p, role: 'liberal' } : p) };
+  eq('knows: at a table of 5 or 6 Hitler sees the fascist', [Core.knows(five, 0), Core.knows(five, 1), Core.knows(five, 2), Core.HITLER_KNOWS_UPTO], [[{ name: 'Bia', role: 'fascista' }], [{ name: 'Ana', role: 'hitler' }], [], 6]);
   let r = { ...g0 };
   for (let i = 0; i < 6; i++) r = Core.revealNext(r);
   eq('reveal: one by one, and after the last the first round begins', [r.phase, r.reveal, Core.revealNext(r).phase, Core.revealNext(Core.revealNext(r)).phase], ['reveal', 6, 'nominate', 'nominate']);
@@ -67,8 +69,10 @@ export default function cases(Core) {
   eq('chancellor: discards one, the other is enacted, next president', [lib.laws, lib.discard, lib.phase, lib.pres, lib.hand], [{ L: 1, F: 0 }, ['F', 'F'], 'nominate', 4, []]);
   eq('chancellor: a bad card changes nothing', [Core.chancellorDiscard(ch, 2, rand) === ch, Core.chancellorDiscard(el, 0, rand) === el], [true, true]);
   const fas = (c) => Core.chancellorDiscard({ ...ch, laws: { L: 0, F: c } }, 0, rand);
-  eq('powers by fascist law: none, investigate, peek, execute, execute, win', [fas(0).phase, fas(1).phase, fas(2).phase, fas(3).phase, fas(4).phase, fas(5).phase, fas(5).winner], ['nominate', 'investigate', 'peek', 'execute', 'execute', 'over', 'F']);
-  eq('6 liberal laws win for the liberals, 5 do not', [Core.WIN, Core.chancellorDiscard({ ...ch, laws: { L: 5, F: 0 } }, 1, rand).winner, Core.chancellorDiscard({ ...ch, laws: { L: 4, F: 0 } }, 1, rand).phase], [{ L: 6, F: 6 }, 'L', 'nominate']);
+  eq('powers at a table of 7: none, investigate, special election, execute, execute, win', [fas(0).phase, fas(1).phase, fas(2).phase, fas(3).phase, fas(4).phase, fas(5).phase, fas(5).winner], ['nominate', 'investigate', 'special', 'execute', 'execute', 'over', 'F']);
+  const powers = (n) => [1, 2, 3, 4, 5].map(k => Core.powerAt({ players: Array(n).fill(base.players[4]) }, k) || null);
+  eq('the boards of the original: 5-6, 7-8 and 9-10 players', [powers(5), powers(6), powers(8), powers(9), powers(10), Core.boardOf(7)], [[null, null, 'peek', 'execute', 'execute'], [null, null, 'peek', 'execute', 'execute'], [null, 'investigate', 'special', 'execute', 'execute'], ['investigate', 'investigate', 'special', 'execute', 'execute'], ['investigate', 'investigate', 'special', 'execute', 'execute'], 'medium']);
+  eq('5 liberal laws win for the liberals, 4 do not; 6 fascist laws for the fascists', [Core.WIN, Core.chancellorDiscard({ ...ch, laws: { L: 4, F: 0 } }, 1, rand).winner, Core.chancellorDiscard({ ...ch, laws: { L: 3, F: 0 } }, 1, rand).phase], [{ L: 5, F: 6 }, 'L', 'nominate']);
   const low = Core.chancellorDiscard({ ...ch, deck: ['L', 'F'], discard: ['F', 'L', 'F'] }, 1, rand);
   eq('fewer than 3 to draw: the discards go back in', [low.deck.length, low.discard.length], [6, 0]);
 
@@ -97,7 +101,11 @@ export default function cases(Core) {
   eq('investigate: Hitler shows as fascist; a liberal as liberal', [seen.phase, Core.investigated(seen), Core.investigated(Core.investigate(inv, 5)), Core.investigated(inv)], ['investigated', 'F', 'L', null]);
   eq('no one is investigated twice', [Core.canTarget({ ...inv, seen: [0] }, 0), seen.seen], [false, [0]]);
   eq('after seeing, the next round', [Core.endPower(seen).phase, Core.endPower(seen).pres, Core.endPower(base) === base], ['nominate', 4, true]);
-  const pk = fas(2);
+  const sp = fas(2), se = Core.specialElect(sp, 6);
+  eq('special election: the president picks the next president, not self, term limits do not apply', [sp.phase, Core.specialElect(sp, 3) === sp, Core.specialElect(sp, 4).pres, se.phase, se.pres, se.back, Core.specialElect(base, 6) === base], ['special', true, 4, 'nominate', 6, 3, true]);
+  const after = Core.vote(Core.nominate(se, 1), false, rand);
+  eq('after the special round the order goes on from the one who called it', [after.pres, after.back], [4, null]);
+  const pk = Core.chancellorDiscard({ ...ch, players: five.players, laws: { L: 0, F: 2 } }, 0, rand);
   eq('peek: the 3 laws on top stay where they are', [Core.endPower(pk).phase, Core.endPower(pk).deck.slice(0, 3), Core.endPower(pk).log.at(-1)], ['nominate', pk.deck.slice(0, 3), 'Duda olhou as próximas 3 leis.']);
   const ex = fas(3);
   const ex1 = Core.execute(ex, 5);
@@ -108,7 +116,7 @@ export default function cases(Core) {
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));
   eq('read state: a damaged game is dropped, the names stay; an unknown theme is dropped', Core.readState({ names: ['a', 3, ' ', 'b'], game: { ...el, deck: ['X'] }, theme: 'pink' }), { v: 1, names: ['a', 'b'], game: null });
-  const broken = [{ ...el, players: [] }, { ...el, players: [{ name: 'a', role: 'rei', alive: true }] }, { ...el, phase: 'dance' }, { ...el, pres: 9 }, { ...el, tracker: 3 }, { ...el, log: [1] }, { ...el, phase: 'vote', chanc: null }, { ...el, phase: 'investigated', target: null }, { ...el, laws: { L: 7, F: 0 } }, { ...el, winner: 'X' }, { ...el, seen: [9] }, { ...el, vetoed: 1 }, { ...el, lastChanc: -1 }];
+  const broken = [{ ...el, players: [] }, { ...el, players: [{ name: 'a', role: 'rei', alive: true }] }, { ...el, phase: 'dance' }, { ...el, pres: 9 }, { ...el, tracker: 3 }, { ...el, log: [1] }, { ...el, phase: 'vote', chanc: null }, { ...el, phase: 'investigated', target: null }, { ...el, laws: { L: 7, F: 0 } }, { ...el, winner: 'X' }, { ...el, seen: [9] }, { ...el, vetoed: 1 }, { ...el, lastChanc: -1 }, { ...el, back: 9 }];
   eq('read game: what does not hold together is null', broken.map(Core.readGame), broken.map(() => null));
 
   /* the reader of the source: invented data here; real answers go in tests/fixtures/source/ and through tests/contract.py */

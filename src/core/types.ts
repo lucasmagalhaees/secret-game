@@ -10,7 +10,7 @@ export type Theme = 'light' | 'dark';
 export type Law = 'L' | 'F';
 export type Party = Law;
 
-/** What a player secretly is. Hitler is a fascist who does not know the other fascists. */
+/** What a player secretly is. Hitler is a fascist; he knows who the fascist is only at a table of 5 or 6. */
 export type Role = 'liberal' | 'fascista' | 'hitler';
 
 export interface Player { name: string; role: Role; alive: boolean }
@@ -26,6 +26,7 @@ export type Phase =
   | 'investigate'   // power: the president picks someone whose party they will see
   | 'investigated'  // the president sees that party
   | 'peek'          // power: the president sees the next 3 laws
+  | 'special'       // power: the president picks the next president
   | 'execute'       // power: the president eliminates a player
   | 'over';
 
@@ -40,6 +41,8 @@ export interface Game {
   phase: Phase;
   /** The president of this round, and the chancellor nominated (or elected), by index in players. */
   pres: number; chanc: number | null;
+  /** After a special election: the president who called it; the order goes on from them. */
+  back: number | null;
   /** The last government elected: neither may be chancellor next (with 5 or fewer alive, only the chancellor). */
   lastPres: number | null; lastChanc: number | null;
   /** Governments rejected (or vetoed) in a row: at the third, the top law is enacted by itself. */

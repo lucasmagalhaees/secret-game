@@ -6,6 +6,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 
 ### Alterado
 - Baralho do jogo original: 11 leis fascistas e 6 liberais (era 9 e 8).
+- Regras do jogo original: liberais vencem com 5 leis; com 5 ou 6 jogadores o Hitler conhece o fascista; poderes pelo tabuleiro da mesa (5–6, 7–8, 9–10).
+
+### Adicionado
+- Eleição especial.
 
 ## [0.4.0]
 

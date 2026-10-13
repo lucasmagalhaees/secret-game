@@ -19,7 +19,7 @@ export function render(): void {
 
 const ROLE: Record<Role, string> = { liberal: 'Liberal', fascista: 'Fascista', hitler: 'Hitler' };
 const PARTY: Record<Law, string> = { L: 'Liberal', F: 'Fascista' };
-const POWER_LABEL: Record<string, string> = { investigate: 'partido', peek: 'espiar', execute: 'eliminar' };
+const POWER_LABEL: Record<string, string> = { investigate: 'partido', peek: 'espiar', special: 'eleição', execute: 'eliminar' };
 const name = (g: Game, i: number): string => esc(g.players[i].name);
 const law = (l: Law, k?: number): string => {
   const face = `<span class="sym">${l === 'L' ? '⚖' : '☠'}</span><span>${l === 'L' ? 'Liberal' : 'Fascista'}</span>`;
@@ -40,12 +40,13 @@ function vTable(): string {
 }
 function vRules(): string {
   return `<section class="card" id="rules"><span class="label">Como joga</span><ul class="rules">
-    <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} fascistas e ${Core.DECK_L} liberais. Quem aprovar ${Core.WIN.F} leis do seu lado vence.</li>
-    <li>Os fascistas se conhecem e sabem quem é o Hitler. O Hitler não sabe quem são eles. Os liberais não conhecem ninguém.</li>
+    <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} fascistas e ${Core.DECK_L} liberais. Os liberais vencem com ${Core.WIN.L} leis liberais; os fascistas, com ${Core.WIN.F} fascistas.</li>
+    <li>Os fascistas se conhecem e sabem quem é o Hitler. Com 5 ou 6 jogadores o Hitler também sabe quem é o fascista; com 7 ou mais, não sabe. Os liberais não conhecem ninguém.</li>
     <li>A cada rodada o presidente indica o chanceler e a mesa vota. Eleito, o presidente tira 3 leis e descarta 1; o chanceler recebe 2, descarta 1 e a outra vira lei.</li>
     <li>O último presidente e o último chanceler eleitos não podem ser chanceler na rodada seguinte (com ${Core.SMALL_TABLE} vivos ou menos, só o último chanceler).</li>
     <li>${Core.TRACKER_MAX} governos rejeitados seguidos: a lei do topo entra sozinha, sem poder, e o limite de mandato zera.</li>
-    <li>Na 2ª lei fascista o presidente descobre o partido de alguém; na 3ª, olha as próximas 3 leis; na 4ª e na 5ª, elimina alguém. Ninguém é investigado duas vezes.</li>
+    <li>Os poderes do presidente dependem da mesa. Com 5 ou 6: na 3ª lei fascista olha as próximas 3 leis. Com 7 ou 8: na 2ª descobre o partido de alguém, na 3ª convoca eleição especial. Com 9 ou 10: na 1ª e na 2ª descobre o partido de alguém, na 3ª convoca eleição especial. Em toda mesa, na 4ª e na 5ª elimina alguém. Ninguém é investigado duas vezes.</li>
+    <li>Eleição especial: o presidente escolhe quem é o próximo presidente. Depois dessa rodada a ordem volta a partir de quem convocou.</li>
     <li>A partir da ${Core.VETO_FROM}ª lei fascista o chanceler pode pedir veto das duas leis; se o presidente aceitar, conta como governo rejeitado.</li>
     <li>Com ${Core.HITLER_ZONE} ou mais leis fascistas, eleger o Hitler chanceler dá a vitória aos fascistas. Eliminar o Hitler dá a vitória aos liberais.</li>
   </ul><p class="hint" id="credit">Baseado em <a href="https://www.secrethitler.com">Secret Hitler</a>, de Goat, Wolf, &amp; Cabbage, sob a licença <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.pt-br">CC BY-NC-SA 4.0</a>. Uso não comercial.</p></section>`;
@@ -57,7 +58,7 @@ function vGame(g: Game): string {
 }
 function vBoard(g: Game): string {
   const slots = (p: Law): string => Array.from({ length: Core.WIN[p] }, (_, i) => {
-    const filled = g.laws[p] > i, tag = i + 1 === Core.WIN[p] ? 'vitória' : p === 'F' ? POWER_LABEL[Core.POWERS[i + 1]] || '' : '';
+    const filled = g.laws[p] > i, tag = i + 1 === Core.WIN[p] ? 'vitória' : p === 'F' ? POWER_LABEL[Core.powerAt(g, i + 1) || ''] || '' : '';
     return `<div class="slot ${p}${filled ? ' on' : ''}">${filled ? (p === 'L' ? '⚖' : '☠') : ''}<small>${tag}</small></div>`;
   }).join('');
   const dots = Array.from({ length: Core.TRACKER_MAX }, (_, i) => `<i class="${g.tracker > i ? 'on' : ''}"></i>`).join('');
@@ -99,7 +100,7 @@ function vPhase(g: Game): string {
       return gated(g, `Papéis (${g.reveal + 1} de ${g.players.length})`, () => {
         const me = g.players[g.reveal], mates = Core.knows(g, g.reveal);
         const info = me.role === 'fascista' ? `<p>Seus aliados: ${mates.map(m => `<b>${esc(m.name)}</b>${m.role === 'hitler' ? ' (Hitler)' : ''}`).join(', ')}.</p>`
-          : me.role === 'hitler' ? '<p>Você não sabe quem são os fascistas. Eles sabem quem você é.</p>' : '<p>Você não sabe quem é quem. Ache o Hitler.</p>';
+          : me.role === 'hitler' ? (mates.length ? `<p>Seu fascista: ${mates.map(m => `<b>${esc(m.name)}</b>`).join(', ')}. Ele sabe quem você é.</p>` : '<p>Você não sabe quem são os fascistas. Eles sabem quem você é.</p>') : '<p>Você não sabe quem é quem. Ache o Hitler.</p>';
         return `<div class="role-card ${Core.partyOf(me.role)}" id="role"><small>Você é</small><b>${ROLE[me.role]}</b></div>${info}<button class="btn block" data-act="hiderole">Entendi, esconder</button>`;
       });
     case 'nominate':
@@ -114,6 +115,8 @@ function vPhase(g: Game): string {
       return `<section class="card" id="phase"><span class="label">Veto</span><p class="big"><b>${name(g, g.chanc as number)}</b> (chanceler) quer vetar as duas leis. <b>${pres}</b>, aceita?</p><p class="hint">Se aceitar, nenhuma lei entra e conta como governo rejeitado.</p><div class="pick"><button class="btn" data-act="veto" data-v="1">Aceitar veto</button><button class="btn ghost" data-act="veto" data-v="0">Recusar</button></div></section>`;
     case 'investigate':
       return `<section class="card" id="phase"><span class="label">Poder: investigar</span><p class="big"><b>${pres}</b>, de quem você quer saber o partido?</p>${pickList(g, i => Core.canTarget(g, i), 'investigate')}</section>`;
+    case 'special':
+      return `<section class="card" id="phase"><span class="label">Poder: eleição especial</span><p class="big"><b>${pres}</b>, quem é o próximo presidente?</p><p class="hint">Depois dessa rodada a ordem volta a partir de ${pres}.</p>${pickList(g, i => Core.canTarget(g, i), 'special')}</section>`;
     case 'investigated':
       return gated(g, 'Investigação', () => {
         const p = Core.investigated(g) as Law;

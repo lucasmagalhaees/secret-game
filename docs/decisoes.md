@@ -20,6 +20,7 @@ Modelo de uma decisão:
 3. Os nomes passam a ser os do Secret Hitler (D3).
 4. Visual no clima do jogo original (D4).
 5. Baralho do jogo original (11 fascistas e 6 liberais), vitória com 6 leis para os dois lados (D5).
+6. Regras iguais às do original, em tudo (D6).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -63,6 +64,20 @@ Modelo de uma decisão:
 - **Decisão:** baralho de 17 leis, 11 fascistas e 6 liberais (substitui o 9/8 da D2). A vitória fica em 6 leis para os dois lados, como na D2; o tabuleiro liberal tem 6 casas. A troca para 5 liberais chegou a ser feita e foi desfeita no mesmo PR.
 - **Interpretações que precisaram ser feitas:** "6 leis mesmo" foi lido como valendo para os dois lados. O resto que difere do original continua como está na D2 (Hitler sem conhecer os fascistas, poderes iguais em toda mesa, sem eleição especial).
 - **Não sei:** como fica o equilíbrio. Com só 6 cartas liberais e vitória em 6, os liberais só vencem por leis se as 6 forem aprovadas (as descartadas voltam quando o baralho é reembaralhado).
+
+## D6. Regras iguais às do original
+
+- **Contexto (13/10/2026):** "Deixa td igual no original inclusive o visual", depois de receber a lista das diferenças.
+- **Decisão:** valem as regras do Secret Hitler original. Substitui o que a D2 e a D5 tinham de diferente:
+  - os liberais vencem com 5 leis e os fascistas com 6; o tabuleiro liberal tem 5 casas;
+  - com 5 ou 6 jogadores o Hitler sabe quem é o fascista;
+  - os poderes seguem o tabuleiro da mesa: 5–6, 7–8 e 9–10 jogadores;
+  - existe a eleição especial: o presidente escolhe o próximo presidente, que pode ser alguém barrado pelo limite de mandato, e depois dessa rodada a ordem segue de quem convocou.
+- **Interpretações que precisaram ser feitas:**
+  - O tabuleiro é escolhido pelo número de jogadores que começaram, não pelos que estão vivos.
+  - A votação continua em voz alta, e o celular só registra se o governo foi eleito. No original os votos são cartas Ja!/Nein! viradas juntas; o resultado é o mesmo, só muda o meio (pedido de 12/10).
+  - Visual: continua o próprio, no clima de época (D4). Reproduzir o logo, as cartas, os tabuleiros e as ilustrações do jogo original não foi feito.
+- **Não sei:** as regras foram escritas a partir do que se sabe do livro de regras do original, sem conferir o texto oficial nesta data.
 
 ## Pendências
 
