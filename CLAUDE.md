@@ -58,7 +58,7 @@ O que cada peça do harness cobre:
 
 1. Mesa de 5 a 10 jogadores (`MIN_PLAYERS`, `MAX_PLAYERS`), em ordem de assento, guardada no aparelho.
 2. Papéis sorteados: um Hitler e fascistas conforme a mesa (`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10); o resto liberal.
-3. Cada um vê o próprio papel em segredo. Os fascistas veem os outros fascistas e o Hitler; com 5 ou 6 jogadores (`HITLER_KNOWS_UPTO`) o Hitler também vê o fascista, com mais ele não vê ninguém; os liberais não veem ninguém.
+3. Cada um vê o próprio papel em segredo. Os fascistas veem os outros fascistas e o Hitler, em linhas separadas (Hitler numa, os outros fascistas noutra); com 5 ou 6 jogadores (`HITLER_KNOWS_UPTO`) o Hitler também vê o fascista, com mais ele não vê ninguém; os liberais não veem ninguém.
 4. Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`). Com menos de 3 para tirar, o lixo volta e é embaralhado.
 5. Rodada: o presidente indica o chanceler, a mesa vota em voz alta (Ja! ou Nein!) e o celular só registra se o governo foi eleito (mais Ja! que Nein!) ou rejeitado. Eleito, o presidente tira 3 leis e descarta 1; o chanceler descarta 1 das 2 e a outra é aprovada.
 6. Limite de mandato: o último presidente e o último chanceler eleitos não podem ser chanceler; com 5 vivos ou menos (`SMALL_TABLE`), só o último chanceler.

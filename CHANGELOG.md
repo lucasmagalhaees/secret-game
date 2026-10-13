@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.6.1]
+
+### Alterado
+- Na carta do fascista, os aliados aparecem separados: o Hitler numa linha, os outros fascistas noutra.
+
 ## [0.6.0]
 
 ### Adicionado

@@ -239,3 +239,12 @@ button.law{transition:transform .15s,opacity .15s}
 .role-card.H{--c:#15110e;border-color:var(--fas);box-shadow:inset 0 -12px 0 #c4381f}
 .role-card.H b{color:#ffb199}
 [data-look="deco"] .role-card.H{--c:#05070c;box-shadow:inset 0 -8px 0 #9b1c2c}
+
+/* who a fascist knows: one row per kind, Hitler apart */
+.allies{display:flex;flex-direction:column;gap:8px}
+.ally{display:flex;align-items:baseline;gap:10px;padding:8px 12px;border:2px solid var(--line);background:var(--surface);overflow-wrap:anywhere}
+.ally small{flex:none;width:156px;text-align:center;font:800 11px/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;color:#f1e5cc}
+.ally span{font-size:17px}
+.ally.H small{background:#15110e;box-shadow:inset 0 -3px 0 #c4381f}
+.ally.F small{background:var(--fas)}
+[data-look="deco"] .ally{border-width:1px;border-color:var(--gold)}

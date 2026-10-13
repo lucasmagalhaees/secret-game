@@ -81,7 +81,9 @@ with sync_playwright() as p:
         assert pg.locator('#role').count() == 1 and {'liberal': 'LIBERAL', 'fascista': 'FASCISTA', 'hitler': 'HITLER'}[me['role']] in txt('#role').upper(), txt('#phase')
         if me['role'] == 'fascista':
             hitler = next(p['name'] for p in G()['players'] if p['role'] == 'hitler')
-            assert '(Hitler)' in txt('#phase') and hitler in txt('#phase'), txt('#phase')
+            assert hitler in txt('#allies .ally.H'), txt('#phase')
+            others = [p['name'] for j, p in enumerate(G()['players']) if p['role'] == 'fascista' and j != i]
+            assert all(o in txt('#allies .ally.F') for o in others) and hitler not in txt('#allies .ally.F'), txt('#allies')
         if i == 0: shot(f's2-papel-{THEME}.png')
         pg.click('[data-act=hiderole]')
     assert G()['phase'] == 'nominate'
@@ -185,7 +187,7 @@ with sync_playwright() as p:
     pg.click('[data-act=start]'); assert len(G()['players']) == 5
     pg.evaluate('''() => { window.__APP.S.game.players.forEach((p, i) => { p.role = i === 0 ? 'hitler' : i === 1 ? 'fascista' : 'liberal'; }); }''')
     pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
-    pg.click('[data-act=open]'); assert 'Seu fascista' in txt('#phase') and 'Bia' in txt('#phase'), txt('#phase')
+    pg.click('[data-act=open]'); assert 'Seu fascista' in txt('#allies') and 'Bia' in txt('#allies .ally.F'), txt('#phase')
     for i in range(5):
         if i: pg.click('[data-act=open]')
         pg.click('[data-act=hiderole]')
