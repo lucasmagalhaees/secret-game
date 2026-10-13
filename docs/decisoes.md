@@ -19,7 +19,7 @@ Modelo de uma decisão:
 2. O app vira o jogo Stalin Secreto (D2).
 3. Os nomes passam a ser os do Secret Hitler (D3).
 4. Visual no clima do jogo original (D4).
-5. Baralho e vitória do jogo original: 11 fascistas e 6 liberais; liberais vencem com 5 (D5).
+5. Baralho do jogo original (11 fascistas e 6 liberais), vitória com 6 leis para os dois lados (D5).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -57,11 +57,12 @@ Modelo de uma decisão:
 - **Interpretações que precisaram ser feitas:** nada do material gráfico original foi copiado (logo, ilustrações, cartas, tabuleiros). Fontes só do sistema, para o app continuar abrindo sem internet.
 - **Consequência nos testes:** o `tests/e2e.py` passou a ler o texto com `textContent` em vez de `innerText`, porque o CSS agora mostra botões e títulos em maiúsculas; o teste confere as palavras, não a caixa.
 
-## D5. Baralho e vitória do jogo original
+## D5. Baralho do jogo original, vitória com 6
 
-- **Contexto (13/10/2026):** "São 11 fascistas e 6 liberais". Depois, perguntado se a vitória liberal ficava em 5 como no original: "Deixe igual o jogo original".
-- **Decisão:** baralho de 17 leis, 11 fascistas e 6 liberais; os liberais vencem com 5 leis e os fascistas com 6. O tabuleiro liberal tem 5 casas. Substitui o 9/8 e o "6 para os dois" da D2.
-- **Interpretações que precisaram ser feitas:** "igual o jogo original" foi lido para o baralho e a vitória, que eram o assunto. O resto que difere do original continua como está na D2 (Hitler sem conhecer os fascistas, poderes iguais em toda mesa, sem eleição especial).
+- **Contexto (13/10/2026):** "São 11 fascistas e 6 liberais". Depois, perguntado se a vitória liberal ficava em 5 como no original: "Deixe igual o jogo original". Em seguida: "É com 6 leis mesmo pra vencer".
+- **Decisão:** baralho de 17 leis, 11 fascistas e 6 liberais (substitui o 9/8 da D2). A vitória fica em 6 leis para os dois lados, como na D2; o tabuleiro liberal tem 6 casas. A troca para 5 liberais chegou a ser feita e foi desfeita no mesmo PR.
+- **Interpretações que precisaram ser feitas:** "6 leis mesmo" foi lido como valendo para os dois lados. O resto que difere do original continua como está na D2 (Hitler sem conhecer os fascistas, poderes iguais em toda mesa, sem eleição especial).
+- **Não sei:** como fica o equilíbrio. Com só 6 cartas liberais e vitória em 6, os liberais só vencem por leis se as 6 forem aprovadas (as descartadas voltam quando o baralho é reembaralhado).
 
 ## Pendências
 

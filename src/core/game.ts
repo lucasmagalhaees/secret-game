@@ -6,8 +6,8 @@ import type { Game, Law, Party, Player, Role } from './types';
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
 /** The deck: 17 laws, 11 fascist and 6 liberal, as in the original game. */
 export const DECK_F = 11, DECK_L = 6;
-/** Laws of its own kind each side needs to win, as in the original game. */
-export const WIN: Record<Law, number> = { L: 5, F: 6 };
+/** Laws of its own kind each side needs to win: 6 for both (the original has 5 for the liberals; see D5). */
+export const WIN: Record<Law, number> = { L: 6, F: 6 };
 /** Governments rejected in a row before the top law is enacted by itself. */
 export const TRACKER_MAX = 3;
 /** Fascist laws on the table from which electing Hitler chancellor wins the game for the fascists. */

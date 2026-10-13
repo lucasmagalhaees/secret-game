@@ -40,7 +40,7 @@ function vTable(): string {
 }
 function vRules(): string {
   return `<section class="card" id="rules"><span class="label">Como joga</span><ul class="rules">
-    <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} fascistas e ${Core.DECK_L} liberais. Os liberais vencem com ${Core.WIN.L} leis liberais; os fascistas, com ${Core.WIN.F} fascistas.</li>
+    <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} fascistas e ${Core.DECK_L} liberais. Quem aprovar ${Core.WIN.F} leis do seu lado vence.</li>
     <li>Os fascistas se conhecem e sabem quem é o Hitler. O Hitler não sabe quem são eles. Os liberais não conhecem ninguém.</li>
     <li>A cada rodada o presidente indica o chanceler e a mesa vota. Eleito, o presidente tira 3 leis e descarta 1; o chanceler recebe 2, descarta 1 e a outra vira lei.</li>
     <li>O último presidente e o último chanceler eleitos não podem ser chanceler na rodada seguinte (com ${Core.SMALL_TABLE} vivos ou menos, só o último chanceler).</li>

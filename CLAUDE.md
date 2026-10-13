@@ -64,7 +64,7 @@ O que cada peça do harness cobre:
 7. 3 governos seguidos sem lei (`TRACKER_MAX`, rejeição ou veto) aprovam a lei do topo, sem poder, e zeram o limite de mandato.
 8. Poderes do presidente pela lei fascista aprovada (`POWERS`): na 2ª investiga o partido de alguém (nunca o mesmo duas vezes; Hitler aparece como fascista), na 3ª olha as próximas 3 leis, na 4ª e na 5ª elimina alguém.
 9. Veto a partir da 5ª lei fascista (`VETO_FROM`): o chanceler pede, o presidente aceita (nenhuma lei, conta como governo sem lei) ou recusa (o chanceler aprova uma).
-10. Vitória: 5 leis liberais ou 6 fascistas (`WIN`), como no original; fascistas também vencem elegendo o Hitler chanceler com 3 ou mais leis fascistas (`HITLER_ZONE`); liberais também vencem eliminando o Hitler.
+10. Vitória: 6 leis do seu lado (`WIN`), para os dois lados (no original os liberais vencem com 5); fascistas também vencem elegendo o Hitler chanceler com 3 ou mais leis fascistas (`HITLER_ZONE`); liberais também vencem eliminando o Hitler.
 11. Todo segredo (papel, mão de leis, partido investigado, próximas leis) só aparece depois de "Passe o celular para X" e do toque de X. Recarregar a página fecha o segredo aberto.
 12. A partida em curso fica guardada no aparelho; dá para encerrar no meio (dois toques) e jogar de novo com a mesma mesa.
 
