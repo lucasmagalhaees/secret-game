@@ -20,11 +20,12 @@ export function setS(next: AppState): void { S = next; }
 export interface Ui { msg: string; name: string; open: string; pick: number | null; confirmEnd: boolean }
 export const ui: Ui = { msg: '', name: '', open: '', pick: null, confirmEnd: false };
 
-/** The theme: the device's, unless one was chosen. The choice goes on <html> and in the colour of the browser bars. */
+/** The theme (the device's, unless one was chosen) and the style. Both go on <html>, and into the colour of the browser bars. */
 export function applyTheme(): void {
-  const t: Theme | undefined = S.theme, root = document.documentElement;
+  const t: Theme | undefined = S.theme, root = document.documentElement, deco = S.look === 'deco';
   if (t) root.dataset.theme = t; else delete root.dataset.theme;
+  root.dataset.look = deco ? 'deco' : 'poster';
   const dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  for (const m of document.querySelectorAll<HTMLMetaElement>('meta[name=theme-color]')) m.content = dark ? '#0d0b09' : '#1d1a17';
+  for (const m of document.querySelectorAll<HTMLMetaElement>('meta[name=theme-color]')) m.content = deco ? (dark ? '#070a12' : '#121a2e') : dark ? '#0d0b09' : '#1d1a17';
 }
 applyTheme();

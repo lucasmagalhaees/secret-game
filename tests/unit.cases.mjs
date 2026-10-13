@@ -116,6 +116,7 @@ export default function cases(Core) {
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));
   eq('read state: a damaged game is dropped, the names stay; an unknown theme is dropped', Core.readState({ names: ['a', 3, ' ', 'b'], game: { ...el, deck: ['X'] }, theme: 'pink' }), { v: 1, names: ['a', 'b'], game: null });
+  eq('read state: the art deco style is kept, an unknown style is dropped', [Core.readState({ look: 'deco' }).look, 'look' in Core.readState({ look: 'neon' }), 'look' in Core.readState({ look: 'poster' })], ['deco', false, false]);
   const broken = [{ ...el, players: [] }, { ...el, players: [{ name: 'a', role: 'rei', alive: true }] }, { ...el, phase: 'dance' }, { ...el, pres: 9 }, { ...el, tracker: 3 }, { ...el, log: [1] }, { ...el, phase: 'vote', chanc: null }, { ...el, phase: 'investigated', target: null }, { ...el, laws: { L: 7, F: 0 } }, { ...el, winner: 'X' }, { ...el, seen: [9] }, { ...el, vetoed: 1 }, { ...el, lastChanc: -1 }, { ...el, back: 9 }];
   eq('read game: what does not hold together is null', broken.map(Core.readGame), broken.map(() => null));
 

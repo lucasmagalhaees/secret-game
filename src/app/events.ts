@@ -47,6 +47,7 @@ export function initEvents(): void {
     else if (a === 'rmname') { setS({ ...S, names: S.names.filter((_, j) => j !== i) }); saveS(); ui.msg = ''; render(); }
     else if (a === 'start') start();
     else if (a === 'theme') { const t = d.t as Theme | 'auto'; if (t === 'auto') delete S.theme; else S.theme = t; saveS(); applyTheme(); render(); }
+    else if (a === 'look') { if (d.l === 'deco') S.look = 'deco'; else delete S.look; saveS(); applyTheme(); render(); }
     else if (a === 'update') applyUpdate();
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;

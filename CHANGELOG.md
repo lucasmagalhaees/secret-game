@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.6.0]
+
+### Adicionado
+- Estilo art déco (claro e escuro), escolhido em "Aparência".
+- Desenhos próprios em caricatura: liberais como pássaros de uniforme, fascistas como jacarés de uniforme, carta própria do Hitler (naja de casaco gritando num púlpito). As leis e o tabuleiro continuam com a balança e a caveira.
+- Animações: fase nova, segredo virando como carta, lei carimbando no tabuleiro. Desligadas com "reduzir movimento".
+- Faixa com presidente, chanceler e rejeições sempre à vista; tela de passar o celular mais clara; histórico recolhível.
+
+### Alterado
+- Modo escuro com sombras e contraste revisados.
+
 ## [0.5.0]
 
 ### Alterado

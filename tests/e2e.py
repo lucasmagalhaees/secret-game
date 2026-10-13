@@ -60,6 +60,13 @@ with sync_playwright() as p:
     cov.reload(pg); wait(); assert dark() == (other == 'dark'), 'the chosen theme stays'
     assert pg.locator('#names li').count() == 7, 'the table is kept on the device'
     pg.click('[data-act=theme][data-t=auto]'); assert dark() == (THEME == 'dark') and pg.evaluate('document.documentElement.dataset.theme') is None
+    # the style: the poster by default, or art deco, which stays
+    look = lambda: pg.evaluate('document.documentElement.dataset.look')
+    assert look() == 'poster' and pg.locator('[data-act=look][data-l=poster]').get_attribute('aria-pressed') == 'true'
+    pg.click('[data-act=look][data-l=deco]'); assert look() == 'deco' and dark() == (THEME == 'dark')
+    cov.reload(pg); wait(); assert look() == 'deco', 'the chosen style stays'
+    shot(f's0-deco-{THEME}.png')
+    pg.click('[data-act=look][data-l=poster]'); assert look() == 'poster' and 'look' not in json.loads(pg.evaluate(f'localStorage.getItem("{KEY}")'))
     # opened from the disk there is no service worker, and the screen says so
     assert 'não fica guardado' in txt('#version') and pg.locator('[data-act=checkupdate]').count() == 0, txt('#version')
 
@@ -70,6 +77,7 @@ with sync_playwright() as p:
         assert 'Passe o celular para' in txt('#phase') and pg.locator('#role').count() == 0, 'the role is not on screen before the tap'
         pg.click('[data-act=open]')
         me = G()['players'][i]
+        assert pg.locator('#role svg.art').count() == 1, 'the role card shows its illustration'
         assert pg.locator('#role').count() == 1 and {'liberal': 'LIBERAL', 'fascista': 'FASCISTA', 'hitler': 'HITLER'}[me['role']] in txt('#role').upper(), txt('#phase')
         if me['role'] == 'fascista':
             hitler = next(p['name'] for p in G()['players'] if p['role'] == 'hitler')
@@ -82,7 +90,8 @@ with sync_playwright() as p:
     pg.evaluate('''() => { const g = window.__APP.S.game; g.players.forEach((p, i) => { p.role = i === 0 ? 'hitler' : i < 3 ? 'fascista' : 'liberal'; }); g.pres = 3; }''')
     pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))')
     cov.reload(pg); wait()
-    assert G()['pres'] == 3 and 'Duda' in txt('#phase'), 'the game in course comes back after a reload'
+    assert G()['pres'] == 3 and 'Duda' in txt('#phase') and 'Duda' in txt('#status'), 'the game in course comes back after a reload'
+    assert pg.locator('#board .slot.new').count() == 0, 'a reload stamps nothing'
     stack = lambda deck: pg.evaluate('(d) => { window.__APP.S.game.deck = d.split(""); }', deck)
 
     def nominate(i):
@@ -100,6 +109,7 @@ with sync_playwright() as p:
         nominate(chanc); votes(True); assert G()['phase'] == 'president', G()['log'][-1]
         hand('p', law); pg.click('[data-act=pdiscard]'); assert G()['phase'] == 'chancellor'
         hand('c', law); pg.click('[data-act=cdiscard]')
+        assert pg.locator('#board .slot.new').count() == (0 if G()['phase'] == 'over' else 1), 'the new law stamps onto the board'
 
     # three governments rejected: the top law goes in by itself
     nominate(4); votes(False); assert G()['tracker'] == 1 and G()['pres'] == 4 and 'rejeitado' in txt('#toast')
@@ -117,7 +127,7 @@ with sync_playwright() as p:
     # 2nd fascist law: Ana sees Caio's party
     stack('FFLFFL'); govern(1, 'F'); assert G()['phase'] == 'investigate'
     pg.click('#phase [data-act=investigate][data-i="2"]')
-    assert pg.locator('#party').count() == 0; pg.click('[data-act=open]'); assert 'FASCISTA' in txt('#party').upper() and 'Caio' in txt('#party')
+    assert pg.locator('#party').count() == 0; pg.click('[data-act=open]'); assert pg.locator('#party svg.art').count() == 1 and 'FASCISTA' in txt('#party').upper() and 'Caio' in txt('#party')
     pg.click('[data-act=endpower]'); assert G()['phase'] == 'nominate' and G()['pres'] == 1
     # 3rd, at a table of 7: Bia calls a special election and makes Edu president; then the order goes on after Bia
     stack('FFLFFL'); govern(3, 'F'); assert G()['phase'] == 'special' and 'eleição especial' in txt('#phase')

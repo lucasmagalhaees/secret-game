@@ -92,6 +92,8 @@ css = read('src/styles.css')
 a = re.search(r':root:not\(\[data-theme="light"\]\)\{(.*?)\}', css, re.S); b = re.search(r':root\[data-theme="dark"\]\{(.*?)\}', css, re.S)
 norm = lambda m: re.sub(r'\s+', '', m.group(1)) if m else None
 check('the two copies of the dark palette are identical', a and b and norm(a) == norm(b))
+c = re.search(r':root\[data-look="deco"\]:not\(\[data-theme="light"\]\)\{(.*?)\}', css, re.S); e = re.search(r':root\[data-look="deco"\]\[data-theme="dark"\]\{(.*?)\}', css, re.S)
+check('the two copies of the art deco dark palette are identical', c and e and norm(c) == norm(e))
 
 # 10. the commit stamp: put in the page by the build, read by the production check
 check('the page has the commit stamp the build fills in', '<meta name="app-commit" content="__APP_COMMIT__">' in read('index.html') and "replace('__APP_COMMIT__', commit())" in read('vite.config.js') and 'VERCEL_GIT_COMMIT_SHA' in read('vite.config.js'))
