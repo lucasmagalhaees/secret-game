@@ -15,26 +15,51 @@ Strict mode therefore does not stop at the first match: it keeps looking for a w
 arrive after the right one.
 
 Exit codes: 0 production is this commit (or --report); 1 it is not; 3 inconclusive (production could not be reached).
-Environment: APP_PROD_URL, APP_PROD_WAIT (seconds to wait for the first match), APP_PROD_HOLD (seconds it must stay matched).
+Environment: APP_PROD_URL (empty means the default below; on GitHub it comes from the repository variable of the same
+name), APP_PROD_WAIT (seconds to wait for the first match), APP_PROD_HOLD (seconds it must stay matched).
+
+Two mistakes this script names instead of just timing out: an address that serves some other site (a page without the
+stamp: the default once pointed at a stranger's app with a similar name), and an address behind Vercel's login.
 """
 import os, pathlib, re, subprocess, sys, time, urllib.error, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-URL = os.environ.get('APP_PROD_URL', 'https://secret-hitler.vercel.app/')
+DEFAULT_URL = 'https://secret-game-gamma.vercel.app/'
+URL = os.environ.get('APP_PROD_URL') or DEFAULT_URL
 AGENT = 'secret-hitler-production-check/1.0'
 STAMP = re.compile(r'<meta name="app-commit" content="([^"]*)"')
 NO_STAMP = '(sem carimbo)'
+LOGIN = '(login da Vercel)'
 
 
 def fetch(url):
-    """The commit stamped in the page the address serves; NO_STAMP for a page without one; None when it cannot be read."""
+    """The commit stamped in the page the address serves; NO_STAMP for a page without one; LOGIN when the address sends
+    to Vercel's login (deployment protection); None when it cannot be read."""
     req = urllib.request.Request(url, headers={'User-Agent': AGENT, 'Cache-Control': 'no-cache', 'Accept': 'text/html'})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
+            if is_login(r.geturl()):
+                return LOGIN
             m = STAMP.search(r.read().decode('utf-8', 'replace'))
             return m.group(1) if m and m.group(1) else NO_STAMP
     except (urllib.error.URLError, OSError, ValueError):
         return None
+
+
+def is_login(final_url):
+    """Where a protected Vercel deployment sends a visitor who is not signed in."""
+    return bool(re.match(r'https?://(www\.)?vercel\.com/(login|sso)', final_url or ''))
+
+
+def why(served):
+    """What to do when production is not this commit, by what the address served."""
+    if served == LOGIN:
+        return (f'{URL} pede login da Vercel (proteção de deploy). Desligue a proteção para o domínio de produção, '
+                'ou use outro endereço público em APP_PROD_URL.')
+    if served == NO_STAMP:
+        return (f'{URL} não parece ser este app: a página não tem o carimbo de commit. Confira o domínio de produção na '
+                'Vercel (Settings → Domains) e a variável APP_PROD_URL do repositório.')
+    return 'A produção não está servindo o commit mais recente da main. Na Vercel, promova o deploy desse commit (ou faça um novo merge). Veja "Publicação" no CLAUDE.md.'
 
 
 def annotate(level, text):
@@ -54,7 +79,9 @@ def head():
 def describe(served):
     """Where the commit production serves sits relative to the one checked out here."""
     if served == NO_STAMP:
-        return 'uma versão sem carimbo de commit (o build não recebeu o commit)'
+        return 'uma página sem carimbo de commit (outro site, ou um build que não recebeu o commit)'
+    if served == LOGIN:
+        return 'a tela de login da Vercel (o endereço está protegido)'
     try:
         behind = subprocess.run(['git', 'rev-list', '--count', f'{served}..HEAD'], cwd=ROOT, capture_output=True, text=True)
         if behind.returncode == 0:
@@ -139,6 +166,10 @@ def selftest():
     check('unreachable address reads as None', fetch(url), None)
     state.update(down=False, body=new); later(0.15, down=True); later(0.35, down=False)
     check('a blip while holding does not fail the check', strict(url, 'new1234', 1, 0.6, 0.05, quiet), 0)
+    check('the login page of Vercel is recognised', [is_login('https://vercel.com/login?next=x'), is_login('https://vercel.com/sso-api?url=x'), is_login('https://vercel.com/docs'), is_login(url)], [True, True, False, False])
+    check('a page from some other site says to check the address', 'não parece ser este app' in why(NO_STAMP) and 'APP_PROD_URL' in why(NO_STAMP), True)
+    check('a protected address says so', 'login da Vercel' in why(LOGIN), True)
+    check('an empty variable falls back to the default address', (os.environ.get('APP_PROD_URL_UNSET_FOR_TEST') or DEFAULT_URL) == DEFAULT_URL, True)
     check('describing a commit outside the history does not crash', 'fora do histórico' in describe('0' * 40) or 'commit 0000000' in describe('0' * 40), True)
     srv.shutdown()
     for f in fails:
@@ -168,7 +199,7 @@ if __name__ == '__main__':
         say('inconclusivo: não sei qual é o commit daqui (sem GITHUB_SHA e sem git).'); sys.exit(3)
     code = strict(URL, want, float(os.environ.get('APP_PROD_WAIT', 420)), float(os.environ.get('APP_PROD_HOLD', 300)), 20, say)
     if code == 1:
-        annotate('error', 'A produção não está servindo o commit mais recente da main. Na Vercel, promova o deploy desse commit (ou faça um novo merge). Veja "Publicação" no CLAUDE.md.')
+        annotate('error', why(fetch(URL)))
     elif code == 3:
         annotate('warning', f'Inconclusivo: não consegui ler {URL} daqui.')
     sys.exit(code)
