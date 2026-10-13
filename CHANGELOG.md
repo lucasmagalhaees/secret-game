@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.7.0]
+
+### Adicionado
+- Animações: carta do papel virando, leis distribuídas em leque, descarte caindo, carimbo da votação, marcador de rejeições tremendo, eliminação escurecendo a tela e riscando o nome, lupa na investigação, espiada levantando a ponta, confete e o vencedor comemorando no fim.
+- Som e vibração, com um botão para desligar.
+- Resumo da partida no fim, com o que cada investigação mostrou de verdade.
+- Segredo que se esconde sozinho quando o app sai da tela ou o celular é virado para baixo.
+- Ajuda de cada fase no botão "?".
+- Desfazer o último toque na indicação e na votação.
+
 ## [0.6.1]
 
 ### Alterado

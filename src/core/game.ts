@@ -1,7 +1,7 @@
 /* The rules of the game. Pure: a game comes in and a new one goes out; chance comes in as a function (`rand`), so the
    same seed always plays the same game. An action that is not allowed where the game is returns the same game,
    untouched: the page only offers what is allowed, and a stray tap changes nothing. */
-import type { Game, Law, Party, Player, Role } from './types';
+import type { Event, Game, Law, Party, Player, Role } from './types';
 
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
 /** The deck: 17 laws, 11 fascist and 6 liberal, as in the original game. */
@@ -81,7 +81,7 @@ export function newGame(names: string[], rand: () => number): { ok: true; game: 
   const players: Player[] = c.names.map((name, i) => ({ name, role: roles[i], alive: true }));
   const deck = shuffle<Law>([...Array(DECK_F).fill('F'), ...Array(DECK_L).fill('L')], rand);
   const pres = Math.floor(rand() * players.length);
-  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`] } };
+  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [] } };
 }
 
 /** What player i is told at the start: the fascists see each other and Hitler; Hitler sees the fascist only at a table
@@ -118,6 +118,7 @@ function nextPres(g: Game): number {
   return i;
 }
 const newRound = (g: Game): Game => ({ ...g, phase: 'nominate', pres: nextPres(g), back: null, chanc: null, hand: [], target: null, vetoed: false });
+const note = (g: Game, e: Event): Event[] => [...g.hist, e];
 const over = (g: Game, winner: Party, why: string): Game => ({ ...g, phase: 'over', winner, why, hand: [], log: [...g.log, why] });
 
 /** With fewer than 3 laws left to draw, the discarded ones go back in and the pile is shuffled. */
@@ -129,7 +130,8 @@ function refill(g: Game, rand: () => number): Game {
 function enact(g: Game, law: Law, rand: () => number, fromGov: boolean): Game {
   const laws = { ...g.laws, [law]: g.laws[law] + 1 };
   const who = fromGov ? `por ${g.players[g.pres].name} (presidente) e ${g.players[g.chanc as number].name} (chanceler)` : `pelo caos (${TRACKER_MAX} governos seguidos sem lei)`;
-  const n: Game = refill({ ...g, laws, hand: [], log: [...g.log, `Lei ${lawName(law)} aprovada ${who}.`] }, rand);
+  const e: Event = fromGov ? { k: 'gov', pres: g.pres, chanc: g.chanc as number, law } : { k: 'chaos', law };
+  const n: Game = refill({ ...g, laws, hand: [], log: [...g.log, `Lei ${lawName(law)} aprovada ${who}.`], hist: note(g, e) }, rand);
   if (laws.L >= WIN.L) return over(n, 'L', `${WIN.L} leis liberais aprovadas: os liberais vencem.`);
   if (laws.F >= WIN.F) return over(n, 'F', `${WIN.F} leis fascistas aprovadas: os fascistas vencem.`);
   const power = law === 'F' && fromGov ? powerAt(n, laws.F) : undefined;
@@ -146,7 +148,7 @@ export function vote(g: Game, elected: boolean, rand: () => number): Game {
     if (chanc.role === 'hitler' && g.laws.F >= HITLER_ZONE) return over(n, 'F', `Hitler (${chanc.name}) foi eleito chanceler: os fascistas vencem.`);
     return { ...n, phase: 'president', hand: n.deck.slice(0, 3), deck: n.deck.slice(3) };
   }
-  return failed({ ...g, log: [...g.log, `Governo ${pres} + ${chanc.name} rejeitado.`] }, rand);
+  return failed({ ...g, log: [...g.log, `Governo ${pres} + ${chanc.name} rejeitado.`], hist: note(g, { k: 'rej', pres: g.pres, chanc: g.chanc }) }, rand);
 }
 
 
@@ -184,7 +186,7 @@ export function answerVeto(g: Game, yes: boolean, rand: () => number): Game {
   if (g.phase !== 'veto') return g;
   const who = g.players[g.pres].name;
   if (!yes) return { ...g, phase: 'chancellor', vetoed: true, log: [...g.log, `${who} (presidente) recusou o veto.`] };
-  return failed({ ...g, discard: [...g.discard, ...g.hand], log: [...g.log, `${who} (presidente) aceitou o veto: nenhuma lei aprovada.`] }, rand);
+  return failed({ ...g, discard: [...g.discard, ...g.hand], log: [...g.log, `${who} (presidente) aceitou o veto: nenhuma lei aprovada.`], hist: note(g, { k: 'veto', pres: g.pres, chanc: g.chanc as number }) }, rand);
 }
 
 /** Who the president can use a power on: anyone else still in the game, and for an investigation, not someone already
@@ -195,14 +197,14 @@ export const canTarget = (g: Game, i: number): boolean => (g.phase === 'investig
 /** The president picks whose party to see. Hitler shows as fascist. */
 export function investigate(g: Game, i: number): Game {
   if (g.phase !== 'investigate' || !canTarget(g, i)) return g;
-  return { ...g, phase: 'investigated', target: i, seen: [...g.seen, i], log: [...g.log, `${g.players[g.pres].name} investigou ${g.players[i].name}.`] };
+  return { ...g, phase: 'investigated', target: i, seen: [...g.seen, i], log: [...g.log, `${g.players[g.pres].name} investigou ${g.players[i].name}.`], hist: note(g, { k: 'inv', by: g.pres, target: i, party: partyOf(g.players[i].role) }) };
 }
 
 /** Special election: the president picks the next president, anyone else alive (term limits do not apply to it). After
  *  that round the presidency goes back to its order, from the player after the one who called it. */
 export function specialElect(g: Game, i: number): Game {
   if (g.phase !== 'special' || !canTarget(g, i)) return g;
-  return { ...g, phase: 'nominate', back: g.pres, pres: i, chanc: null, hand: [], target: null, vetoed: false, log: [...g.log, `${g.players[g.pres].name} convocou eleição especial: ${g.players[i].name} é o próximo presidente.`] };
+  return { ...g, phase: 'nominate', back: g.pres, pres: i, chanc: null, hand: [], target: null, vetoed: false, log: [...g.log, `${g.players[g.pres].name} convocou eleição especial: ${g.players[i].name} é o próximo presidente.`], hist: note(g, { k: 'special', by: g.pres, target: i }) };
 }
 
 /** The party the president sees, once a player has been investigated. */
@@ -210,7 +212,7 @@ export const investigated = (g: Game): Party | null => (g.phase === 'investigate
 
 /** The president has seen what the power showed (a party, or the next 3 laws): the next round begins. */
 export function endPower(g: Game): Game {
-  if (g.phase === 'peek') return newRound({ ...g, log: [...g.log, `${g.players[g.pres].name} olhou as próximas 3 leis.`] });
+  if (g.phase === 'peek') return newRound({ ...g, log: [...g.log, `${g.players[g.pres].name} olhou as próximas 3 leis.`], hist: note(g, { k: 'peek', by: g.pres }) });
   return g.phase === 'investigated' ? newRound(g) : g;
 }
 
@@ -218,7 +220,7 @@ export function endPower(g: Game): Game {
 export function execute(g: Game, i: number): Game {
   if (g.phase !== 'execute' || !canTarget(g, i)) return g;
   const players = g.players.map((p, j) => (j === i ? { ...p, alive: false } : p));
-  const n: Game = { ...g, players, log: [...g.log, `${g.players[g.pres].name} eliminou ${g.players[i].name}.`] };
+  const n: Game = { ...g, players, log: [...g.log, `${g.players[g.pres].name} eliminou ${g.players[i].name}.`], hist: note(g, { k: 'exec', by: g.pres, target: i, role: g.players[i].role }) };
   if (g.players[i].role === 'hitler') return over(n, 'L', `Hitler (${g.players[i].name}) foi eliminado: os liberais vencem.`);
   return newRound(n);
 }

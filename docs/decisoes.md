@@ -22,6 +22,8 @@ Modelo de uma decisão:
 5. Baralho do jogo original (11 fascistas e 6 liberais), vitória com 6 leis para os dois lados (D5).
 6. Regras iguais às do original, em tudo (D6).
 7. Telas mais claras, modo escuro revisado, animações, estilo art déco e desenhos de animais (D7).
+8. Endereço de produção (D8).
+9. Mais animações e melhorias: carta virando, distribuição, descarte, carimbo, poderes, confete, vibração, sons, resumo, esconder sozinho, ajuda e desfazer (D9).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -91,6 +93,19 @@ Modelo de uma decisão:
   - desenhos próprios em SVG (os fascistas trocaram de cobra para jacaré em seguida: "e se o fascista for um jacare? a arte da cobra ficou mt ruim, a do liberal ficou boa"; o jacaré segue o traço do pássaro, de perfil, de pé): pássaro de uniforme (quepe, gola e botões; pedido em seguida: "Os pássaros pode ter uniforme tbm e a cobra Hitler ter um design p diferenciar"), jacaré de uniforme (quepe, cinto, botões) e uma carta do Hitler com outro contorno (fundo preto, faixa vermelha; jacaré de casaco longo, quepe alto, braçadeira vermelha lisa, olho vermelho, sobrancelha franzida e boca aberta, com o punho batendo no púlpito). Depois, mais acabamento a pedido ("faz entao"): sombras, escamas, dentes, expressão nos olhos e medalha no pássaro. Nada de braço estendido no Hitler, para não ler como saudação. Pedidos para se aproximar de cartas oficiais e de uma expansão da Steam foram recusados. Por fim ("tem q mudar totalmente o estilo da ilustracao, faca mais caricatura", com uma ilustração de banco de imagens como exemplo do tipo de traço): tudo redesenhado em caricatura, com contorno preto grosso, cores chapadas, cabeça grande e expressão exagerada. Perguntado e respondido: fascista jacaré, Hitler naja. Nada foi copiado da imagem de exemplo. As leis e o tabuleiro voltaram para os símbolos (balança e caveira): "a ilustracao das leis nao deveria ter mudado, só a dos personagens"., também nos selos das leis e do tabuleiro.
 - **Interpretações que precisaram ser feitas:** "outra linha de estilo" virou um segundo estilo escolhível, não uma troca do pôster. O partido investigado mostra o desenho do partido, nunca a carta do Hitler.
 - **Não sei:** como as animações e a Didot ficam no iPhone de verdade (os testes rodam no Chromium).
+
+## D9. Mais animações e melhorias
+
+- **Contexto (13/10/2026):** 12 propostas (6 animações, 6 melhorias), "faca todas animacoes e melhorias".
+- **Decisão:** todas, como estão nos requisitos 13 a 17 e na seção Interface do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - Som e vibração ficam ligados por padrão e saem juntos num botão só ("Som e vibração" em Aparência).
+  - Nenhum som em ação secreta (o descarte toca papel, mas o descarte não diz qual lei foi).
+  - O desfazer vale só para escolhas públicas (indicação e votação) e some ao abrir um segredo, para ninguém refazer depois de ver cartas.
+  - "Quem mentiu na investigação": o app não sabe o que o presidente disse; o resumo mostra o que a investigação mostrou de verdade, e a mesa compara.
+  - Virado para baixo é o celular com mais de 150° de inclinação; o iPhone só informa isso depois de a pessoa permitir, pedido no primeiro toque em "mostrar".
+  - Com "reduzir movimento", nada anima e nada espera (o descarte segue na hora); os testes ponta a ponta rodam assim, mais uma rodada com movimento.
+- **Não sei:** como os sons soam no alto-falante de um celular, e se a permissão de movimento do iPhone aparece como esperado.
 
 ## Pendências
 

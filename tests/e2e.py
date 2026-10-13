@@ -19,7 +19,9 @@ NAMES = ['Ana', 'Bia', 'Caio', 'Duda', 'Edu', 'Fê', '<b>Gil</b>']
 
 with sync_playwright() as p:
     b = p.chromium.launch()
-    ctx = b.new_context(viewport=dict(width=393, height=852), device_scale_factor=2, color_scheme=THEME, locale='pt-BR', timezone_id='America/Sao_Paulo', has_touch=True, is_mobile=True)
+    # the main run asks for less motion, as a device can: nothing waits for an animation, so every tap acts at once.
+    # A short run with motion on, at the end, checks the animations themselves.
+    ctx = b.new_context(viewport=dict(width=393, height=852), device_scale_factor=2, color_scheme=THEME, locale='pt-BR', timezone_id='America/Sao_Paulo', has_touch=True, is_mobile=True, reduced_motion='reduce')
     ctx.route('**/*', lambda r: r.abort() if r.request.url.startswith('http') else r.continue_())
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
@@ -67,6 +69,11 @@ with sync_playwright() as p:
     cov.reload(pg); wait(); assert look() == 'deco', 'the chosen style stays'
     shot(f's0-deco-{THEME}.png')
     pg.click('[data-act=look][data-l=poster]'); assert look() == 'poster' and 'look' not in json.loads(pg.evaluate(f'localStorage.getItem("{KEY}")'))
+    # sound and vibration: on by default, off when chosen, and that stays
+    saved = lambda: json.loads(pg.evaluate(f'localStorage.getItem("{KEY}")'))
+    assert pg.locator('[data-act=fx][data-v=on]').get_attribute('aria-pressed') == 'true'
+    pg.click('[data-act=fx][data-v=off]'); assert saved().get('quiet') is True and pg.locator('[data-act=fx][data-v=off]').get_attribute('aria-pressed') == 'true'
+    pg.click('[data-act=fx][data-v=on]'); assert 'quiet' not in saved()
     # opened from the disk there is no service worker, and the screen says so
     assert 'não fica guardado' in txt('#version') and pg.locator('[data-act=checkupdate]').count() == 0, txt('#version')
 
@@ -114,7 +121,17 @@ with sync_playwright() as p:
         assert pg.locator('#board .slot.new').count() == (0 if G()['phase'] == 'over' else 1), 'the new law stamps onto the board'
 
     # three governments rejected: the top law goes in by itself
-    nominate(4); votes(False); assert G()['tracker'] == 1 and G()['pres'] == 4 and 'rejeitado' in txt('#toast')
+    # help for the phase, open and closed
+    pg.click('[data-act=help]'); assert 'escolhe quem vai ser o chanceler' in txt('#helptext')
+    pg.click('[data-act=help]'); assert pg.locator('#helptext').count() == 0
+    # a nomination and a vote result can be taken back, until something else happens
+    nominate(4); assert pg.locator('#undo').count() == 1
+    pg.click('#undo'); assert G()['phase'] == 'nominate' and G()['chanc'] is None and pg.locator('#undo').count() == 0
+    nominate(4); votes(False)
+    assert pg.evaluate('document.getElementById("stamp").hidden') is False and 'Rejeitado' in txt('#stamp'), 'the vote result is stamped on the screen'
+    assert G()['tracker'] == 1 and pg.locator('#tracker.bump').count() == 1, 'the tracker shakes when it moves'
+    pg.click('#undo'); assert G()['phase'] == 'vote' and G()['tracker'] == 0 and G()['chanc'] == 4
+    votes(False); assert G()['tracker'] == 1 and G()['pres'] == 4 and 'rejeitado' in txt('#toast')
     nominate(5); votes(False)
     stack('LFFLFFLL')
     nominate(6); votes(False)
@@ -161,6 +178,9 @@ with sync_playwright() as p:
     assert G()['pres'] == 0; nominate(2); votes(False); assert G()['pres'] == 2
     nominate(0); votes(True)
     g = G(); assert g['phase'] == 'over' and g['winner'] == 'F' and 'fascistas venceram' in txt('#phase')
+    assert pg.locator('#confetti i').count() > 0 and pg.locator('#phase .cheer svg.art').count() == 1, 'confetti and the winners cheering'
+    assert 'Ana investigou Caio: era fascista' in ' '.join(txt('#summary').split()), txt('#summary')
+    assert 'eliminou' in txt('#summary') and 'rejeitados' in txt('#summary') and 'Caos' in txt('#summary') and 'vetaram' in txt('#summary'), txt('#summary')
     assert pg.locator('#players .role').count() == 7 and 'Hitler' in txt('#players'), 'the roles are shown at the end'
     assert overflow() == 0; shot(f's4-fim-{THEME}.png')
 
@@ -188,6 +208,12 @@ with sync_playwright() as p:
     pg.evaluate('''() => { window.__APP.S.game.players.forEach((p, i) => { p.role = i === 0 ? 'hitler' : i === 1 ? 'fascista' : 'liberal'; }); }''')
     pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
     pg.click('[data-act=open]'); assert 'Seu fascista' in txt('#allies') and 'Bia' in txt('#allies .ally.F'), txt('#phase')
+    # a secret closes by itself when the app leaves the screen, or when the phone is put face down
+    pg.evaluate('''() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; }''')
+    assert pg.locator('#role').count() == 0 and 'saiu da tela' in txt('#toast'), 'hidden when the app goes away'
+    pg.click('[data-act=open]'); pg.evaluate("window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { beta: 175 }))")
+    assert pg.locator('#role').count() == 0 and 'virado para baixo' in txt('#toast'), 'hidden when the phone is face down'
+    pg.click('[data-act=open]')
     for i in range(5):
         if i: pg.click('[data-act=open]')
         pg.click('[data-act=hiderole]')
@@ -201,5 +227,28 @@ with sync_playwright() as p:
 
     cov.stop(pg, f'e2e-{THEME}')
     assert not errs, errs
+
+    # ---------- with motion on: the animations play, and taps wait for the falling card ----------
+    mctx = b.new_context(viewport=dict(width=393, height=852), color_scheme=THEME, locale='pt-BR', reduced_motion='no-preference')
+    mctx.route('**/*', lambda r: r.abort() if r.request.url.startswith('http') else r.continue_())
+    mp = mctx.new_page(); merrs = []
+    mp.on('pageerror', lambda e: merrs.append(str(e)))
+    cov.start(mp)
+    mp.goto((ROOT / 'dist' / 'index.html').as_uri()); mp.wait_for_function('window.__APP && window.__APP.S')
+    for n in NAMES[:5]: mp.fill('#name', n); mp.press('#name', 'Enter')
+    mp.click('[data-act=start]')
+    mp.click('[data-act=open]'); assert mp.locator('.turn.go .back').count() == 1, 'the role card turns over'
+    mp.click('[data-act=hiderole]')
+    for _ in range(4): mp.click('[data-act=open]'); mp.click('[data-act=hiderole]')
+    mp.locator('#phase [data-act=nominate]').first.click(); mp.click('[data-act=elect][data-v="1"]')
+    assert mp.locator('#stamp.go').count() == 1 and 'Eleito' in mp.text_content('#stamp')
+    mp.click('[data-act=open]'); assert mp.locator('.flip .hand .law').count() == 3, 'the laws are dealt'
+    mp.click('#phase [data-act=pick][data-k="0"]'); mp.click('[data-act=pdiscard]')
+    assert mp.locator('#phase .law.toss').count() == 1 and mp.evaluate('window.__APP.S.game.phase') == 'president', 'the card falls before the game moves on'
+    mp.click('[data-act=pdiscard]')                                                   # a tap while it falls changes nothing
+    mp.wait_for_function("window.__APP.S.game.phase === 'chancellor'", timeout=3000)
+    assert mp.evaluate('window.__APP.S.game.discard.length') == 1, 'one discard, not two'
+    cov.stop(mp, f'e2e-motion-{THEME}')
+    assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

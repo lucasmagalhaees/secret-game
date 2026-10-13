@@ -112,10 +112,18 @@ export default function cases(Core) {
   eq('execute: the player is out, the game goes on', [ex1.players[5].alive, ex1.phase, Core.execute(ex, 3) === ex, Core.execute(ex1, 5) === ex1], [false, 'nominate', true, true]);
   eq('execute Hitler: the liberals win', [Core.execute(ex, 0).winner, Core.execute(ex, 0).phase], ['L', 'over']);
 
+  /* the history, for the end-of-game summary */
+  eq('history: a government and its law, and a rejection', [lib.hist.at(-1), rej.hist.at(-1)], [{ k: 'gov', pres: 3, chanc: 4, law: 'L' }, { k: 'rej', pres: 3, chanc: 4 }]);
+  eq('history: the chaos law is recorded as chaos', chaos.hist.at(-1), { k: 'chaos', law: 'F' });
+  eq('history: an investigation keeps the party really seen', [seen.hist.at(-1), Core.investigate(inv, 5).hist.at(-1)], [{ k: 'inv', by: 3, target: 0, party: 'F' }, { k: 'inv', by: 3, target: 5, party: 'L' }]);
+  eq('history: peek, special election, elimination, veto', [Core.endPower(pk).hist.at(-1).k, se.hist.at(-1), ex1.hist.at(-1), yes.hist.at(-1)], ['peek', { k: 'special', by: 3, target: 6 }, { k: 'exec', by: 3, target: 5, role: 'liberal' }, { k: 'veto', pres: 3, chanc: 4 }]);
+  eq('history: a game saved before the history existed reads with an empty one; a broken one is dropped', [Core.readGame((({ hist, ...rest }) => rest)(el)).hist, Core.readGame({ ...el, hist: 'x' }), Core.readGame({ ...el, hist: [1] })], [[], null, null]);
+
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));
   eq('read state: a damaged game is dropped, the names stay; an unknown theme is dropped', Core.readState({ names: ['a', 3, ' ', 'b'], game: { ...el, deck: ['X'] }, theme: 'pink' }), { v: 1, names: ['a', 'b'], game: null });
+  eq('read state: sound and vibration off is kept; anything else means on', [Core.readState({ quiet: true }).quiet, 'quiet' in Core.readState({ quiet: 'yes' })], [true, false]);
   eq('read state: the art deco style is kept, an unknown style is dropped', [Core.readState({ look: 'deco' }).look, 'look' in Core.readState({ look: 'neon' }), 'look' in Core.readState({ look: 'poster' })], ['deco', false, false]);
   const broken = [{ ...el, players: [] }, { ...el, players: [{ name: 'a', role: 'rei', alive: true }] }, { ...el, phase: 'dance' }, { ...el, pres: 9 }, { ...el, tracker: 3 }, { ...el, log: [1] }, { ...el, phase: 'vote', chanc: null }, { ...el, phase: 'investigated', target: null }, { ...el, laws: { L: 7, F: 0 } }, { ...el, winner: 'X' }, { ...el, seen: [9] }, { ...el, vetoed: 1 }, { ...el, lastChanc: -1 }, { ...el, back: 9 }];
   eq('read game: what does not hold together is null', broken.map(Core.readGame), broken.map(() => null));
