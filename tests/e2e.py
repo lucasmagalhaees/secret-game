@@ -77,6 +77,7 @@ with sync_playwright() as p:
         assert 'Passe o celular para' in txt('#phase') and pg.locator('#role').count() == 0, 'the role is not on screen before the tap'
         pg.click('[data-act=open]')
         me = G()['players'][i]
+        assert pg.locator('#role svg.art').count() == 1, 'the role card shows its illustration'
         assert pg.locator('#role').count() == 1 and {'liberal': 'LIBERAL', 'fascista': 'FASCISTA', 'hitler': 'HITLER'}[me['role']] in txt('#role').upper(), txt('#phase')
         if me['role'] == 'fascista':
             hitler = next(p['name'] for p in G()['players'] if p['role'] == 'hitler')
@@ -126,7 +127,7 @@ with sync_playwright() as p:
     # 2nd fascist law: Ana sees Caio's party
     stack('FFLFFL'); govern(1, 'F'); assert G()['phase'] == 'investigate'
     pg.click('#phase [data-act=investigate][data-i="2"]')
-    assert pg.locator('#party').count() == 0; pg.click('[data-act=open]'); assert 'FASCISTA' in txt('#party').upper() and 'Caio' in txt('#party')
+    assert pg.locator('#party').count() == 0; pg.click('[data-act=open]'); assert pg.locator('#party svg.art').count() == 1 and 'FASCISTA' in txt('#party').upper() and 'Caio' in txt('#party')
     pg.click('[data-act=endpower]'); assert G()['phase'] == 'nominate' and G()['pres'] == 1
     # 3rd, at a table of 7: Bia calls a special election and makes Edu president; then the order goes on after Bia
     stack('FFLFFL'); govern(3, 'F'); assert G()['phase'] == 'special' and 'eleição especial' in txt('#phase')
