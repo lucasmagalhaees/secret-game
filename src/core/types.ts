@@ -5,6 +5,8 @@
 export type Json = any;
 
 export type Theme = 'light' | 'dark';
+/** The style of the app: the 1930s poster (the default) or art deco. */
+export type Look = 'poster' | 'deco';
 
 /** A law card, and a party: L is liberal, F is fascist. */
 export type Law = 'L' | 'F';
@@ -62,8 +64,8 @@ export interface Game {
   log: string[];
 }
 
-/** Everything saved on the device (`secrethitler.v1`): the names of the last table, the game in course and the theme. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme }
+/** Everything saved on the device (`secrethitler.v1`): the names of the last table, the game in course, the theme and the style. */
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look }
 
 /** An entry as the source describes it, once read by `normEntry`. */
 export interface Entry { id: string; name: string; value: number }
