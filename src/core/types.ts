@@ -34,6 +34,18 @@ export type Phase =
 
 export type Winner = Party;
 
+/** One thing that happened, by who did it (indexes in players): what the end-of-game summary is made from. An
+ *  investigation keeps the party that was really seen, so the table can compare it with what the president said. */
+export type Event =
+  | { k: 'gov'; pres: number; chanc: number; law: Law }
+  | { k: 'rej'; pres: number; chanc: number }
+  | { k: 'veto'; pres: number; chanc: number }
+  | { k: 'chaos'; law: Law }
+  | { k: 'inv'; by: number; target: number; party: Party }
+  | { k: 'peek'; by: number }
+  | { k: 'special'; by: number; target: number }
+  | { k: 'exec'; by: number; target: number; role: Role };
+
 export interface Game {
   players: Player[];
   /** The draw pile, top first, and the discarded laws. */
@@ -62,10 +74,12 @@ export interface Game {
   winner: Winner | null; why: string;
   /** What happened, in order, as the whole table may know it. */
   log: string[];
+  /** The same, as data, with what was secret at the time (the end-of-game summary shows it). */
+  hist: Event[];
 }
 
-/** Everything saved on the device (`secrethitler.v1`): the names of the last table, the game in course, the theme and the style. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look }
+/** Everything saved on the device (`secrethitler.v1`): the names of the last table, the game in course, the theme, the style and whether sound and vibration are off. */
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true }
 
 /** An entry as the source describes it, once read by `normEntry`. */
 export interface Entry { id: string; name: string; value: number }

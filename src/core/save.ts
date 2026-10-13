@@ -1,7 +1,7 @@
 /* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
    never breaks the page: the names and the theme still come back. */
 import { MAX_PLAYERS, NAME_MAX, WIN } from './game';
-import type { AppState, Game, Law, Phase, Player } from './types';
+import type { AppState, Event, Game, Law, Phase, Player } from './types';
 
 const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'special', 'execute', 'over'];
 const isLaw = (x: unknown): x is Law => x === 'L' || x === 'F';
@@ -26,12 +26,15 @@ export function readGame(x: unknown): Game | null {
   if (!Array.isArray(g.log) || !g.log.every(l => typeof l === 'string')) return null;
   if ((g.phase === 'vote' || g.phase === 'chancellor' || g.phase === 'veto') && g.chanc === null) return null;
   if (g.phase === 'investigated' && g.target === null) return null;
-  return g;
+  // the history came later: a game saved before it has none, and that is not damage
+  const hist = g.hist === undefined ? [] : g.hist;
+  if (!Array.isArray(hist) || !hist.every((e: Event) => !!e && typeof e === 'object' && typeof e.k === 'string')) return null;
+  return { ...g, hist };
 }
 
 /** Everything saved, as it was read from the device. */
 export function readState(x: unknown): AppState {
-  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown }) : {};
+  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown }) : {};
   const names = (Array.isArray(o.names) ? o.names : []).filter((s): s is string => typeof s === 'string' && !!s.trim()).map(s => s.slice(0, NAME_MAX)).slice(0, MAX_PLAYERS);
-  return { v: 1, names, game: readGame(o.game), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}) };
+  return { v: 1, names, game: readGame(o.game), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
 }

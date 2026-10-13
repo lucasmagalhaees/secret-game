@@ -20,4 +20,5 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | O service worker no Safari do iPhone e no app instalado na Tela de Início | Os testes rodam no Chromium | Abrir a produção no iPhone, ligar o modo avião e abrir de novo |
 | Uma partida de verdade, com pessoas passando o celular | Ninguém jogou ainda | Jogar uma partida e anotar o que travou |
 | As animações, a fonte Didot do art déco e os desenhos no Safari do iPhone | Os testes rodam no Chromium/Linux | Abrir no iPhone e jogar uma rodada em cada estilo |
+| Som, vibração e o esconder ao virar o celular num aparelho de verdade | Os testes rodam no Chromium, sem alto-falante nem sensor; o iPhone não vibra por página e pede permissão para o sensor | Jogar uma rodada num Android e num iPhone |
 | A mesa de 10 jogadores na tela | O e2e joga com 7; com 10 só as regras foram testadas | Montar uma mesa de 10 e jogar |

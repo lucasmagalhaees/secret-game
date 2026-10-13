@@ -22,6 +22,8 @@ Modelo de uma decisão:
 5. Baralho do jogo original (11 fascistas e 6 liberais), vitória com 6 leis para os dois lados (D5).
 6. Regras iguais às do original, em tudo (D6).
 7. Telas mais claras, modo escuro revisado, animações, estilo art déco e desenhos de animais (D7).
+8. Endereço de produção (D8).
+9. Mais animações e melhorias: carta virando, distribuição, descarte, carimbo, poderes, confete, vibração, sons, resumo, esconder sozinho, ajuda e desfazer (D9).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -97,6 +99,19 @@ Modelo de uma decisão:
 - **Contexto (13/10/2026):** o job "produção" falhou depois do merge do #4. O script conferia `https://secret-hitler.vercel.app`, um endereço suposto no começo que é de outro projeto ("Secwet Hitwew UwU", sem carimbo de commit). O deploy da Vercel tinha dado certo. Endereço informado pelo Lucas: https://secret-game-gamma.vercel.app/ (conferido no mesmo dia: serve o commit `6e6e539`).
 - **Decisão:** esse é o padrão do script e do `CLAUDE.md`. A variável `APP_PROD_URL` do repositório, se existir, manda. O script passa a dizer quando o endereço é de outro site ou pede login da Vercel.
 - **Não sei:** se o domínio vai mudar (domínio próprio). Se mudar, basta a variável `APP_PROD_URL`.
+
+## D9. Mais animações e melhorias
+
+- **Contexto (13/10/2026):** 12 propostas (6 animações, 6 melhorias), "faca todas animacoes e melhorias".
+- **Decisão:** todas, como estão nos requisitos 13 a 17 e na seção Interface do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - Som e vibração ficam ligados por padrão e saem juntos num botão só ("Som e vibração" em Aparência).
+  - Nenhum som em ação secreta (o descarte toca papel, mas o descarte não diz qual lei foi).
+  - O desfazer vale só para escolhas públicas (indicação e votação) e some ao abrir um segredo, para ninguém refazer depois de ver cartas.
+  - "Quem mentiu na investigação": o app não sabe o que o presidente disse; o resumo mostra o que a investigação mostrou de verdade, e a mesa compara.
+  - Virado para baixo é o celular com mais de 150° de inclinação; o iPhone só informa isso depois de a pessoa permitir, pedido no primeiro toque em "mostrar".
+  - Com "reduzir movimento", nada anima e nada espera (o descarte segue na hora); os testes ponta a ponta rodam assim, mais uma rodada com movimento.
+- **Não sei:** como os sons soam no alto-falante de um celular, e se a permissão de movimento do iPhone aparece como esperado.
 
 ## Pendências
 

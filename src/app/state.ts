@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { AppState, Theme } from '../core';
+import type { AppState, Game, Theme } from '../core';
 
 /* ================= what is kept, and what is on screen =================
    This module is one of the two that run code while loading (the other is src/main.ts): it reads what is saved and
@@ -17,8 +17,11 @@ export function setS(next: AppState): void { S = next; }
 /** What is on screen: nothing here is saved, so a reload always closes whatever secret was open.
  *  `open` is the secret screen being shown (see gateKey in render.ts); `pick` the card or player tapped and not yet
  *  confirmed; `name` the name being typed on the table screen. */
-export interface Ui { msg: string; name: string; open: string; pick: number | null; confirmEnd: boolean }
-export const ui: Ui = { msg: '', name: '', open: '', pick: null, confirmEnd: false };
+export interface Ui { msg: string; name: string; open: string; pick: number | null; confirmEnd: boolean; help: boolean; undo: Game | null; busy: boolean }
+/** `help` is the explanation of the phase, open or not; `undo` the game as it was before the last public choice (a
+ *  nomination or a vote result), which can be taken back until anything else happens; `busy` holds taps while a
+ *  discarded card is still falling. */
+export const ui: Ui = { msg: '', name: '', open: '', pick: null, confirmEnd: false, help: false, undo: null, busy: false };
 
 /** The theme (the device's, unless one was chosen) and the style. Both go on <html>, and into the colour of the browser bars. */
 export function applyTheme(): void {

@@ -68,6 +68,11 @@ O que cada peça do harness cobre:
 10. Vitória: 5 leis liberais ou 6 fascistas (`WIN`); fascistas também vencem elegendo o Hitler chanceler com 3 ou mais leis fascistas (`HITLER_ZONE`); liberais também vencem eliminando o Hitler.
 11. Todo segredo (papel, mão de leis, partido investigado, próximas leis) só aparece depois de "Passe o celular para X" e do toque de X. Recarregar a página fecha o segredo aberto.
 12. A partida em curso fica guardada no aparelho; dá para encerrar no meio (dois toques) e jogar de novo com a mesma mesa.
+13. Um segredo aberto se fecha sozinho quando o app sai da tela ou o celular é virado para baixo.
+14. A indicação do chanceler e o resultado da votação podem ser desfeitos ("Desfazer o último toque") até acontecer outra coisa; abrir um segredo também tira o desfazer.
+15. Cada fase tem uma explicação curta no botão "?".
+16. No fim, o resumo da partida mostra cada governo e a lei que saiu, as rejeições, os vetos, o caos, os poderes e o que cada investigação mostrou de verdade.
+17. Som e vibração (`S.quiet` desliga os dois): sons feitos na hora, sem arquivo, só para o que a mesa toda já sabe (carimbo da votação, papel do descarte, martelo da lei e da eliminação, fanfarra do fim); vibração ao abrir um segredo, ao eleger e ao eliminar. Só o Android deixa uma página vibrar.
 
 ## Arquitetura
 
@@ -96,7 +101,8 @@ Sem DOM, sem rede e sem armazenamento (conferido pelo `docs_check.py`, e pelo `t
 | `src/app/api.ts` | `getJSON` (toda chamada passa por ele, com tempo máximo) e `loadEntries`. Sem fonte configurada, não chama nada |
 | `src/app/render.ts` | `render` e as telas de cada fase, a faixa de quem governa, o portão dos segredos (`gateKey`), o que se mexe (só o que acabou de mudar), `toast`, `blurField` |
 | `src/app/art.ts` | Os desenhos, caricaturas em SVG no próprio código: `portrait` (o papel: pássaro liberal de uniforme azul, jacaré fascista de uniforme marrom e quepe preto, naja de casaco e braçadeira gritando num púlpito para o Hitler) e `seal` (o símbolo do partido nas leis e no tabuleiro: balança e caveira, sem personagem) |
-| `src/app/events.ts` | Um listener delegado por `data-act`; o único lugar que usa `Math.random` |
+| `src/app/events.ts` | Um listener delegado por `data-act`; o único lugar que usa `Math.random`; o desfazer, o descarte que espera a carta cair e o esconder sozinho (`visibilitychange`, `deviceorientation`) |
+| `src/app/fx.ts` | Som (Web Audio, sintetizado), vibração e `later` (espera a animação, ou não espera quando o aparelho pede menos movimento) |
 | `src/app/update.ts` | Registro do service worker, aviso de versão nova (`initUpdates`, `applyUpdate`, `checkNow`) e `builtFrom`, o commit da página |
 | `src/main.ts` | Entrada: liga os listeners, expõe `window.__APP`, pinta a tela e registra o service worker |
 | `src/env.d.ts` | Declarações de tipo de `window.__APP`; os tipos do Vite vêm por referência |
@@ -111,7 +117,7 @@ Renderização é `innerHTML` a partir do estado. Todo texto que não veio do pr
 
 ### Estado no `localStorage`
 
-`secrethitler.v1`: `{ v: 1, names: [...], game: Game | null, theme, look }`. `theme` é `'light'` ou `'dark'`; sem o campo, segue o aparelho. `look` é `'deco'`; sem o campo, o estilo é o pôster. A partida inteira fica guardada, inclusive papéis e a ordem do baralho: quem abrir as ferramentas do navegador vê tudo. É um jogo entre amigos na mesma mesa, não um cofre. O que está aberto na tela (`ui`) não é guardado.
+`secrethitler.v1`: `{ v: 1, names: [...], game: Game | null, theme, look }`. `theme` é `'light'` ou `'dark'`; sem o campo, segue o aparelho. `look` é `'deco'`; sem o campo, o estilo é o pôster. `quiet` é `true` com som e vibração desligados; sem o campo, ligados. A partida inteira fica guardada, inclusive papéis e a ordem do baralho: quem abrir as ferramentas do navegador vê tudo. É um jogo entre amigos na mesma mesa, não um cofre. O que está aberto na tela (`ui`) não é guardado.
 
 ## Fonte de dados
 
@@ -133,7 +139,7 @@ Uma coluna de até 720 px, pensada para 393 px de largura. Tema claro e escuro, 
 
 - **Dois estilos** (D4, D7), escolhidos no cartão "Aparência" (`S.look`), cada um com claro e escuro. **Pôster** (padrão): pôster político dos anos 30, papel envelhecido, tinta preta, azul liberal e vermelho fascista, capitulares condensadas, bordas grossas e sombras duras. **Art déco**: marfim e azul-marinho com filetes dourados (de noite, azul-marinho e dourado), serifa de alto contraste (Didot nos Apple). A paleta escura do art déco também aparece duas vezes, e o `docs_check.py` confere. Fontes só do aparelho, nada baixado.
 - **Desenhos próprios** (`src/app/art.ts`), em caricatura: contorno preto grosso, cores chapadas, cabeça grande, expressão exagerada, sobre um foco de luz que funciona em qualquer cor de carta. Liberais são pássaros de uniforme azul, fascistas são jacarés de uniforme marrom e quepe preto, o Hitler tem carta própria (naja de capelo aberto, casaco cinza, braçadeira vermelha lisa, gritando num púlpito; sem braços, nada de saudação). As leis e o tabuleiro ficam com os símbolos, balança para liberal e caveira para fascista. Nenhuma arte, logo, personagem ou ilustração de outro jogo.
-- **Movimento só no que acabou de mudar:** a fase nova entra deslizando, o segredo vira como carta quando é aberto, a lei aprovada carimba no tabuleiro. Escolher uma carta não mexe nada. Com "reduzir movimento" ligado no aparelho, nada se mexe.
+- **Movimento só no que acabou de mudar** (D9): a fase nova entra deslizando; o papel e o partido investigado aparecem de costas e viram; as leis são distribuídas em leque e as espiadas levantam a ponta; a descartada cai antes de o jogo seguir (os toques esperam); a votação é carimbada na tela; o marcador de rejeições treme; a eliminação escurece a tela e risca o nome; a lupa passa sobre a investigação; no fim, confete na cor de quem venceu e o desenho dele comemorando. Escolher uma carta não mexe nada. Com "reduzir movimento" ligado no aparelho, nada se mexe e nada espera.
 - **Nenhum seletor do sistema** (`<select>`): a lista que ele abre é desenhada pelo aparelho, com as cores dele, e já apareceu branca no tema escuro. Escolhas são botões do app. O `docs_check.py` e o `tests/e2e.py` conferem.
 - Campos com fonte de 16 px ou mais (o iPhone dá zoom abaixo disso), `viewport-fit=cover` com `env(safe-area-inset-*)`, metas `apple-mobile-web-app-*`.
 - O Safari pode limpar o `localStorage` de site sem uso por semanas. Se o app guardar algo que importa, ele precisa de backup em arquivo.
@@ -154,7 +160,7 @@ Os casos do núcleo ficam em `tests/unit.cases.mjs`. Regra nova entra ali primei
 
 **Cobertura:** com `APP_COVERAGE=1` (o `verify.sh` completo liga sozinho), cada suíte grava quais funções e trechos do script de `dist/index.html` executou. `python3 tests/cov.py` junta tudo e falha abaixo de 95% das funções e 90% do código. Teste que recarrega a página usa `cov.reload(pg)` em vez de `pg.reload()`.
 
-`e2e.py` abre a página num tamanho de celular, com a rede bloqueada, e joga partidas inteiras pela tela: monta a mesa (nome vazio, repetido, mesa cheia, nome com marcação aparecendo como texto), troca o tema, confere que cada papel só aparece depois do toque, empilha papéis e baralho por `window.__APP.S` para a partida ser sempre a mesma, e passa por rejeições e caos, limite de mandato, os poderes da mesa de 7 (investigar, eleição especial, eliminar), veto recusado e aceito, vitória fascista pelo Hitler chanceler vitória liberal pelo Hitler eliminado e uma mesa de 5 (o Hitler vê o fascista, a 3ª lei fascista deixa espiar), troca de estilo, a lei nova carimbando no tabuleiro e a faixa de quem governa. Confere também que a partida volta depois de recarregar, que nada passa da largura da tela e que não há erro de script. Capturas em `tests/shots/`.
+`e2e.py` abre a página num tamanho de celular, com a rede bloqueada, e joga partidas inteiras pela tela: monta a mesa (nome vazio, repetido, mesa cheia, nome com marcação aparecendo como texto), troca o tema, confere que cada papel só aparece depois do toque, empilha papéis e baralho por `window.__APP.S` para a partida ser sempre a mesma, e passa por rejeições e caos, limite de mandato, os poderes da mesa de 7 (investigar, eleição especial, eliminar), veto recusado e aceito, vitória fascista pelo Hitler chanceler vitória liberal pelo Hitler eliminado e uma mesa de 5 (o Hitler vê o fascista, a 3ª lei fascista deixa espiar), troca de estilo, a lei nova carimbando no tabuleiro e a faixa de quem governa, o desfazer, a ajuda, o segredo que se esconde sozinho, o carimbo da votação, o resumo da partida, o confete; tudo com "reduzir movimento" ligado, e no fim uma rodada com movimento para ver a carta virar, as leis serem distribuídas e o descarte esperar a carta cair. Confere também que a partida volta depois de recarregar, que nada passa da largura da tela e que não há erro de script. Capturas em `tests/shots/`.
 
 `pwa.py` publica o build e depois uma "versão seguinte" e confere: a página fica guardada, a primeira instalação não anuncia nada, o app abre com o site fora do ar, a versão nova é anunciada, o app em uso só troca depois do toque, a cópia antiga é apagada, publicar de novo sem mudar o app não avisa, e fechar e abrir de novo entra na versão que esperava. O build precisa estar num repositório git, porque a tela mostra o commit.
 
