@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.5.0]
+
+### Alterado
+- Baralho do jogo original: 11 leis fascistas e 6 liberais (era 9 e 8).
+
 ## [0.4.0]
 
 ### Alterado

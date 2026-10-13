@@ -4,8 +4,8 @@
 import type { Game, Law, Party, Player, Role } from './types';
 
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
-/** The deck: 17 laws, 9 fascist and 8 liberal. */
-export const DECK_F = 9, DECK_L = 8;
+/** The deck: 17 laws, 11 fascist and 6 liberal, as in the original game. */
+export const DECK_F = 11, DECK_L = 6;
 /** Laws of one kind needed to win. */
 export const WIN = 6;
 /** Governments rejected in a row before the top law is enacted by itself. */

@@ -19,6 +19,7 @@ Modelo de uma decisão:
 2. O app vira o jogo Stalin Secreto (D2).
 3. Os nomes passam a ser os do Secret Hitler (D3).
 4. Visual no clima do jogo original (D4).
+5. Baralho do jogo original: 11 fascistas e 6 liberais (D5).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -55,6 +56,13 @@ Modelo de uma decisão:
 - **Decisão:** um visual próprio no mesmo clima de época: pôster político dos anos 30, papel creme com textura, faixa preta no topo, azul liberal e vermelho-alaranjado fascista, títulos em capitulares condensadas, bordas grossas, sombras duras, cartas de lei com selo (balança e caveira) e o papel secreto num cartaz com raios.
 - **Interpretações que precisaram ser feitas:** nada do material gráfico original foi copiado (logo, ilustrações, cartas, tabuleiros). Fontes só do sistema, para o app continuar abrindo sem internet.
 - **Consequência nos testes:** o `tests/e2e.py` passou a ler o texto com `textContent` em vez de `innerText`, porque o CSS agora mostra botões e títulos em maiúsculas; o teste confere as palavras, não a caixa.
+
+## D5. Baralho de 11 fascistas e 6 liberais
+
+- **Contexto (13/10/2026):** "São 11 fascistas e 6 liberais".
+- **Decisão:** o baralho passa a ser o do jogo original, com 17 leis: 11 fascistas e 6 liberais. Substitui o 9/8 da D2.
+- **Interpretações que precisaram ser feitas:** só o baralho mudou. A vitória continua em 6 leis para os dois lados (D2). No original os liberais vencem com 5: com 6 cartas liberais no baralho, os liberais só vencem por leis se as 6 forem aprovadas (as descartadas voltam quando o baralho é reembaralhado).
+- **Não sei:** se a mesa quer os liberais vencendo com 5, como no original.
 
 ## Pendências
 

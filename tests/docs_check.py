@@ -47,7 +47,7 @@ for rel in set(re.findall(r'`((?:src|tests|docs|scripts|\.github|\.claude)/[\w./
 CONSTANTS = [
     (r'const CHECK_EVERY = 30 \* 60e3;', 'a cada 30 min com ele aberto (`CHECK_EVERY`)'),
     (r'MIN_PLAYERS = 5, MAX_PLAYERS = 10', 'Mesa de 5 a 10 jogadores (`MIN_PLAYERS`, `MAX_PLAYERS`)'),
-    (r'DECK_F = 9, DECK_L = 8', 'Baralho de 17 leis: 9 fascistas (`DECK_F`) e 8 liberais (`DECK_L`)'),
+    (r'DECK_F = 11, DECK_L = 6', 'Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`)'),
     (r'WIN = 6;', 'Vitória: 6 leis do seu lado (`WIN`)'),
     (r'TRACKER_MAX = 3;', '3 governos seguidos sem lei (`TRACKER_MAX`'),
     (r'HITLER_ZONE = 3;', '3 ou mais leis fascistas (`HITLER_ZONE`)'),

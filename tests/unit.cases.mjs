@@ -24,7 +24,7 @@ export default function cases(Core) {
     eq(`new game with ${p}: one Hitler, the fascists of the table, the rest liberal`, [count(roles, 'hitler'), count(roles, 'hitler') + count(roles, 'fascista'), count(roles, 'liberal')], [1, Core.FASCISTS[p], p - Core.FASCISTS[p]]);
   }
   const g0 = Core.newGame(NAMES, rand).game;
-  eq('new game: 17 laws, 9 fascist and 8 liberal, nothing on the table, everyone seeing their role', [g0.deck.length, count(g0.deck, 'F'), count(g0.deck, 'L'), g0.laws, g0.phase, g0.reveal, g0.players.every(p => p.alive), g0.pres >= 0 && g0.pres < 7], [17, 9, 8, { L: 0, F: 0 }, 'reveal', 0, true, true]);
+  eq('new game: 17 laws, 11 fascist and 6 liberal, nothing on the table, everyone seeing their role', [g0.deck.length, count(g0.deck, 'F'), count(g0.deck, 'L'), g0.laws, g0.phase, g0.reveal, g0.players.every(p => p.alive), g0.pres >= 0 && g0.pres < 7], [17, 11, 6, { L: 0, F: 0 }, 'reveal', 0, true, true]);
   eq('new game: a bad table says why', Core.newGame(['a', 'b'], rand), { ok: false, why: 'count' });
 
   // a table of 7 with known roles: Ana Hitler, Bia and Caio fascists, the rest liberal; Duda president
