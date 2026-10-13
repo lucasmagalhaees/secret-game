@@ -1,0 +1,37 @@
+/* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
+   never breaks the page: the names and the theme still come back. */
+import { MAX_PLAYERS, NAME_MAX } from './game';
+import type { AppState, Game, Law, Phase, Player } from './types';
+
+const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'execute', 'over'];
+const isLaw = (x: unknown): x is Law => x === 'L' || x === 'F';
+const isLaws = (x: unknown): x is Law[] => Array.isArray(x) && x.every(isLaw);
+const isInt = (x: unknown, max: number): x is number => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= max;
+const isIdx = (x: unknown, n: number): x is number => isInt(x, n - 1);
+const isPlayer = (p: unknown): p is Player => {
+  const o = p as Player;
+  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean';
+};
+
+/** A saved game, or null if it does not hold together. */
+export function readGame(x: unknown): Game | null {
+  const g = x as Game;
+  if (!g || typeof g !== 'object' || !Array.isArray(g.players) || g.players.length < 1 || g.players.length > MAX_PLAYERS || !g.players.every(isPlayer)) return null;
+  const n = g.players.length;
+  if (!isLaws(g.deck) || !isLaws(g.discard) || !isLaws(g.hand) || !g.laws || !isInt(g.laws.L, 6) || !isInt(g.laws.F, 6)) return null;
+  if (!PHASES.includes(g.phase) || !isIdx(g.pres, n) || !(g.chanc === null || isIdx(g.chanc, n)) || !(g.target === null || isIdx(g.target, n))) return null;
+  if (!isInt(g.tracker, 2) || !isInt(g.reveal, n) || !(g.winner === null || isLaw(g.winner)) || typeof g.why !== 'string') return null;
+  if (!(g.lastPres === null || isIdx(g.lastPres, n)) || !(g.lastChanc === null || isIdx(g.lastChanc, n)) || typeof g.vetoed !== 'boolean') return null;
+  if (!Array.isArray(g.seen) || !g.seen.every(i => isIdx(i, n))) return null;
+  if (!Array.isArray(g.log) || !g.log.every(l => typeof l === 'string')) return null;
+  if ((g.phase === 'vote' || g.phase === 'chancellor' || g.phase === 'veto') && g.chanc === null) return null;
+  if (g.phase === 'investigated' && g.target === null) return null;
+  return g;
+}
+
+/** Everything saved, as it was read from the device. */
+export function readState(x: unknown): AppState {
+  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown }) : {};
+  const names = (Array.isArray(o.names) ? o.names : []).filter((s): s is string => typeof s === 'string' && !!s.trim()).map(s => s.slice(0, NAME_MAX)).slice(0, MAX_PLAYERS);
+  return { v: 1, names, game: readGame(o.game), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}) };
+}
