@@ -5,7 +5,7 @@
   --bg:#efe0c2; --surface:#f8eedb; --line:#2a2521; --fg:#1d1a17; --muted:#6b5d4b;
   --accent:#8f2a1b; --accent-bg:#e4572e; --on-accent:#fff4e2; --neg:#b3261e;
   --lib:#2f6690; --lib-bg:#bfdbe6; --fas:#c4381f; --fas-bg:#f4c3a6;
-  --ink:#1d1a17; --paper:#f8eedb; --grain:rgba(80,50,20,.06);
+  --ink:#1d1a17; --paper:#f8eedb; --grain:rgba(80,50,20,.06); --shadow:#2a2521; --gold:#b8963a;
   color-scheme:light;
   --font:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
   --display:"Futura","Futura PT","Century Gothic","Avenir Next Condensed","Arial Narrow","Roboto Condensed","Segoe UI",sans-serif;
@@ -14,18 +14,44 @@
    (tests/docs_check.py checks that the two are the same) */
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#191613; --surface:#25201b; --line:#e9dcc2; --fg:#f1e5cc; --muted:#b4a68d;
-    --accent:#ff8a5c; --accent-bg:#e4572e; --on-accent:#fff4e2; --neg:#ff7a62;
-    --lib:#8cc3e3; --lib-bg:#1d3a4f; --fas:#ff7a52; --fas-bg:#4e1f14;
-    --ink:#0d0b09; --paper:#f1e5cc; --grain:rgba(255,230,190,.03);
+    --bg:#14110e; --surface:#221d18; --line:#d8c8a6; --fg:#f3e8d0; --muted:#b9ab90;
+    --accent:#ff9466; --accent-bg:#e4572e; --on-accent:#fff4e2; --neg:#ff8a72;
+    --lib:#93c8e8; --lib-bg:#1b3850; --fas:#ff8059; --fas-bg:#4a1d12;
+    --ink:#0a0907; --paper:#f1e5cc; --grain:rgba(255,230,190,.035); --shadow:#000; --gold:#c9a646;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-    --bg:#191613; --surface:#25201b; --line:#e9dcc2; --fg:#f1e5cc; --muted:#b4a68d;
-    --accent:#ff8a5c; --accent-bg:#e4572e; --on-accent:#fff4e2; --neg:#ff7a62;
-    --lib:#8cc3e3; --lib-bg:#1d3a4f; --fas:#ff7a52; --fas-bg:#4e1f14;
-    --ink:#0d0b09; --paper:#f1e5cc; --grain:rgba(255,230,190,.03);
+    --bg:#14110e; --surface:#221d18; --line:#d8c8a6; --fg:#f3e8d0; --muted:#b9ab90;
+    --accent:#ff9466; --accent-bg:#e4572e; --on-accent:#fff4e2; --neg:#ff8a72;
+    --lib:#93c8e8; --lib-bg:#1b3850; --fas:#ff8059; --fas-bg:#4a1d12;
+    --ink:#0a0907; --paper:#f1e5cc; --grain:rgba(255,230,190,.035); --shadow:#000; --gold:#c9a646;
+    color-scheme:dark;
+}
+/* the art deco style: ivory and navy with gold rules, or navy and gold at night. Its dark palette also appears twice,
+   identical (tests/docs_check.py checks it too) */
+:root[data-look="deco"]{
+  --bg:#f3ede0; --surface:#fffaf0; --line:#1a2238; --fg:#141a2b; --muted:#6a6450;
+  --accent:#7d6219; --accent-bg:#c9a646; --on-accent:#141a2b; --neg:#a3202e;
+  --lib:#24507a; --lib-bg:#d6e3ee; --fas:#9b1c2c; --fas-bg:#f1d4d2;
+  --ink:#121a2e; --paper:#fffaf0; --grain:rgba(184,150,58,.07); --shadow:rgba(18,26,46,.22); --gold:#b8963a;
+  --display:"Didot","Bodoni 72","Bodoni MT","Playfair Display",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root[data-look="deco"]:not([data-theme="light"]){
+    --bg:#0b0f1a; --surface:#121a2b; --line:#c9a646; --fg:#efe6cf; --muted:#a9a18a;
+    --accent:#e3c46a; --accent-bg:#c9a646; --on-accent:#0b0f1a; --neg:#ff8a8a;
+    --lib:#8fb8e0; --lib-bg:#16294a; --fas:#f08a8a; --fas-bg:#3d1520;
+    --ink:#070a12; --paper:#efe6cf; --grain:rgba(201,166,70,.05); --shadow:rgba(0,0,0,.55); --gold:#c9a646;
+    color-scheme:dark;
+  }
+}
+:root[data-look="deco"][data-theme="dark"]{
+    --bg:#0b0f1a; --surface:#121a2b; --line:#c9a646; --fg:#efe6cf; --muted:#a9a18a;
+    --accent:#e3c46a; --accent-bg:#c9a646; --on-accent:#0b0f1a; --neg:#ff8a8a;
+    --lib:#8fb8e0; --lib-bg:#16294a; --fas:#f08a8a; --fas-bg:#3d1520;
+    --ink:#070a12; --paper:#efe6cf; --grain:rgba(201,166,70,.05); --shadow:rgba(0,0,0,.55); --gold:#c9a646;
     color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0}
@@ -48,7 +74,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 main .wrap{display:flex;flex-direction:column;gap:16px;padding-top:16px;padding-bottom:28px}
 
 /* a card is a printed panel: thick ink border, an inner rule, a hard shadow */
-.card{background:var(--surface);border:3px solid var(--line);box-shadow:5px 5px 0 var(--line);padding:16px;display:flex;flex-direction:column;gap:12px;position:relative}
+.card{background:var(--surface);border:3px solid var(--line);box-shadow:5px 5px 0 var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px;position:relative}
 .card::before{content:"";position:absolute;inset:4px;border:1px solid var(--line);opacity:.35;pointer-events:none}
 .card>.label:first-child{align-self:flex-start;background:var(--line);color:var(--surface);padding:4px 10px;margin:-16px 0 0 -16px}
 .card.secret{border-style:double;border-width:6px;background:repeating-linear-gradient(-45deg,var(--surface) 0 14px,var(--bg) 14px 15px)}
@@ -68,8 +94,8 @@ main .wrap{display:flex;flex-direction:column;gap:16px;padding-top:16px;padding-
 .field input{flex:1;min-width:0;border:0;background:none;color:var(--fg);height:48px;font:inherit;font-size:16px;outline:none}
 
 /* buttons are stamped blocks that sink when pressed */
-.btn{min-height:48px;padding:0 16px;font:800 16px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;background:var(--accent-bg);color:var(--on-accent);border:2px solid var(--line);box-shadow:3px 3px 0 var(--line);transition:transform .05s,box-shadow .05s}
-.btn:active:not(:disabled){transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
+.btn{min-height:48px;padding:0 16px;font:800 16px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;background:var(--accent-bg);color:var(--on-accent);border:2px solid var(--line);box-shadow:3px 3px 0 var(--shadow);transition:transform .05s,box-shadow .05s}
+.btn:active:not(:disabled){transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
 .btn.ghost{background:var(--surface);color:var(--fg)}
 .btn.ghost.on{background:var(--fg);color:var(--surface)}
 .btn.elect{background:var(--lib);color:#f1e5cc}
@@ -94,10 +120,11 @@ main .wrap{display:flex;flex-direction:column;gap:16px;padding-top:16px;padding-
 
 /* law cards: a printed policy with a seal */
 .hand{display:flex;gap:12px;justify-content:center}
-.law{flex:1;max-width:118px;aspect-ratio:5/7;border:3px solid var(--line);box-shadow:4px 4px 0 var(--line);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px;font:800 12px/1 var(--display);text-transform:uppercase;letter-spacing:.14em;position:relative}
+.law{flex:1;max-width:118px;aspect-ratio:5/7;border:3px solid var(--line);box-shadow:4px 4px 0 var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px;font:800 12px/1 var(--display);text-transform:uppercase;letter-spacing:.14em;position:relative}
 .law::before{content:"Lei";font-size:10px;letter-spacing:.3em;opacity:.8}
 .law::after{content:"";position:absolute;inset:5px;border:1.5px solid currentColor;opacity:.5;pointer-events:none}
-.law .sym{font-size:38px;line-height:1;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;border:3px solid currentColor;letter-spacing:0}
+.law .sym{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;border:3px solid currentColor;overflow:hidden;letter-spacing:0}
+.law .sym .seal{width:54px;height:54px;margin-top:6px}
 .law.L{background:var(--lib-bg);color:var(--lib)}
 .law.F{background:var(--fas-bg);color:var(--fas)}
 button.law.on{transform:rotate(-4deg) translateY(4px);opacity:.6;box-shadow:none}
@@ -121,7 +148,7 @@ button.law.on .sym::after{content:"✕";position:absolute;font-size:64px;color:v
 .slot.L{color:var(--lib)}
 .slot.F{color:var(--fas)}
 .slot small{font:700 9px/1.1 var(--font);letter-spacing:0;max-width:100%;overflow:hidden;text-overflow:clip;white-space:nowrap}
-.slot.on{border:2px solid var(--line);box-shadow:2px 2px 0 var(--line);opacity:1}
+.slot.on{border:2px solid var(--line);box-shadow:2px 2px 0 var(--shadow);opacity:1}
 .slot.on.L{background:var(--lib);color:#f1e5cc}
 .slot.on.F{background:var(--fas);color:#f1e5cc}
 .meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;font:700 12px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -140,3 +167,75 @@ button.law.on .sym::after{content:"✕";position:absolute;font-size:64px;color:v
 .update .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px}
 .update .btn{background:var(--ink);color:#f1e5cc;min-height:38px;border-color:#f1e5cc;box-shadow:none}
 .toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#f1e5cc;border:2px solid var(--accent-bg);padding:10px 14px;font:700 14px/1.3 var(--display);letter-spacing:.04em;max-width:calc(100% - 32px)}
+
+/* who governs now, always in view */
+.status{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px}
+.status span{background:var(--surface);border:2px solid var(--line);padding:6px 10px;display:flex;flex-direction:column;min-width:0}
+.status small{font:700 10px/1.2 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.status b{font:800 16px/1.2 var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* the hand-off: whose turn it is to hold the phone */
+.handoff{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:6px 0 4px}
+.handoff .who{font:900 34px/1.1 var(--display);text-transform:uppercase;letter-spacing:.06em;overflow-wrap:anywhere;max-width:100%}
+.phone{width:34px;height:58px;border:3px solid var(--fg);border-radius:8px;position:relative;margin-bottom:6px;animation:pass 1.8s ease-in-out infinite}
+.phone::after{content:"";position:absolute;left:50%;bottom:5px;width:12px;height:3px;margin-left:-6px;border-radius:2px;background:var(--fg)}
+@keyframes pass{0%,100%{transform:rotate(-10deg)}50%{transform:translateX(8px) rotate(10deg)}}
+
+/* the history folds away */
+details.card{display:block}
+details.card>summary{cursor:pointer;list-style:none;display:inline-block}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:" ▾"}
+details.card[open]>summary::after{content:" ▴"}
+details.card .log{margin-top:12px}
+
+/* motion: only what just changed moves */
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes flip{from{opacity:0;transform:perspective(700px) rotateY(75deg)}to{opacity:1;transform:none}}
+@keyframes stamp{0%{opacity:0;transform:scale(1.45) rotate(-14deg)}60%{opacity:1;transform:scale(.94) rotate(3deg)}100%{transform:none}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+.card.enter{animation:enter .28s ease-out}
+.flip .role-card,.flip .law{animation:flip .45s cubic-bezier(.2,.8,.2,1) both}
+.flip .hand .law:nth-child(2){animation-delay:.08s}
+.flip .hand .law:nth-child(3){animation-delay:.16s}
+.track{overflow:hidden}
+.slot.new{animation:stamp .55s cubic-bezier(.2,.8,.2,1) both}
+.toast:not([hidden]){animation:toastIn .2s ease-out}
+button.law{transition:transform .15s,opacity .15s}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+
+/* ---------- art deco: the same screens, other lines ---------- */
+[data-look="deco"] body{background-image:repeating-linear-gradient(45deg,var(--grain) 0 1px,transparent 1px 14px),repeating-linear-gradient(-45deg,var(--grain) 0 1px,transparent 1px 14px)}
+[data-look="deco"] .top{border-bottom:5px double var(--gold)}
+[data-look="deco"] .brand{font-weight:700;letter-spacing:.32em;font-size:19px}
+[data-look="deco"] .brand span{color:var(--gold)}
+[data-look="deco"] .chip{border-color:var(--gold);border-radius:999px}
+[data-look="deco"] .card{border:1px solid var(--gold);box-shadow:0 6px 18px var(--shadow);border-radius:3px}
+[data-look="deco"] .card::before{inset:5px;border:1px solid var(--gold);opacity:.6}
+[data-look="deco"] .card::after{content:"";position:absolute;top:-1px;right:-1px;width:28px;height:28px;pointer-events:none;
+  background:repeating-radial-gradient(circle at 100% 0,transparent 0 5px,var(--gold) 5px 6px);opacity:.7}
+[data-look="deco"] .card>.label:first-child{background:none;color:var(--accent);border-bottom:1px solid var(--gold);padding:0 0 6px;margin:0;letter-spacing:.3em}
+[data-look="deco"] .card.secret{border:3px double var(--gold);background:var(--surface)}
+[data-look="deco"] .btn{border:1px solid var(--gold);box-shadow:none;border-radius:2px;letter-spacing:.22em;font-weight:700}
+[data-look="deco"] .btn:active:not(:disabled){transform:translateY(1px)}
+[data-look="deco"] .btn.ghost{background:transparent}
+[data-look="deco"] .segm,[data-look="deco"] .field,[data-look="deco"] .x,[data-look="deco"] .status span{border-width:1px;border-color:var(--gold)}
+[data-look="deco"] .segm button+button{border-left:1px solid var(--gold)}
+[data-look="deco"] .tag,[data-look="deco"] .role{border:1px solid var(--gold);border-radius:999px}
+[data-look="deco"] .law{border:1px solid var(--gold);border-radius:6px;box-shadow:0 6px 14px var(--shadow)}
+[data-look="deco"] .law::after{border:3px double currentColor;border-radius:3px}
+[data-look="deco"] .role-card{border:1px solid var(--gold);background:repeating-conic-gradient(from -90deg at 50% 100%,rgba(255,215,120,.16) 0 4deg,transparent 4deg 10deg),var(--c)}
+[data-look="deco"] .role-card b{font-weight:700;letter-spacing:.14em;text-shadow:none}
+[data-look="deco"] .track{border:1px solid var(--gold);border-radius:3px}
+[data-look="deco"] .slot{border-style:solid;border-width:1px;border-radius:3px}
+[data-look="deco"] .slot.on{border:1px solid var(--gold);box-shadow:0 3px 8px var(--shadow)}
+[data-look="deco"] .names li{border-top:1px solid var(--gold);border-top-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+[data-look="deco"] .toast{border:1px solid var(--gold);border-radius:3px}
+[data-look="deco"] .update{border-bottom:3px double var(--gold)}
+
+/* the drawings */
+.role-card .art{width:132px;height:132px;margin:0 auto 4px;display:block}
+.slot .seal{width:70%;height:auto;max-height:60%}
+.role-card.H{--c:#15110e;border-color:var(--fas);box-shadow:inset 0 -12px 0 #c4381f}
+.role-card.H b{color:#ffb199}
+[data-look="deco"] .role-card.H{--c:#05070c;box-shadow:inset 0 -8px 0 #9b1c2c}
