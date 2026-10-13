@@ -109,5 +109,5 @@ const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox=
 /** The big picture on a role card. */
 export const portrait = (r: Role): string => svg(r === 'liberal' ? bird() : r === 'hitler' ? cobra() : gator(), 'art');
 
-/** The small seal of a party: on law cards and on the board. */
-export const seal = (p: Law): string => svg(p === 'L' ? bird() : gator(), 'seal');
+/** The seal of a party on law cards and on the board: a symbol, not a character (the scales and the skull). */
+export const seal = (p: Law): string => `<span class="glyph" aria-hidden="true">${p === 'L' ? '⚖' : '☠'}</span>`;

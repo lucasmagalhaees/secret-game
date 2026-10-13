@@ -124,7 +124,7 @@ main .wrap{display:flex;flex-direction:column;gap:16px;padding-top:16px;padding-
 .law::before{content:"Lei";font-size:10px;letter-spacing:.3em;opacity:.8}
 .law::after{content:"";position:absolute;inset:5px;border:1.5px solid currentColor;opacity:.5;pointer-events:none}
 .law .sym{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;border:3px solid currentColor;overflow:hidden;letter-spacing:0}
-.law .sym .seal{width:54px;height:54px;margin-top:6px}
+.law .sym .glyph{font-size:38px;line-height:1}
 .law.L{background:var(--lib-bg);color:var(--lib)}
 .law.F{background:var(--fas-bg);color:var(--fas)}
 button.law.on{transform:rotate(-4deg) translateY(4px);opacity:.6;box-shadow:none}
@@ -235,7 +235,7 @@ button.law{transition:transform .15s,opacity .15s}
 
 /* the drawings */
 .role-card .art{width:132px;height:132px;margin:0 auto 4px;display:block}
-.slot .seal{width:70%;height:auto;max-height:60%}
+.slot .glyph{font-size:22px;line-height:1}
 .role-card.H{--c:#15110e;border-color:var(--fas);box-shadow:inset 0 -12px 0 #c4381f}
 .role-card.H b{color:#ffb199}
 [data-look="deco"] .role-card.H{--c:#05070c;box-shadow:inset 0 -8px 0 #9b1c2c}
