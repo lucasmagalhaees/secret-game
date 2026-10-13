@@ -119,8 +119,10 @@ function vPhase(g: Game): string {
     case 'reveal':
       return gated(g, `Papéis (${g.reveal + 1} de ${g.players.length})`, () => {
         const me = g.players[g.reveal], mates = Core.knows(g, g.reveal);
-        const info = me.role === 'fascista' ? `<p>Seus aliados: ${mates.map(m => `<b>${esc(m.name)}</b>${m.role === 'hitler' ? ' (Hitler)' : ''}`).join(', ')}.</p>`
-          : me.role === 'hitler' ? (mates.length ? `<p>Seu fascista: ${mates.map(m => `<b>${esc(m.name)}</b>`).join(', ')}. Ele sabe quem você é.</p>` : '<p>Você não sabe quem são os fascistas. Eles sabem quem você é.</p>') : '<p>Você não sabe quem é quem. Ache o Hitler.</p>';
+        const names = (r: Role): string => mates.filter(m => m.role === r).map(m => `<b>${esc(m.name)}</b>`).join(', ');
+        const row = (cls: string, label: string, who: string): string => who ? `<div class="ally ${cls}"><small>${label}</small><span>${who}</span></div>` : '';
+        const info = me.role === 'fascista' ? `<div class="allies" id="allies">${row('H', 'Hitler', names('hitler'))}${row('F', 'Outros fascistas', names('fascista'))}</div>`
+          : me.role === 'hitler' ? (mates.length ? `<div class="allies" id="allies">${row('F', 'Seu fascista', names('fascista'))}</div><p class="hint">Ele sabe quem você é.</p>` : '<p>Você não sabe quem são os fascistas. Eles sabem quem você é.</p>') : '<p>Você não sabe quem é quem. Ache o Hitler.</p>';
         return `<div class="role-card ${Core.partyOf(me.role)}${me.role === 'hitler' ? ' H' : ''}" id="role">${portrait(me.role)}<small>Você é</small><b>${ROLE[me.role]}</b></div>${info}<button class="btn block" data-act="hiderole">Entendi, esconder</button>`;
       });
     case 'nominate':
