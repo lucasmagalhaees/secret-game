@@ -31,7 +31,7 @@ export function readGame(x: unknown): Game | null {
 
 /** Everything saved, as it was read from the device. */
 export function readState(x: unknown): AppState {
-  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown }) : {};
+  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown }) : {};
   const names = (Array.isArray(o.names) ? o.names : []).filter((s): s is string => typeof s === 'string' && !!s.trim()).map(s => s.slice(0, NAME_MAX)).slice(0, MAX_PLAYERS);
-  return { v: 1, names, game: readGame(o.game), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}) };
+  return { v: 1, names, game: readGame(o.game), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}) };
 }

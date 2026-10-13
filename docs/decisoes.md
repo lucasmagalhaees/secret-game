@@ -21,6 +21,7 @@ Modelo de uma decisão:
 4. Visual no clima do jogo original (D4).
 5. Baralho do jogo original (11 fascistas e 6 liberais), vitória com 6 leis para os dois lados (D5).
 6. Regras iguais às do original, em tudo (D6).
+7. Telas mais claras, modo escuro revisado, animações, estilo art déco e desenhos de animais (D7).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -78,6 +79,18 @@ Modelo de uma decisão:
   - A votação continua em voz alta, e o celular só registra se o governo foi eleito. No original os votos são cartas Ja!/Nein! viradas juntas; o resultado é o mesmo, só muda o meio (pedido de 12/10).
   - Visual: continua o próprio, no clima de época (D4). Reproduzir o logo, as cartas, os tabuleiros e as ilustrações do jogo original não foi feito.
 - **Não sei:** as regras foram escritas a partir do que se sabe do livro de regras do original, sem conferir o texto oficial nesta data.
+
+## D7. Visual: clareza, animações, art déco e animais
+
+- **Contexto (13/10/2026):** pedido para deixar o visual "o mais parecido possível" com o original, recusado (copiaria logo, cartas, tabuleiros e personagens). Oferecidos telas mais claras, modo escuro melhor, animações e outra linha de estilo: "Quero todas". Depois: "Coloca uma carta diferente pro hitler. Pode estilizar com animais pro liberais e pros facistas. Facistas como cobras de uniforme e liberais como pássaros". Sugerido em seguida usar lagartos como no original: recusado pelo mesmo motivo; ficaram as cobras e os pássaros pedidos.
+- **Decisão:**
+  - faixa sempre visível com presidente, chanceler (ou indicado) e rejeições; tela de passar o celular com o nome grande; histórico recolhível (aberto no fim do jogo);
+  - modo escuro com sombra própria (preta) e contraste revisado;
+  - animações: fase nova, segredo aberto e lei aprovada; nada com "reduzir movimento";
+  - estilo art déco como opção, o pôster continua o padrão;
+  - desenhos próprios em SVG: pássaro, cobra de uniforme e uma carta do Hitler (fundo preto, faixa vermelha, cobra de casaco, quepe mais alto e braçadeira vermelha lisa), também nos selos das leis e do tabuleiro.
+- **Interpretações que precisaram ser feitas:** "outra linha de estilo" virou um segundo estilo escolhível, não uma troca do pôster. O partido investigado mostra o desenho do partido, nunca a carta do Hitler.
+- **Não sei:** como as animações e a Didot ficam no iPhone de verdade (os testes rodam no Chromium).
 
 ## Pendências
 
