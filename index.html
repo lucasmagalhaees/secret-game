@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Secret Hitler</title>
+<meta name="description" content="Jogo de cartas de dedução social: liberais contra fascistas, num celular passando de mão em mão.">
+<meta name="app-commit" content="__APP_COMMIT__">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Secret Hitler">
+<meta name="theme-color" content="#0d0b09" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1d1a17" media="(prefers-color-scheme: light)">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <b class="brand">Secret <span>Hitler</span></b>
+  <span class="score" id="score" aria-label="Leis aprovadas"></span>
+</div></header>
+
+<div class="update" id="update" hidden></div>
+
+<main><div class="wrap" id="view"></div></main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
