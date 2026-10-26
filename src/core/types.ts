@@ -18,8 +18,9 @@ export type Role = 'liberal' | 'fascista' | 'hitler';
 /** How well the players run by the app play (D10): easy, medium, hard, extreme. */
 export type Level = 'facil' | 'medio' | 'dificil' | 'extremo';
 
-/** `ai`: the seat is played by the app, not by a person at the table. */
-export interface Player { name: string; role: Role; alive: boolean; ai?: true }
+/** `ai`: the seat is played by the app, not by a person at the table; `level`, a level of its own for that seat (the
+ *  measurements use it to put one level against another; the app gives every seat the level of the game). */
+export interface Player { name: string; role: Role; alive: boolean; ai?: true; level?: Level }
 
 /** Where the game is. The phases that show something secret are gated by the page: the phone goes to one person first. */
 export type Phase =

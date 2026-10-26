@@ -96,7 +96,7 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
   const known: (Role | null)[] = g.players.map((p, i) => (i === me || all ? p.role : null));
   const hand: Law[] = (q === 'pdiscard' || q === 'cdiscard' || q === 'veto') ? [...g.hand] : [];
   return {
-    me, role, level: (g.level || 'medio') as Level, n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
+    me, role, level: (g.players[me].level || g.level || 'medio') as Level, n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
     laws: { ...g.laws }, tracker: g.tracker, pres: g.pres, chanc: g.chanc, lastPres: g.lastPres, lastChanc: g.lastChanc,
     ask: q, options: [...options], hand, hist: g.hist.map(e => seenBy(e, me))
   };

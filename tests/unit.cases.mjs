@@ -159,6 +159,8 @@ export default function cases(Core) {
   const zoned = Core.believe(view({ level: 'extremo', laws: { L: 0, F: 4 }, hist: [{ k: 'chaos', law: 'F' }, { k: 'chaos', law: 'F' }, { k: 'chaos', law: 'F' }, { k: 'gov', pres: 2, chanc: 6, law: 'F' }] }));
   eq('believing: someone elected chancellor with 3 fascist laws already on the table is not Hitler', [zoned.pH[6] < 0.01, zoned.pH[2] > 0.1], [true, true]);
   eq('the odds of a hand: 0 to 3 fascist laws, adding up to 1', [Core.drawOdds(11, 6).length, Math.round(Core.drawOdds(11, 6).reduce((a, x) => a + x, 0) * 1e6), Math.round(Core.drawOdds(11, 6)[3] * 1000), Core.drawOdds(1, 1)], [4, 1e6, 243, [0.25, 0.25, 0.25, 0.25]]);
+  eq('a seat may have a level of its own (the measurements use it); a bad one is damage', [Core.viewOf({ ...sg, players: sg.players.map((p, i) => (i === 4 ? { ...p, level: 'facil' } : p)) }, 4, 'vote', [1, 0]).level, Core.viewOf(sg, 4, 'vote', [1, 0]).level, Core.readGame({ ...el, players: el.players.map(p => ({ ...p, level: 'x' })) })], ['facil', 'medio', null]);
+  eq('the levels: fascists who think about how the table sees them only from the hard level up', Core.LEVELS.map(l => Core.AI[l].image > 0 && Core.AI[l].plan), [false, false, true, true]);
   eq('the levels: careless to careful, believing to doubting, and only the extreme counts the laws', [Core.LEVELS.map(l => Core.AI[l].noise > Core.AI.extremo.noise), Core.LEVELS.map(l => Core.AI[l].count), Core.AI.facil.lie < Core.AI.medio.lie && Core.AI.medio.lie < Core.AI.dificil.lie && Core.AI.dificil.lie < Core.AI.extremo.lie], [[true, true, true, false], [false, false, false, true], true]);
 
   // the votes, one by one, where the app plays some seats

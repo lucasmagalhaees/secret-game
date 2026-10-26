@@ -126,8 +126,22 @@ Modelo de uma decisão:
   - A IA precisa ouvir o que as pessoas dizem: depois de governar, investigar ou espiar, a pessoa escolhe o que diz (pode mentir ou ficar calada) até a próxima eleição. As IAs falam sempre; as liberais dizem a verdade.
   - O nível vale para todas as IAs da mesa, dos dois lados.
   - "Não faz metajogo": nenhuma IA muda o jeito de jogar pelo jeito que as outras jogam nem pelo histórico de partidas anteriores.
-- **Medido (26/10/2026, `node scripts/ai_bench.mjs 200`, 3.200 partidas só de IA, mesas de 5 a 10):** vitórias liberais com os dois lados no mesmo nível: fácil 28%, médio 52%, difícil 61%, extremo 65%. Liberais mais fortes ganham mais (28% → 52% → ~62%). Já o nível dos fascistas quase não muda o resultado (em cada linha, as colunas ficam a até 6 pontos uma da outra). Todas as partidas terminaram.
-- **Medido também (26/10/2026, mesmo comando, 600 partidas por nível, uma IA média no lugar de "você"):** como fascista, quem joga como uma IA média vence 67% no fácil, 50% no médio, 35% no difícil e 24% no extremo. Como liberal, vence 39%, 52%, 59% e 66%: as IAs mais fortes também são os seus colegas liberais, e os fascistas não ficam muito melhores com o nível. Ou seja, o nível hoje é dificuldade de verdade para quem é fascista; para quem é liberal, ele deixa a mesa mais esperta, não mais difícil.
+- **Balanceamento (26/10/2026, pedido do Lucas):** "os fascistas da IA têm que melhorar também … o jogo tem que ficar o mais balanceado possível … não pode ficar um jogo tendencioso para nenhum dos lados". A primeira versão deixava os liberais vencerem 28% no fácil e 65% no extremo, e o nível dos fascistas quase não pesava. A medição também tinha um erro: a mesa inteira votava no nível do presidente; agora cada lugar decide no próprio nível (`Player.level`, só usado pelas medições). O que mudou:
+  - Fascistas do difícil para cima pensam em como a mesa vai ver cada jogada (`image`): para cada jeito de jogar a mão, calculam, com o mesmo raciocínio da mesa, quanto mais desconfiariam deles e do Hitler, contra o valor de uma lei fascista. O Hitler que não conhece o time faz o mesmo com a própria imagem.
+  - Fascistas do difícil para cima indicam o Hitler sempre que podem a partir da 3ª lei fascista, e investigam o Hitler para abonar ("é liberal").
+  - Descuido em dois: `noise` (escolher e votar sem pensar) e `slip` (descartar a lei errada). No fácil, errar a lei 30% das vezes entregava o jogo aos fascistas, porque o baralho é quase só fascista.
+  - Calibrados por medição, mantendo a ordem dos níveis: memória do fácil 2 → 4 governos; `lie` (quanto desconfia do que ouve) 0 / 0,3 / 0,35 / 0,4, antes 0 / 0,4 / 0,7 / 0,85. Acreditar que o fascista mente quase sempre deixava o liberal certeiro demais.
+- **Medido (26/10/2026, `node scripts/ai_bench.mjs 400`, 6.400 partidas só de IA, mesas de 5 a 10):** vitórias liberais, liberais no nível da linha e fascistas no da coluna:
+
+  | liberais \ fascistas | fácil | médio | difícil | extremo |
+  |---|---|---|---|---|
+  | fácil | 48% | 39% | 22% | 21% |
+  | médio | 69% | 51% | 39% | 37% |
+  | difícil | 81% | 69% | 47% | 44% |
+  | extremo | 85% | 72% | 52% | 47% |
+
+  Com a mesa toda no mesmo nível (a diagonal, que é o jogo do app), os liberais vencem entre 47% e 51%. Fora da diagonal, quem tem o nível maior vence mais, dos dois lados. Erro da medida: cerca de 2,5 pontos para cada lado. Todas as partidas terminaram.
+- **Medido também (mesmo comando, 1.200 partidas por nível, uma IA média no lugar de "você"):** como liberal, você vence 51% no fácil, 53% no médio, 45% no difícil e 45% no extremo; como fascista, 57%, 48%, 43% e 38%. O nível agora é dificuldade dos dois lados.
 - **Corrigido junto:** depois de um veto aceito o baralho não era reabastecido, e o presidente seguinte podia tirar menos de 3 leis (achado por uma partida só de IA que travou; agora há um caso para isso).
 - **Não sei:** como a IA se sai contra gente de verdade (só foi medida contra ela mesma); se os textos das falas soam naturais; quanto tempo de "pensando" é confortável num celular.
 

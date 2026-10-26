@@ -10,7 +10,7 @@ const isInt = (x: unknown, max: number): x is number => Number.isInteger(x) && (
 const isIdx = (x: unknown, n: number): x is number => isInt(x, n - 1);
 const isPlayer = (p: unknown): p is Player => {
   const o = p as Player;
-  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean' && (o.ai === undefined || o.ai === true);
+  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean' && (o.ai === undefined || o.ai === true) && (o.level === undefined || LEVELS.includes(o.level));
 };
 
 /** A saved game, or null if it does not hold together. */

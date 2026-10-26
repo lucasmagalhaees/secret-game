@@ -13,7 +13,8 @@ import { DECK_F, DECK_L, HITLER_ZONE, TRACKER_MAX } from './game';
 import type { Law, Level, Party, Role, Seen, View } from './types';
 
 /** What each level does differently:
- *  - noise: how often it decides without thinking (a random option);
+ *  - noise: how often it picks someone or votes without thinking (a random option);
+ *  - slip: how often it plays a law from its hand without thinking;
  *  - memory: how many of the last governments, investigations and eliminations it remembers (what it saw itself it
  *    never forgets);
  *  - lie: how often it thinks a fascist lies about a hand or an investigation (0: it believes everything it hears);
@@ -22,13 +23,16 @@ import type { Law, Level, Party, Role, Seen, View } from './types';
  *  - trust: how often, as a fascist, it lets a liberal law through to look clean;
  *  - wary: the chance that the nominated chancellor is Hitler above which it votes Nein, from HITLER_ZONE fascist laws;
  *  - plan: as a fascist, plays for the long game: makes Hitler look clean before HITLER_ZONE (puts him in governments
- *    that pass liberal laws) and eliminates the liberals who caught a teammate lying. */
-export interface Knobs { noise: number; memory: number; lie: number; count: boolean; act: number; trust: number; wary: number; plan: boolean }
+ *    that pass liberal laws) and eliminates the liberals who caught a teammate lying;
+ *  - image: as a fascist with a hand to play, how much looking suspicious to the table costs, against a fascist law
+ *    worth 1 (0: it does not think about it). It works out how the table would see each way to play the hand, with the
+ *    same reasoning the table uses. */
+export interface Knobs { noise: number; memory: number; lie: number; count: boolean; act: number; trust: number; wary: number; plan: boolean; image: number; slip: number }
 export const AI: Record<Level, Knobs> = {
-  facil: { noise: 0.3, memory: 2, lie: 0, count: false, act: 0.25, trust: 0, wary: 0.5, plan: false },
-  medio: { noise: 0.1, memory: 6, lie: 0.4, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false },
-  dificil: { noise: 0.03, memory: 99, lie: 0.7, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true },
-  extremo: { noise: 0, memory: 99, lie: 0.85, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true }
+  facil: { noise: 0.3, slip: 0.1, memory: 4, lie: 0, count: false, act: 0.25, trust: 0, wary: 0.5, plan: false, image: 0 },
+  medio: { noise: 0.1, slip: 0.1, memory: 6, lie: 0.3, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false, image: 0 },
+  dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1 },
+  extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1 }
 };
 /** How often a liberal thinks a fascist lets a liberal law through on purpose (the same at every level). */
 const TRUST_GUESS = 0.15;
@@ -203,7 +207,8 @@ export function decide(v: View, rand: () => number): number {
   const k = AI[v.level], o = v.options;
   if (!o.length) return -1;
   const talk = v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek';
-  if (!talk && rand() < k.noise) return o[Math.floor(rand() * o.length)];
+  const hand = v.ask === 'pdiscard' || v.ask === 'cdiscard' || v.ask === 'veto';
+  if (!talk && rand() < (hand ? k.slip : k.noise)) return o[Math.floor(rand() * o.length)];
   const team = fasc(v.role), all = team && v.known.every(r => r !== null);
   const allies = all ? v.known.map((r, i) => (r && fasc(r) && i !== v.me ? i : -1)).filter(i => i >= 0) : [];
   const hitler = v.known.indexOf('hitler');
@@ -254,6 +259,24 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
   return e?.saw ? nF(e.saw) : -1;
 }
 
+/** The best way for a fascist to play a hand, thinking about how the table will see it: each way is a law (worth 1 if
+ *  fascist) and what will be said about it; it costs `image` times how much more the table would suspect this player,
+ *  and Hitler. Returns the index of the best way. */
+function weigh(v: View, ways: { law?: Law; pc?: number; cc?: number }[], hitler: number): number {
+  const k = AI[v.level], now = believe(v, true), gov = { k: 'gov' as const, pres: v.pres, chanc: v.chanc as number };
+  const watch = (b: Beliefs): number => b.pF[v.me] + (hitler >= 0 && hitler !== v.me ? b.pH[hitler] : 0) + (v.me === hitler ? b.pH[v.me] : 0);
+  const base = watch(now);
+  let top = 0, best = -Infinity;
+  ways.forEach((w, i) => {
+    const after = believe({ ...v, hist: [...v.hist, { ...gov, ...(w.law ? { law: w.law } : { k: 'veto' as const }), pc: w.pc, cc: w.cc }] }, true);
+    const score = (w.law === 'F' ? 1 : 0) - k.image * (watch(after) - base);
+    if (score > best + 1e-9) { best = score; top = i; }
+  });
+  return top;
+}
+/** The fascist laws a president who sees a hand with d of them passes on: as many as possible, or one fewer. */
+const passes = (d: number): number[] => [...new Set([Math.min(2, d), Math.max(0, d - 1)])];
+
 /** A fascist who knows its team (and Hitler at a small table): plays for it, and looks like a liberal when it can. */
 function fascist(v: View, rand: () => number, allies: number[], hitler: number): number {
   const o = v.options, k = AI[v.level], isAlly = (i: number): boolean => allies.includes(i);
@@ -265,6 +288,11 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     if (L < 0) return 0;
     if (groom && v.chanc === hitler) return F;                               // Hitler gets a liberal law to pass
     if (isAlly(v.chanc as number)) return L;
+    if (k.image) {                                                           // the chancellor is a liberal: what will the table think?
+      const d = nF(v.hand), ms = passes(d);
+      const m = ms[weigh(v, ms.map(m => { const law: Law = m === 2 ? 'F' : 'L'; return { law, pc: presStory(d, m, law), cc: m }; }), hitler)];
+      return m === Math.min(2, d) ? L : F;
+    }
     // passing two fascist laws out of a hand with one liberal means saying "I drew 3 fascist": the one who counts the
     // laws only says it when it is believable
     if (k.count && nF(v.hand) === 2 && drawOdds(Math.max(0, DECK_F - v.laws.F), Math.max(0, DECK_L - v.laws.L))[3] < 0.2) return F;
@@ -274,6 +302,10 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     if (nF(v.hand) === 0) return o.includes(2) ? 2 : 0;
     if (nF(v.hand) === 2) return 0;
     if (groom && v.me === hitler) return v.hand.indexOf('F');               // Hitler stays clean until it pays
+    if (k.image && !isAlly(v.pres)) {                                        // a liberal president passed one of each
+      const ways: { law: Law; pc: number; cc: number }[] = [{ law: 'F', pc: 2, cc: 2 }, { law: 'L', pc: 2, cc: 1 }];
+      return weigh(v, ways, hitler) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
+    }
     return !isAlly(v.pres) && clean() ? v.hand.indexOf('F') : v.hand.indexOf('L');
   }
   if (v.ask === 'veto') return nF(v.hand) === 0 ? 1 : 0;
@@ -285,13 +317,14 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     return liberalJa(v, pub) ? 1 : 0;
   }
   if (v.ask === 'nominate') {
-    if (v.laws.F >= HITLER_ZONE && o.includes(hitler) && (v.level === 'facil' || pub.pH[hitler] < 0.5)) return hitler;
+    if (v.laws.F >= HITLER_ZONE && o.includes(hitler) && (k.plan || pub.pH[hitler] < 0.5)) return hitler;
     if (groom && o.includes(hitler) && rand() < 0.5) return hitler;
     const mates = o.filter(isAlly);
     if (mates.length && rand() < 0.6) return best(mates, i => pub.pF[i], rand);
     return best(o.filter(i => !isAlly(i)).length ? o.filter(i => !isAlly(i)) : o, i => pub.pF[i], rand);
   }
   if (v.ask === 'investigate') {
+    if (k.plan && o.includes(hitler) && hitler !== v.me) return hitler;    // to vouch for him afterwards
     const mates = o.filter(isAlly);
     if (mates.length && rand() < 0.4) return best(mates, i => -pub.pF[i], rand);
     const libs = o.filter(i => !isAlly(i));
@@ -310,6 +343,12 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
 function hidden(v: View, rand: () => number): number {
   const early = v.laws.F < HITLER_ZONE, k = AI[v.level];
   const seen = new Set(v.hist.flatMap(e => (e.k === 'inv' && e.by === v.me && e.party === 'F' ? [e.target] : [])));
+  if (k.image && v.ask === 'pdiscard' && v.hand.includes('L') && v.hand.includes('F')) {   // weighs his image, as a fascist does
+    const d = nF(v.hand), ms = passes(d);
+    const m = ms[weigh(v, ms.map(m => { const law: Law = m === 2 ? 'F' : 'L'; return { law, pc: presStory(d, m, law), cc: m }; }), v.me)];
+    return m === Math.min(2, d) ? v.hand.indexOf('L') : v.hand.indexOf('F');
+  }
+  if (k.image && v.ask === 'cdiscard' && nF(v.hand) === 1) return weigh(v, [{ law: 'F', pc: 2, cc: 2 }, { law: 'L', pc: 2, cc: 1 }], v.me) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
   if (v.ask === 'pdiscard') { const L = v.hand.indexOf('L'); return L >= 0 && !(early && rand() < 0.5 + k.trust) ? L : Math.max(0, v.hand.indexOf('F')); }
   if (v.ask === 'cdiscard') { const L = v.hand.indexOf('L'); return nF(v.hand) === 1 && !(early && rand() < 0.5 + k.trust) ? L : liberal(v, rand); }
   if (v.ask === 'veto') return nF(v.hand) === 0 ? 1 : 0;

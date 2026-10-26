@@ -30,9 +30,9 @@ const name = (g: Game, i: number): string => esc(g.players[i].name);
 const AI_TAG = '<small class="ai">IA</small>';
 /** What each level does, in a line (D10). */
 export const LEVEL: Record<Level, [string, string]> = {
-  facil: ['Fácil', 'Erra bastante, esquece o que aconteceu há mais de dois governos e acredita em tudo que ouve.'],
-  medio: ['Médio', 'Joga pelo próprio lado, lembra dos últimos governos e desconfia de vez em quando.'],
-  dificil: ['Difícil', 'Lembra de tudo: cada governo, cada voto, cada fala. Desconfia de história que não fecha, e os fascistas armam para o Hitler parecer limpo.'],
+  facil: ['Fácil', 'Escolhe e vota sem pensar muitas vezes, esquece o que aconteceu há mais de quatro governos e acredita em tudo que ouve. Os fascistas mentem pouco.'],
+  medio: ['Médio', 'Joga pelo próprio lado, lembra dos últimos governos e desconfia de vez em quando. Os fascistas mentem quando a verdade entrega.'],
+  dificil: ['Difícil', 'Lembra de tudo e desconfia de história que não fecha. Os fascistas pensam em como a mesa vai ver cada jogada e armam para o Hitler parecer limpo.'],
   extremo: ['Extremo', 'Conta as cartas: sabe quantas leis de cada tipo ainda podem sair e calcula a chance de cada fala ser verdade. Nunca vê o papel de ninguém.']
 };
 const law = (l: Law, k?: number): string => {

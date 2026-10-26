@@ -1,7 +1,7 @@
 // Measures the players run by the app (D10): whole games with only them at the table, in Node, with the core alone.
 //   node scripts/ai_bench.mjs [games per cell, default 200]
-// For every level, the liberals at that level against fascists at each level (the level of a seat is the level of the
-// game, so a cell mixes two games' choices: the liberals decide with one level's view, the fascists with the other's).
+// For every level, the liberals at that level against fascists at each level (each seat decides at its own level,
+// `Player.level`, votes included).
 // Prints how often the liberals win and how the games end; then, for each level, how a player of medium level sitting
 // in one seat (standing in for a person) does against a table of that level, as a liberal and as a fascist.
 // Not part of verify.sh: it takes a few minutes, and its numbers go to docs/decisoes.md (D10) with the date.
@@ -15,17 +15,17 @@ await build({ root, configFile: false, logLevel: 'silent', build: { outDir, empt
 const { Core } = await import(pathToFileURL(path.join(outDir, 'core.mjs')).href);
 
 const GAMES = Number(process.argv[2]) || 200, SIZES = [5, 6, 7, 8, 9, 10];
-/** One game with every seat run by the app: the liberals think at `lib`, the fascists at `fas`. */
-function play(n, lib, fas, seed) {
+/** One game with every seat run by the app, each seat at the level `levelOf` gives it. */
+function play(n, seed, levelOf) {
   const rand = Core.seeded(seed), names = Core.BOT_NAMES.slice(0, n);
-  let g = Core.newGame(names, rand, { ai: names.map(() => true), level: lib }).game, steps = 0;
+  let g = Core.newGame(names, rand, { ai: names.map(() => true) }).game, steps = 0;
+  g = { ...g, players: g.players.map((p, i) => ({ ...p, level: levelOf(p, i) })) };
   while (g.phase !== 'over' && steps < 2000) {
-    const t = Core.botTurn(g), who = t ? g.players[t.seat].role : 'liberal';
-    const next = Core.botStep({ ...g, level: who === 'liberal' ? lib : fas }, rand);
+    const next = Core.botStep(g, rand);
     if (!next) break;
-    g = { ...next, level: lib }; steps++;
+    g = next; steps++;
   }
-  return { g, steps };
+  return g;
 }
 const pct = x => `${Math.round(x * 100)}%`.padStart(4);
 console.log(`${GAMES} partidas por célula, mesas de ${SIZES[0]} a ${SIZES[SIZES.length - 1]} (rodízio). Liberais (linha) contra fascistas (coluna): vitórias liberais.`);
@@ -37,7 +37,7 @@ for (const lib of Core.LEVELS) {
   for (const fas of Core.LEVELS) {
     let won = 0;
     for (let i = 0; i < GAMES; i++) {
-      const { g } = play(SIZES[i % SIZES.length], lib, fas, 1000 * i + 17);
+      const g = play(SIZES[i % SIZES.length], 7000 * i + 3, p => (p.role === 'liberal' ? lib : fas));
       if (g.phase !== 'over') { stuck++; continue; }
       if (g.winner === 'L') won++;
       if (lib === fas) { const k = `${lib}: ${g.why.replace(/\(.*?\)/, '()')}`; ends[k] = (ends[k] || 0) + 1; }
@@ -54,13 +54,7 @@ console.log(`\n"Você" (uma IA média num lugar) contra a mesa de cada nível, $
 for (const X of Core.LEVELS) {
   const w = { L: [0, 0], F: [0, 0] };
   for (let i = 0; i < 3 * GAMES; i++) {
-    const n = SIZES[i % SIZES.length], rand = Core.seeded(9100 * i + 5), names = Core.BOT_NAMES.slice(0, n), me = i % n;
-    let g = Core.newGame(names, rand, { ai: names.map(() => true), level: X }).game, steps = 0;
-    while (g.phase !== 'over' && steps < 2000) {
-      const t = Core.botTurn(g), next = Core.botStep({ ...g, level: t && t.seat === me ? 'medio' : X }, rand);
-      if (!next) break;
-      g = { ...next, level: X }; steps++;
-    }
+    const n = SIZES[i % SIZES.length], me = i % n, g = play(n, 9100 * i + 5, (p, j) => (j === me ? 'medio' : X));
     const p = Core.partyOf(g.players[me].role); w[p][1]++; if (g.winner === p) w[p][0]++;
   }
   console.log(`  mesa ${X.padEnd(8)} você liberal vence ${pct(w.L[0] / w.L[1])}, fascista vence ${pct(w.F[0] / w.F[1])}`);

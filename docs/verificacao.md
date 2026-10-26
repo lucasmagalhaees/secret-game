@@ -11,9 +11,9 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | A documentação bate com o código, inclusive os números das regras | `python3 tests/docs_check.py` | 12/10/2026 |
 | Partidas inteiras pela tela (os dois lados vencendo), nos dois temas, no Chromium em tamanho de celular | `python3 tests/e2e.py dark` e `light` | 12/10/2026 |
 | O app abre sem internet e troca de versão com um toque, no Chromium | `python3 tests/pwa.py` | 12/10/2026 |
-| As IAs: cada visão só tem o que o lugar sabe, as respostas ficam nas opções, partidas só de IA em todo nível e toda mesa terminam e podem ser salvas, liberais não mentem | `node tests/core.mjs` (103 casos) | 26/10/2026 |
+| As IAs: cada visão só tem o que o lugar sabe, as respostas ficam nas opções, partidas só de IA em todo nível e toda mesa terminam e podem ser salvas, liberais não mentem | `node tests/core.mjs` (105 casos) | 26/10/2026 |
 | Jogar sozinho contra a IA pela tela, do começo ao fim, recarregando no meio; duas pessoas com IA, voto por pessoa | `python3 tests/e2e.py dark` e `light` | 26/10/2026 |
-| Os níveis da IA, medidos em 3.200 partidas só de IA (números na D10) | `node scripts/ai_bench.mjs 200` | 26/10/2026 |
+| Os níveis da IA balanceados: com a mesa no mesmo nível, liberais vencem 47% a 51%; medidos em 6.400 partidas só de IA (números na D10) | `node scripts/ai_bench.mjs 400` | 26/10/2026 |
 | Depois de um veto aceito, o baralho é reabastecido | caso em `tests/unit.cases.mjs` | 26/10/2026 |
 | A produção (https://secret-game-gamma.vercel.app) serve o commit da `main` | Página lida: `meta app-commit` = `6e6e539` | 13/10/2026 |
 
