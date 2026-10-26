@@ -1,7 +1,7 @@
 /* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
    never breaks the page: the names and the theme still come back. */
-import { MAX_PLAYERS, NAME_MAX, WIN } from './game';
-import type { AppState, Event, Game, Law, Phase, Player } from './types';
+import { LEVELS, MAX_PLAYERS, NAME_MAX, WIN } from './game';
+import type { AppState, Event, Game, Law, Level, Phase, Player } from './types';
 
 const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'special', 'execute', 'over'];
 const isLaw = (x: unknown): x is Law => x === 'L' || x === 'F';
@@ -10,7 +10,7 @@ const isInt = (x: unknown, max: number): x is number => Number.isInteger(x) && (
 const isIdx = (x: unknown, n: number): x is number => isInt(x, n - 1);
 const isPlayer = (p: unknown): p is Player => {
   const o = p as Player;
-  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean';
+  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean' && (o.ai === undefined || o.ai === true);
 };
 
 /** A saved game, or null if it does not hold together. */
@@ -26,6 +26,7 @@ export function readGame(x: unknown): Game | null {
   if (!Array.isArray(g.log) || !g.log.every(l => typeof l === 'string')) return null;
   if ((g.phase === 'vote' || g.phase === 'chancellor' || g.phase === 'veto') && g.chanc === null) return null;
   if (g.phase === 'investigated' && g.target === null) return null;
+  if (!(g.drew === undefined || isLaws(g.drew)) || !(g.level === undefined || LEVELS.includes(g.level))) return null;
   // the history came later: a game saved before it has none, and that is not damage
   const hist = g.hist === undefined ? [] : g.hist;
   if (!Array.isArray(hist) || !hist.every((e: Event) => !!e && typeof e === 'object' && typeof e.k === 'string')) return null;
@@ -34,7 +35,9 @@ export function readGame(x: unknown): Game | null {
 
 /** Everything saved, as it was read from the device. */
 export function readState(x: unknown): AppState {
-  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown }) : {};
-  const names = (Array.isArray(o.names) ? o.names : []).filter((s): s is string => typeof s === 'string' && !!s.trim()).map(s => s.slice(0, NAME_MAX)).slice(0, MAX_PLAYERS);
-  return { v: 1, names, game: readGame(o.game), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
+  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown; ai?: unknown; level?: unknown }) : {};
+  const flags = Array.isArray(o.ai) ? o.ai : [];
+  const seats = (Array.isArray(o.names) ? o.names : []).map((s, i) => ({ s, ai: flags[i] === true })).filter((x): x is { s: string; ai: boolean } => typeof x.s === 'string' && !!x.s.trim()).slice(0, MAX_PLAYERS);
+  const names = seats.map(x => x.s.slice(0, NAME_MAX)), ai = seats.map(x => x.ai);
+  return { v: 1, names, game: readGame(o.game), ...(ai.some(Boolean) ? { ai } : {}), ...(LEVELS.includes(o.level as Level) ? { level: o.level as Level } : {}), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
 }

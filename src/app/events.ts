@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { Game, Theme } from '../core';
+import type { Ask, Game, Level, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
 import { blurField, confetti, flash, render, stamp, toast } from './render';
@@ -16,26 +16,91 @@ const rand = (): number => Math.random();
 function play(next: Game, msg?: string, undo: Game | null = null): void {
   const before = S.game, changed = next !== before;
   setS({ ...S, game: next }); saveS();
-  if (changed) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; }
+  if (changed) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
   if (msg && changed) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
     confetti(next.winner); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
   }
+  tick();
+}
+
+/* ---------- the players run by the app (D10) ----------
+   When it is their turn, one step is played after `ui.think` ms, so the people at the table can follow it; then the
+   next. Anything that happens meanwhile (a tap, an undo, a new game) changes S.game, and the step that was waiting is
+   dropped. Seeing their own role takes no time. */
+let botTimer: ReturnType<typeof setTimeout> | undefined;
+export function tick(): void {
+  clearTimeout(botTimer);
+  const g = S.game, t = g ? Core.botTurn(g) : null;
+  if (!g || !t) return;
+  botTimer = setTimeout(() => {
+    if (S.game !== g) return;
+    const next = Core.botStep(g, rand);
+    if (next) botPlayed(g, next);
+  }, t.ask === 'reveal' ? 0 : ui.think);
+}
+/** What everyone notices when a vote is counted: the stamp, and the vibration when it elects. */
+function voted(before: Game, next: Game): void {
+  const e = [...next.hist].reverse().find(x => x.k === 'vote');
+  const elected = !!e && e.k === 'vote' && e.ja.length * 2 > before.players.filter(p => p.alive).length;
+  stamp(elected ? 'Eleito!' : 'Rejeitado!', elected ? 'L' : 'F'); sound('stamp'); if (elected) buzz([40, 60, 40]);
+}
+/** An app player did something: the same sounds and marks as when a person does it, and the line it adds to the log. */
+function botPlayed(before: Game, next: Game): void {
+  if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
+  if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
+  gavelIf(before, next);
+  if (next.players.some((p, i) => !p.alive && before.players[i].alive)) { flash(); sound('gavel'); buzz(220); }
+  const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
+  play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line || undefined);
+}
+/** A person voted at a table with app players: once every person still in the game has, the votes are counted. */
+function myVote(i: number, yes: boolean): void {
+  const g = S.game as Game;
+  ui.votes = { ...ui.votes, [i]: yes };
+  const people = Core.humansAlive(g);
+  if (people.length === 1) count(g);
+  else render();
+}
+function count(g: Game): void {
+  const next = Core.castVotes(g, ui.votes, rand);
+  if (next === g) return;
+  voted(g, next); gavelIf(g, next);
+  choose(g, next, next.phase === 'over' ? lawMsg(g, next) || next.why : next.log[next.log.length - 1]);
 }
 /** A public choice that can be taken back with "Desfazer" until something else happens. */
 const choose = (before: Game, next: Game, msg?: string): void => play(next, msg, before);
 const ERR = { name: 'Escreve um nome.', dup: 'Esse nome já está na mesa.', count: `A mesa vai de ${Core.MIN_PLAYERS} a ${Core.MAX_PLAYERS} jogadores.` };
 
+/** Which seats of the table the app plays, one flag per name. */
+const flags = (): boolean[] => S.names.map((_, i) => !!S.ai?.[i]);
+function setTable(names: string[], ai: boolean[]): void {
+  const next = { ...S, names };
+  if (ai.some(Boolean)) next.ai = ai; else delete next.ai;
+  setS(next); saveS();
+}
 function addName(): void {
   const r = Core.addName(S.names, valOf('#name'));
   blurField();
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
-  setS({ ...S, names: r.names }); saveS(); ui.msg = ''; ui.name = ''; render();
+  setTable(r.names, [...flags(), false]); ui.msg = ''; ui.name = ''; render();
   $<HTMLInputElement>('#name')?.focus();
 }
+/** One more seat for the app, or as many as it takes to make a table of n. */
+function addBots(n: number): void {
+  let names = S.names, ai = flags();
+  if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
+  if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
+  blurField();
+  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names)]; ai = [...ai, true]; }
+  if (names.length > n) { ui.msg = `A mesa já tem ${names.length} lugares.`; }
+  else ui.msg = '';
+  setTable(names, ai); render();
+}
 function start(): void {
-  const r = Core.newGame(S.names, rand);
+  if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
+  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   ui.msg = ''; ui.help = false; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
 }
@@ -76,7 +141,10 @@ export function initEvents(): void {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
     if (a === 'addname') addName();
-    else if (a === 'rmname') { setS({ ...S, names: S.names.filter((_, j) => j !== i) }); saveS(); ui.msg = ''; render(); }
+    else if (a === 'rmname') { setTable(S.names.filter((_, j) => j !== i), flags().filter((_, j) => j !== i)); ui.msg = ''; render(); }
+    else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
+    else if (a === 'fill') addBots(Number(d.n));
+    else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
     else if (a === 'start') start();
     else if (a === 'theme') { const t = d.t as Theme | 'auto'; if (t === 'auto') delete S.theme; else S.theme = t; saveS(); applyTheme(); render(); }
     else if (a === 'look') { if (d.l === 'deco') S.look = 'deco'; else delete S.look; saveS(); applyTheme(); render(); }
@@ -85,10 +153,13 @@ export function initEvents(): void {
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
     else if (a === 'help') { ui.help = !ui.help; render(); }
-    else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); }
+    else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));
     else if (a === 'nominate') choose(g, Core.nominate(g, i));
+    else if (a === 'myvote') myVote(i, d.v === '1');
+    else if (a === 'countvotes') count(g);
+    else if (a === 'say') { const next = Core.say(g, i, d.w as Ask, Number(d.v)); play(next, next.log[next.log.length - 1]); }
     else if (a === 'elect') {
       const yes = d.v === '1', next = Core.vote(g, yes, rand);
       stamp(yes ? 'Eleito!' : 'Rejeitado!', yes ? 'L' : 'F'); sound('stamp'); if (yes) buzz([40, 60, 40]);
@@ -109,7 +180,7 @@ export function initEvents(): void {
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }
     else if (a === 'again') start();
-    else if (a === 'table' || (a === 'end' && ui.confirmEnd)) { ui.confirmEnd = false; ui.open = ''; ui.pick = null; ui.undo = null; setS({ ...S, game: null }); saveS(); render(); }
+    else if (a === 'table' || (a === 'end' && ui.confirmEnd)) { ui.confirmEnd = false; ui.open = ''; ui.pick = null; ui.undo = null; setS({ ...S, game: null }); saveS(); render(); tick(); }
     else if (a === 'end') { ui.confirmEnd = true; render(); }
   });
   document.addEventListener('input', e => {

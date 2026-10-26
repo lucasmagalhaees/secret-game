@@ -1,6 +1,6 @@
 # Secret Hitler
 
-Jogo de dedução social no estilo Secret Hitler: liberais contra fascistas (com um Hitler escondido), num celular que passa de mão em mão. 5 a 10 jogadores.
+Jogo de dedução social no estilo Secret Hitler: liberais contra fascistas (com um Hitler escondido), num celular que passa de mão em mão. 5 a 10 lugares; dá para jogar sozinho contra a IA, em quatro níveis.
 
 Feito a partir do modelo de arquitetura do Oito Lados: página estática em TypeScript, um arquivo só no ar, núcleo puro testado no Node e no navegador, testes ponta a ponta com Playwright, deploy na Vercel a cada merge e um conjunto de regras para trabalhar com IA sem que ela diga que funciona sem ter rodado.
 
@@ -20,6 +20,7 @@ Baseado em [Secret Hitler](https://www.secrethitler.com), de Goat, Wolf, & Cabba
 
 - Monta a mesa, sorteia os papéis e mostra cada um em segredo ("passe o celular para…").
 - Conduz as rodadas: indicação, votação, mão do presidente e do chanceler, poderes, veto, caos e fim de jogo. As regras completas estão nos requisitos do [`CLAUDE.md`](CLAUDE.md) e na tela inicial do app.
+- Joga sozinho ou com poucos: a IA ocupa os lugares vazios, em quatro níveis, e cada IA só sabe o que o lugar dela saberia.
 - A partida fica guardada no aparelho. Abre sem internet depois da primeira vez, e avisa quando sai versão nova.
 - Tema automático, claro ou escuro.
 
@@ -40,6 +41,7 @@ vercel.json
 scripts/verify.sh
 scripts/check_production.py
 scripts/rename.py
+scripts/ai_bench.mjs
 tests/unit.cases.mjs
 tests/core.mjs
 tests/unit.py

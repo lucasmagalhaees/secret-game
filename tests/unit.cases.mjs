@@ -113,11 +113,92 @@ export default function cases(Core) {
   eq('execute Hitler: the liberals win', [Core.execute(ex, 0).winner, Core.execute(ex, 0).phase], ['L', 'over']);
 
   /* the history, for the end-of-game summary */
-  eq('history: a government and its law, and a rejection', [lib.hist.at(-1), rej.hist.at(-1)], [{ k: 'gov', pres: 3, chanc: 4, law: 'L' }, { k: 'rej', pres: 3, chanc: 4 }]);
+  eq('history: a government and its law, and a rejection', [lib.hist.at(-1), rej.hist.at(-1)], [{ k: 'gov', pres: 3, chanc: 4, law: 'L', drew: ['F', 'F', 'L'], got: ['L', 'F'] }, { k: 'rej', pres: 3, chanc: 4 }]);
   eq('history: the chaos law is recorded as chaos', chaos.hist.at(-1), { k: 'chaos', law: 'F' });
   eq('history: an investigation keeps the party really seen', [seen.hist.at(-1), Core.investigate(inv, 5).hist.at(-1)], [{ k: 'inv', by: 3, target: 0, party: 'F' }, { k: 'inv', by: 3, target: 5, party: 'L' }]);
-  eq('history: peek, special election, elimination, veto', [Core.endPower(pk).hist.at(-1).k, se.hist.at(-1), ex1.hist.at(-1), yes.hist.at(-1)], ['peek', { k: 'special', by: 3, target: 6 }, { k: 'exec', by: 3, target: 5, role: 'liberal' }, { k: 'veto', pres: 3, chanc: 4 }]);
+  eq('history: peek, special election, elimination, veto', [Core.endPower(pk).hist.at(-1).k, se.hist.at(-1), ex1.hist.at(-1), yes.hist.at(-1)], ['peek', { k: 'special', by: 3, target: 6 }, { k: 'exec', by: 3, target: 5, role: 'liberal' }, { k: 'veto', pres: 3, chanc: 4, drew: ['F', 'F', 'L'], got: ['L', 'F'] }]);
   eq('history: a game saved before the history existed reads with an empty one; a broken one is dropped', [Core.readGame((({ hist, ...rest }) => rest)(el)).hist, Core.readGame({ ...el, hist: 'x' }), Core.readGame({ ...el, hist: [1] })], [[], null, null]);
+
+  eq('history: a peek keeps the 3 laws seen', Core.endPower(pk).hist.at(-1).saw, pk.deck.slice(0, 3));
+  const short = Core.answerVeto(Core.askVeto(Core.presidentDiscard(Core.vote({ ...base, phase: 'vote', chanc: 4, laws: { L: 0, F: 5 }, deck: deck('FFL'), discard: deck('LLLFFFLFFFLF') }, true, rand), 0)), true, rand);
+  eq('a vetoed session ends like any other: fewer than 3 laws left, the discards go back in', [short.deck.length, short.discard.length, Core.vote(Core.nominate(short, 1), true, rand).hand.length], [15, 0, 3]);
+  eq('a nomination is said to the table', Core.nominate(base, 4).log.at(-1), 'Duda indicou Edu para chanceler.');
+
+  /* players run by the app (D10) */
+  eq('levels, easiest first; names for the app players skip those at the table', [Core.LEVELS, Core.botName(['ada', 'Beto']), Core.botName([])], [['facil', 'medio', 'dificil', 'extremo'], 'Cida', 'Ada']);
+  const aiG = Core.newGame(NAMES, Core.seeded(3), { ai: [false, true, true, true, true, true, true], level: 'extremo' }).game;
+  eq('new game with app players: seats marked, level kept; without them no level; a bad level falls to medium', [aiG.players.map(p => !!p.ai), aiG.level, 'level' in g0, Core.newGame(NAMES, rand, { ai: [true], level: 'x' }).game.level, Core.hasAi(aiG), Core.hasAi(g0), Core.humansAlive(aiG)], [[false, true, true, true, true, true, true], 'extremo', false, 'medio', true, false, [0]]);
+  const ai7 = (over) => ({ ...base, players: base.players.map((p, i) => (i ? { ...p, ai: true } : p)), level: 'medio', ...over });
+  // a history with every secret in it: Duda (3) president with Edu (4), Duda investigated Ana (Hitler), Fê (5) spied, Gil (6) eliminated
+  const secrets = [{ k: 'gov', pres: 3, chanc: 4, law: 'F', drew: deck('FFL'), got: deck('FF') }, { k: 'inv', by: 3, target: 0, party: 'F' }, { k: 'peek', by: 5, saw: deck('LFF') }, { k: 'exec', by: 3, target: 6, role: 'liberal' }];
+  const sg = ai7({ hist: secrets });
+  const v4 = Core.viewOf(sg, 4, 'vote', [1, 0]), v3 = Core.viewOf(sg, 3, 'vote', [1, 0]), v1 = Core.viewOf(sg, 1, 'vote', [1, 0]), v0 = Core.viewOf(sg, 0, 'vote', [1, 0]);
+  eq('view: a liberal knows its own role only', v4.known, [null, null, null, null, 'liberal', null, null]);
+  eq('view: a fascist knows every role; Hitler at a table of 7 only his own', [v1.known, v0.known], [['hitler', 'fascista', 'fascista', 'liberal', 'liberal', 'liberal', 'liberal'], ['hitler', null, null, null, null, null, null]]);
+  eq('view: the chancellor sees what it got, not what the president drew; no one sees the role of who was eliminated', [v4.hist[0], v4.hist[3]], [{ k: 'gov', pres: 3, chanc: 4, law: 'F', got: ['F', 'F'] }, { k: 'exec', by: 3, target: 6 }]);
+  eq('view: the president sees its hand and its investigation; the others see neither, nor the spied laws', [v3.hist[0].drew, v3.hist[1].party, 'party' in v4.hist[1], 'saw' in v4.hist[2], v1.hist[2].saw, Core.viewOf(sg, 5, 'vote', [1, 0]).hist[2].saw], [['F', 'F', 'L'], 'F', false, false, undefined, ['L', 'F', 'F']]);
+  const blind = JSON.stringify(Core.viewOf(sg, 6, 'vote', [1, 0]));
+  eq('view: nothing secret of others anywhere in what a liberal gets', ['hitler', 'fascista', 'drew', 'got', 'party', 'saw'].map(w => blind.includes(w)), [false, false, false, false, false, false]);
+  eq('view: the question, the answers allowed, and the hand only when asked about it', [v4.ask, v4.options, v4.hand, Core.viewOf({ ...sg, phase: 'president', hand: deck('FLF') }, 3, 'pdiscard', [0, 1, 2]).hand], ['vote', [1, 0], [], ['F', 'L', 'F']]);
+
+  // deciding: rand near 1 means no careless moment and no trick
+  const hi = () => 0.99;
+  const view = (over) => ({ me: 4, role: 'liberal', level: 'medio', n: 7, alive: Array(7).fill(true), known: [null, null, null, null, 'liberal', null, null], fascists: 3, laws: { L: 0, F: 0 }, tracker: 0, pres: 3, chanc: 4, lastPres: null, lastChanc: null, ask: 'vote', options: [1, 0], hand: [], hist: [], ...over });
+  eq('a liberal president throws a fascist law away; a liberal chancellor makes the liberal one', [Core.decide(view({ me: 3, known: [null, null, null, 'liberal', null, null, null], ask: 'pdiscard', options: [0, 1, 2], hand: deck('LFF') }), hi), Core.decide(view({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi)], [1, 0]);
+  const knowAll = ['hitler', 'fascista', 'fascista', 'liberal', 'liberal', 'liberal', 'liberal'];
+  eq('a fascist chancellor makes the fascist law, and asks to veto two liberal ones', [Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi), Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1, 2], hand: deck('LL'), laws: { L: 0, F: 5 } }), hi)], [1, 2]);
+  eq('from the 3rd fascist law, a fascist president nominates Hitler', Core.decide(view({ me: 1, role: 'fascista', known: knowAll, pres: 1, chanc: null, ask: 'nominate', options: [0, 2, 3, 4], laws: { L: 1, F: 3 } }), hi), 0);
+  eq('an answer is always one of the options, even when the option the player would pick is not there', Core.decide(view({ me: 1, role: 'fascista', known: knowAll, pres: 1, chanc: null, ask: 'nominate', options: [5], laws: { L: 1, F: 3 } }), hi), 5);
+  eq('a liberal tells the truth about its hand and its investigation', [Core.decide(view({ me: 3, ask: 'pc', options: [0, 1, 2, 3], hist: [secrets[0]] }), hi), Core.decide(view({ ask: 'cc', options: [0, 1, 2], hist: [secrets[0]] }), hi), Core.decide(view({ me: 3, ask: 'inv', options: [0, 1], hist: [secrets[1]] }), hi)], [2, 2, 1]);
+  eq('a fascist president who passed two fascist laws out of a hand with a liberal says it drew 3 fascist', Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'pc', options: [0, 1, 2, 3], hist: [{ k: 'gov', pres: 1, chanc: 4, law: 'F', drew: deck('FLF'), got: deck('FF') }] }), () => 0), 3);
+  // believing: a liberal president passed a liberal and a fascist law; the chancellor made the fascist one and said both were fascist
+  const caught = Core.believe(view({ me: 3, known: [null, null, null, 'liberal', null, null, null], level: 'extremo', hist: [{ k: 'gov', pres: 3, chanc: 5, law: 'F', drew: deck('FFL'), got: deck('FL'), pc: 2, cc: 2 }] }));
+  eq('believing: the president who was lied to knows the chancellor is a fascist', caught.pF[5] > 0.99, true);
+  const told = Core.believe(view({ level: 'extremo', hist: [{ k: 'inv', by: 4, target: 2, party: 'F' }] }));
+  eq('believing: what it investigated itself is certain; the odds of each seat add up to the fascists of the table', [Math.round(told.pF[2] * 1e9) / 1e9, Math.round(told.pF.reduce((a, x) => a + x, 0) * 1000) / 1000, Math.round(told.pH.reduce((a, x) => a + x, 0) * 1000) / 1000, told.pF[4]], [1, 3, 1, 0]);
+  const zoned = Core.believe(view({ level: 'extremo', laws: { L: 0, F: 4 }, hist: [{ k: 'chaos', law: 'F' }, { k: 'chaos', law: 'F' }, { k: 'chaos', law: 'F' }, { k: 'gov', pres: 2, chanc: 6, law: 'F' }] }));
+  eq('believing: someone elected chancellor with 3 fascist laws already on the table is not Hitler', [zoned.pH[6] < 0.01, zoned.pH[2] > 0.1], [true, true]);
+  eq('the odds of a hand: 0 to 3 fascist laws, adding up to 1', [Core.drawOdds(11, 6).length, Math.round(Core.drawOdds(11, 6).reduce((a, x) => a + x, 0) * 1e6), Math.round(Core.drawOdds(11, 6)[3] * 1000), Core.drawOdds(1, 1)], [4, 1e6, 243, [0.25, 0.25, 0.25, 0.25]]);
+  eq('the levels: careless to careful, believing to doubting, and only the extreme counts the laws', [Core.LEVELS.map(l => Core.AI[l].noise > Core.AI.extremo.noise), Core.LEVELS.map(l => Core.AI[l].count), Core.AI.facil.lie < Core.AI.medio.lie && Core.AI.medio.lie < Core.AI.dificil.lie && Core.AI.dificil.lie < Core.AI.extremo.lie], [[true, true, true, false], [false, false, false, true], true]);
+
+  // the votes, one by one, where the app plays some seats
+  const vg = ai7({ phase: 'vote', chanc: 4, reveal: 7 });
+  eq('votes: without the vote of the person at the table nothing happens', Core.castVotes(vg, {}, rand), vg);
+  const voted = Core.castVotes(vg, { 0: true }, Core.seeded(5));
+  eq('votes: every vote is recorded for all to see, and more Ja! than Nein! elects', [voted.hist.at(-1).k, voted.hist.at(-1).ja.includes(0), voted.hist.at(-1).ja.includes(3), voted.hist.at(-1).ja.includes(4), voted.log.some(l => l.startsWith('Votos. Ja!: Ana')), (voted.phase === 'president') === (voted.hist.at(-1).ja.length > 3)], ['vote', true, true, true, true, true]);
+  const tie = ai7({ phase: 'vote', chanc: 4, players: ai7().players.map((p, i) => (i === 6 ? { ...p, alive: false } : p)) });
+  eq('votes: a tie rejects', ((t) => t.hist.at(-1).ja.length === 3 ? t.phase : 'nominate')(Core.castVotes(tie, { 0: false }, Core.seeded(8))), 'nominate');
+  // what each seat tells the table
+  const said = ai7({ phase: 'nominate', pres: 4, hist: [{ k: 'gov', pres: 0, chanc: 3, law: 'L', drew: deck('FFL'), got: deck('FL') }] });
+  const s1 = Core.say(said, 0, 'pc', 2);
+  eq('telling the table: the president may say what it drew, once; the log says it', [Core.claims(said, 0), Core.claims(said, 3), s1.hist[0].pc, s1.log.at(-1), Core.say(s1, 0, 'pc', 3) === s1, Core.claims(s1, 0)], [['pc'], ['cc'], 2, 'Ana (presidente) disse que tirou 2 fascistas e 1 liberal.', true, []]);
+  eq('telling the table: only who was there, only possible numbers; keeping quiet is -1', [Core.say(said, 4, 'pc', 1) === said, Core.say(said, 0, 'pc', 4) === said, Core.say(said, 3, 'cc', -1).hist[0].cc, Core.say(said, 3, 'cc', -1).log.at(-1)], [true, true, -1, 'Duda não disse o que recebeu.']);
+  eq('telling the table: a new election closes it', Core.claims({ ...said, hist: [...said.hist, { k: 'rej', pres: 4, chanc: 1 }] }, 0), []);
+  const invd = ai7({ phase: 'nominate', hist: [{ k: 'inv', by: 0, target: 1, party: 'F' }, { k: 'peek', by: 0, saw: deck('FFL') }] });
+  eq('telling the table: an investigation and a spying', [Core.claims(invd, 0), Core.say(invd, 0, 'inv', 0).log.at(-1), Core.say(invd, 0, 'peek', 2).log.at(-1), Core.claims({ ...invd, phase: 'investigated' }, 0)], [['inv', 'peek'], 'Ana disse que Bia é liberal.', 'Ana disse que as próximas 3 leis são 2 fascistas e 1 liberal.', ['peek']]);
+  // whose turn
+  eq('whose turn: players run by the app see their roles by themselves; a person sees theirs', [Core.botTurn(ai7({ phase: 'reveal', reveal: 0 })), Core.botTurn(ai7({ phase: 'reveal', reveal: 2 })).ask, Core.botStep(ai7({ phase: 'reveal', reveal: 2 }), rand).reveal], [null, 'reveal', 3]);
+  eq('whose turn: the president tells first, then the chancellor, before the game goes on', [Core.botTurn(ai7({ phase: 'nominate', pres: 2, hist: [{ k: 'gov', pres: 5, chanc: 6, law: 'L', drew: deck('LLF'), got: deck('LL') }] })).seat, Core.botTurn(ai7({ phase: 'nominate', pres: 2, hist: [{ k: 'gov', pres: 5, chanc: 6, law: 'L', drew: deck('LLF'), got: deck('LL'), pc: 0 }] })).seat], [5, 6]);
+  eq('whose turn: the vote waits for the person; with no person left, the app votes alone', [Core.botTurn(ai7({ phase: 'vote', chanc: 4 })), Core.botTurn(ai7({ phase: 'vote', chanc: 4, players: ai7().players.map((p, i) => (i ? p : { ...p, alive: false })) })).ask], [null, 'votes']);
+  eq('whose turn: a question with no possible answer is never asked', Core.botTurn(ai7({ phase: 'nominate', pres: 1, lastChanc: 2, players: ai7().players.map((p, i) => (i === 1 || i === 2 ? p : { ...p, alive: false })) })), null);
+  eq('whose turn: nobody at a table of people only, nobody after the end', [Core.botTurn(base), Core.botTurn(ai7({ phase: 'over' })), Core.botStep(base, rand)], [null, null, null]);
+  // whole games with only players run by the app: every step is a move the rules accept, and every game ends
+  let ended = 0, played = 0, moved = true, kept = true, honest = true;
+  for (const level of Core.LEVELS) for (let n = Core.MIN_PLAYERS; n <= Core.MAX_PLAYERS; n++) {
+    const r = Core.seeded(n * 31 + level.length), names = Core.BOT_NAMES.slice(0, n);
+    let g = Core.newGame(names, r, { ai: names.map(() => true), level }).game;
+    for (let step = 0; step < 600 && g.phase !== 'over'; step++) {
+      const next = Core.botStep(g, r);
+      if (!next || next === g || JSON.stringify(next) === JSON.stringify(g)) { moved = false; break; }
+      g = next;
+      if (!Core.readGame(JSON.parse(JSON.stringify(g)))) kept = false;
+    }
+    played++; if (g.phase === 'over' && g.winner) ended++;
+    for (const e of g.hist) if ((e.k === 'gov' || e.k === 'veto') && g.players[e.pres].role === 'liberal' && e.pc !== undefined && e.pc !== e.drew.filter(l => l === 'F').length) honest = false;
+  }
+  eq('games with only app players, every level, every table size: every step moves, every state can be saved, every game ends, liberals never lie', [ended, moved, kept, honest], [played, true, true, true]);
+  eq('read state: which seats the app plays and the level are kept; nonsense is dropped', [Core.readState({ names: ['a', 3, 'b'], ai: [false, true, true] }).ai, 'ai' in Core.readState({ names: ['a'], ai: [false] }), Core.readState({ level: 'extremo' }).level, 'level' in Core.readState({ level: 'x' })], [[false, true], false, 'extremo', false]);
+  eq('read game: a bad app seat, level or hand drawn is damage', [Core.readGame({ ...el, players: el.players.map(p => ({ ...p, ai: 1 })) }), Core.readGame({ ...el, level: 'x' }), Core.readGame({ ...el, drew: ['X'] }), !!Core.readGame({ ...el, level: 'dificil', drew: deck('FFL') })], [null, null, null, true]);
 
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });

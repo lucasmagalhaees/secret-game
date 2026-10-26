@@ -225,6 +225,84 @@ with sync_playwright() as p:
     assert [('L' if 'LIBERAL' in t.upper() else 'F') for t in pg.locator('#peek .law').all_inner_texts()] == top
     pg.click('[data-act=endpower]'); assert G()['pres'] == 4
 
+    # ---------- against the app (D10): one person and the app's players ----------
+    pg.evaluate(f"localStorage.setItem('{KEY}', JSON.stringify({{v: 1, names: []}}))"); cov.reload(pg); wait()
+    pg.click('[data-act=fill][data-n="7"]'); assert 'Ponha o seu nome' in txt('#msg'), 'the app completes a table that has a person'
+    pg.fill('#name', 'Lu'); pg.click('[data-act=fill][data-n="7"]')
+    assert pg.locator('#names li').count() == 7 and pg.locator('#names small.ai').count() == 6 and '6 lugares são da IA' in txt('#solo')
+    pg.click('[data-act=addbot]'); assert pg.locator('#names li').count() == 8
+    pg.locator('#names li').nth(7).locator('[data-act=rmname]').click(); assert pg.locator('#names li').count() == 7
+    pg.click('[data-act=fill][data-n="5"]'); assert 'já tem 7 lugares' in txt('#msg')
+    pg.click('[data-act=level][data-v=extremo]')
+    assert pg.locator('[data-act=level][data-v=extremo]').get_attribute('aria-pressed') == 'true' and 'Conta as cartas' in txt('#leveltext')
+    pg.locator('#names li').nth(0).locator('[data-act=rmname]').click(); pg.click('[data-act=start]')
+    assert 'pelo menos uma pessoa' in txt('#msg') and G() is None, 'a table of the app alone does not start'
+    pg.fill('#name', 'Lu'); pg.press('#name', 'Enter')                     # Lu sits last: seat 6
+    assert overflow() == 0; shot(f's5-contra-ia-mesa-{THEME}.png')
+    pg.evaluate('window.__APP.ui.think = 60000')                              # slow, to see the app player thinking
+    pg.click('[data-act=start]')
+    pg.wait_for_function('window.__APP.S.game.reveal === 6')
+    assert G()['level'] == 'extremo' and sum(1 for x in G()['players'] if x.get('ai')) == 6
+    assert 'Só para os seus olhos' in txt('#phase') and 'Passe o celular' not in txt('#phase') and txt('#phase .who') == 'Lu', 'alone, nobody to pass the phone to'
+    pg.click('[data-act=open]'); assert pg.locator('#role').count() == 1; pg.click('[data-act=hiderole]')
+    if G()['pres'] != 6:
+        assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
+    pg.evaluate('window.__APP.ui.think = 0')
+    pg.click('[data-act=help]'); assert 'IA no nível extremo' in txt('#helptext'); pg.click('[data-act=help]')
+    me, seen, reloaded = 6, set(), False
+    ORDER = ['[data-act=open]', '[data-act=hiderole]', '[data-act=say]', '#phase [data-act=nominate]', '[data-act=myvote]', '[data-act=pdiscard]:not([disabled])', '[data-act=cdiscard]:not([disabled])', '#phase [data-act=pick]', '[data-act=veto]', '#phase [data-act=investigate]', '#phase [data-act=special]', '[data-act=execute]:not([disabled])', '#phase [data-act=pickp]', '[data-act=endpower]']
+    for step in range(900):
+        g = G()
+        if g['phase'] == 'over': break
+        holder = g['pres'] if g['phase'] in ('president', 'veto', 'investigated', 'peek') else g['chanc'] if g['phase'] == 'chancellor' else None
+        if holder is not None and holder != me:
+            assert pg.locator('#phase .law').count() == 0 and pg.locator('#party').count() == 0, f'nothing secret of an app player on screen ({g["phase"]})'
+        if pg.locator('.handoff').count():
+            assert txt('#phase .who') == 'Lu', 'the phone only ever opens for the person'
+        if g['phase'] == 'vote' and g['players'][me]['alive']:
+            assert pg.locator('#phase [data-act=elect]').count() == 0 and pg.locator('#phase [data-act=myvote]').count() == 2; seen.add('vote')
+        if pg.locator('.claim').count():
+            seen.add('claim'); assert 'Pode mentir' in txt('.claim')
+        if step == 40 and not reloaded:
+            cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
+        for sel in ORDER:
+            if pg.locator(sel).count():
+                try: pg.locator(sel).first.click(timeout=2000)
+                except Exception: pass
+                break
+        else:
+            pg.wait_for_timeout(20)
+    g = G(); log = '\n'.join(g['log'])
+    assert g['phase'] == 'over' and g['winner'] in ('L', 'F'), g['log'][-5:]
+    assert {'vote'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert pg.locator('#summary').count() == 1 and pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
+    assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
+
+    # two people and three app players: the people vote one by one, then the votes open; and if both are out, the app plays on
+    pg.click('[data-act=table]')
+    for x in list(range(pg.locator('#names li').count())): pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
+    for n in ('Ana', 'Bia'): pg.fill('#name', n); pg.press('#name', 'Enter')
+    pg.click('[data-act=fill][data-n="7"]'); pg.click('[data-act=level][data-v=facil]')
+    pg.evaluate('window.__APP.ui.think = 60000'); pg.click('[data-act=start]')
+    for who in ('Ana', 'Bia'):
+        assert 'Passe o celular para' in txt('#phase') and txt('#phase .who') == who
+        pg.click('[data-act=open]'); pg.click('[data-act=hiderole]')
+    pg.wait_for_function("window.__APP.S.game.phase === 'nominate'")
+    pg.evaluate("(() => { const g = window.__APP.S.game; g.pres = 2; g.chanc = 3; g.phase = 'vote'; })()")
+    pg.click('[data-act=help]'); pg.click('[data-act=help]')
+    assert pg.locator('#voter-0').count() == 1 and pg.locator('#voter-1').count() == 1 and pg.locator('[data-act=countvotes]').is_disabled()
+    pg.click('#voter-0 [data-act=myvote][data-v="1"]'); assert pg.locator('[data-act=countvotes]').is_disabled()
+    pg.click('#voter-1 [data-act=myvote][data-v="0"]'); pg.click('[data-act=countvotes]')
+    v = [e for e in G()['hist'] if e['k'] == 'vote'][-1]
+    assert 0 in v['ja'] and 1 not in v['ja'] and 'Votos. Ja!: Ana' in '\n'.join(G()['log']), v
+    pg.evaluate("(() => { const g = window.__APP.S.game; g.players[0].alive = false; g.players[1].alive = false; window.__APP.ui.think = 0; })()")
+    if pg.locator('[data-act=undo]').count(): pg.click('[data-act=undo]')                   # taking the count back and playing it through again
+    else: pg.click('[data-act=help]')
+    pg.wait_for_function("window.__APP.S.game.phase === 'over'", timeout=20000)
+    assert G()['winner'] in ('L', 'F')
+    pg.evaluate("(() => { const g = window.__APP.S.game; g.phase = 'nominate'; g.winner = null; window.__APP.ui.think = 60000; })()"); pg.click('[data-act=help]')
+    assert pg.locator('#watching').count() == 1, 'with no person left, the screen says the app plays on'
+
     cov.stop(pg, f'e2e-{THEME}')
     assert not errs, errs
 
@@ -251,4 +329,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas), animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

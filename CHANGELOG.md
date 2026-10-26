@@ -2,6 +2,18 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.8.0]
+
+### Adicionado
+- Jogar sozinho ou com poucos contra a IA: "+ IA" e "Completar a mesa até" na mesa, quatro níveis (fácil, médio, difícil, extremo).
+- O juiz: cada IA só recebe o que o lugar dela saberia e só responde a pergunta da vez.
+- Com IA na mesa, voto por pessoa e todos os votos no registro; quem governou, investigou ou espiou pode dizer à mesa o que viu (ou mentir, ou calar).
+- No resumo do fim, as leis que cada governo tirou e passou e o que cada um disse.
+- A indicação do chanceler entra no registro.
+
+### Corrigido
+- Depois de um veto aceito, o baralho não era reabastecido: o presidente seguinte podia tirar menos de 3 leis (ou nenhuma).
+
 ## [0.7.0]
 
 ### Adicionado
