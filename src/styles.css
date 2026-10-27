@@ -431,3 +431,5 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 .crux small{display:block;font:800 11px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .crux p{margin:6px 0 4px;font-size:15px}
 .crux>b{font:800 16px/1 var(--display);color:var(--fas)}
+/* the minutes number their laws themselves ("1ª", "2ª"): no list numbers beside them */
+.timeline.ata-list{list-style:none;padding-left:0}

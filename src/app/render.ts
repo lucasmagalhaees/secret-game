@@ -236,7 +236,11 @@ function moment(g: Game, i: number, me: number): string {
     return `${head}: ${what}${said ? `, e ${said}` : ''}.`;
   }
   if (e.k === 'chaos') return `A lei ${lawW(e.law)} que entrou pelo caos.`;
-  if (e.k === 'inv') return `${who(e.by)} investigou ${who(e.target)}${e.said && e.said !== '-' ? ` e disse que é ${e.said === 'L' ? 'liberal' : '{f}'}` : ''}.`;
+  if (e.k === 'inv') {
+    const said = e.said && e.said !== '-' ? (e.said === 'L' ? 'liberal' : '{f}') : '';
+    if (e.target === me) return `${who(e.by)} usou o poder de investigar e viu o seu partido (a investigação mostra o partido de verdade, não o que você fez)${said ? `, e disse que você é ${said}` : ''}.`;
+    return `${who(e.by)} investigou ${who(e.target)}${said ? ` e disse que é ${said}` : ''}.`;
+  }
   if (e.k === 'exec') return `${who(e.by)} eliminou ${who(e.target)}.`;
   return '';
 }
@@ -337,7 +341,7 @@ function vAta(g: Game): string {
     rows.push(`<li class="${e.k === 'gov' ? `gov ${e.law}` : 'rej'}">${head} ${name(g, e.pres)} (pres.) + ${name(g, e.chanc)} (chanc.)<small class="hands">${v ? `{ja}: ${ja}` : 'votos em voz alta, sem registro'}</small></li>`);
   });
   const who = g.players.map((p, i) => ({ i, t: tally[i] })).filter(x => x.t.L + x.t.F).sort((a, b) => b.t.F - a.t.F || a.t.L - b.t.L);
-  return `<section class="card" id="ata"><span class="label">Ata · assistência</span>${rows.length ? `<ol class="timeline">${rows.join('')}</ol>` : '<p class="hint">Nenhuma lei ainda.</p>'}
+  return `<section class="card" id="ata"><span class="label">Ata · assistência</span>${rows.length ? `<ol class="timeline ata-list">${rows.join('')}</ol>` : '<p class="hint">Nenhuma lei ainda.</p>'}
     ${who.length ? `<p class="hint">Aprovou (governou ou votou {ja}), por jogador:</p><ul class="tally">${who.map(x => `<li><span>${name(g, x.i)}</span><span><i class="mini F">F</i> ${x.t.F} <i class="mini L">L</i> ${x.t.L}</span></li>`).join('')}</ul>` : ''}
     <button class="btn ghost block" data-act="assist" data-v="off">Esconder a ata</button></section>`;
 }

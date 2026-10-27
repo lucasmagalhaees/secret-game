@@ -304,6 +304,7 @@ with sync_playwright() as p:
     assert g['phase'] == 'over' and g['winner'] in ('L', 'F'), g['log'][-5:]
     laws = sum(1 for e in g['hist'] if e['k'] in ('gov', 'chaos'))
     assert pg.locator('#ata .timeline li.gov').count() == laws and 'Ja!:' in txt('#ata') and pg.locator('#ata .tally li').count() > 0, 'the minutes: every law, and who voted Ja! for it'
+    assert pg.evaluate("getComputedStyle(document.querySelector('#ata .timeline')).listStyleType") == 'none', 'the minutes number the laws once (1ª, 2ª), not twice'
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#showata'); assert pg.locator('#ata').count() == 1
     assert {'vote', 'decree', 'coach'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
