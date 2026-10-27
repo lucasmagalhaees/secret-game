@@ -1,7 +1,8 @@
 /* The rules of the game. Pure: a game comes in and a new one goes out; chance comes in as a function (`rand`), so the
    same seed always plays the same game. An action that is not allowed where the game is returns the same game,
    untouched: the page only offers what is allowed, and a stray tap changes nothing. */
-import type { Event, Game, Law, Level, Party, Player, Role } from './types';
+import type { Event, Game, Law, Level, Pack, Party, Player, Role } from './types';
+import { words } from './words';
 
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
 /** The deck: 17 laws, 11 fascist and 6 liberal, as in the original game. */
@@ -35,13 +36,17 @@ export const powerAt = (g: Game, n: number): Power | undefined => POWERS[boardOf
 
 /** The levels of the players run by the app, easiest first (D10). */
 export const LEVELS: Level[] = ['facil', 'medio', 'dificil', 'extremo'];
-/** Names for the players run by the app (D11): politicians of the 1930s, liberals and fascists mixed. The name says
- *  nothing about the role: roles are dealt at random, so Churchill may well be the fascist. Hitler is not among them
- *  (he is a role). */
-export const BOT_NAMES = ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Blum', 'Mosley', 'Azaña', 'Goebbels', 'Beneš', 'Plínio Salgado', 'Matteotti', 'Quisling'];
-/** A name for one more player run by the app: one of BOT_NAMES not yet at the table, at random (`rand`) or the first. */
-export function botName(names: string[], rand?: () => number): string {
-  const free = BOT_NAMES.filter(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR')));
+/** Names for the players run by the app (D11, D12): well-known politicians of each theme, the two sides mixed. The name
+ *  says nothing about the role: roles are dealt at random, so Churchill may well be the fascist. The leader of the
+ *  hidden side (Hitler, Stalin) is not among them: it is a role. */
+export const BOT_NAMES: Record<Pack, string[]> = {
+  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'De Gaulle', 'Goebbels', 'Truman', 'Göring', 'Eisenhower', 'Himmler', 'Kennedy', 'Salazar'],
+  comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Ho Chi Minh']
+};
+/** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
+ *  first. */
+export function botName(names: string[], rand?: () => number, pack: Pack = 'fascismo'): string {
+  const free = (BOT_NAMES[pack] || BOT_NAMES.fascismo).filter(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR')));
   return free.length ? free[rand ? Math.floor(rand() * free.length) : 0] : `IA ${names.length + 1}`;
 }
 
@@ -64,7 +69,7 @@ export function shuffle<T>(list: readonly T[], rand: () => number): T[] {
 }
 
 export const partyOf = (r: Role): Party => (r === 'liberal' ? 'L' : 'F');
-export const lawName = (l: Law): string => (l === 'L' ? 'liberal' : 'fascista');
+export const lawName = (l: Law, pack?: Pack): string => (l === 'L' ? 'liberal' : words(pack).f);
 
 /** The names of a table, checked: trimmed, none empty, none repeated, between MIN_PLAYERS and MAX_PLAYERS. */
 export function checkNames(names: string[]): { ok: true; names: string[] } | { ok: false; why: 'count' | 'name' | 'dup' } {
@@ -87,7 +92,7 @@ export function addName(names: string[], name: string): { ok: true; names: strin
 /** A new game: roles dealt at random, the deck shuffled, the first president drawn. `ai` marks the seats the app plays,
  *  at `level`. `train` (D11, training against the app): the role the one person at the table wants; the roles are
  *  still dealt at random, and then that seat swaps with one that got it. */
-export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
+export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role; pack?: Pack } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
   const c = checkNames(names);
   if (!c.ok) return c;
   const k = FASCISTS[c.names.length];
@@ -101,7 +106,8 @@ export function newGame(names: string[], rand: () => number, opts: { ai?: boolea
   const level = players.some(p => p.ai) ? { level: opts.level && LEVELS.includes(opts.level) ? opts.level : 'medio' as Level, ...(train ? { train } : {}) } : {};
   const deck = shuffle<Law>([...Array(DECK_F).fill('F'), ...Array(DECK_L).fill('L')], rand);
   const pres = Math.floor(rand() * players.length);
-  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level } };
+  players.forEach(p => { if (p.ai) p.mood = Math.round((rand() * 2 - 1) * 100) / 100; });   // drawn last: the deal stays as it was
+  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level, ...(opts.pack === 'comunismo' ? { pack: opts.pack } : {}) } };
 }
 
 /** What player i is told at the start: the fascists see each other and Hitler; Hitler sees the fascist only at a table
@@ -151,9 +157,9 @@ function enact(g: Game, law: Law, rand: () => number, fromGov: boolean): Game {
   const laws = { ...g.laws, [law]: g.laws[law] + 1 };
   const who = fromGov ? `por ${g.players[g.pres].name} (presidente) e ${g.players[g.chanc as number].name} (chanceler)` : `pelo caos (${TRACKER_MAX} governos seguidos sem lei)`;
   const e: Event = fromGov ? { k: 'gov', pres: g.pres, chanc: g.chanc as number, law, drew: g.drew || [], got: g.hand } : { k: 'chaos', law };
-  const n: Game = refill({ ...g, laws, hand: [], log: [...g.log, `Lei ${lawName(law)} aprovada ${who}.`], hist: note(g, e) }, rand);
+  const n: Game = refill({ ...g, laws, hand: [], log: [...g.log, `Lei ${lawName(law, g.pack)} aprovada ${who}.`], hist: note(g, e) }, rand);
   if (laws.L >= WIN.L) return over(n, 'L', `${WIN.L} leis liberais aprovadas: os liberais vencem.`);
-  if (laws.F >= WIN.F) return over(n, 'F', `${WIN.F} leis fascistas aprovadas: os fascistas vencem.`);
+  if (laws.F >= WIN.F) return over(n, 'F', `${WIN.F} leis ${words(g.pack).fs} aprovadas: os ${words(g.pack).fs} vencem.`);
   const power = law === 'F' && fromGov ? powerAt(n, laws.F) : undefined;
   if (power) return { ...n, phase: power, target: null };
   return newRound(n);
@@ -165,7 +171,7 @@ export function vote(g: Game, elected: boolean, rand: () => number): Game {
   const pres = g.players[g.pres].name, chanc = g.players[g.chanc];
   if (elected) {
     const n: Game = { ...g, tracker: 0, lastPres: g.pres, lastChanc: g.chanc, log: [...g.log, `Governo ${pres} + ${chanc.name} eleito.`] };
-    if (chanc.role === 'hitler' && g.laws.F >= HITLER_ZONE) return over(n, 'F', `Hitler (${chanc.name}) foi eleito chanceler: os fascistas vencem.`);
+    if (chanc.role === 'hitler' && g.laws.F >= HITLER_ZONE) return over(n, 'F', `${words(g.pack).boss} (${chanc.name}) foi eleito chanceler: os ${words(g.pack).fs} vencem.`);
     return { ...n, phase: 'president', hand: n.deck.slice(0, 3), drew: n.deck.slice(0, 3), deck: n.deck.slice(3) };
   }
   return failed({ ...g, log: [...g.log, `Governo ${pres} + ${chanc.name} rejeitado.`], hist: note(g, { k: 'rej', pres: g.pres, chanc: g.chanc }) }, rand);
@@ -241,6 +247,6 @@ export function execute(g: Game, i: number): Game {
   if (g.phase !== 'execute' || !canTarget(g, i)) return g;
   const players = g.players.map((p, j) => (j === i ? { ...p, alive: false } : p));
   const n: Game = { ...g, players, log: [...g.log, `${g.players[g.pres].name} eliminou ${g.players[i].name}.`], hist: note(g, { k: 'exec', by: g.pres, target: i, role: g.players[i].role }) };
-  if (g.players[i].role === 'hitler') return over(n, 'L', `Hitler (${g.players[i].name}) foi eliminado: os liberais vencem.`);
+  if (g.players[i].role === 'hitler') return over(n, 'L', `${words(g.pack).boss} (${g.players[i].name}) foi eliminado: os liberais vencem.`);
   return newRound(n);
 }

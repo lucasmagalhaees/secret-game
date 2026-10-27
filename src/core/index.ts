@@ -3,6 +3,7 @@ import { BOT_NAMES, botName, LEVELS, boardOf, HITLER_KNOWS_UPTO, powerAt, specia
 import { AI, believe, decide, drawOdds } from './ai';
 import { botStep, botTurn, castVotes, claims, hasAi, humansAlive, say, turn, viewOf } from './judge';
 import { readGame, readState } from './save';
+import { PACKS, WORDS, words } from './words';
 import { normEntries, normEntry } from './source';
 
 export const Core = {
@@ -10,6 +11,7 @@ export const Core = {
   seeded, shuffle, partyOf, lawName, addName, checkNames, newGame, knows, revealNext, canNominate, nominate, vote,
   presidentDiscard, chancellorDiscard, canVeto, askVeto, answerVeto, canTarget, specialElect, investigate, investigated, endPower, execute,
   LEVELS, BOT_NAMES, botName, AI, believe, decide, drawOdds, viewOf, turn, botTurn, botStep, castVotes, claims, say, hasAi, humansAlive,
+  PACKS, WORDS, words,
   readGame, readState, normEntry, normEntries
 };
 export type * from './types';

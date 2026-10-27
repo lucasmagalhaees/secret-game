@@ -238,7 +238,7 @@ with sync_playwright() as p:
     pg.click('[data-act=fill][data-n="5"]'); assert 'já tem 7 lugares' in txt('#msg')
     pg.click('[data-act=level][data-v=extremo]')
     assert pg.locator('[data-act=level][data-v=extremo]').get_attribute('aria-pressed') == 'true' and 'Conta as cartas' in txt('#leveltext')
-    assert sum(1 for x in pg.locator('#names li b').all_text_contents() if x in ('Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Blum', 'Mosley', 'Azaña', 'Goebbels', 'Beneš', 'Plínio Salgado', 'Matteotti', 'Quisling')) == 6, 'the app players get names of politicians of the 1930s'
+    assert sum(1 for x in pg.locator('#names li b').all_text_contents() if x in pg.evaluate('window.__APP.Core.BOT_NAMES.fascismo')) == 6, 'the app players get names of well-known politicians'
     pg.click('[data-act=train][data-v=fascista]'); assert 'Você vai ser fascista' in txt('#traintext')
     pg.click('[data-act=assist][data-v=on]'); assert pg.locator('[data-act=assist][data-v=on]').get_attribute('aria-pressed') == 'true'
     pg.locator('#names li').nth(0).locator('[data-act=rmname]').click(); pg.click('[data-act=start]')
@@ -253,6 +253,12 @@ with sync_playwright() as p:
     assert 'Só para os seus olhos' in txt('#phase') and 'Passe o celular' not in txt('#phase') and txt('#phase .who') == 'Lu', 'alone, nobody to pass the phone to'
     pg.click('[data-act=open]'); assert pg.locator('#role').count() == 1 and 'Fascista' in txt('#role') and 'escolheu ser fascista' in txt('#trained'); pg.click('[data-act=hiderole]')
     assert pg.locator('#ata').count() == 1 and 'Nenhuma lei ainda' in txt('#ata')
+    # the notebook: a fascist at a table of 7 knows Hitler and the other fascist; the rest is marked by hand, and kept
+    assert pg.locator('#notes .sure-tag').count() == 2 and pg.locator('#notes [data-act=note]').count() == 4 * 3
+    first = pg.locator('#notes [data-act=note][data-v=L]').first.get_attribute('data-i')
+    pg.locator('#notes [data-act=note][data-v=L]').first.click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
+    pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
+    pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     pg.evaluate('window.__APP.ui.think = 0')
@@ -296,6 +302,7 @@ with sync_playwright() as p:
     for n in ('Ana', 'Bia'): pg.fill('#name', n); pg.press('#name', 'Enter')
     pg.click('[data-act=fill][data-n="7"]'); pg.click('[data-act=level][data-v=facil]')
     pg.evaluate('window.__APP.ui.think = 60000'); pg.click('[data-act=start]')
+    assert pg.evaluate('window.__APP.S.notes') is None, 'a new game starts a clean notebook'
     for who in ('Ana', 'Bia'):
         assert 'Passe o celular para' in txt('#phase') and txt('#phase .who') == who
         pg.click('[data-act=open]'); pg.click('[data-act=hiderole]')
@@ -314,6 +321,37 @@ with sync_playwright() as p:
     assert G()['winner'] in ('L', 'F')
     pg.evaluate("(() => { const g = window.__APP.S.game; g.phase = 'nominate'; g.winner = null; window.__APP.ui.think = 60000; })()"); pg.click('[data-act=help]')
     assert pg.locator('#watching').count() == 1, 'with no person left, the screen says the app plays on'
+    assert pg.locator('#notes').count() == 0, 'with two people at the table there is no notebook: the other one would see it'
+
+    # the communist theme (D12): liberals against communists, Stalin, Da! and Niet!, the wolf and the bear
+    pg.click('[data-act=end]'); pg.click('[data-act=end]')
+    pg.click('[data-act=pack][data-v=comunismo]')
+    reds = pg.evaluate('window.__APP.Core.BOT_NAMES.comunismo')
+    assert txt('#boss') == 'Stalin' and sum(1 for x in pg.locator('#names li b').all_text_contents() if x in reds) == 5, 'the app seats take names of the theme'
+    assert 'Liberais x Comunistas' in txt('#pack') and 'comunistas' in txt('#rules') and 'Stalin' in txt('#rules') and 'fascis' not in (txt('#table') + txt('#solo') + txt('#rules')).lower()
+    for x in list(range(pg.locator('#names li').count())):
+        if pg.locator('#names li').nth(0).locator('small.ai').count() == 0: pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
+        else: break
+    pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
+    pg.fill('#name', 'Lu'); pg.press('#name', 'Enter'); pg.click('[data-act=train][data-v=hitler]'); assert 'Stalin' in txt('#solo')
+    pg.evaluate('window.__APP.ui.think = 0')
+    pg.click('[data-act=start]'); pg.wait_for_selector('[data-act=open]'); pg.click('[data-act=open]')
+    assert 'Stalin' in txt('#role') and pg.locator('#role svg.art').count() == 1 and G()['pack'] == 'comunismo'; pg.click('[data-act=hiderole]')
+    for step in range(600):
+        g = G()
+        if g['laws']['L'] + g['laws']['F'] >= 1 or g['phase'] == 'over': break
+        for sel in ORDER:
+            if pg.locator(sel).count():
+                try: pg.locator(sel).first.click(timeout=2000)
+                except Exception: pass
+                break
+        else:
+            pg.wait_for_timeout(20)
+    body = pg.evaluate('document.body.innerText')
+    assert 'fascis' not in body.lower() and 'Hitler' not in body and 'ja!' not in body.lower() and ('da!' in body.lower() or 'niet!' in body.lower()), [l for l in body.split('\n') if 'fascis' in l.lower() or 'Hitler' in l or 'Ja!' in l][:5]
+    assert 'lei comunista' in txt('#decree').lower() or 'lei liberal' in txt('#decree').lower()
+    assert overflow() == 0; shot(f's7-comunistas-{THEME}.png')
+    pg.click('[data-act=end]'); pg.click('[data-act=end]'); pg.click('[data-act=pack][data-v=fascismo]'); assert txt('#boss') == 'Hitler'
 
     cov.stop(pg, f'e2e-{THEME}')
     assert not errs, errs
@@ -341,4 +379,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes históricos, ata), anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

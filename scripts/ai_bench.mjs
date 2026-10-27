@@ -17,7 +17,7 @@ const { Core } = await import(pathToFileURL(path.join(outDir, 'core.mjs')).href)
 const GAMES = Number(process.argv[2]) || 200, SIZES = [5, 6, 7, 8, 9, 10];
 /** One game with every seat run by the app, each seat at the level `levelOf` gives it. */
 function play(n, seed, levelOf) {
-  const rand = Core.seeded(seed), names = Core.BOT_NAMES.slice(0, n);
+  const rand = Core.seeded(seed), names = Core.BOT_NAMES.fascismo.slice(0, n);
   let g = Core.newGame(names, rand, { ai: names.map(() => true) }).game, steps = 0;
   g = { ...g, players: g.players.map((p, i) => ({ ...p, level: levelOf(p, i) })) };
   while (g.phase !== 'over' && steps < 2000) {

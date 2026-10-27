@@ -20,7 +20,8 @@ Baseado em [Secret Hitler](https://www.secrethitler.com), de Goat, Wolf, & Cabba
 
 - Monta a mesa, sorteia os papéis e mostra cada um em segredo ("passe o celular para…").
 - Conduz as rodadas: indicação, votação, mão do presidente e do chanceler, poderes, veto, caos e fim de jogo. As regras completas estão nos requisitos do [`CLAUDE.md`](CLAUDE.md) e na tela inicial do app.
-- Joga sozinho ou com poucos: a IA ocupa os lugares vazios, em quatro níveis, e cada IA só sabe o que o lugar dela saberia. Dá para treinar escolhendo o próprio papel e ligar uma ata com quem aprovou cada lei.
+- Joga sozinho ou com poucos: a IA ocupa os lugares vazios, em quatro níveis, e cada IA só sabe o que o lugar dela saberia. Dá para treinar escolhendo o próprio papel, ligar uma ata com quem aprovou cada lei e anotar quem é quem.
+- Dois temas: liberais x fascistas (o original) e liberais x comunistas.
 - A partida fica guardada no aparelho. Abre sem internet depois da primeira vez, e avisa quando sai versão nova.
 - Tema automático, claro ou escuro.
 

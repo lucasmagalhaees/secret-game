@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.10.0]
+
+### Adicionado
+- Tema liberais x comunistas: comunistas e Stalin como time escondido, votos Da!/Niet!, lobo branco e urso, estrela nas leis.
+- Anotações da pessoa: marcar cada jogador como Libs, Nazis (ou Coms); o que ela sabe de certeza já vem marcado.
+- Cada IA com um temperamento próprio: os votos variam, menos unanimidade.
+
+### Alterado
+- Nomes das IAs mais conhecidos (Churchill, Roosevelt, Mussolini, Franco…; no tema novo, Lenin, Mao, Fidel, Reagan…).
+- Nível fácil recalibrado.
+
 ## [0.9.0]
 
 ### Adicionado

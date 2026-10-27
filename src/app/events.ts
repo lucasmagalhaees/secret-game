@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { Ask, Game, Level, Role, Theme } from '../core';
+import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
 import { blurField, confetti, decree, flash, render, stamp, toast } from './render';
@@ -93,20 +93,30 @@ function addBots(n: number): void {
   if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
   if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
   blurField();
-  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand)]; ai = [...ai, true]; }
+  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack)]; ai = [...ai, true]; }
   if (names.length > n) { ui.msg = `A mesa já tem ${names.length} lugares.`; }
   else ui.msg = '';
   setTable(names, ai); render();
 }
+/** Another theme (D12): the seats of the app get names of that theme; the people keep theirs. */
+function setPack(pack: Pack | undefined): void {
+  const ai = flags(), names: string[] = S.names.map((x, i) => (ai[i] ? '' : x));
+  for (let i = 0; i < names.length; i++) if (ai[i]) names[i] = Core.botName(names.filter(Boolean), rand, pack);
+  const next = { ...S, names };
+  if (pack) next.pack = pack; else delete next.pack;
+  setS(next); saveS(); render();
+}
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
-  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train });
+  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
+  if (S.notes) { const next = { ...S }; delete next.notes; setS(next); }     // a new game starts a clean notebook
   ui.msg = ''; ui.help = false; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
 }
 function lawMsg(before: Game, after: Game): string {
-  if (after.phase === 'over') return after.winner === 'L' ? 'Os liberais venceram!' : 'Os fascistas venceram!';
-  if (after.laws.F > before.laws.F) return 'Lei fascista aprovada.';
+  const w = Core.words(after.pack);
+  if (after.phase === 'over') return after.winner === 'L' ? 'Os liberais venceram!' : `Os ${w.fs} venceram!`;
+  if (after.laws.F > before.laws.F) return `Lei ${w.f} aprovada.`;
   if (after.laws.L > before.laws.L) return 'Lei liberal aprovada.';
   return '';
 }
@@ -148,6 +158,7 @@ export function initEvents(): void {
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
     else if (a === 'fill') addBots(Number(d.n));
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
+    else if (a === 'pack') setPack(d.v === 'comunismo' ? 'comunismo' : undefined);
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
@@ -158,6 +169,7 @@ export function initEvents(): void {
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
     else if (a === 'help') { ui.help = !ui.help; render(); }
+    else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));

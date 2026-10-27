@@ -2,8 +2,9 @@
    Original caricatures, inline SVG: thick ink outlines, flat colours, big heads and loud faces. The liberals are a
    smug bird in a navy uniform; the fascists are a sneering alligator in a brown uniform and a black peaked cap; Hitler
    gets a card of his own: a cobra with its hood spread, in a long grey coat with a plain red armband, yelling over a
-   lectern. Each figure stands on a soft spotlight so it reads on any card colour, in every style and theme. */
-import type { Law, Role } from '../core';
+   lectern. In the communist theme (D12) the hidden side is a white wolf in a red tunic and its leader a bear with a
+   moustache and a pipe. Each figure stands on a soft spotlight so it reads on any card colour, in every style and theme. */
+import type { Law, Pack, Role } from '../core';
 
 const K = '#1b1512';                  // ink
 const W = '#fffaf0', GOLD = '#e8b730', RED = '#d63c2b', PINK = '#f19a8c';
@@ -104,10 +105,73 @@ const cobra = (): string => {
   <path d="M28 54 l-6 -3 M26 62 l-7 0 M92 54 l6 -3 M94 62 l7 0" fill="none" stroke="${W}" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>`;
 };
 
+/** A communist (D12): a snarling white wolf in a red tunic with a belt and a pointed cloth cap with a red star. */
+const wolf = (): string => {
+  const FUR = '#f4f3ee', FUR2 = '#c9ced3', TUNIC = '#b8322a', TUNIC2 = '#8f241e', CAP = '#6b7a52', CAP2 = '#56633f';
+  return `${spot}
+  <path d="M38 98 C20 104 8 96 6 84 C14 90 22 88 30 84 C20 82 16 74 18 68 C24 78 34 84 42 86Z" fill="${FUR}" ${o()}/>
+  <path d="M14 82 C18 86 24 86 28 84" fill="none" stroke="${FUR2}" stroke-width="2.4"/>
+  <path d="M48 104 L46 114 M42 114 h9 M70 104 L72 114 M68 114 h9" fill="none" stroke="${K}" stroke-width="7" stroke-linecap="round"/>
+  <path d="M48 104 L46 114 M42 114 h9 M70 104 L72 114 M68 114 h9" fill="none" stroke="${FUR}" stroke-width="4" stroke-linecap="round"/>
+  <path d="M34 104 C30 84 36 66 52 60 C64 56 76 60 82 70 C88 82 88 96 84 106 C70 110 48 110 34 104Z" fill="${TUNIC}" ${o()}/>
+  <path d="M56 60 L64 72 L72 60 L66 58 L64 62 L62 58Z" fill="${FUR}" ${o(1.8)}/>
+  <path d="M64 72 V106" fill="none" ${o(1.6)}/>
+  <circle cx="69" cy="82" r="2.4" fill="${GOLD}" ${o(1.2)}/><circle cx="69" cy="92" r="2.4" fill="${GOLD}" ${o(1.2)}/>
+  <path d="M35 96 H86" stroke="${K}" stroke-width="6"/><path d="M35 96 H86" stroke="#3a2a22" stroke-width="3.4"/>
+  <rect x="60" y="92" width="8" height="8" rx="1" fill="${GOLD}" ${o(1.4)}/>
+  <path d="M40 72 C46 66 56 70 56 82 C54 90 46 92 40 88Z" fill="${TUNIC2}" ${o()}/>
+  <path d="M42 89 l-3 6 M46 91 l-1 6 M50 91 l1 6" fill="none" stroke="${FUR}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M42 89 l-3 6 M46 91 l-1 6 M50 91 l1 6" fill="none" ${o(1)}/>
+  <path d="M76 70 l3 3 l-1 -4 l4 -1 l-4 -1 l1 -4 l-3 3 l-3 -3 l1 4 l-4 1 l4 1 l-1 4Z" fill="${GOLD}" ${o(0.8)}/>
+  <path d="M44 42 C42 28 54 20 68 20 C80 20 88 28 90 34 L108 38 C116 40 117 50 110 52 L92 58 C80 62 58 62 50 56 C46 52 44 48 44 42Z" fill="${FUR}" ${o()}/>
+  <path d="M44 44 l-6 -2 l5 6 l-6 2 l7 2 l-4 5 l8 -2" fill="${FUR}" ${o(1.6)}/>
+  <path d="M52 56 C62 60 82 60 94 55 L106 51 C98 53 88 54 74 52 C64 51 56 52 52 56Z" fill="${FUR2}"/>
+  <path d="M74 48 C84 51 98 48 112 46" fill="none" ${o(2.2)}/>
+  <path d="M84 49 l2 6 l2 -6 M100 47 l2 6 l2 -6" fill="${W}" ${o(1.1)}/>
+  <ellipse cx="111" cy="41" rx="4.6" ry="3.6" fill="${K}"/>
+  <ellipse cx="78" cy="34" rx="5.6" ry="4.6" fill="#f6e36b" ${o(1.6)}/><circle cx="79.5" cy="34.5" r="2.2" fill="${K}"/>
+  <path d="M70 26 L86 31" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M60 50 c3 2 6 2 9 0" fill="none" stroke="${FUR2}" stroke-width="2"/>
+  <path d="M44 32 C42 22 50 14 62 2 C70 12 80 18 84 30 C70 26 56 28 44 32Z" fill="${CAP}" ${o()}/>
+  <path d="M62 2 C62 10 62 20 63 28" fill="none" stroke="${CAP2}" stroke-width="2.2"/>
+  <path d="M44 32 C56 28 70 26 84 30 L86 36 C72 32 56 34 44 38Z" fill="${CAP2}" ${o(1.6)}/>
+  <path d="M63 14 l2 4 l4.4 .4 l-3.4 2.8 l1.2 4.3 l-4.2 -2.4 l-4.2 2.4 l1.2 -4.3 l-3.4 -2.8 l4.4 -.4Z" fill="${RED}" ${o(1.2)}/>`;
+};
+
+/** Stalin (D12): a big brown bear with a heavy moustache and a pipe, in a plain khaki tunic with gold shoulder boards
+ *  and a peaked cap with a red star, glowering. */
+const bear = (): string => {
+  const FUR = '#7a5232', FUR2 = '#5c3c22', MUZ = '#d8b48a', TUNIC = '#8a865f', TUNIC2 = '#6f6b48', CAP = '#7d7a55', CAP2 = '#5f5c3d';
+  return `${spot}
+  <path d="M22 116 C20 92 30 74 46 70 L76 70 C92 74 100 92 98 116Z" fill="${TUNIC}" ${o()}/>
+  <path d="M60 72 V116" fill="none" ${o(1.6)}/>
+  <circle cx="64" cy="84" r="2.6" fill="${GOLD}" ${o(1.2)}/><circle cx="64" cy="96" r="2.6" fill="${GOLD}" ${o(1.2)}/><circle cx="64" cy="108" r="2.6" fill="${GOLD}" ${o(1.2)}/>
+  <path d="M40 86 h12 v8 h-12Z M70 86 h12 v8 h-12Z" fill="${TUNIC2}" ${o(1.6)}/>
+  <path d="M26 76 l16 -4 l2 6 l-16 4Z M94 76 l-16 -4 l-2 6 l16 4Z" fill="${GOLD}" ${o(1.3)}/>
+  <path d="M48 70 L60 78 L72 70" fill="none" ${o(2)}/>
+  <circle cx="36" cy="22" r="10" fill="${FUR}" ${o()}/><circle cx="36" cy="22" r="5" fill="${FUR2}"/>
+  <circle cx="84" cy="22" r="10" fill="${FUR}" ${o()}/><circle cx="84" cy="22" r="5" fill="${FUR2}"/>
+  <path d="M30 44 C28 24 42 14 60 14 C78 14 92 24 90 44 C88 62 76 72 60 72 C44 72 32 62 30 44Z" fill="${FUR}" ${o()}/>
+  <ellipse cx="60" cy="52" rx="17" ry="13" fill="${MUZ}" ${o(2)}/>
+  <ellipse cx="60" cy="45" rx="6" ry="4.4" fill="${K}"/>
+  <path d="M38 56 C44 48 54 50 60 52 C66 50 76 48 82 56 C76 58 68 56 60 58 C52 56 44 58 38 56Z" fill="#2a1d14" ${o(1.6)}/>
+  <path d="M54 62 C58 64 62 64 66 62" fill="none" ${o(2)}/>
+  <path d="M66 62 L84 66 L86 62 L92 62 C96 62 98 66 96 70 C94 74 88 74 86 70 L84 70 L64 66Z" fill="#4a2e1c" ${o(1.6)}/>
+  <path d="M94 58 c-2 -4 2 -6 0 -10 M99 56 c-2 -4 2 -6 0 -10" fill="none" stroke="${W}" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+  <ellipse cx="50" cy="38" rx="4.6" ry="3.8" fill="${W}" ${o(1.4)}/><circle cx="51" cy="38.6" r="2.2" fill="${K}"/>
+  <ellipse cx="70" cy="38" rx="4.6" ry="3.8" fill="${W}" ${o(1.4)}/><circle cx="69" cy="38.6" r="2.2" fill="${K}"/>
+  <path d="M42 30 L56 35 M78 30 L64 35" fill="none" stroke="${K}" stroke-width="4" stroke-linecap="round"/>
+  <path d="M36 26 C34 6 86 6 84 26Z" fill="${CAP}" ${o()}/>
+  <path d="M37 24 H83" stroke="${CAP2}" stroke-width="3.4"/>
+  <path d="M34 26 H86 C84 31 74 32 60 32 C46 32 36 31 34 26Z" fill="#2b2a22" ${o(1.8)}/>
+  <path d="M60 10 l2 4 l4.4 .4 l-3.4 2.8 l1.2 4.3 l-4.2 -2.4 l-4.2 2.4 l1.2 -4.3 l-3.4 -2.8 l4.4 -.4Z" fill="${RED}" ${o(1.2)}/>`;
+};
+
 const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox="0 0 120 120" aria-hidden="true" focusable="false">${body}</svg>`;
 
-/** The big picture on a role card. */
-export const portrait = (r: Role): string => svg(r === 'liberal' ? bird() : r === 'hitler' ? cobra() : gator(), 'art');
+/** The big picture on a role card. In the communist theme (D12) the hidden side is the wolf and its leader the bear. */
+export const portrait = (r: Role, pack: Pack = 'fascismo'): string => svg(r === 'liberal' ? bird() : pack === 'comunismo' ? (r === 'hitler' ? bear() : wolf()) : r === 'hitler' ? cobra() : gator(), 'art');
 
-/** The seal of a party on law cards and on the board: a symbol, not a character (the scales and the skull). */
-export const seal = (p: Law): string => `<span class="glyph" aria-hidden="true">${p === 'L' ? '⚖' : '☠'}</span>`;
+/** The seal of a party on law cards and on the board: a symbol, not a character (the scales; the skull, or the star in
+ *  the communist theme). */
+export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<span class="glyph" aria-hidden="true">${p === 'L' ? '⚖' : pack === 'comunismo' ? '★' : '☠'}</span>`;
