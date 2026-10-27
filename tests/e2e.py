@@ -269,6 +269,13 @@ with sync_playwright() as p:
     assert pg.locator('#players .meter').count() == 0
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
+    # the reasoning of the app players (D16): during the game, only after a warning, since it shows the roles
+    assert not pg.locator('#mind').is_visible(); pg.click('#mindtoggle')
+    assert pg.locator('#mind').is_visible() and 'Estraga a partida' in txt('#mind') and pg.locator('#mind .role').count() == 0, 'a warning first, no role on screen'
+    pg.click('#mindon'); assert pg.evaluate('window.__APP.S.debug') is True and pg.locator('#mind .mind-who button').count() == 6 and pg.locator('#mind .mind-bel li').count() == 6, 'then each app player, and what it thinks of each other seat'
+    assert 'Lu (você)' in txt('#mind .mind-bel') and 'Por que' in txt('#mind') and 'No começo' in txt('#mind .mind-trail'), txt('#mind')
+    assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0; shot(f's5-raciocinio-{THEME}.png')
+    pg.click('#mindtoggle'); assert not pg.locator('#mind').is_visible()
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     pg.evaluate('window.__APP.ui.think = 0')
@@ -314,6 +321,18 @@ with sync_playwright() as p:
     if crux: assert 'ponto crucial' in txt('#crux-end').lower() and f"{round(crux['after'] * 100)}%" in txt('#crux-end')
     assert pg.locator('#summary').count() == 1 and pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
+    # at the end, the reasoning opens freely: every decision of the chosen app player, with its reason and the options weighed
+    pg.evaluate('(() => { delete window.__APP.S.debug; })()'); pg.click('#mindtoggle'); assert 'Estraga' not in txt('#mind')
+    for k in range(2):
+        seat = int(pg.locator('#mind .mind-who button').nth(k).get_attribute('data-i')); pg.locator('#mind .mind-who button').nth(k).click()
+        mine = pg.evaluate(f'window.__APP.S.game.trace.filter(t => t.seat === {seat}).length')
+        assert mine > 0 and pg.locator('#mind .mind-log > li').count() == mine, (seat, mine)
+    assert pg.locator('#mind .mind-rows').count() > 0 and pg.locator('#mind .mind-rows tr.on').count() > 0, 'the options it compared, the chosen one marked'
+    other = pg.locator('#mind .mind-bel button').nth(1); pick = other.get_attribute('data-i'); other.click()
+    assert pg.locator(f'#mind .mind-bel li.on [data-i="{pick}"]').count() == 1
+    mind = txt('#mind'); assert '{p' not in mind and '{f' not in mind and 'undefined' not in mind and 'NaN' not in mind, mind[:400]
+    assert pg.locator('#mind .mind-trail li').count() >= 1 and (pg.locator('#mind .mind-trail li').count() == 1 or '→' in txt('#mind .mind-trail'))
+    shot(f's6-raciocinio-fim-{THEME}.png'); pg.click('#mindtoggle')
 
     # two people and three app players: the people vote one by one, then the votes open; and if both are out, the app plays on
     pg.click('[data-act=table]')
@@ -398,4 +417,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo, ponto crucial), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo, ponto crucial, raciocínio das IAs), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

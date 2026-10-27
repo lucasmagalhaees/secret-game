@@ -171,6 +171,10 @@ export function initEvents(): void {
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
     else if (a === 'help') { ui.help = !ui.help; render(); }
+    else if (a === 'mind') { ui.mind = !ui.mind; render(); }
+    else if (a === 'debug') { const next = { ...S }; if (d.v === 'on') next.debug = true; else { delete next.debug; ui.mind = false; } setS(next); saveS(); render(); }
+    else if (a === 'mindseat') { ui.mindSeat = i; ui.mindOf = null; render(); }
+    else if (a === 'mindof') { ui.mindOf = i; render(); }
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
     else if (a === 'notesopen') { const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }

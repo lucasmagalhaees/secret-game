@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Role } from '../core';
+import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Role, Trace } from '../core';
 import { portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { S, ui } from './state';
@@ -101,7 +101,7 @@ function vGame(g: Game): string {
   entering = key !== seenPhase; seenPhase = key;
   const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek', 'talk'].includes(bot.ask) ? bot : null;   // talk and claims happen beside the phase, not instead of it
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
-  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + vCoach(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + vDrawer(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
+  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + vCoach(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + vDrawer(g) + vMind(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -325,6 +325,70 @@ function vDrawer(g: Game): string {
   return `<button class="drawer-tab${open ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${open}" aria-controls="drawer">${open ? '✕' : '✎'}<span>Anotações${n ? ` · ${n}` : ''}</span></button>
     <aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê. O que você sabe de certeza já vem marcado.</p><ul class="names noted" id="notes">${rows}</ul></aside>`;
 }
+/* ---------- the reasoning of the app players (D16), to find bugs ----------
+   What each one believes of everyone now, how that changed and with what, and why it made each decision. It shows the
+   roles, so during the game it opens only after a warning (S.debug); at the end, freely. */
+const of3w = (n: number): string => (n === 0 ? '3 liberais' : n === 3 ? '3 {fs}' : n === 1 ? '1 {f} e 2 liberais' : '2 {fs} e 1 liberal');
+const of2w = (n: number): string => (n === 0 ? '2 liberais' : n === 2 ? '2 {fs}' : '1 {f} e 1 liberal');
+const lawsW = (h: Law[]): string => h.map(l => `<i class="mini ${l}">${l}</i>`).join('');
+/** What a decision was, in words. */
+function traceLabel(g: Game, t: Trace): string {
+  const e = g.hist[t.at], p = (i: number): string => (g.players[i] ? `<b>${name(g, i)}</b>` : '?');
+  switch (t.ask) {
+    case 'vote': return `Votou ${t.a === 1 ? '{ja}' : '{nein}'}${e && e.k === 'vote' ? ` no governo ${p(e.pres)} + ${p(e.chanc)}` : ''}`;
+    case 'nominate': return `Indicou ${p(t.a)} para chanceler`;
+    case 'pdiscard': return t.hand ? `Presidente, tirou ${lawsW(t.hand)} e descartou ${lawsW([t.hand[t.a]])}` : 'Descartou uma lei';
+    case 'cdiscard': return t.a === 2 ? `Chanceler, recebeu ${lawsW(t.hand || [])} e pediu veto` : t.hand ? `Chanceler, recebeu ${lawsW(t.hand)} e aprovou ${lawsW([t.hand[1 - t.a]])}` : 'Aprovou uma lei';
+    case 'veto': return t.a === 1 ? 'Aceitou o veto' : 'Recusou o veto';
+    case 'investigate': return `Investigou ${p(t.a)}`;
+    case 'special': return `Deu a presidência a ${p(t.a)} (eleição especial)`;
+    case 'execute': return `Eliminou ${p(t.a)}`;
+    case 'pc': return `Disse que tirou ${of3w(t.a)}`;
+    case 'cc': return `Disse que recebeu ${of2w(t.a)}`;
+    case 'inv': return `Disse que o investigado é ${t.a === 1 ? '{f}' : 'liberal'}`;
+    case 'peek': return `Disse que as próximas têm ${t.a} ${t.a === 1 ? '{f}' : '{fs}'}`;
+    case 'talk': return t.a === Core.QUIET ? 'Ficou calada na conversa' : `Disse à mesa: "${t.a % 2 ? 'Confio em' : 'Desconfio de'} ${name(g, t.a >> 1)}"`;
+    default: return t.ask;
+  }
+}
+/** A reason, with the names of the seats in it. */
+const whyText = (g: Game, line: string): string => line.replace(/\{p(\d+)\}/g, (_, i: string) => (g.players[+i] ? `<b>${name(g, +i)}</b>` : '?'));
+let trailCache: { key: string; seat: number; t: ReturnType<typeof Core.trail> } | null = null;
+function trailOf(g: Game, seat: number): ReturnType<typeof Core.trail> {
+  const key = `${g.log.length}:${g.hist.length}`;
+  if (!trailCache || trailCache.key !== key || trailCache.seat !== seat) trailCache = { key, seat, t: Core.trail(g, seat) };
+  return trailCache.t;
+}
+const signed = (d: number): string => `${d >= 0 ? '+' : '−'}${Math.round(Math.abs(d) * 100)}`;
+function vMind(g: Game): string {
+  if (!Core.hasAi(g)) return '';
+  const open = ui.mind, over = g.phase === 'over', bots = g.players.map((p, i) => (p.ai ? i : -1)).filter(i => i >= 0);
+  const tab = `<button class="drawer-tab mind-tab${open ? ' open' : ''}" data-act="mind" id="mindtoggle" aria-expanded="${open}" aria-controls="mind">${open ? '✕' : '🧠'}<span>Raciocínio das IAs</span></button>`;
+  if (!open) return `${tab}<aside class="drawer mind" id="mind" aria-label="Raciocínio das IAs"></aside>`;
+  if (!over && !S.debug) {
+    return `${tab}<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span><p>Mostra o que cada IA pensa e por que fez cada jogada, para achar bug.</p><p class="hint"><b>Estraga a partida:</b> aparecem os papéis de todos, as mãos de leis e as mentiras. No fim do jogo abre sem aviso.</p><button class="btn block" data-act="debug" data-v="on" id="mindon">Mostrar mesmo assim</button></aside>`;
+  }
+  const seat = ui.mindSeat !== null && bots.includes(ui.mindSeat) ? ui.mindSeat : bots[0];
+  const p = g.players[seat], k = Core.AI[(p.level || g.level || 'medio') as Level], mood = p.mood ?? 0, me = solo(g);
+  const pick = `<div class="pick mind-who">${bots.map(i => `<button class="btn ghost${i === seat ? ' on' : ''}" data-act="mindseat" data-i="${i}" aria-pressed="${i === seat}">${name(g, i)} <span class="role ${Core.partyOf(g.players[i].role)}">${role(g.players[i].role)}</span></button>`).join('')}</div>`;
+  const tr = trailOf(g, seat), now = tr[tr.length - 1], others = g.players.map((_, i) => i).filter(i => i !== seat);
+  const knows = Core.viewOf(g, seat, 'vote', [1, 0]).known;
+  const of = ui.mindOf !== null && others.includes(ui.mindOf) ? ui.mindOf : me >= 0 && me !== seat ? me : others[0];
+  const bel = others.sort((a, b) => now.f[b] - now.f[a]).map(i => `<li class="${g.players[i].alive ? '' : 'dead'}${i === of ? ' on' : ''}"><button data-act="mindof" data-i="${i}" aria-pressed="${i === of}"><span class="who">${name(g, i)}${i === me ? ' <small>(você)</small>' : ''} <span class="role ${Core.partyOf(g.players[i].role)}">${role(g.players[i].role)}</span>${knows[i] ? ' <small>sabe</small>' : ''}</span><span class="meter"><i style="width:${Math.round(now.f[i] * 100)}%"></i><b>${pct(now.f[i])}</b></span><small class="boss">{boss} ${pct(now.h[i])}</small></button></li>`).join('');
+  const steps = tr.slice(1).map((x, j) => ({ at: x.at, before: tr[j].f[of], after: x.f[of], hb: tr[j].h[of], ha: x.h[of] })).filter(x => Math.abs(x.after - x.before) >= 0.005 || Math.abs(x.ha - x.hb) >= 0.005);
+  const story = `<ol class="mind-trail"><li><span>No começo (sem saber nada além do próprio papel${knows.some((r, i) => r && i !== seat) ? ' e do time' : ''})</span><b class="d">${pct(tr[0].f[of])}</b></li>${steps.map(x => `<li class="${x.after > x.before ? 'up' : 'down'}"><span>${moment(g, x.at, me)}</span><b class="d">${pct(x.before)} → ${pct(x.after)} <small>(${signed(x.after - x.before)})</small></b>${Math.abs(x.ha - x.hb) >= 0.005 ? `<small class="d">{boss}: ${pct(x.hb)} → ${pct(x.ha)}</small>` : ''}</li>`).join('')}</ol>`;
+  const mine = (g.trace || []).filter(t => t.seat === seat).reverse();
+  const table = (t: Trace): string => (t.why.rows && t.why.rows.length ? `<table class="mind-rows"><tr><th></th><th>{f}</th><th>{boss}</th>${t.why.rows.some(r => r.v !== undefined) ? '<th>conta</th>' : ''}</tr>${t.why.rows.map(r => `<tr${r.seat === t.a || (t.ask === 'talk' && r.seat === t.a >> 1) ? ' class="on"' : ''}><td>${name(g, r.seat)}</td><td>${pct(r.f)}</td><td>${pct(r.h)}</td>${r.v !== undefined ? `<td>${r.v.toFixed(2)}</td>` : ''}</tr>`).join('')}</table>` : '');
+  const decisions = mine.length ? `<ol class="mind-log">${mine.map(t => `<li><b class="what">${traceLabel(g, t)}</b>${t.why.text.map(l => `<p>${whyText(g, l)}</p>`).join('')}${table(t)}</li>`).join('')}</ol>` : '<p class="hint">Nenhuma decisão ainda.</p>';
+  const head = `<p class="mind-head"><b>${name(g, seat)}</b> · <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span> · ${LEVEL[(p.level || g.level || 'medio') as Level][0]} · ${mood > 0.15 ? 'confiante' : mood < -0.15 ? 'desconfiada' : 'equilibrada'} (${mood >= 0 ? '+' : '−'}${Math.abs(mood).toFixed(2)})${p.alive ? '' : ' · eliminada'}</p>
+    <p class="hint">Lembra ${k.memory >= 99 ? 'de tudo' : `dos últimos ${k.memory} governos, investigações e eliminações`} · acha que quem é do lado escondido mente ${pct(k.lie)} das vezes · ${k.count ? 'conta' : 'não conta'} as leis que ainda podem sair · decide sem pensar ${pct(k.noise)} das vezes${p.role === 'liberal' ? '' : ` · mente ${pct(k.act)} das vezes`}.</p>`;
+  return `${tab}<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span>${pick}${head}
+    <span class="label">O que ${name(g, seat)} acha de cada um agora</span><p class="hint">Chance de ser do lado escondido (a barra) e de ser o {boss}. Toque num nome para ver por que.${knows.filter(Boolean).length > 1 ? ' Quem está marcado com "sabe" ela conhece pela regra, e as contas dela usam isso.' : ''}</p><ul class="names mind-bel">${bel}</ul>
+    <span class="label">Por que ${name(g, seat)} pensa isso de ${of === me ? 'você' : name(g, of)}</span><p class="hint">Cada momento que mexeu na conta, com antes e depois.${k.memory < 99 ? ` Ela esquece o que passou de ${k.memory} eventos, então um número também pode mudar porque algo antigo saiu da memória.` : ''}</p>${story}
+    <span class="label">Decisões de ${name(g, seat)}, da última para a primeira</span>${decisions}
+    ${over ? '' : '<button class="btn ghost block" data-act="debug" data-v="off">Esconder o raciocínio</button>'}</aside>`;
+}
+
 /** The minutes, with assistance on (D11): every law, the government that made it and who voted Ja! for that
  *  government, and the count for each player. Only what the whole table saw: never a hand, a party or a role. */
 function vAta(g: Game): string {

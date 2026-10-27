@@ -10,7 +10,7 @@
    still in the deck. A fascist knows its team and plays for it, lying about its hand when the truth would give it away;
    Hitler, when he does not know his team, plays like a liberal so he can be elected later. */
 import { DECK_F, DECK_L, HITLER_ZONE, TRACKER_MAX } from './game';
-import type { Law, Level, Party, Role, Seen, View } from './types';
+import type { Law, Level, Party, Role, Seen, View, Why } from './types';
 
 /** What each level does differently:
  *  - noise: how often it picks someone or votes without thinking (a random option);
@@ -175,6 +175,18 @@ export function believe(v: View, outside = false): Beliefs {
 /** The chance that at least one of these seats is a fascist. */
 export const risk = (b: Beliefs, seats: number[]): number => b.worlds.reduce((a, x) => a + (seats.some(i => fasc(x.roles[i])) ? x.w : 0), 0);
 
+/* ---------- explaining (D16) ----------
+   While a decision is made, what weighed in it is written down: the sentences and the options compared. Writing it
+   down never changes the decision; outside decideWhy nothing is written. */
+let ex: Why | null = null;
+const P = (i: number): string => `{p${i}}`;
+const pc = (x: number): string => `${Math.round(x * 100)}%`;
+const why = (line: string): void => { if (ex) ex.text.push(line); };
+const rows = (b: Beliefs, seats: number[], score?: (i: number) => number): void => {
+  if (ex) ex.rows = seats.map(i => ({ seat: i, f: b.pF[i], h: b.pH[i], ...(score ? { v: score(i) } : {}) }));
+};
+const nmF = (n: number, of: number): string => (of === 3 ? ['3 liberais', '1 {f} e 2 liberais', '2 {fs} e 1 liberal', '3 {fs}'] : ['2 liberais', '1 {f} e 1 liberal', '2 {fs}'])[n] ?? `${n}`;
+
 /* ---------- deciding ---------- */
 /** The option with the lowest score; ties go to chance. */
 function best(options: number[], score: (i: number) => number, rand: () => number): number {
@@ -194,8 +206,14 @@ function liberalJa(v: View, b: Beliefs): boolean {
   base = pairs ? base / pairs : 1;
   // the temper of this player: the wary one wants a government clearly cleaner than most, the trusting one goes along
   const slack = 0.05 + MOOD * v.mood + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
-  if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) return false;
-  return risk(b, gov.filter(i => i !== v.me)) <= base + slack;
+  rows(b, gov.filter(i => i !== v.me));
+  if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) {
+    why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);
+    return false;
+  }
+  const r = risk(b, gov.filter(i => i !== v.me)), ok = r <= base + slack;
+  why(`Chance de ter alguém do lado escondido neste governo: ${pc(r)}. Num par qualquer da mesa: ${pc(base)}. Aceita até ${pc(base + slack)} (folga de 5%, ${v.mood >= 0 ? '+' : ''}${pc(MOOD * v.mood)} do temperamento${v.tracker === TRACKER_MAX - 1 ? ', +20% porque mais uma rejeição traz o caos' : ''}): ${ok ? '{ja}' : '{nein}'}`);
+  return ok;
 }
 
 /** The last government (or investigation, or spying) this seat was part of, for what it says about it. */
@@ -209,12 +227,23 @@ function lastOwn<K extends Seen['k']>(v: View, kinds: K[], who: (e: Extract<Seen
 
 /** The answer of this player to the question in its view: always one of `v.options`. */
 export function decide(v: View, rand: () => number): number {
+  return decideWhy(v, rand).a;
+}
+/** The same answer, with why it was given (D16). The decision is the same as decide's, draw for draw. */
+export function decideWhy(v: View, rand: () => number): { a: number; why: Why } {
+  ex = { text: [] };
+  try {
+    const a = decideIn(v, rand);
+    return { a, why: ex };
+  } finally { ex = null; }
+}
+function decideIn(v: View, rand: () => number): number {
   const k = AI[v.level], o = v.options;
   if (!o.length) return -1;
   if (v.ask === 'talk') return speak(v, rand);
   const talk = v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek';
   const hand = v.ask === 'pdiscard' || v.ask === 'cdiscard' || v.ask === 'veto';
-  if (!talk && rand() < (hand ? k.slip : k.noise)) return o[Math.floor(rand() * o.length)];
+  if (!talk && rand() < (hand ? k.slip : k.noise)) { why(`Decidiu sem pensar: o nível erra ${pc(hand ? k.slip : k.noise)} das vezes ${hand ? 'na lei que descarta' : 'em quem escolhe e como vota'}.`); return o[Math.floor(rand() * o.length)]; }
   const team = fasc(v.role), all = team && v.known.every(r => r !== null);
   const allies = all ? v.known.map((r, i) => (r && fasc(r) && i !== v.me ? i : -1)).filter(i => i >= 0) : [];
   const hitler = v.known.indexOf('hitler');
@@ -227,39 +256,56 @@ export function decide(v: View, rand: () => number): number {
  *  vouches for a teammate. The easy level talks less. */
 function speak(v: View, rand: () => number): number {
   const k = AI[v.level], o = v.options, others = v.alive.map((a, i) => (a && i !== v.me ? i : -1)).filter(i => i >= 0);
-  if (!others.length || rand() < (v.level === 'facil' ? 0.5 : 0.15)) return QUIET;
+  if (!others.length || rand() < (v.level === 'facil' ? 0.5 : 0.15)) { why('Ficou calada desta vez.'); return QUIET; }
   const base = v.fascists / Math.max(1, v.n - 1), all = fasc(v.role) && v.known.every(r => r !== null);
   const pick = (i: number, trust: boolean): number => { const a = 2 * i + (trust ? 1 : 0); return o.includes(a) ? a : QUIET; };
   if (all) {
     const pub = believe(v, true), libs = others.filter(i => v.known[i] === 'liberal'), mates = others.filter(i => v.known[i] !== 'liberal');
     const target = best(libs, i => -pub.pF[i], rand);
-    if (libs.length && (pub.pF[target] >= base || rand() < k.act * 0.5)) return pick(target, false);
-    if (mates.length && rand() < 0.5) return pick(best(mates, i => pub.pF[i], rand), true);
+    rows(pub, others);
+    if (libs.length && (pub.pF[target] >= base || rand() < k.act * 0.5)) { why(`É do lado escondido e sabe quem é liberal. Engrossou a desconfiança sobre ${P(target)}, o liberal de quem a mesa mais desconfia (${pc(pub.pF[target])}, pelo que todos viram).`); return pick(target, false); }
+    if (mates.length && rand() < 0.5) { const m = best(mates, i => pub.pF[i], rand); why(`É do lado escondido: abonou ${P(m)}, um aliado.`); return pick(m, true); }
+    why('É do lado escondido e preferiu não chamar atenção.');
     return QUIET;
   }
   const b = believe(v), free = others.filter(i => v.known[i] === null);
   if (!free.length) return QUIET;
   const worst = best(free, i => -b.pF[i], rand), clean = best(free, i => b.pF[i], rand);
-  if (b.pF[worst] >= base + 0.2) return pick(worst, false);
-  if (b.pF[clean] <= base * 0.5) return pick(clean, true);
+  rows(b, free);
+  if (b.pF[worst] >= base + 0.2) { why(`Disse o que acha: ${P(worst)} é de quem mais desconfia (${pc(b.pF[worst])}; num lugar qualquer seria ${pc(base)}).`); return pick(worst, false); }
+  if (b.pF[clean] <= base * 0.5) { why(`Disse o que acha: ${P(clean)} é quem parece mais limpo (${pc(b.pF[clean])}; num lugar qualquer seria ${pc(base)}).`); return pick(clean, true); }
+  why('Ninguém se destaca o bastante para acusar ou abonar: ficou calada.');
   return QUIET;
 }
 
 /** A liberal: plays its side by what it believes. */
 function liberal(v: View, rand: () => number): number {
   const o = v.options;
-  if (v.ask === 'pdiscard') return Math.max(0, v.hand.indexOf('F'));
-  if (v.ask === 'cdiscard') return nF(v.hand) === 2 ? (o.includes(2) && v.tracker < TRACKER_MAX - 1 ? 2 : 0) : Math.max(0, v.hand.indexOf('F'));
-  if (v.ask === 'veto') return nF(v.hand) === 2 && v.tracker < TRACKER_MAX - 1 ? 1 : 0;
-  if (v.ask === 'pc') { const e = lastOwn(v, ['gov', 'veto'], e => e.pres === v.me); return e?.drew ? nF(e.drew) : -1; }
-  if (v.ask === 'cc') { const e = lastOwn(v, ['gov', 'veto'], e => e.chanc === v.me); return e?.got ? nF(e.got) : -1; }
-  if (v.ask === 'inv') { const e = lastOwn(v, ['inv'], e => e.by === v.me); return e?.party === 'F' ? 1 : 0; }
-  if (v.ask === 'peek') { const e = lastOwn(v, ['peek'], e => e.by === v.me); return e?.saw ? nF(e.saw) : -1; }
+  if (v.ask === 'pdiscard') { why(v.hand.includes('F') ? 'É liberal: jogou fora uma lei {f} e passou o melhor que tinha.' : 'Só tinha liberais: qualquer uma.'); return Math.max(0, v.hand.indexOf('F')); }
+  if (v.ask === 'cdiscard') {
+    if (nF(v.hand) === 2) { const veto = o.includes(2) && v.tracker < TRACKER_MAX - 1; why(veto ? 'Recebeu 2 {fs}: pediu veto (o caos ainda não está perto).' : `Recebeu 2 {fs}: não tinha como evitar${o.includes(2) ? ' (veto arriscaria o caos)' : ''}.`); return veto ? 2 : 0; }
+    why(v.hand.includes('L') ? 'É liberal: aprovou a liberal.' : 'Sem escolha.'); return Math.max(0, v.hand.indexOf('F'));
+  }
+  if (v.ask === 'veto') { const yes = nF(v.hand) === 2 && v.tracker < TRACKER_MAX - 1; why(nF(v.hand) === 2 ? (yes ? 'Passou 2 {fs} mesmo: aceitou o veto.' : 'Passou 2 {fs}, mas o veto traria o caos: recusou.') : 'Sabe que passou uma liberal: o chanceler quer vetar sem motivo. Recusou.'); return yes ? 1 : 0; }
+  if (v.ask === 'pc') { const e = lastOwn(v, ['gov', 'veto'], e => e.pres === v.me); why(`É liberal: disse a verdade${e?.drew ? `, ${nmF(nF(e.drew), 3)}` : ''}.`); return e?.drew ? nF(e.drew) : -1; }
+  if (v.ask === 'cc') { const e = lastOwn(v, ['gov', 'veto'], e => e.chanc === v.me); why(`É liberal: disse a verdade${e?.got ? `, ${nmF(nF(e.got), 2)}` : ''}.`); return e?.got ? nF(e.got) : -1; }
+  if (v.ask === 'inv') { const e = lastOwn(v, ['inv'], e => e.by === v.me); why('É liberal: disse o que viu.'); return e?.party === 'F' ? 1 : 0; }
+  if (v.ask === 'peek') { const e = lastOwn(v, ['peek'], e => e.by === v.me); why('É liberal: disse o que viu.'); return e?.saw ? nF(e.saw) : -1; }
   const b = believe(v);
-  if (v.ask === 'vote') return v.pres === v.me || v.chanc === v.me || liberalJa(v, b) ? 1 : 0;
-  if (v.ask === 'nominate') return best(o, i => b.pF[i] + (v.laws.F >= HITLER_ZONE ? 2 * b.pH[i] : 0), rand);
-  if (v.ask === 'investigate') return best(o, i => -(b.pF[i] * (1 - b.pF[i])) - b.pF[i] / 100, rand);
-  if (v.ask === 'special') return best(o, i => b.pF[i], rand);
+  if (v.ask === 'vote') { if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; } return liberalJa(v, b) ? 1 : 0; }
+  if (v.ask === 'nominate') {
+    const zone = v.laws.F >= HITLER_ZONE, score = (i: number): number => b.pF[i] + (zone ? 2 * b.pH[i] : 0);
+    rows(b, o, score); why(`Indicou quem parece mais limpo: menor chance de ser do lado escondido${zone ? ', contando em dobro a chance de ser o {boss} (já há 3 leis {fs})' : ''}.`);
+    return best(o, score, rand);
+  }
+  if (v.ask === 'investigate') {
+    const score = (i: number): number => -(b.pF[i] * (1 - b.pF[i])) - b.pF[i] / 100;
+    rows(b, o, i => b.pF[i] * (1 - b.pF[i]));
+    why('Investigou de quem tinha mais dúvida: a chance mais perto de 50%, onde ver o partido ensina mais (investigar quem já parece limpo ou culpado quase não muda o que ela sabe). No empate, pende para o mais suspeito.');
+    return best(o, score, rand);
+  }
+  if (v.ask === 'special') { rows(b, o); why('Escolheu para presidente quem parece mais limpo.'); return best(o, i => b.pF[i], rand); }
+  rows(b, o, i => b.pH[i] + 0.3 * b.pF[i]); why('Eliminou quem tem mais chance de ser o {boss} (e, depois, de ser do lado escondido).');
   return best(o, i => -(b.pH[i] + 0.3 * b.pF[i]), rand);                   // execute
 }
 
@@ -270,21 +316,26 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
     const e = lastOwn(v, ['gov', 'veto'], e => e.pres === v.me);
     if (!e?.drew || !e.got) return -1;
     const d = nF(e.drew), m = nF(e.got), law = e.k === 'veto' ? undefined : e.law, story = presStory(d, m, law);
-    return story !== d && rand() < act ? story : d;
+    const lie = story !== d && rand() < act;
+    why(story === d ? `Disse a verdade (${nmF(d, 3)}): não a entrega.` : lie ? `Tirou ${nmF(d, 3)} e passou ${nmF(m, 2)}; a verdade a entregaria. Mentiu: ${nmF(story, 3)}, a história que faz o que passou parecer forçado.` : `A verdade (${nmF(d, 3)}) a entrega, mas ela não mentiu desta vez (o nível mente ${pc(act)} das vezes).`);
+    return lie ? story : d;
   }
   if (v.ask === 'cc') {
     const e = lastOwn(v, ['gov', 'veto'], e => e.chanc === v.me);
     if (!e?.got) return -1;
     const m = nF(e.got), story = chancStory(m, e.k === 'veto' ? undefined : e.law);
-    return story !== m && rand() < act ? story : m;
+    const lie = story !== m && rand() < act;
+    why(story === m ? `Disse a verdade (${nmF(m, 2)}).` : lie ? `Recebeu ${nmF(m, 2)} e aprovou a {f}. Mentiu: ${nmF(story, 2)}, para parecer que não teve escolha.` : `A verdade a entrega, mas não mentiu desta vez (o nível mente ${pc(act)} das vezes).`);
+    return lie ? story : m;
   }
   if (v.ask === 'inv') {
     const e = lastOwn(v, ['inv'], e => e.by === v.me);
     if (!e?.party) return 0;
-    if (e.party === 'F' || isAlly(e.target)) return rand() < act ? 0 : 1;   // covers a teammate
-    return rand() < act / 2 ? 1 : 0;                                          // frames a liberal, now and then
+    if (e.party === 'F' || isAlly(e.target)) { const cover = rand() < act; why(cover ? `Viu que ${P(e.target)} é do lado escondido e mentiu: disse liberal, para cobrir o aliado.` : `Viu que ${P(e.target)} é do lado escondido e não mentiu desta vez.`); return cover ? 0 : 1; }   // covers a teammate
+    const frame = rand() < act / 2; why(frame ? `Viu que ${P(e.target)} é liberal e mentiu: disse {f}, para incriminar.` : `Viu que ${P(e.target)} é liberal e disse a verdade.`); return frame ? 1 : 0;   // frames a liberal, now and then
   }
   const e = lastOwn(v, ['peek'], e => e.by === v.me);
+  why('Disse a verdade sobre as próximas leis.');
   return e?.saw ? nF(e.saw) : -1;
 }
 
@@ -296,11 +347,14 @@ function weigh(v: View, ways: { law?: Law; pc?: number; cc?: number }[], hitler:
   const watch = (b: Beliefs): number => b.pF[v.me] + (hitler >= 0 && hitler !== v.me ? b.pH[hitler] : 0) + (v.me === hitler ? b.pH[v.me] : 0);
   const base = watch(now);
   let top = 0, best = -Infinity;
+  const told: string[] = [];
   ways.forEach((w, i) => {
     const after = believe({ ...v, hist: [...v.hist, { ...gov, ...(w.law ? { law: w.law } : { k: 'veto' as const }), pc: w.pc, cc: w.cc }] }, true);
     const score = (w.law === 'F' ? 1 : 0) - k.image * (watch(after) - base);
+    told.push(`lei ${w.law === 'F' ? '{f}' : 'liberal'}: a desconfiança da mesa sobre ela${hitler >= 0 && hitler !== v.me ? ' e o {boss}' : ''} iria de ${pc(base)} para ${pc(watch(after))}, valor ${score.toFixed(2)}`);
     if (score > best + 1e-9) { best = score; top = i; }
   });
+  why(`Pesou como a mesa veria cada jeito (lei {f} vale 1; cada ponto de desconfiança custa ${k.image}): ${told.join('; ')}. Ficou com a lei ${ways[top].law === 'F' ? '{f}' : 'liberal'}.`);
   return top;
 }
 /** The fascist laws a president who sees a hand with d of them passes on: as many as possible, or one fewer. */
@@ -314,9 +368,9 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
   if (v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek') return fascistTalk(v, rand, isAlly);
   if (v.ask === 'pdiscard') {
     const L = v.hand.indexOf('L'), F = Math.max(0, v.hand.indexOf('F'));
-    if (L < 0) return 0;
-    if (groom && v.chanc === hitler) return F;                               // Hitler gets a liberal law to pass
-    if (isAlly(v.chanc as number)) return L;
+    if (L < 0) { why('Só tinha {fs}: qualquer uma.'); return 0; }
+    if (groom && v.chanc === hitler) { why(`O chanceler é o {boss}: passou uma liberal para ele aprovar e parecer limpo antes da ${HITLER_ZONE}ª lei {f}.`); return F; }   // Hitler gets a liberal law to pass
+    if (isAlly(v.chanc as number)) { why('O chanceler é aliado: jogou fora a liberal e passou {fs}.'); return L; }
     if (k.image) {                                                           // the chancellor is a liberal: what will the table think?
       const d = nF(v.hand), ms = passes(d);
       const m = ms[weigh(v, ms.map(m => { const law: Law = m === 2 ? 'F' : 'L'; return { law, pc: presStory(d, m, law), cc: m }; }), hitler)];
@@ -324,47 +378,53 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     }
     // passing two fascist laws out of a hand with one liberal means saying "I drew 3 fascist": the one who counts the
     // laws only says it when it is believable
-    if (k.count && nF(v.hand) === 2 && drawOdds(Math.max(0, DECK_F - v.laws.F), Math.max(0, DECK_L - v.laws.L))[3] < 0.2) return F;
-    return clean() ? F : L;
+    if (k.count && nF(v.hand) === 2 && drawOdds(Math.max(0, DECK_F - v.laws.F), Math.max(0, DECK_L - v.laws.L))[3] < 0.2) { why('Contando o baralho, dizer "tirei 3 {fs}" não seria crível: passou uma liberal.'); return F; }
+    const c = clean(); why(c ? 'Deixou passar uma liberal para parecer limpa.' : 'Jogou fora a liberal e passou {fs}.'); return c ? F : L;
   }
   if (v.ask === 'cdiscard') {
-    if (nF(v.hand) === 0) return o.includes(2) ? 2 : 0;
-    if (nF(v.hand) === 2) return 0;
-    if (groom && v.me === hitler) return v.hand.indexOf('F');               // Hitler stays clean until it pays
+    if (nF(v.hand) === 0) { why(o.includes(2) ? 'Recebeu 2 liberais: pediu veto, para não aprovar liberal.' : 'Recebeu 2 liberais: sem escolha.'); return o.includes(2) ? 2 : 0; }
+    if (nF(v.hand) === 2) { why('Recebeu 2 {fs}: aprovou uma.'); return 0; }
+    if (groom && v.me === hitler) { why(`É o {boss}: aprovou a liberal para parecer limpo antes da ${HITLER_ZONE}ª lei {f}.`); return v.hand.indexOf('F'); }   // Hitler stays clean until it pays
     if (k.image && !isAlly(v.pres)) {                                        // a liberal president passed one of each
       const ways: { law: Law; pc: number; cc: number }[] = [{ law: 'F', pc: 2, cc: 2 }, { law: 'L', pc: 2, cc: 1 }];
       return weigh(v, ways, hitler) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
     }
-    return !isAlly(v.pres) && clean() ? v.hand.indexOf('F') : v.hand.indexOf('L');
+    const c = !isAlly(v.pres) && clean(); why(c ? 'Aprovou a liberal para parecer limpa.' : 'Aprovou a {f}.'); return c ? v.hand.indexOf('F') : v.hand.indexOf('L');
   }
-  if (v.ask === 'veto') return nF(v.hand) === 0 ? 1 : 0;
+  if (v.ask === 'veto') { why(nF(v.hand) === 0 ? 'Sabe que passou 2 liberais: aceitou o veto, para não sair liberal.' : 'Passou {fs}: recusou o veto, para sair lei {f}.'); return nF(v.hand) === 0 ? 1 : 0; }
   const pub = believe(v, true);
   if (v.ask === 'vote') {
-    if (v.chanc === hitler && v.laws.F >= HITLER_ZONE) return 1;
-    if (isAlly(v.pres) || isAlly(v.chanc as number) || v.pres === v.me || v.chanc === v.me) return 1;
-    if (v.tracker === TRACKER_MAX - 1 && rand() < 0.5) return 0;            // the chaos plays for the fascists
+    if (v.chanc === hitler && v.laws.F >= HITLER_ZONE) { why(`O chanceler é o {boss} e já há ${HITLER_ZONE} leis {fs}: elegê-lo ganha o jogo. {ja}`); return 1; }
+    if (isAlly(v.pres) || isAlly(v.chanc as number) || v.pres === v.me || v.chanc === v.me) { why('Há um aliado (ou ela mesma) no governo: {ja}'); return 1; }
+    if (v.tracker === TRACKER_MAX - 1 && rand() < 0.5) { why('Mais uma rejeição traz o caos, que costuma tirar lei {f}: {nein}'); return 0; }   // the chaos plays for the fascists
+    why('Nenhum aliado no governo: votou como um liberal votaria pelo que a mesa viu, para não destoar.');
     return liberalJa(v, pub) ? 1 : 0;
   }
   if (v.ask === 'nominate') {
-    if (v.laws.F >= HITLER_ZONE && o.includes(hitler) && (k.plan || pub.pH[hitler] < 0.5)) return hitler;
-    if (groom && o.includes(hitler) && rand() < 0.5) return hitler;
+    rows(pub, o);
+    if (v.laws.F >= HITLER_ZONE && o.includes(hitler) && (k.plan || pub.pH[hitler] < 0.5)) { why(`Já há ${HITLER_ZONE} leis {fs}: indicou o {boss}, ${P(hitler)}, para ganhar se a mesa o eleger.`); return hitler; }
+    if (groom && o.includes(hitler) && rand() < 0.5) { why(`Indicou o {boss}, ${P(hitler)}, para ele aprovar uma liberal e parecer limpo.`); return hitler; }
     const mates = o.filter(isAlly);
-    if (mates.length && rand() < 0.6) return best(mates, i => pub.pF[i], rand);
-    return best(o.filter(i => !isAlly(i)).length ? o.filter(i => !isAlly(i)) : o, i => pub.pF[i], rand);
+    if (mates.length && rand() < 0.6) { const m = best(mates, i => pub.pF[i], rand); why(`Indicou um aliado, ${P(m)}, o que a mesa menos desconfia.`); return m; }
+    const libs = o.filter(i => !isAlly(i)).length ? o.filter(i => !isAlly(i)) : o, pick = best(libs, i => pub.pF[i], rand);
+    why(`Indicou ${P(pick)}, quem a mesa acha mais limpo, para parecer liberal.`); return pick;
   }
   if (v.ask === 'investigate') {
-    if (k.plan && o.includes(hitler) && hitler !== v.me) return hitler;    // to vouch for him afterwards
+    rows(pub, o);
+    if (k.plan && o.includes(hitler) && hitler !== v.me) { why(`Investigou o {boss}, ${P(hitler)}, para depois dizer que ele é liberal e abonar.`); return hitler; }    // to vouch for him afterwards
     const mates = o.filter(isAlly);
-    if (mates.length && rand() < 0.4) return best(mates, i => -pub.pF[i], rand);
-    const libs = o.filter(i => !isAlly(i));
-    return best(libs.length ? libs : o, i => pub.pF[i], rand);
+    if (mates.length && rand() < 0.4) { const m = best(mates, i => -pub.pF[i], rand); why(`Investigou um aliado sob suspeita, ${P(m)}, para limpar a barra dele.`); return m; }
+    const libs = o.filter(i => !isAlly(i)), pick = best(libs.length ? libs : o, i => pub.pF[i], rand);
+    why(`Investigou ${P(pick)}, o liberal que a mesa acha mais limpo, e pode incriminá-lo depois.`); return pick;
   }
-  if (v.ask === 'special') { const mates = o.filter(isAlly); return best(mates.length ? mates : o, i => pub.pF[i], rand); }
+  if (v.ask === 'special') { const mates = o.filter(isAlly), pick = best(mates.length ? mates : o, i => pub.pF[i], rand); rows(pub, o); why(mates.length ? `Deu a presidência a um aliado, ${P(pick)}.` : `Deu a presidência a ${P(pick)}.`); return pick; }
   // execute: a liberal who knows a teammate lied (it investigated one, or got caught by one), or else the one the
   // table trusts most
   const libs = o.filter(i => !isAlly(i)), saw = (i: number): number => k.plan ? v.hist.filter(e =>
     (e.k === 'inv' && e.by === i && isAlly(e.target)) || ((e.k === 'gov' || e.k === 'veto') && e.pres === i && isAlly(e.chanc) && (e.pc ?? -1) >= 0 && (e.cc ?? -1) >= 0 && Math.max(0, (e.pc as number) - 1) !== e.cc)).length : 0;
-  return best(libs.length ? libs : o, i => pub.pF[i] - saw(i), rand);
+  const pick = best(libs.length ? libs : o, i => pub.pF[i] - saw(i), rand); rows(pub, o, i => pub.pF[i] - saw(i));
+  why(saw(pick) ? `Eliminou ${P(pick)}, que sabe que um aliado mentiu.` : `Eliminou ${P(pick)}, o liberal em quem a mesa mais confia.`);
+  return pick;
 }
 
 /** Hitler who does not know his team: plays like a liberal to be trusted, lets liberal laws through early, and once
@@ -378,10 +438,10 @@ function hidden(v: View, rand: () => number): number {
     return m === Math.min(2, d) ? v.hand.indexOf('L') : v.hand.indexOf('F');
   }
   if (k.image && v.ask === 'cdiscard' && nF(v.hand) === 1) return weigh(v, [{ law: 'F', pc: 2, cc: 2 }, { law: 'L', pc: 2, cc: 1 }], v.me) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
-  if (v.ask === 'pdiscard') { const L = v.hand.indexOf('L'); return L >= 0 && !(early && rand() < 0.5 + k.trust) ? L : Math.max(0, v.hand.indexOf('F')); }
-  if (v.ask === 'cdiscard') { const L = v.hand.indexOf('L'); return nF(v.hand) === 1 && !(early && rand() < 0.5 + k.trust) ? L : liberal(v, rand); }
-  if (v.ask === 'veto') return nF(v.hand) === 0 ? 1 : 0;
+  if (v.ask === 'pdiscard') { const L = v.hand.indexOf('L'), keep = L >= 0 && !(early && rand() < 0.5 + k.trust); why(keep ? 'É o {boss}: jogou fora a liberal.' : 'É o {boss}: passou o melhor que tinha, para parecer liberal.'); return keep ? L : Math.max(0, v.hand.indexOf('F')); }
+  if (v.ask === 'cdiscard') { const L = v.hand.indexOf('L'); if (nF(v.hand) === 1 && !(early && rand() < 0.5 + k.trust)) { why('É o {boss}: aprovou a {f}.'); return L; } return liberal(v, rand); }
+  if (v.ask === 'veto') { why(nF(v.hand) === 0 ? 'É o {boss} e passou 2 liberais: aceitou o veto.' : 'É o {boss}: recusou o veto.'); return nF(v.hand) === 0 ? 1 : 0; }
   if (v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek') return fascistTalk(v, rand, i => seen.has(i));
-  if (v.ask === 'execute') { const b = believe(v); return best(v.options, i => b.pF[i], rand); }   // the one most surely liberal
+  if (v.ask === 'execute') { const b = believe(v); rows(b, v.options); why('É o {boss}: eliminou quem tem mais cara de liberal.'); return best(v.options, i => b.pF[i], rand); }   // the one most surely liberal
   return liberal(v, rand);
 }

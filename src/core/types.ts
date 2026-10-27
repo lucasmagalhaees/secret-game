@@ -97,6 +97,8 @@ export interface Game {
   train?: Role;
   /** The theme (D12); absent, the original one. */
   pack?: Pack;
+  /** Every decision of the players run by the app, with its reason (D16). */
+  trace?: Trace[];
   /** In 'investigated': who was investigated. */
   target: number | null;
   winner: Winner | null; why: string;
@@ -107,7 +109,7 @@ export interface Game {
 }
 
 /** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the person's notes on the game in course (`notes`, seat → party) and whether their side panel is open (`notesOpen`), whether the live suspicion shows (`live`), whether the trainer gives tips (`coach`), how fast the app's players act (`speed`), the game in course, the theme, the style and whether sound and vibration are off. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; notesOpen?: true; live?: true; coach?: true; speed?: Speed }
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; notesOpen?: true; live?: true; coach?: true; speed?: Speed; debug?: true }
 
 /** An entry as the source describes it, once read by `normEntry`. */
 export interface Entry { id: string; name: string; value: number }
@@ -134,6 +136,14 @@ export type Seen =
   | { k: 'exec'; by: number; target: number }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;
+
+/** Why a player run by the app decided what it decided (D16), as it would explain it: sentences with {pN} for the
+ *  name of seat N and the theme's words ({f}, {fs}, {boss}), and, when it compared options, each option with the
+ *  chance it gave of that seat being on the hidden side (f), of being its leader (h), and the score it compared (v). */
+export interface Why { text: string[]; rows?: { seat: number; f: number; h: number; v?: number }[] }
+/** One decision of a player run by the app, with its reason (D16): who, what was asked, the answer, the laws in its
+ *  hand when it was about them, and how far the history had gone. */
+export interface Trace { seat: number; ask: Ask; a: number; at: number; hand?: Law[]; why: Why }
 
 /** Everything one player run by the app gets to decide with, built by the judge (`viewOf`): what that person could know
  *  sitting at the table, and nothing more. `known` is the role of each seat as far as this player knows it (its own;

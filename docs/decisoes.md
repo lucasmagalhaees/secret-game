@@ -223,6 +223,18 @@ Modelo de uma decisão:
   - Só para quem é do lado escondido, como foi pedido.
 - **Não sei:** se uma frase por momento basta, ou se a pessoa vai querer ver os três maiores.
 
+## D16. O raciocínio das IAs
+
+- **Contexto (27/10/2026):** "Preciso que detalhe mais, entendeu? Como cada IA está pensando para a gente encontrar bugs. Por que que ele estava com mais dúvida de mim? Qual ação que eu fiz que levou ele a fazer isso?"
+- **Decisão:** requisito 34 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - É uma ferramenta para achar bug, não uma dica: mostra os papéis, as mãos e as mentiras. Por isso, durante a partida, só abre depois de um aviso, e a escolha fica guardada (`S.debug`) para não perguntar toda partida. No fim, abre sem aviso.
+  - O motivo é escrito por quem decide, no momento da decisão (`decideWhy` em `src/core/ai.ts`), com as contas que ela de fato usou, em vez de ser adivinhado depois. Escrever não muda a decisão: 120 partidas só de IA com as mesmas sementes saíram iguais antes e depois.
+  - "Qual ação levou a isso" é a trilha (`trail`): a conta da IA sobre um jogador no começo e depois de cada lei, veto, caos, investigação, espiada e eliminação, com antes e depois. As IAs não usam os votos nem a conversa nas contas, então esses não aparecem como momento.
+  - O que a IA pensa de verdade, não a conta "como se não soubesse" da desconfiança ao vivo: um fascista mostra 0% e 100% para quem conhece.
+  - Numa mesa com IA, com uma pessoa ou mais, a aba fica na borda esquerda (as anotações ficam na direita), e nunca fica aberta sozinha em tela larga.
+- **Não sei:** se o painel em tela de celular, com textos longos, fica legível o bastante para caçar bug; e se alguém vai querer exportar isso em arquivo.
+
 ## Pendências
 
 | Pendência | Quem resolve |

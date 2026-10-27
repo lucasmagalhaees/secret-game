@@ -21,6 +21,7 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | Painel lateral de anotações (celular e tela larga), desconfiança ao vivo, nenhum "undefined" ou "NaN" na tela em toda a partida contra a IA | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (124 casos) | 27/10/2026 |
 | Ponto crucial no fim e ao vivo, para quem é do lado escondido | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (125 casos) | 27/10/2026 |
 | Balanceamento com a conversa: liberais 46% a 47% com a mesa no mesmo nível | `node scripts/ai_bench.mjs 300` | 27/10/2026 |
+| Raciocínio das IAs: aviso antes de mostrar, cada decisão com motivo e opções, trilha de cada jogador, nada de "undefined" no painel; explicar não muda nenhuma decisão | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (130 casos); 120 partidas só de IA iguais antes e depois, mesmas sementes | 27/10/2026 |
 | Depois de um veto aceito, o baralho é reabastecido | caso em `tests/unit.cases.mjs` | 26/10/2026 |
 | A produção (https://secret-game-gamma.vercel.app) serve o commit da `main` | Página lida: `meta app-commit` = `6e6e539` | 13/10/2026 |
 
