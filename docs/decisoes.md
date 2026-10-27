@@ -29,6 +29,7 @@ Modelo de uma decisão:
 12. Tema liberais x comunistas, nomes mais conhecidos, anotações da pessoa e votos variados (D12).
 13. As IAs conversam, dicas do treinador, o que as IAs pensavam de você e velocidade da IA (D13).
 14. Anotações num painel lateral, desconfiança ao vivo e o "undefined" na vez da IA (D14).
+15. O ponto crucial para quem é do lado escondido (D15).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -210,6 +211,17 @@ Modelo de uma decisão:
   - "Lateral": uma aba vertical na borda direita da tela que abre um painel deslizante por cima do jogo, e fecha pela mesma aba. Num celular não cabe um painel fixo ao lado de uma coluna de 393 px; em tela de 1400 px ou mais, o painel fica aberto ao lado do jogo.
   - Desconfiança ao vivo: uma barra por IA na lista de jogadores, ligada e desligada por um botão na própria lista, e desligada de início. A IA que sabe o seu papel mostra a conta que faria se não soubesse. Mostrar 0% ou 100%, ou esconder a barra só das que sabem, entregaria os fascistas para um liberal.
 - **Não sei:** se a barra ao vivo deixa o jogo fácil demais (ela vem desligada); como fica o painel no Safari do iPhone.
+
+## D15. O ponto crucial
+
+- **Contexto (27/10/2026):** "no caso de eu ser hitler/stalin ou fascista mostre o ponto crucial da decisão que fez desconfiança subir".
+- **Decisão:** requisito 33 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - "Ponto crucial" é o acontecimento (lei, veto, caos, investigação, eliminação) depois do qual a desconfiança média das IAs sobre a pessoa mais subiu. As falas sobre a mão contam junto com o governo delas.
+  - Aparece no fim (com as IAs que não sabiam o papel, como o gráfico) e ao vivo, junto da desconfiança ao vivo. A versão ao vivo usa a mesma conta das barras, em que quem sabe o papel conta como se não soubesse, para não entregar ninguém.
+  - Às vezes o ponto crucial não é uma jogada da pessoa: um governo dos outros que sai limpo faz a desconfiança sobrar para quem não se mostrou. O cartão diz isso.
+  - Só para quem é do lado escondido, como foi pedido.
+- **Não sei:** se uma frase por momento basta, ou se a pessoa vai querer ver os três maiores.
 
 ## Pendências
 

@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.12.0]
+
+### Adicionado
+- Ponto crucial: para quem é fascista, Hitler, comunista ou Stalin, o momento que mais fez a desconfiança subir, no fim e ao vivo.
+
 ## [0.11.0]
 
 ### Adicionado

@@ -425,3 +425,9 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 .meter{position:relative;display:inline-flex;align-items:center;width:74px;height:20px;border:1.5px solid var(--line);margin-left:auto;flex:0 0 auto}
 .meter i{position:absolute;left:0;top:0;bottom:0;background:var(--fas);opacity:.85}
 .meter b{position:relative;width:100%;text-align:center;font:800 11px/1 var(--display);color:var(--fg);text-shadow:0 0 3px var(--surface)}
+
+/* ---------- the crucial point (D15) ---------- */
+.crux{margin:10px 0 6px;padding:10px 12px;border-left:4px solid var(--fas);background:color-mix(in srgb,var(--fas) 10%,transparent)}
+.crux small{display:block;font:800 11px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.crux p{margin:6px 0 4px;font-size:15px}
+.crux>b{font:800 16px/1 var(--display);color:var(--fas)}

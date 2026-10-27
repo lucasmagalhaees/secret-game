@@ -138,6 +138,29 @@ export function suspicion(g: Game, me: number): { seat: number; f: number }[] {
   });
 }
 
+/** The moment that raised the suspicion on `me` the most (D15): the event (an index in the history: a law, a veto,
+ *  the chaos, an investigation, an elimination) after which the average suspicion of the players run by the app rose
+ *  the most, with that average before and after. 'end' asks the ones that did not know the role of `me` (the end
+ *  summary); 'live' asks all of them, the ones that know reckoning as if they did not, as the live suspicion does, so
+ *  nothing gives away who knows. Null when nothing raised it. */
+export function crux(g: Game, me: number, mode: 'end' | 'live'): { at: number; before: number; after: number } | null {
+  const marks = g.hist.map((e, i) => (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos' || e.k === 'inv' || e.k === 'exec' ? i : -1)).filter(i => i >= 0);
+  const askers = g.players.map((p, seat) => ({ p, seat })).filter(({ p, seat }) => p.ai && seat !== me && (mode === 'live' ? p.alive : viewOf(g, seat, 'vote', [1, 0]).known[me] === null)).map(x => x.seat);
+  if (!marks.length || !askers.length) return null;
+  const avg = (upto: number): number => askers.reduce((a, seat) => {
+    const v = viewOf({ ...g, hist: g.hist.slice(0, upto + 1) }, seat, 'vote', [1, 0]);
+    const blind: View = v.known[me] === null ? v : { ...v, role: 'liberal', known: v.known.map((_, i) => (i === seat ? 'liberal' : null)) };
+    return a + believe(blind).pF[me];
+  }, 0) / askers.length;
+  let prev = avg(-1), top: { at: number; before: number; after: number } | null = null;
+  for (const i of marks) {
+    const now = avg(i);
+    if (now - prev > 0.01 && (!top || now - prev > top.after - top.before)) top = { at: i, before: prev, after: now };
+    prev = now;
+  }
+  return top;
+}
+
 /* ---------- the votes, where the app plays some seats ---------- */
 /** Everyone alive votes: the people with `votes` (seat → Ja!), the players run by the app by themselves. The votes are
  *  recorded for all to see, and more Ja! than Nein! elects. Missing a person's vote, nothing happens. */

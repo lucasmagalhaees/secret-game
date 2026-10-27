@@ -308,6 +308,9 @@ with sync_playwright() as p:
     assert {'vote', 'decree', 'coach'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
+    crux = pg.evaluate('window.__APP.Core.crux(window.__APP.S.game, 6, "end")')
+    assert (pg.locator('#crux-end').count() == 1) == (crux is not None), 'a fascist sees the moment that raised the suspicion the most'
+    if crux: assert 'ponto crucial' in txt('#crux-end').lower() and f"{round(crux['after'] * 100)}%" in txt('#crux-end')
     assert pg.locator('#summary').count() == 1 and pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
 
@@ -394,4 +397,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo, ponto crucial), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
