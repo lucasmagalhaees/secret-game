@@ -27,7 +27,7 @@ export function readGame(x: unknown): Game | null {
   if (!Array.isArray(g.log) || !g.log.every(l => typeof l === 'string')) return null;
   if ((g.phase === 'vote' || g.phase === 'chancellor' || g.phase === 'veto') && g.chanc === null) return null;
   if (g.phase === 'investigated' && g.target === null) return null;
-  if (!(g.drew === undefined || isLaws(g.drew)) || !(g.level === undefined || LEVELS.includes(g.level)) || !(g.train === undefined || ROLES.includes(g.train)) || !(g.pack === undefined || g.pack === 'comunismo')) return null;
+  if (!(g.drew === undefined || isLaws(g.drew)) || !(g.level === undefined || LEVELS.includes(g.level)) || !(g.train === undefined || ROLES.includes(g.train)) || !(g.pack === undefined || g.pack === 'comunismo') || !(g.region === undefined || (REGIONS.includes(g.region) && g.region !== 'mundo'))) return null;
   // the history came later: a game saved before it has none, and that is not damage
   const hist = g.hist === undefined ? [] : g.hist;
   if (!Array.isArray(hist) || !hist.every((e: Event) => !!e && typeof e === 'object' && typeof e.k === 'string')) return null;

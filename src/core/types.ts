@@ -99,6 +99,8 @@ export interface Game {
   train?: Role;
   /** The theme (D12); absent, the original one. */
   pack?: Pack;
+  /** The continent of the names and of the animals (D24); absent, the whole world. */
+  region?: Region;
   /** Every decision of the players run by the app, with its reason (D16). */
   trace?: Trace[];
   /** In 'investigated': who was investigated. */

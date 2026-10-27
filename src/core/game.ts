@@ -113,7 +113,7 @@ export function addName(names: string[], name: string): { ok: true; names: strin
 /** A new game: roles dealt at random, the deck shuffled, the first president drawn. `ai` marks the seats the app plays,
  *  at `level`. `train` (D11, training against the app): the role the one person at the table wants; the roles are
  *  still dealt at random, and then that seat swaps with one that got it. */
-export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role; pack?: Pack } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
+export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role; pack?: Pack; region?: Region } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
   const c = checkNames(names);
   if (!c.ok) return c;
   const k = FASCISTS[c.names.length];
@@ -128,7 +128,7 @@ export function newGame(names: string[], rand: () => number, opts: { ai?: boolea
   const deck = shuffle<Law>([...Array(DECK_F).fill('F'), ...Array(DECK_L).fill('L')], rand);
   const pres = Math.floor(rand() * players.length);
   players.forEach(p => { if (p.ai) p.mood = Math.round((rand() * 2 - 1) * 100) / 100; });   // drawn last: the deal stays as it was
-  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level, ...(opts.pack === 'comunismo' ? { pack: opts.pack } : {}) } };
+  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level, ...(opts.pack === 'comunismo' ? { pack: opts.pack } : {}), ...(opts.region && opts.region !== 'mundo' && REGIONS.includes(opts.region) ? { region: opts.region } : {}) } };
 }
 
 /** What player i is told at the start: the fascists see each other and Hitler; Hitler sees the fascist only at a table

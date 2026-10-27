@@ -119,7 +119,7 @@ function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): 
 }
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
-  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack });
+  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   if (S.notes) { const next = { ...S }; delete next.notes; setS(next); }     // a new game starts a clean notebook
   ui.msg = ''; ui.help = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');

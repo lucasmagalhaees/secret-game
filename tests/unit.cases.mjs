@@ -289,6 +289,8 @@ export default function cases(Core) {
   eq('names by continent: Lula goes by Polvo; the Americas have Fidel, Chávez, Maduro and Pinochet', [lists.some(l => l.includes('Lula')), Core.NAMES_BY.comunismo.americas.includes('Polvo'), ['Fidel', 'Chávez', 'Maduro'].every(x => Core.NAMES_BY.comunismo.americas.includes(x)), Core.NAMES_BY.fascismo.americas.includes('Pinochet')], [false, true, true, true]);
   const nm = Array.from({ length: 9 }).reduce((acc) => [...acc, Core.botName(acc, Core.seeded(acc.length + 1), 'comunismo', 'americas')], ['Lu']);
   eq('names by continent: a table filled from one continent takes names from its list only, never twice', [nm.slice(1).every(x => Core.NAMES_BY.comunismo.americas.includes(x)), new Set(nm).size], [true, 10]);
+  const rg = Core.newGame(NAMES, Core.seeded(2), { ai: [false, true, true, true, true, true, true], region: 'africa' }).game;
+  eq('names by continent: the game keeps its continent (for the drawings); the whole world or nonsense keeps none', [rg.region, 'region' in Core.newGame(NAMES, Core.seeded(2), { region: 'mundo' }).game, 'region' in Core.newGame(NAMES, Core.seeded(2), { region: 'marte' }).game, Core.readGame({ ...el, region: 'marte' }), Core.readGame({ ...el, region: 'asia' }).region], ['africa', false, false, null, 'asia']);
   eq('read state: the continent of the names is kept; the whole world or nonsense is the default', [Core.readState({ region: 'africa' }).region, 'region' in Core.readState({ region: 'mundo' }), 'region' in Core.readState({ region: 'marte' })], ['africa', false, false]);
 
   /* the finished games kept on the device (D23) */
