@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.11.0]
+
+### Adicionado
+- As IAs conversam entre as rodadas: "Desconfio de X", "Confio em Y".
+- Dicas do treinador: a chance da mão que o presidente disse, se a história fecha, quem parece mais suspeito, e como a mesa te vê.
+- No fim, o que cada IA pensava de você, lei a lei.
+- Velocidade da IA: lenta, normal ou rápida.
+
 ## [0.10.0]
 
 ### Adicionado

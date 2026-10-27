@@ -379,12 +379,35 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 [data-look="deco"] #solo .segm.roles button:nth-child(n+3){border-top:1px solid var(--gold)}
 
 /* ---------- the person's notebook (D12) ---------- */
-#notes .names li{gap:8px}
+#players .names li .who{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+#players .names li .who .tag{font-size:10px;padding:3px 6px}
+.names.noted li{gap:8px}
+.tag.you{background:transparent;color:var(--muted);border-color:var(--muted)}
 .notes-segm{display:inline-flex;flex:0 0 auto}
 .notes-segm button{min-width:50px;min-height:40px;font-size:12px;padding:0 6px;white-space:nowrap}
 .notes-segm button.on.L{background:var(--lib);color:var(--surface)}
 .notes-segm button.on.F{background:var(--fas);color:var(--surface)}
-#notes li.L>span:first-child{color:var(--lib);font-weight:700}
-#notes li.F>span:first-child{color:var(--fas);font-weight:700}
+#notes li.L>.who{color:var(--lib);font-weight:700}
+#notes li.F>.who{color:var(--fas);font-weight:700}
 .sure-tag.F{background:var(--fas);border-color:var(--fas);color:var(--surface)}
 .sure-tag.L{background:var(--lib);border-color:var(--lib);color:var(--surface)}
+
+/* ---------- the trainer and what the app players thought (D13) ---------- */
+.coach p{margin:.5em 0;font-size:15px}
+.thoughts{list-style:none;margin:6px 0 0;padding:0}
+.thoughts li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed var(--muted)}
+.thoughts li:first-child{border-top:0}
+.thoughts li>span{overflow-wrap:anywhere;font-size:15px}
+.thoughts li>span .role{margin-left:4px;font-size:10px;padding:3px 5px}
+.thoughts b{font:800 16px/1 var(--display);min-width:3.2em;text-align:right;white-space:nowrap}
+.thoughts b small{font-weight:600;font-size:12px;color:var(--muted)}
+.spark{width:96px;height:48px;overflow:visible}
+.spark-line{fill:none;stroke:var(--fas);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark-base{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.spark-dot{fill:var(--fas);stroke:var(--surface);stroke-width:1}
+.notes-toggle{display:block;width:100%;margin:2px 0 6px;padding:10px 12px;min-height:44px;text-align:left;border:2px dashed var(--line);background:transparent;color:var(--fg);font:800 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.notes-toggle[aria-expanded="true"]{border-style:solid}
+[data-look="deco"] .notes-toggle{border-width:1px;border-color:var(--gold)}
+.tag.mark{font-size:11px;padding:4px 8px}
+.tag.mark.L{background:var(--lib);border-color:var(--lib);color:var(--surface)}
+.tag.mark.F{background:var(--fas);border-color:var(--fas);color:var(--surface)}

@@ -17,6 +17,8 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | Treino (papel escolhido), nomes históricos, ata com quem votou Ja! e o anúncio de quem aprovou cada lei, pela tela | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (109 casos) | 27/10/2026 |
 | Tema liberais x comunistas (palavras, nomes, desenhos, nada de "fascista" na tela), anotações com o que a pessoa sabe já marcado | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (114 casos) | 27/10/2026 |
 | Votos variados (temperamento) e níveis ainda balanceados: liberais 47% a 53% com a mesa no mesmo nível | `node scripts/ai_bench.mjs 400` | 27/10/2026 |
+| Conversa das IAs, dicas do treinador, o que as IAs pensavam de você, velocidade, anotações na lista de jogadores | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (123 casos) | 27/10/2026 |
+| Balanceamento com a conversa: liberais 46% a 47% com a mesa no mesmo nível | `node scripts/ai_bench.mjs 300` | 27/10/2026 |
 | Depois de um veto aceito, o baralho é reabastecido | caso em `tests/unit.cases.mjs` | 26/10/2026 |
 | A produção (https://secret-game-gamma.vercel.app) serve o commit da `main` | Página lida: `meta app-commit` = `6e6e539` | 13/10/2026 |
 

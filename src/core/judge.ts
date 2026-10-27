@@ -5,10 +5,10 @@
    what was offered is not played: the first allowed option is. So no player run by the app sees more than its seat or
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
-import { decide } from './ai';
-import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, investigate, nominate, presidentDiscard, revealNext, specialElect, vote } from './game';
+import { believe, decide, drawOdds, QUIET } from './ai';
+import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, investigate, nominate, presidentDiscard, revealNext, specialElect, vote } from './game';
 import { words } from './words';
-import type { Ask, Event, Game, Gov, Law, Level, Role, Seen, View } from './types';
+import type { Ask, Event, Game, Gov, Law, Level, Role, Seen, Talk, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
 const isAi = (g: Game, i: number): boolean => !!g.players[i]?.ai;
@@ -62,6 +62,69 @@ export function say(g: Game, seat: number, what: Ask, v: number): Game {
   }
   const i = lastIndex(g, ['peek']);
   return set(i, { said: v }, quiet ? `${who} não disse o que espiou.` : `${who} disse que as próximas 3 leis são ${fN(v, 3, words(g.pack).f, 'liberal')}.`);
+}
+
+/* ---------- what the players run by the app say between rounds (D13) ---------- */
+/** How many of them speak each round, at most. */
+export const TALKS = 2;
+/** What ends a round of talk: anything that happened at the table that is not talk. */
+const roundMark = (g: Game): number => lastIndex(g, ['vote', 'rej', 'gov', 'veto', 'chaos', 'inv', 'peek', 'special', 'exec']);
+/** Who speaks next, if anyone: once something happened, at the start of a round (before the president nominates),
+ *  up to TALKS players run by the app, each once, in an order that turns with the rounds. */
+export function talker(g: Game): number | null {
+  if (g.phase !== 'nominate' || !g.hist.some(e => e.k === 'gov' || e.k === 'rej' || e.k === 'chaos' || e.k === 'veto')) return null;
+  const mark = roundMark(g), said = g.hist.slice(mark + 1).filter((e): e is Talk => e.k === 'talk');
+  if (said.length >= TALKS) return null;
+  const n = g.players.length, start = (g.hist.filter(e => e.k === 'vote' || e.k === 'rej').length * 3) % n;
+  for (let j = 0; j < n; j++) {
+    const i = (start + j) % n;
+    if (isAi(g, i) && g.players[i].alive && !said.some(t => t.by === i)) return i;
+  }
+  return null;
+}
+/** The options of a player who may speak: suspect or trust any other seat still in the game, or keep quiet. */
+const talkOptions = (g: Game, me: number): number[] => [...g.players.flatMap((p, i) => (p.alive && i !== me ? [2 * i, 2 * i + 1] : [])), QUIET];
+/** Plays what it said: a line in the log, and the talk in the history. */
+export function talk(g: Game, by: number, a: number): Game {
+  if (talker(g) !== by || !talkOptions(g, by).includes(a)) return g;
+  const quiet = a === QUIET, about = quiet ? -1 : a >> 1, kind: Talk['say'] = quiet ? 'quiet' : a % 2 ? 'trust' : 'acc';
+  const line = quiet ? [] : [`${g.players[by].name}: "${kind === 'acc' ? 'Desconfio de' : 'Confio em'} ${g.players[about].name}."`];
+  return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind }] };
+}
+
+/* ---------- the trainer, for the person (D13) ---------- */
+export interface Coach {
+  /** The chance of the hand the last president said they drew, counting the laws that could still come out. */
+  odds: { who: number; said: number; p: number } | null;
+  /** The last government's story does not hold together: one of the two lied (or a liberal law was thrown away). */
+  clash: boolean;
+  /** Who looks most like the hidden side, by what this seat knows: the chance of each, highest first. */
+  suspects: { seat: number; f: number; boss: number }[];
+  /** How the table sees this seat, from what everyone saw: the chance it is on the hidden side. */
+  seen: number;
+}
+/** What a careful player sitting at `seat` could work out from what that seat knows (its own view, nothing more). */
+export function coach(g: Game, seat: number): Coach {
+  const i = lastIndex(g, ['gov', 'veto']), e = g.hist[i] as Gov | undefined;
+  let odds: Coach['odds'] = null, clash = false;
+  if (e && e.pc !== undefined && e.pc >= 0) {
+    const before = g.hist.slice(0, i), F = before.filter(x => (x.k === 'gov' || x.k === 'chaos') && x.law === 'F').length, L = before.filter(x => (x.k === 'gov' || x.k === 'chaos') && x.law === 'L').length;
+    odds = { who: e.pres, said: e.pc, p: drawOdds(Math.max(0, DECK_F - F), Math.max(0, DECK_L - L))[e.pc] };
+  }
+  if (e && e.cc !== undefined && e.cc >= 0) {
+    clash = (e.pc !== undefined && e.pc >= 0 && Math.max(0, e.pc - 1) !== e.cc) || (e.law === 'F' && e.cc < 2);
+  }
+  const v = { ...viewOf(g, seat, 'vote', [1, 0]), level: 'extremo' as Level }, b = believe(v);
+  const suspects = g.players.map((p, j) => ({ seat: j, f: b.pF[j], boss: b.pH[j], alive: p.alive }))
+    .filter(x => x.seat !== seat && x.alive && v.known[x.seat] === null).sort((x, y) => y.f - x.f).slice(0, 3).map(({ seat: s, f, boss }) => ({ seat: s, f, boss }));
+  return { odds, clash, suspects, seen: believe(v, true).pF[seat] };
+}
+/** At the end: how much each player run by the app that did not know `me` suspected them, from the start and after each
+ *  law, investigation or elimination (the same reasoning those players used, from their own seats). */
+export function thoughts(g: Game, me: number): { seat: number; series: number[] }[] {
+  const marks = g.hist.map((e, i) => (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos' || e.k === 'inv' || e.k === 'exec' ? i : -1)).filter(i => i >= 0);
+  return g.players.map((p, seat) => ({ p, seat })).filter(({ p, seat }) => p.ai && seat !== me && viewOf(g, seat, 'vote', [1, 0]).known[me] === null)
+    .map(({ seat }) => ({ seat, series: [-1, ...marks].map(i => believe(viewOf({ ...g, hist: g.hist.slice(0, i + 1) }, seat, 'vote', [1, 0])).pF[me]) }));
 }
 
 /* ---------- the votes, where the app plays some seats ---------- */
@@ -133,6 +196,8 @@ export function botTurn(g: Game): { seat: number; ask: Ask | 'reveal' | 'see' | 
     const s = seats(g, i => isAi(g, i) && claims(g, i).includes(kind))[0];
     if (s !== undefined) return { seat: s, ask: kind, options: kind === 'inv' ? [0, 1] : Array.from({ length: MAX_SAY[kind] + 1 }, (_, i) => i) };
   }
+  const who = talker(g);
+  if (who !== null) return { seat: who, ask: 'talk', options: talkOptions(g, who) };
   const t = turn(g), choice = t && !['reveal', 'see', 'votes'].includes(t.ask);
   if (!t || (choice && !t.options.length)) return null;                     // nothing it could answer: never asked
   return isAi(g, t.seat) || t.ask === 'votes' ? t : null;
@@ -147,6 +212,7 @@ export function botStep(g: Game, rand: () => number): Game | null {
   const a = ask(g, t.seat, t.ask, t.options, rand);
   switch (t.ask) {
     case 'pc': case 'cc': case 'inv': case 'peek': return say(g, t.seat, t.ask, a);
+    case 'talk': return talk(g, t.seat, a);
     case 'nominate': return nominate(g, a);
     case 'pdiscard': return presidentDiscard(g, a);
     case 'cdiscard': return a === 2 ? askVeto(g) : chancellorDiscard(g, a, rand);
