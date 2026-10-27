@@ -28,6 +28,7 @@ Modelo de uma decisão:
 11. Treino com papel escolhido, nomes históricos para as IAs, ata com quem aprovou cada lei e o anúncio da lei aprovada (D11).
 12. Tema liberais x comunistas, nomes mais conhecidos, anotações da pessoa e votos variados (D12).
 13. As IAs conversam, dicas do treinador, o que as IAs pensavam de você e velocidade da IA (D13).
+14. Anotações num painel lateral, desconfiança ao vivo e o "undefined" na vez da IA (D14).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -199,6 +200,16 @@ Modelo de uma decisão:
   - Anotações no lugar certo (27/10/2026, "as anotações têm que aparecer do lado da mesa de jogo, senão fica muito perdido … eu tenho que scrollar a tela toda hora"): o caderno passou para dentro da lista de jogadores, cada anotação na linha do jogador, e a lista subiu para logo abaixo da fase da vez, acima do tabuleiro. Depois ("não daria pra anotação ser uma tab collapsable?"): o caderno abre e fecha num botão "Anotar"; fechado, cada jogador marcado mostra só a etiqueta (Libs, Nazis, Coms) e o que se sabe de certeza; o app lembra se ficou aberto.
 - **Balanceamento conferido (27/10/2026, `node scripts/ai_bench.mjs 300`):** com a conversa, a mesa no mesmo nível dá vitórias liberais de 47%, 46%, 46% e 47% (erro de cerca de 3 pontos); "você" (uma IA média num lugar) vence como liberal 49%, 51%, 47% e 47%, e como fascista 57%, 51%, 46% e 42%.
 - **Não sei:** se as falas soam naturais numa partida inteira; se as dicas deixam o treino fácil demais (por isso vêm desligadas).
+
+## D14. Painel lateral de anotações, desconfiança ao vivo, "undefined"
+
+- **Contexto (27/10/2026):** "ainda fica aparecendo uns undefined nas ações dos jogadores"; "quero também um ao vivo do desconfiança rate que possa ser ligado e desligado, e a aba de anotações não ficou lateral como eu pedi".
+- **Decisão:** requisitos 27 e 32 do `CLAUDE.md`.
+- **O "undefined":** reproduzido em 7 de 12 partidas jogadas pela tela. Era a tela "Vez da IA" na hora em que uma IA ia falar (conversa da D13): não havia texto para essa ação. A conversa e as falas sobre a mão agora acontecem ao lado da fase, sem trocar a tela, e o e2e confere a cada passo da partida contra a IA que nada na tela diz "undefined" ou "NaN".
+- **Interpretações que precisaram ser feitas:**
+  - "Lateral": uma aba vertical na borda direita da tela que abre um painel deslizante por cima do jogo, e fecha pela mesma aba. Num celular não cabe um painel fixo ao lado de uma coluna de 393 px; em tela de 1400 px ou mais, o painel fica aberto ao lado do jogo.
+  - Desconfiança ao vivo: uma barra por IA na lista de jogadores, ligada e desligada por um botão na própria lista, e desligada de início. A IA que sabe o seu papel mostra a conta que faria se não soubesse. Mostrar 0% ou 100%, ou esconder a barra só das que sabem, entregaria os fascistas para um liberal.
+- **Não sei:** se a barra ao vivo deixa o jogo fácil demais (ela vem desligada); como fica o painel no Safari do iPhone.
 
 ## Pendências
 

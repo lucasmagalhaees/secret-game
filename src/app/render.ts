@@ -99,9 +99,9 @@ function vRules(): string {
 function vGame(g: Game): string {
   const key = `${g.phase}:${g.log.length}:${g.reveal}`;
   entering = key !== seenPhase; seenPhase = key;
-  const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek'].includes(bot.ask) ? bot : null;
+  const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek', 'talk'].includes(bot.ask) ? bot : null;   // talk and claims happen beside the phase, not instead of it
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
-  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + vCoach(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
+  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + vCoach(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + vDrawer(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -205,12 +205,22 @@ function vBoard(g: Game): string {
 function vPlayers(g: Game): string {
   const dead = new Set(g.players.filter(p => !p.alive).map(p => p.name)), fresh = [...dead].filter(x => !seenDead.has(x));
   seenDead = dead;
-  const kit = noteKit(g), notes = S.notes || {};
-  return `<section class="card" id="players"><span class="label">${kit ? 'Jogadores e suas anotações' : 'Jogadores'}</span>${kit ? `<button class="notes-toggle" data-act="notesopen" aria-expanded="${!!S.notesOpen}" id="notestoggle">${S.notesOpen ? '▾ Fechar anotações' : `▸ Anotar${Object.keys(notes).length ? ` (${Object.keys(notes).length} ${Object.keys(notes).length === 1 ? 'marcado' : 'marcados'})` : ''}`}</button>${S.notesOpen ? '<p class="hint">Só você vê as anotações. O que você sabe de certeza já vem marcado.</p>' : ''}` : ''}<ul class="names${kit ? ' noted' : ''}"${kit ? ' id="notes"' : ''}>${g.players.map((p, i) => {
+  const kit = noteKit(g), notes = S.notes || {}, me = solo(g);
+  const live = S.live && me >= 0 && g.phase !== 'over' && g.phase !== 'reveal' ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
+  const meter = (i: number): string => { const f = live?.get(i); return f === undefined ? '' : `<span class="meter" title="Quanto ${esc(g.players[i].name)} desconfia de você agora"><i style="width:${Math.round(f * 100)}%"></i><b>${pct(f)}</b></span>`; };
+  const liveBtn = me >= 0 && g.phase !== 'over' ? `<button class="live-toggle" data-act="live" aria-pressed="${!!S.live}" id="livetoggle">👁 Desconfiança ao vivo: ${S.live ? 'ligada' : 'desligada'}</button>` : '';
+  return `<section class="card" id="players"><span class="label">Jogadores</span>${liveBtn}${live ? '<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>' : ''}<ul class="names">${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
-    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}</span>${kit ? kit.cell(i) : ''}</li>`;
+    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
   }).join('')}</ul></section>`;
+}
+/** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
+let liveCache: { key: string; rows: { seat: number; f: number }[] } | null = null;
+function liveSuspicion(g: Game, me: number): { seat: number; f: number }[] {
+  const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => `${p.name}${p.alive ? 1 : 0}`).join()}`;
+  if (!liveCache || liveCache.key !== key) liveCache = { key, rows: Core.suspicion(g, me) };
+  return liveCache.rows;
 }
 /** The one person at a table with app players, or -1. */
 const solo = (g: Game): number => { const p = g.players.map((x, i) => (x.ai ? -1 : i)).filter(i => i >= 0); return Core.hasAi(g) && p.length === 1 ? p[0] : -1; };
@@ -251,22 +261,32 @@ function vThoughts(g: Game): string {
  *  for every other seat, liberal or the hidden side, as the person marks it. What the person knows for sure comes
  *  marked and cannot be changed: their team (by rule 3) and what their own investigations showed. Only when there is
  *  one person at the table, so no one else sees it; at the end the roles are on the table anyway. */
-function noteKit(g: Game): { me: number; cell: (i: number) => string } | null {
+function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => string } | null {
   const me = solo(g);
   if (me < 0 || g.phase === 'over' || g.phase === 'reveal') return null;
   const sure = new Map<number, [string, Law]>();
   for (const k of Core.knows(g, me)) sure.set(g.players.findIndex(p => p.name === k.name), [role(k.role), 'F']);
   for (const e of g.hist) if (e.k === 'inv' && e.by === me && !sure.has(e.target)) sure.set(e.target, [`${party(e.party)} (investigou)`, e.party]);
   const notes = S.notes || {};
-  const cell = (i: number): string => {
-    if (i === me) return '<span class="tag you">Você</span>';
+  const cell = (i: number, edit: boolean): string => {
+    if (i === me) return edit ? '' : '<span class="tag you">Você</span>';
     const known = sure.get(i), mark = notes[i];
-    if (!known && !S.notesOpen) return mark ? `<span class="tag mark ${mark}">${mark === 'L' ? W.libs : W.short}</span>` : '';
+    if (known) return `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>`;
+    if (!edit) return mark ? `<span class="tag mark ${mark}">${mark === 'L' ? W.libs : W.short}</span>` : '';
     const btn = (v: '' | Law, label: string): string => `<button class="${(mark || '') === v ? 'on' : ''} ${v}" data-act="note" data-i="${i}" data-v="${v}" aria-pressed="${(mark || '') === v}">${label}</button>`;
-    return known ? `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>`
-      : `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(g.players[i].name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`;
+    return `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(g.players[i].name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`;
   };
   return { me, cell };
+}
+/** The notebook as a side panel (D14): a tab on the right edge of the screen opens it over the game, and it closes
+ *  again with the same tab; on a wide screen it stays open beside the game. */
+function vDrawer(g: Game): string {
+  const kit = noteKit(g);
+  if (!kit) return '';
+  const n = Object.keys(S.notes || {}).length, open = !!S.notesOpen;
+  const rows = g.players.map((p, i) => (i === kit.me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}</span>${kit.cell(i, true)}</li>`)).join('');
+  return `<button class="drawer-tab${open ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${open}" aria-controls="drawer">${open ? '✕' : '✎'}<span>Anotações${n ? ` · ${n}` : ''}</span></button>
+    <aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê. O que você sabe de certeza já vem marcado.</p><ul class="names noted" id="notes">${rows}</ul></aside>`;
 }
 /** The minutes, with assistance on (D11): every law, the government that made it and who voted Ja! for that
  *  government, and the count for each player. Only what the whole table saw: never a hand, a party or a role. */
