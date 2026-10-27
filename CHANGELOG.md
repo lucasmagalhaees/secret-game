@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.18.0]
+
+### Alterado
+- Depois que uma IA diz o que recebeu, a próxima espera mais. O que o último governo disse fica escrito abaixo da mesa.
+
+### Corrigido
+- Às vezes aparecia o botão para ver a carta de uma IA.
+- A tela da fase tremia e entrava de novo a cada fala de IA, e um segredo aberto ou um voto se perdia.
+
 ## [0.17.0]
 
 ### Alterado
