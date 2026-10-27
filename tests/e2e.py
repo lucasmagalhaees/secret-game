@@ -257,13 +257,18 @@ with sync_playwright() as p:
     pg.click('[data-act=open]'); assert pg.locator('#role').count() == 1 and 'Fascista' in txt('#role') and 'escolheu ser fascista' in txt('#trained'); pg.click('[data-act=hiderole]')
     assert pg.locator('#ata').count() == 1 and 'Nenhuma lei ainda' in txt('#ata')
     # the notebook: a fascist at a table of 7 knows Hitler and the other fascist; the rest is marked by hand, and kept
-    assert pg.locator('#notes .sure-tag').count() == 2 and pg.locator('#notes [data-act=note]').count() == 0, 'the notebook starts closed, what is known shown'
-    pg.click('#notestoggle'); assert pg.locator('#notes [data-act=note]').count() == 4 * 3 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true'
+    assert pg.locator('#players .sure-tag').count() == 2 and not pg.locator('#drawer').is_visible(), 'the notebook starts closed; what is known shows in the list of players'
+    pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 4 * 3 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
+    assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
     first = pg.locator('#notes [data-act=note][data-v=L]').first.get_attribute('data-i')
     pg.locator('#notes [data-act=note][data-v=L]').first.click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
-    pg.click('#notestoggle'); assert pg.locator('#notes [data-act=note]').count() == 0 and pg.locator('#notes .tag.mark.F').count() == 1 and '1 marcado' in txt('#notestoggle'), 'closed, the marks stay in view'
+    pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
+    # the live suspicion: off by default, on with a tap, one bar per app player
+    assert pg.locator('#players .meter').count() == 0
+    pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
+    pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     pg.evaluate('window.__APP.ui.think = 0')
@@ -283,6 +288,8 @@ with sync_playwright() as p:
         if pg.locator('.claim').count():
             seen.add('claim'); assert 'Pode mentir' in txt('.claim')
         if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
+        body = pg.evaluate('document.body.innerText')
+        assert 'undefined' not in body and 'NaN' not in body, [l for l in body.split('\n') if 'undefined' in l or 'NaN' in l]
         if pg.locator('#coach').count(): seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
         if step == 40 and not reloaded:
             cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
@@ -387,4 +394,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

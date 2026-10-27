@@ -127,6 +127,17 @@ export function thoughts(g: Game, me: number): { seat: number; series: number[] 
     .map(({ seat }) => ({ seat, series: [-1, ...marks].map(i => believe(viewOf({ ...g, hist: g.hist.slice(0, i + 1) }, seat, 'vote', [1, 0])).pF[me]) }));
 }
 
+/** Live, during the game (D14): how much each player run by the app suspects `me` right now. One that knows the role
+ *  of `me` (a fascist knows everyone) shows the reckoning it would make if it did not, from its own seat, as it would
+ *  look to the table: showing its real answer (0 or 100%), or nothing, would give away who knows. */
+export function suspicion(g: Game, me: number): { seat: number; f: number }[] {
+  return g.players.map((p, seat) => ({ p, seat })).filter(({ p, seat }) => p.ai && p.alive && seat !== me).map(({ seat }) => {
+    const v = viewOf(g, seat, 'vote', [1, 0]);
+    const blind: View = v.known[me] === null ? v : { ...v, role: 'liberal', known: v.known.map((_, i) => (i === seat ? 'liberal' : null)) };
+    return { seat, f: believe(blind).pF[me] };
+  });
+}
+
 /* ---------- the votes, where the app plays some seats ---------- */
 /** Everyone alive votes: the people with `votes` (seat → Ja!), the players run by the app by themselves. The votes are
  *  recorded for all to see, and more Ja! than Nein! elects. Missing a person's vote, nothing happens. */

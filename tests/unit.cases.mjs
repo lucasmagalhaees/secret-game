@@ -232,7 +232,9 @@ export default function cases(Core) {
   const told2 = ai7({ phase: 'over', hist: [{ k: 'gov', pres: 0, chanc: 3, law: 'F', pc: 3, cc: 2 }, { k: 'rej', pres: 3, chanc: 4 }, { k: 'gov', pres: 4, chanc: 0, law: 'F', pc: 2, cc: 2 }] });
   const th = Core.thoughts(told2, 0);
   eq('what they thought: only app players that did not know the person, from the start and after each law', [th.map(x => x.seat), th.every(x => x.series.length === 3 && x.series.every(v => v >= 0 && v <= 1))], [[3, 4, 5, 6], true]);
-  eq('read state: tips, speed and the open notebook are kept; nonsense is dropped', [Core.readState({ notesOpen: true }).notesOpen, 'notesOpen' in Core.readState({ notesOpen: 1 }), Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, false, true, 'lenta', false, false]);
+  const live = Core.suspicion({ ...told2, phase: 'nominate' }, 0);
+  eq('live suspicion: every app player in the game, a chance each; one that knows the role reckons as if it did not', [live.map(x => x.seat), live.every(x => x.f >= 0 && x.f <= 1), live.some(x => x.seat === 1 && x.f > 0 && x.f < 1)], [[1, 2, 3, 4, 5, 6], true, true]);
+  eq('read state: tips, speed and the open notebook are kept; nonsense is dropped', [Core.readState({ notesOpen: true, live: true }).notesOpen && Core.readState({ live: true }).live, 'notesOpen' in Core.readState({ notesOpen: 1 }), Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, false, true, 'lenta', false, false]);
 
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });

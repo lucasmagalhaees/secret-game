@@ -5,10 +5,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 ## [0.11.0]
 
 ### Adicionado
+- Anotações num painel lateral, aberto por uma aba na borda da tela (fixo ao lado em tela larga).
+- Desconfiança ao vivo: quanto cada IA desconfia de você agora, liga e desliga.
 - As IAs conversam entre as rodadas: "Desconfio de X", "Confio em Y".
 - Dicas do treinador: a chance da mão que o presidente disse, se a história fecha, quem parece mais suspeito, e como a mesa te vê.
 - No fim, o que cada IA pensava de você, lei a lei.
 - Velocidade da IA: lenta, normal ou rápida.
+
+### Corrigido
+- "undefined" na tela "Vez da IA" quando uma IA ia falar.
 
 ## [0.10.0]
 
