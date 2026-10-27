@@ -107,7 +107,7 @@ main .wrap{display:flex;flex-direction:column;gap:16px;padding-top:16px;padding-
 .btn.vote.on.L{background:var(--lib);color:var(--on-party)}
 .btn.vote.on.F{background:var(--fas);color:var(--on-party)}
 .pick:has(.btn.vote.on) .btn.vote:not(.on){opacity:.55;box-shadow:none}
-.btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+.btn:disabled{background:var(--surface);color:var(--muted);border-style:dashed;cursor:default;box-shadow:none}
 .segm{display:flex;border:2px solid var(--line)}
 .segm button{flex:1;min-height:44px;font:700 14px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
 .segm button+button{border-left:2px solid var(--line)}
@@ -324,12 +324,13 @@ button.law{transition:transform .15s,opacity .15s}
 .timeline .role{font-size:10px;padding:2px 6px;border-width:1px}
 
 /* help for the phase, and taking back the last public tap */
-.help{display:flex;align-items:flex-start;gap:8px}
-.helpbtn{flex:none;width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:var(--surface);font:900 16px/1 var(--display)}
-.helpbtn[aria-expanded="true"]{background:var(--fg);color:var(--surface)}
+.help{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.helpbtn{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 10px 0 0;font:700 14px/1.2 var(--display);letter-spacing:.04em;color:var(--fg)}
+.helpbtn b{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:var(--surface);font:900 16px/1 var(--display)}
+.helpbtn[aria-expanded="true"] b{background:var(--fg);color:var(--surface)}
 .helptext{flex:1;font-size:14px;background:var(--surface);border:2px solid var(--line);padding:8px 10px}
 .undo{align-self:flex-start;font:700 13px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:2px dashed var(--line);background:var(--surface)}
-[data-look="deco"] .helpbtn,[data-look="deco"] .helptext,[data-look="deco"] .undo{border-width:1px;border-color:var(--gold)}
+[data-look="deco"] .helpbtn b,[data-look="deco"] .helptext,[data-look="deco"] .undo{border-width:1px;border-color:var(--gold)}
 
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important;transition:none !important}.confetti{display:none}.turn.go .back{display:none}}
 
@@ -471,3 +472,19 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 [data-look="deco"] .dock{border-top:1px solid var(--gold)}
 [data-look="deco"] .dock-btn{border:1px solid var(--gold)}
 @media (min-width:1400px){.dock-btn.notes{display:none}.dock:not(:has(.dock-btn:not(.notes))){display:none}}
+/* D18: the whole table at a glance, at the top */
+.seats{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.seat{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:2px 8px;border:2px solid var(--line);background:var(--surface);font:700 13px/1.2 var(--display);max-width:100%}
+.seat.L{box-shadow:inset 5px 0 0 var(--lib)}
+.seat.F{box-shadow:inset 5px 0 0 var(--fas)}
+.seat.sure.L{border-color:var(--lib)}
+.seat.sure.F{border-color:var(--fas)}
+.seat.dead{opacity:.5;text-decoration:line-through}
+.seat i{font:800 10px/1 var(--display);font-style:normal;letter-spacing:.06em;text-transform:uppercase;padding:3px 5px;background:var(--fg);color:var(--surface)}
+.seat i.you{background:none;color:var(--muted);border:1px solid var(--muted)}
+.seat i.sus{background:var(--fas);color:var(--on-party)}
+[data-look="deco"] .seat{border-width:1px;border-color:var(--gold)}
+/* D18: a choice that opens more choices, and the tabs at the end */
+.more{display:inline-flex;align-items:center;min-height:44px;font:800 13px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--fg);text-decoration:underline;text-underline-offset:4px}
+#moreopts{display:contents}
+.endtabs{position:sticky;top:calc(62px + env(safe-area-inset-top));z-index:5;background:var(--bg)}

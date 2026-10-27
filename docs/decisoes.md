@@ -247,6 +247,18 @@ Modelo de uma decisão:
   - O texto sobre as cores cheias de partido (votos, papéis, tabuleiro) passou a seguir o tema: escuro no tema escuro, claro no claro.
 - **Não sei:** se cobrir os botões da barra por 3,5 s com o aviso incomoda no uso real. Os itens 5 a 9 da lista (mesa no topo, tela inicial mais curta, botão de começar, "?" maior, fim de jogo em abas) ficaram para depois.
 
+## D18. Menos rolagem
+
+- **Contexto (27/10/2026):** "faz os itens de 5 a 9", os pontos que ficaram de fora da D17: a mesa no topo, a tela inicial mais curta, o botão de começar, o "?" maior e o fim de jogo em abas.
+- **Decisão:** requisito 36 do `CLAUDE.md`, e os requisitos 15 e 16 ajustados.
+- **Interpretações que precisaram ser feitas:**
+  - "Mesa no topo" é uma faixa compacta, sem toque, com os nomes na ordem de assento. A lista completa (marcas, barras da desconfiança ao vivo) continua mais abaixo, porque é ali que se mexe.
+  - Na faixa, a cor vem do que a pessoa sabe (com borda) ou marcou no caderno (só a barra lateral): as duas coisas que ela consultaria rolando.
+  - "Mais opções" e "Como joga" abrem por botão do próprio app, e não por `<details>`: a tela é repintada a cada jogada e um `<details>` fecharia sozinho. Não ficam guardados, e o app abre sempre com os dois fechados.
+  - Botão desativado (começar sem gente bastante, descartar sem escolher a carta) passou a ser tracejado e apagado, em vez do vermelho apagado que parecia erro.
+  - Abas do fim: Resultado, Resumo, Registro. O raciocínio das IAs continua na barra de baixo.
+- **Não sei:** se a faixa de lugares, com 9 ou 10 pessoas, ocupa linhas demais no celular; com 7 são três linhas.
+
 ## Pendências
 
 | Pendência | Quem resolve |

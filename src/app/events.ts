@@ -111,7 +111,7 @@ function start(): void {
   const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   if (S.notes) { const next = { ...S }; delete next.notes; setS(next); }     // a new game starts a clean notebook
-  ui.msg = ''; ui.help = false; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
+  ui.msg = ''; ui.help = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
 }
 function lawMsg(before: Game, after: Game): string {
   const w = Core.words(after.pack);
@@ -164,6 +164,8 @@ export function initEvents(): void {
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
+    else if (a === 'more') { ui.more = !ui.more; render(); }
+    else if (a === 'rules') { ui.rules = !ui.rules; render(); }
     else if (a === 'theme') { const t = d.t as Theme | 'auto'; if (t === 'auto') delete S.theme; else S.theme = t; saveS(); applyTheme(); render(); }
     else if (a === 'look') { if (d.l === 'deco') S.look = 'deco'; else delete S.look; saveS(); applyTheme(); render(); }
     else if (a === 'fx') { if (d.v === 'off') S.quiet = true; else { delete S.quiet; buzz(30); sound('stamp'); } saveS(); render(); }
@@ -171,6 +173,7 @@ export function initEvents(): void {
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
     else if (a === 'help') { ui.help = !ui.help; render(); }
+    else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
     else if (a === 'mind') { ui.mind = !ui.mind; if (ui.mind && S.notesOpen) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); } render(); }
     else if (a === 'debug') { const next = { ...S }; if (d.v === 'on') next.debug = true; else { delete next.debug; ui.mind = false; } setS(next); saveS(); render(); }
     else if (a === 'mindseat') { ui.mindSeat = i; ui.mindOf = null; render(); }

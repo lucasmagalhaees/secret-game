@@ -43,6 +43,14 @@ with sync_playwright() as p:
 
     # ---------- the table ----------
     assert pg.locator('#empty').count() == 1 and pg.locator('[data-act=start]').is_disabled(), txt('#view')
+    # D18: the home screen is short; the start button says what is missing, and with a name the app fills the table there
+    assert 'Faltam 5 para começar' in txt('[data-act=start]') and pg.locator('#fillmin').count() == 0
+    assert pg.locator('#ruleslist').count() == 0 and pg.locator('#moreopts').count() == 0 and 'sorteado' in txt('#moresum'), 'the rules and the other choices start closed'
+    pg.click('#rulestoggle'); assert pg.locator('#ruleslist li').count() >= 5; pg.click('#rulestoggle'); assert pg.locator('#ruleslist').count() == 0
+    pg.fill('#name', 'Xu'); pg.press('#name', 'Enter'); assert 'Faltam 4' in txt('[data-act=start]') and 'Completar com 4 da IA' in txt('#fillmin')
+    pg.click('#fillmin'); assert pg.locator('#names li').count() == 5 and not pg.locator('[data-act=start]').is_disabled() and 'Começar com 5 jogadores' in txt('[data-act=start]')
+    for _ in range(5): pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
+    assert pg.locator('#empty').count() == 1
     assert pg.locator('select').count() == 0, 'no select of the system: its list is drawn by the device, with colours of its own'
     pg.click('[data-act=addname]'); assert 'Escreve um nome' in txt('#msg')
     for i, n in enumerate(NAMES):
@@ -191,9 +199,13 @@ with sync_playwright() as p:
     nominate(0); votes(True)
     g = G(); assert g['phase'] == 'over' and g['winner'] == 'F' and 'fascistas venceram' in txt('#phase')
     assert pg.locator('#confetti i').count() > 0 and pg.locator('#phase .cheer svg.art').count() == 1, 'confetti and the winners cheering'
+    assert pg.locator('#players .role').count() == 7 and 'Hitler' in txt('#players'), 'the roles are shown at the end'
+    # D18: the end in tabs: the result first, the whole game and the record one tap away
+    assert pg.get_attribute('#tab-res', 'aria-selected') == 'true' and pg.locator('#summary').count() == 0 and pg.locator('#log').count() == 0
+    pg.click('#tab-jogo'); assert pg.locator('#summary').count() == 1 and pg.locator('#players').count() == 0
     assert 'Ana investigou Caio: era fascista' in ' '.join(txt('#summary').split()), txt('#summary')
     assert 'eliminou' in txt('#summary') and 'rejeitados' in txt('#summary') and 'Caos' in txt('#summary') and 'vetaram' in txt('#summary'), txt('#summary')
-    assert pg.locator('#players .role').count() == 7 and 'Hitler' in txt('#players'), 'the roles are shown at the end'
+    pg.click('#tab-log'); assert pg.locator('#log li').count() > 10; pg.click('#tab-res')
     assert overflow() == 0; shot(f's4-fim-{THEME}.png')
 
     # again with the same table, then ending a game halfway
@@ -248,6 +260,7 @@ with sync_playwright() as p:
     pg.click('[data-act=level][data-v=extremo]')
     assert pg.locator('[data-act=level][data-v=extremo]').get_attribute('aria-pressed') == 'true' and 'Conta as cartas' in txt('#leveltext')
     assert sum(1 for x in pg.locator('#names li b').all_text_contents() if x in pg.evaluate('window.__APP.Core.BOT_NAMES.fascismo')) == 6, 'the app players get names of well-known politicians'
+    pg.click('#moretoggle'); assert pg.locator('#moreopts').count() == 1
     pg.click('[data-act=train][data-v=fascista]'); assert 'Você vai ser fascista' in txt('#traintext')
     pg.click('[data-act=assist][data-v=on]'); assert pg.locator('[data-act=assist][data-v=on]').get_attribute('aria-pressed') == 'true'
     pg.click('[data-act=coach][data-v=on]'); assert 'treinador faz as contas' in txt('#solo')
@@ -312,6 +325,9 @@ with sync_playwright() as p:
         if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
         body = pg.evaluate('document.body.innerText')
         assert 'undefined' not in body and 'NaN' not in body, [l for l in body.split('\n') if 'undefined' in l or 'NaN' in l]
+        if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
+            seen.add('seats'); assert pg.locator('#seats li').count() == 7 and 'você' in txt('#seats').lower() and pg.locator('#seats li.F').count() >= 2, ('the table at the top, with what the person knows', txt('#seats'))
+            assert 'Como funciona esta fase' in txt('[data-act=help]'), 'the help button says what it is'
         if pg.locator('#coach').count():
             seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
             assert pg.evaluate("!!(document.querySelector('#phase').compareDocumentPosition(document.querySelector('#coach')) & Node.DOCUMENT_POSITION_FOLLOWING)"), 'what the person has to do comes before the trainer'
@@ -327,16 +343,18 @@ with sync_playwright() as p:
     g = G(); log = '\n'.join(g['log'])
     assert g['phase'] == 'over' and g['winner'] in ('L', 'F'), g['log'][-5:]
     laws = sum(1 for e in g['hist'] if e['k'] in ('gov', 'chaos'))
+    pg.click('#tab-jogo')
     assert pg.locator('#ata .timeline li.gov').count() == laws and 'Ja!:' in txt('#ata') and pg.locator('#ata .tally li').count() > 0, 'the minutes: every law, and who voted Ja! for it'
     assert pg.evaluate("getComputedStyle(document.querySelector('#ata .timeline')).listStyleType") == 'none', 'the minutes number the laws once (1ª, 2ª), not twice'
-    pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#showata'); assert pg.locator('#ata').count() == 1
-    assert {'vote', 'decree', 'coach'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
+    assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
+    assert {'vote', 'decree', 'coach', 'seats'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
     crux = pg.evaluate('window.__APP.Core.crux(window.__APP.S.game, 6, "end")')
     assert (pg.locator('#crux-end').count() == 1) == (crux is not None), 'a fascist sees the moment that raised the suspicion the most'
     if crux: assert 'ponto crucial' in txt('#crux-end').lower() and f"{round(crux['after'] * 100)}%" in txt('#crux-end')
-    assert pg.locator('#summary').count() == 1 and pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
+    assert pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     # at the end, the reasoning opens freely: every decision of the chosen app player, with its reason and the options weighed
     pg.evaluate('(() => { delete window.__APP.S.debug; })()'); pg.click('#mindtoggle'); assert 'Estraga' not in txt('#mind')
@@ -374,7 +392,7 @@ with sync_playwright() as p:
     else: pg.click('[data-act=help]')
     pg.wait_for_function("window.__APP.S.game.phase === 'over'", timeout=20000)
     assert G()['winner'] in ('L', 'F')
-    pg.evaluate("(() => { const g = window.__APP.S.game; g.phase = 'nominate'; g.winner = null; window.__APP.ui.think = 60000; })()"); pg.click('[data-act=help]')
+    pg.evaluate("(() => { const g = window.__APP.S.game; g.phase = 'nominate'; g.winner = null; window.__APP.ui.think = 60000; })()"); pg.click('#tab-res')   # any tap repaints; the end screen has no help button
     assert pg.locator('#watching').count() == 1, 'with no person left, the screen says the app plays on'
     assert pg.locator('#notes').count() == 0, 'with two people at the table there is no notebook: the other one would see it'
 
@@ -388,7 +406,9 @@ with sync_playwright() as p:
         if pg.locator('#names li').nth(0).locator('small.ai').count() == 0: pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
         else: break
     pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
-    pg.fill('#name', 'Lu'); pg.press('#name', 'Enter'); pg.click('[data-act=train][data-v=hitler]'); assert 'Stalin' in txt('#solo')
+    pg.fill('#name', 'Lu'); pg.press('#name', 'Enter')
+    if pg.locator('#moreopts').count() == 0: pg.click('#moretoggle')
+    pg.click('[data-act=train][data-v=hitler]'); assert 'Stalin' in txt('#solo')
     pg.evaluate('window.__APP.ui.think = 0')
     pg.click('[data-act=start]'); pg.wait_for_selector('[data-act=open]'); pg.click('[data-act=open]')
     assert 'Stalin' in txt('#role') and pg.locator('#role svg.art').count() == 1 and G()['pack'] == 'comunismo'; pg.click('[data-act=hiderole]')

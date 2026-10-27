@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.15.0]
+
+### Alterado
+- A mesa toda numa faixa no alto da partida: presidente, chanceler, quem saiu e o que você sabe ou marcou de cada um.
+- Tela inicial mais curta: "Mais opções" guarda papel, velocidade, treinador e ata; "Como joga" vem fechado.
+- O botão de começar diz quantos faltam e oferece completar com a IA.
+- O botão de ajuda diz o que é: "Como funciona esta fase".
+- Fim de jogo em abas: Resultado, Resumo e Registro.
+- Botão desativado fica tracejado, em vez de vermelho apagado.
+
 ## [0.14.0]
 
 ### Alterado
