@@ -209,7 +209,7 @@ function vPlayers(g: Game): string {
   const live = S.live && me >= 0 && g.phase !== 'over' && g.phase !== 'reveal' ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
   const meter = (i: number): string => { const f = live?.get(i); return f === undefined ? '' : `<span class="meter" title="Quanto ${esc(g.players[i].name)} desconfia de você agora"><i style="width:${Math.round(f * 100)}%"></i><b>${pct(f)}</b></span>`; };
   const liveBtn = me >= 0 && g.phase !== 'over' ? `<button class="live-toggle" data-act="live" aria-pressed="${!!S.live}" id="livetoggle">👁 Desconfiança ao vivo: ${S.live ? 'ligada' : 'desligada'}</button>` : '';
-  return `<section class="card" id="players"><span class="label">Jogadores</span>${liveBtn}${live ? '<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>' : ''}<ul class="names">${g.players.map((p, i) => {
+  return `<section class="card" id="players"><span class="label">Jogadores</span>${liveBtn}${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
     return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
@@ -221,6 +221,39 @@ function liveSuspicion(g: Game, me: number): { seat: number; f: number }[] {
   const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => `${p.name}${p.alive ? 1 : 0}`).join()}`;
   if (!liveCache || liveCache.key !== key) liveCache = { key, rows: Core.suspicion(g, me) };
   return liveCache.rows;
+}
+/** One moment of the game, told from the point of view of `me` (D15): what the whole table saw happen. */
+function moment(g: Game, i: number, me: number): string {
+  const e = g.hist[i], who = (j: number): string => (j === me ? 'você' : `<b>${name(g, j)}</b>`);
+  const lawW = (l?: Law): string => (l === 'L' ? 'liberal' : '{f}');
+  const of3 = (n: number): string => (n === 0 ? '3 liberais' : n === 3 ? '3 {fs}' : n === 1 ? '1 {f} e 2 liberais' : '2 {fs} e 1 liberal');
+  const of2 = (n: number): string => (n === 0 ? '2 liberais' : n === 2 ? '2 {fs}' : '1 {f} e 1 liberal');
+  if (!e) return '';
+  if (e.k === 'gov' || e.k === 'veto') {
+    const what = e.k === 'veto' ? 'vetaram as duas leis' : `saiu lei ${lawW(e.law)}`;
+    const said = [e.pc !== undefined && e.pc >= 0 ? `${who(e.pres)} disse que tirou ${of3(e.pc)}` : '', e.cc !== undefined && e.cc >= 0 ? `${who(e.chanc)} disse que recebeu ${of2(e.cc)}` : ''].filter(Boolean).join(' e ');
+    const head = e.pres === me ? `Você foi presidente com ${who(e.chanc)}` : e.chanc === me ? `Você foi chanceler de ${who(e.pres)}` : `${who(e.pres)} e ${who(e.chanc)} governaram`;
+    return `${head}: ${what}${said ? `, e ${said}` : ''}.`;
+  }
+  if (e.k === 'chaos') return `A lei ${lawW(e.law)} que entrou pelo caos.`;
+  if (e.k === 'inv') return `${who(e.by)} investigou ${who(e.target)}${e.said && e.said !== '-' ? ` e disse que é ${e.said === 'L' ? 'liberal' : '{f}'}` : ''}.`;
+  if (e.k === 'exec') return `${who(e.by)} eliminou ${who(e.target)}.`;
+  return '';
+}
+/** The crucial point (D15), for a person on the hidden side: the moment that raised the suspicion on them the most. */
+function vCrux(g: Game, me: number, mode: 'end' | 'live'): string {
+  if (g.players[me].role === 'liberal') return '';
+  const c = mode === 'live' ? liveCrux(g, me) : Core.crux(g, me, 'end');
+  if (!c) return '';
+  const e = g.hist[c.at], mine = !!e && ((e.k === 'gov' || e.k === 'veto') ? e.pres === me || e.chanc === me : e.k === 'inv' ? e.target === me : false);
+  const why = mine ? '' : '<p class="hint">Não foi uma jogada sua: quando outros parecem limpos, sobra desconfiança para quem ainda não se mostrou.</p>';
+  return `<div class="crux" id="crux-${mode}"><small>${mode === 'live' ? 'O que mais fez a desconfiança subir até agora' : 'O ponto crucial: o que mais fez a desconfiança subir'}</small><p>${moment(g, c.at, me)}</p><b>${pct(c.before)} → ${pct(c.after)}</b>${why}</div>`;
+}
+let cruxCache: { key: string; c: ReturnType<typeof Core.crux> } | null = null;
+function liveCrux(g: Game, me: number): ReturnType<typeof Core.crux> {
+  const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => `${p.name}${p.alive ? 1 : 0}`).join()}`;
+  if (!cruxCache || cruxCache.key !== key) cruxCache = { key, c: Core.crux(g, me, 'live') };
+  return cruxCache.c;
 }
 /** The one person at a table with app players, or -1. */
 const solo = (g: Game): number => { const p = g.players.map((x, i) => (x.ai ? -1 : i)).filter(i => i >= 0); return Core.hasAi(g) && p.length === 1 ? p[0] : -1; };
@@ -253,7 +286,7 @@ function vThoughts(g: Game): string {
     const pts = s.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
     return `<svg class="spark" viewBox="0 0 ${W0} ${H0}" role="img" aria-label="Desconfiança de ${pct(s[0])} a ${pct(s[s.length - 1])}"><line x1="4" x2="${W0 - 4}" y1="${y(s[0]).toFixed(1)}" y2="${y(s[0]).toFixed(1)}" class="spark-base"/><polyline points="${pts}" class="spark-line"/>${s.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i === s.length - 1 ? 3 : 2}" class="spark-dot"><title>${i ? `Depois do ${i}º acontecimento` : 'No começo'}: ${pct(v)}</title></circle>`).join('')}</svg>`;
   };
-  const html = rows.length ? `<section class="card" id="thoughts"><span class="label">O que as IAs pensavam de você</span><p class="hint">A chance que cada IA dava de você ser {f}, do começo ao fim, lei a lei. A linha tracejada é o começo.</p><ul class="thoughts">${rows.map(r => `<li><span>${name(g, r.seat)} <span class="role ${Core.partyOf(g.players[r.seat].role)}">${role(g.players[r.seat].role)}</span></span>${line(r.series)}<b><small>${pct(r.series[0])} →</small> ${pct(r.series[r.series.length - 1])}</b></li>`).join('')}</ul></section>` : '';
+  const html = rows.length ? `<section class="card" id="thoughts"><span class="label">O que as IAs pensavam de você</span><p class="hint">A chance que cada IA dava de você ser {f}, do começo ao fim, lei a lei. A linha tracejada é o começo.</p><ul class="thoughts">${rows.map(r => `<li><span>${name(g, r.seat)} <span class="role ${Core.partyOf(g.players[r.seat].role)}">${role(g.players[r.seat].role)}</span></span>${line(r.series)}<b><small>${pct(r.series[0])} →</small> ${pct(r.series[r.series.length - 1])}</b></li>`).join('')}</ul>${vCrux(g, me, 'end')}</section>` : '';
   thoughtsCache = { key, html };
   return html;
 }

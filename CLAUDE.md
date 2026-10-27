@@ -90,6 +90,7 @@ O que cada peça do harness cobre:
 30. No fim, com uma pessoa só na mesa (D13): "O que as IAs pensavam de você", uma linha por IA que não sabia o papel da pessoa, com a chance que ela dava de a pessoa ser do lado escondido do começo ao fim, lei a lei (`thoughts`).
 31. Velocidade da IA (D13, `S.speed`): lenta, normal ou rápida (`SPEEDS`: 2,4 s, 1,2 s e 0,5 s).
 32. Desconfiança ao vivo (D14, `S.live`): com uma pessoa só na mesa, um botão na lista de jogadores liga e desliga uma barra ao lado de cada IA com quanto ela desconfia da pessoa agora (`suspicion`). A IA que sabe o papel da pessoa (o fascista sabe todos) mostra a conta que faria se não soubesse: o número real dela, ou a falta dele, entregaria quem sabe.
+33. Ponto crucial (D15, `crux`): para a pessoa do lado escondido (fascista, Hitler, comunista, Stalin), o momento que mais fez subir a desconfiança média das IAs sobre ela, contado com o que a mesa viu ("Você foi presidente com X: saiu lei fascista, e você disse que tirou 3 fascistas") e com a média antes e depois. No fim, abaixo de "O que as IAs pensavam de você", com as IAs que não sabiam o papel; ao vivo, com a desconfiança ao vivo ligada, com a mesma conta das barras. Se o momento não foi uma jogada da pessoa, o cartão explica que a desconfiança sobra para quem ainda não se mostrou.
 
 ## Arquitetura
 
@@ -105,7 +106,7 @@ Sem DOM, sem rede e sem armazenamento (conferido pelo `docs_check.py`, e pelo `t
 |---|---|
 | `src/core/types.ts` | As formas dos dados: `Game`, `Player`, `Law`, `Phase`, `AppState`, `Entry`, `Json` |
 | `src/core/game.ts` | As regras: `newGame` (com os lugares da IA e o nível), `revealNext`, `nominate`, `vote`, `presidentDiscard`, `chancellorDiscard`, `askVeto`, `answerVeto`, `investigate`, `endPower`, `execute`, as constantes da mesa e `seeded`/`shuffle` (o acaso entra como função) |
-| `src/core/judge.ts` | O juiz entre a partida e as IAs: `viewOf` (o que cada lugar pode saber), `turn`/`botTurn` (de quem é a vez), `botStep` (a jogada da IA, pelas regras), `castVotes` (os votos um a um), `claims`/`say` (o que cada um diz à mesa), `talker`/`talk` (a conversa entre as rodadas), `coach` (as dicas do treinador) e `thoughts` (o que as IAs pensavam da pessoa). Único código que segura a partida inteira e pergunta algo às IAs |
+| `src/core/judge.ts` | O juiz entre a partida e as IAs: `viewOf` (o que cada lugar pode saber), `turn`/`botTurn` (de quem é a vez), `botStep` (a jogada da IA, pelas regras), `castVotes` (os votos um a um), `claims`/`say` (o que cada um diz à mesa), `talker`/`talk` (a conversa entre as rodadas), `coach` (as dicas do treinador), `thoughts` (o que as IAs pensavam da pessoa), `suspicion` (a desconfiança ao vivo) e `crux` (o ponto crucial). Único código que segura a partida inteira e pergunta algo às IAs |
 | `src/core/ai.ts` | As IAs, cegas de propósito: `decide` responde a pergunta da visão; `believe` pesa todas as divisões de papéis possíveis pelo que aconteceu (leis, falas, investigações; no extremo, contando o baralho com `drawOdds`); os níveis em `AI` |
 | `src/core/words.ts` | As palavras de cada tema (`WORDS`, `words`, `PACKS`): o lado escondido, o líder, os votos, as abreviações |
 | `src/core/save.ts` | `readGame` e `readState`: lê o que foi guardado, descartando a partida que não fecha |

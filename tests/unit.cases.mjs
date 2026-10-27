@@ -234,6 +234,9 @@ export default function cases(Core) {
   eq('what they thought: only app players that did not know the person, from the start and after each law', [th.map(x => x.seat), th.every(x => x.series.length === 3 && x.series.every(v => v >= 0 && v <= 1))], [[3, 4, 5, 6], true]);
   const live = Core.suspicion({ ...told2, phase: 'nominate' }, 0);
   eq('live suspicion: every app player in the game, a chance each; one that knows the role reckons as if it did not', [live.map(x => x.seat), live.every(x => x.f >= 0 && x.f <= 1), live.some(x => x.seat === 1 && x.f > 0 && x.f < 1)], [[1, 2, 3, 4, 5, 6], true, true]);
+  const cruxG = ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 0, chanc: 5, law: 'F', pc: 3, cc: 1 }, { k: 'rej', pres: 4, chanc: 6 }] });
+  const cEnd = Core.crux(cruxG, 0, 'end'), cLive = Core.crux(cruxG, 0, 'live');
+  eq('crucial point: the moment that raised the suspicion the most, with the average before and after; at the end and live', [cEnd.at, cEnd.after > cEnd.before, cLive.at, Core.crux(ai7({ phase: 'nominate' }), 0, 'end')], [1, true, 1, null]);
   eq('read state: tips, speed and the open notebook are kept; nonsense is dropped', [Core.readState({ notesOpen: true, live: true }).notesOpen && Core.readState({ live: true }).live, 'notesOpen' in Core.readState({ notesOpen: 1 }), Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, false, true, 'lenta', false, false]);
 
   /* what is saved */
