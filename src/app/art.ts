@@ -331,6 +331,17 @@ const LEADERS: Record<string, () => string> = {
     <path d="M54 46 L60 38 L66 46 L64 52 L56 52Z" fill="#7a5a62" ${o(1.4)}/>
     <path d="M46 56 C50 68 70 68 74 56 C68 60 52 60 46 56Z" fill="#5a1414" ${o(1.6)}/><path d="M50 57 l2.4 6 l2.4 -5.4 M65 57 l2.4 6 l2.4 -5.4" fill="${W}" ${o(1)}/>
     ${angry(40, 11, '#e8442e')}${shout}`,
+  rato: () => `<circle cx="34" cy="24" r="13" fill="#8a8580" ${o()}/><circle cx="34" cy="24" r="7" fill="#d99a9a"/><circle cx="86" cy="24" r="13" fill="#8a8580" ${o()}/><circle cx="86" cy="24" r="7" fill="#d99a9a"/>
+    <path d="M38 40 C38 28 48 22 60 22 C72 22 82 28 82 40 C82 52 74 60 68 66 L60 76 L52 66 C46 60 38 52 38 40Z" fill="#8a8580" ${o()}/>
+    <ellipse cx="60" cy="74" rx="4.6" ry="3.6" fill="${PINK}" ${o(1.4)}/>
+    <path d="M48 68 L30 64 M48 71 L30 72 M72 68 L90 64 M72 71 L90 72" fill="none" stroke="${K}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M52 62 C56 70 64 70 68 62 C64 64 56 64 52 62Z" fill="#5a1414" ${o(1.4)}/><path d="M57 63 h6 v5 h-6Z" fill="${W}" ${o(1)}/>
+    ${angry(42, 10, '#e8442e')}${shout}`,
+  panda: () => `<circle cx="36" cy="22" r="10" fill="#1f1b19" ${o()}/><circle cx="84" cy="22" r="10" fill="#1f1b19" ${o()}/>
+    <path d="M30 46 C28 26 42 16 60 16 C78 16 92 26 90 46 C88 62 76 72 60 72 C44 72 32 62 30 46Z" fill="#f4f1ea" ${o()}/>
+    <path d="M40 40 C40 32 50 30 54 36 C58 44 52 50 46 50 C42 50 40 46 40 40Z M80 40 C80 32 70 30 66 36 C62 44 68 50 74 50 C78 50 80 46 80 40Z" fill="#1f1b19"/>
+    <ellipse cx="60" cy="54" rx="13" ry="10" fill="#fffaf0" ${o(1.6)}/><ellipse cx="60" cy="48" rx="5.4" ry="3.8" fill="${K}"/>
+    ${stache(57)}<path d="M54 63 C58 65 62 65 66 63" fill="none" ${o(2)}/>${pipe(66, 62)}${angry(40, 12, W)}`,
   oculos: () => `<circle cx="36" cy="24" r="10" fill="#2a2420" ${o()}/><circle cx="84" cy="24" r="10" fill="#2a2420" ${o()}/>
     <path d="M30 46 C28 26 42 16 60 16 C78 16 92 26 90 46 C88 62 76 72 60 72 C44 72 32 62 30 46Z" fill="#2a2420" ${o()}/>
     <path d="M42 34 C46 28 56 30 56 38 C56 46 48 50 44 46 Z M78 34 C74 28 64 30 64 38 C64 46 72 50 76 46 Z" fill="#e8d6a8" ${o(1.2)}/>
@@ -352,7 +363,7 @@ const LEADERS: Record<string, () => string> = {
     <ellipse cx="60" cy="44" rx="4" ry="3" fill="${K}"/>${pipe(72, 58)}${angry(36, 11, W)}`
 };
 const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
-  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'bufalo' }, asia: { H: 'escorpiao', S: 'iaque' }, europa: { H: 'morcego', S: 'morsa' }
+  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'bufalo' }, asia: { H: 'escorpiao', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }
 };
 const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
   ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`
