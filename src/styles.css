@@ -496,3 +496,7 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .plays-head{display:block;margin-top:8px;font:800 12px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}
 .plays-head.good{color:var(--lib)}.plays-head.bad{color:var(--fas)}
 .plays.good li::before{content:"✓ ";font-weight:800;color:var(--lib)}.plays.bad li::before{content:"✗ ";font-weight:800;color:var(--fas)}
+/* D21: what the last government told the table, kept in view */
+.said{margin:0;padding:8px 12px;border-left:5px solid var(--line);background:var(--surface);font-size:14px;line-height:1.4}
+.said small{display:block;font:800 10px/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+[data-look="deco"] .said{border-left-color:var(--gold)}

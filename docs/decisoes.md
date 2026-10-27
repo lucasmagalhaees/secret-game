@@ -280,19 +280,15 @@ Modelo de uma decisão:
   - O sensor fecha o segredo quando o celular fica de tela para baixo. Deitado, segurando o celular acima do rosto, ele fica nessa mesma posição. Das duas opções do pedido, escolhi deixar desligado de início, com um botão para ligar no cartão "Aparência". Sair do app continua fechando o segredo, porque isso não engana.
 - **Não sei:** se alguém vai querer o sensor ligado. Se ninguém quiser, dá para tirar de vez.
 
-## D22. IA sem metajogo, mas não ingênua
+## D21. Dá tempo de ler o que o governo disse
 
-- **Contexto (27/10/2026):** um liberal que testou o chanceler (passou 1 fascista e 1 liberal tendo tirado 2 liberais, e contou) virou 100% fascista para a IA. Depois: "da mesma forma se fosse fascista e usasse o falso descarte pra testar o chanceler [...] isso precisa ser balanceado corretamente, veja todos os casos"; "a IA n pode ter metajogo mas tbm n pode ser ingenua [...] eu sendo hitler posso aprovar lei liberal no inicio para disfarçar e esse cenário uma IA deve saber que existe no nivel adequado de dificuldade"; "varra a logica da IA buscando por incongruencias desse tipo".
-- **Decisão:** requisito 18 do `CLAUDE.md`. O que a IA não sabia, em todos os níveis ou só nos de baixo:
-  1. **Uma jogada virava certeza.** O liberal nunca jogava fora uma liberal, nunca errava a lei e nunca errava a fala. Agora há sempre uma margem (`SLIP_GUESS`, 3%), em todos os níveis.
-  2. **Teste do chanceler.** Com 1 fascista e 2 liberais, o liberal pode passar uma de cada para ver o que o chanceler aprova, e conta a verdade. A IA calcula isso em todos os níveis (`TEST_GUESS`: 15% no difícil e no extremo, metade nos de baixo). Os liberais do difícil e do extremo testam quando têm dúvida sobre o chanceler, antes da zona do Hitler (`test` em `AI`). Um fascista pode se esconder atrás do "teste": os do difícil e do extremo contam a verdade, metade das vezes, quando o chanceler aprovou a liberal. O treinador chama de teste, não de "história que não fecha". A revisão do fim julga o teste pelo que custou e pelo que mostrou.
-  3. **Hitler se disfarçando.** Antes da 3ª lei fascista, o Hitler deixa passar liberal, e o time passa liberal para ele aprovar. O difícil e o extremo sabem disso (`BOSS_CLEAN`, 60%); fácil e médio o tratam como qualquer fascista.
-  4. **A espiada não era conferida.** No difícil e no extremo, o que alguém disse ter espiado vira a mão que o presidente seguinte tem de ter, nos mundos em que quem espiou é liberal.
-  5. **Os votos eram ignorados.** No extremo, o fascista que sabe que há aliado no governo vota Ja! (`ALLY_JA`, 90%), contra 60% de qualquer outro (`ANY_JA`).
-  6. **Indicação, eliminação e eleição especial não diziam nada.** No difícil e no extremo, o presidente fascista que conhece o time indica um aliado uma vez e meia mais que o acaso (`ALLY_PICK`); e os fascistas desses níveis, sabendo disso, indicam aliado menos (35% contra 60%). No difícil e no extremo, um fascista que conhece o time quase nunca elimina um aliado e prefere dar a presidência a um.
-  7. **A IA muito desconfiada rejeitava qualquer governo.** O temperamento tirava até 15 pontos da folga e a deixava abaixo de zero, então nem um governo comum passava. A folga agora nunca é menor que zero.
-- **Interpretações que precisaram ser feitas:** fácil e médio continuam mais ingênuos de propósito, porque é isso que separa os níveis. Mesmo assim, em nenhum nível uma jogada sozinha prova o papel de alguém. A conversa das IAs continua fora das contas (D13).
-- **Não sei:** se 15% de teste e 60% de disfarce do Hitler batem com mesas de pessoas de verdade. Medi só contra as próprias IAs.
+- **Contexto (27/10/2026):** "a animacao do claim de votacao ta mt rapida, mal dá tempo de ler o que o presidente e o chaceler disseram que receberam".
+- **Decisão:** requisito 31 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:** fiz duas coisas. Depois que uma IA diz à mesa o que recebeu, investigou ou espiou, a próxima jogada espera mais (`CLAIM_HOLD`). E o que o último governo, ou a última investigação, disse fica escrito numa linha abaixo da faixa da mesa até o próximo. Assim não depende de pegar o aviso passando.
+- **Dois bugs no mesmo assunto (27/10/2026):** "aparece pra ver a carta de um jogador IA, fora que a telinha de acao fica tremendo pq toda hora eh sobrescrita por eventos enquanto o presidas vota".
+  - Enquanto uma IA falava da própria mão, a tela mostrava a fase pelo lado de quem joga, e quando a fase era de um segredo da IA aparecia o portão "Sou X, mostrar". Agora a fase de uma IA mostra sempre a IA decidindo.
+  - A cada fala ou conversa de IA, a fase entrava de novo, deslizando, e um segredo aberto ou um voto meio contado se perdia. A tela só considera que a fase mudou quando o jogo anda de verdade (governo, rejeição, poder, eleição), não com o que se diz ao lado.
+- **Não sei:** se os 2,5 s a mais no normal bastam para quem lê devagar. A velocidade "lenta" dá 4 s.
 
 ## Pendências
 

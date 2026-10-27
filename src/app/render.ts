@@ -113,9 +113,12 @@ function vRules(): string {
 
 /* ---------- the game ---------- */
 function vGame(g: Game): string {
-  const key = `${g.phase}:${g.log.length}:${g.reveal}`;
+  const key = `${g.phase}:${beat(g)}:${g.reveal}`;
   entering = key !== seenPhase; seenPhase = key;
-  const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek', 'talk'].includes(bot.ask) ? bot : null;   // talk and claims happen beside the phase, not instead of it
+  // talk and claims happen beside the phase, not instead of it; while one goes on, a phase an app player holds still
+  // shows that player deciding, never the gate of its secret (D21)
+  const bot = Core.botTurn(g), under = Core.turn(g), side = ['pc', 'cc', 'inv', 'peek', 'talk'];
+  const acting = bot && !side.includes(bot.ask) ? bot : under && under.ask !== 'votes' && g.players[under.seat]?.ai ? under : null;
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
   // what the person has to do comes first; what helps them decide (their claim, the trainer) right after it
   const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`);
@@ -126,7 +129,7 @@ function vGame(g: Game): string {
     const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vThoughts(g) + vReview(g) + vPlayers(g) + vBoard(g);
     return card + bar + body + vDock(g);
   }
-  return vUndo() + vStatus(g) + vSeats(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
+  return vUndo() + vStatus(g) + vSeats(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -365,6 +368,14 @@ function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => str
   };
   return { me, cell, party: (i: number): Law | '' => sure.get(i)?.[1] || notes[i] || '', sure: (i: number): boolean => sure.has(i) };
 }
+/** What the last government (or investigation) told the table, kept in view under the table until the next one
+ *  (D21): a claim no longer flashes by in a note. */
+function vSaid(g: Game): string {
+  if (g.phase === 'reveal') return '';
+  const i = g.hist.map((e, j) => ((e.k === 'gov' || e.k === 'veto') && (e.pc !== undefined || e.cc !== undefined)) || (e.k === 'inv' && e.said !== undefined) ? j : -1).filter(j => j >= 0).pop();
+  if (i === undefined) return '';
+  return `<p class="said" id="said"><small>${g.hist[i].k === 'inv' ? 'Última investigação' : 'Último governo'}</small>${moment(g, i, solo(g))}</p>`;
+}
 /** The whole table at a glance, at the top (D18): every seat in order, who is president and chancellor, who is out, and,
  *  playing alone, what the person knows or marked of each (the colour) and, with the live suspicion on, how much each
  *  app player suspects them. */
@@ -486,10 +497,13 @@ function vLog(g: Game): string {
   return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}<ol class="log">${[...g.log].reverse().map(l => `<li>${esc(l)}</li>`).join('')}</ol></details>`;
 }
 
-/** The key of the secret a phase shows, and who may see it; null for a phase with nothing secret. The log grows every
- *  round, so the same phase in another round has another key and starts closed. */
+/** How far the game has gone, counting what changes a phase and not what is said beside it (a claim, a talk): the
+ *  screen of a phase stays put, and a secret stays open, while the app players speak (D21). */
+export const beat = (g: Game): number => g.hist.filter(e => e.k !== 'talk').length;
+/** The key of the secret a phase shows, and who may see it; null for a phase with nothing secret. The game moves on
+ *  every round, so the same phase in another round has another key and starts closed. */
 export function gateKey(g: Game): { key: string; who: number } | null {
-  const k = g.log.length;
+  const k = beat(g);
   if (g.phase === 'reveal') return { key: `reveal:${g.reveal}`, who: g.reveal };
   if (g.phase === 'president' || g.phase === 'investigated' || g.phase === 'peek') return { key: `${g.phase}:${k}`, who: g.pres };
   if (g.phase === 'chancellor') return { key: `chancellor:${k}`, who: g.chanc as number };
