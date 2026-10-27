@@ -414,6 +414,14 @@ with sync_playwright() as p:
 
     # the communist theme (D12): liberals against communists, Stalin, Da! and Niet!, the wolf and the bear
     pg.click('[data-act=end]'); pg.click('[data-act=end]')
+    # D23: every finished game is kept on the device, and exported as a file
+    kept = pg.evaluate("JSON.parse(localStorage.getItem('secrethitler.history.v1') || '[]')")
+    assert len(kept) >= 2 and all(x['game']['phase'] == 'over' for x in kept) and f'{len(kept)} partidas terminadas' in txt('#historytext'), (len(kept), txt('#history'))
+    with pg.expect_download() as dl: pg.click('#exportgames')
+    f = json.loads(open(dl.value.path(), encoding='utf-8').read())
+    assert f['app'] == 'secret-hitler' and f['format'] == 1 and len(f['games']) == len(kept) and dl.value.suggested_filename.endswith('.json') and 'trace' in f['games'][-1]['game'], 'the export holds every kept game, with the reasoning of the app players'
+    pg.click('#wipe'); assert 'Toque de novo' in txt('#wipe'); pg.click('#wipe')
+    assert 'Nenhuma partida terminada' in txt('#historytext') and pg.locator('#exportgames').count() == 0
     pg.click('[data-act=pack][data-v=comunismo]')
     reds = pg.evaluate('window.__APP.Core.BOT_NAMES.comunismo')
     assert txt('#boss') == 'Stalin' and sum(1 for x in pg.locator('#names li b').all_text_contents() if x in reds) == 5, 'the app seats take names of the theme'

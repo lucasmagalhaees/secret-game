@@ -5,6 +5,7 @@ import { portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { S, ui } from './state';
 import { builtFrom, canUpdate } from './update';
+import { kept } from './history';
 
 /* ================= the screen =================
    Rendering is innerHTML from the state. Every text that did not come from the code goes through esc(). A field with
@@ -24,7 +25,7 @@ export function render(): void {
   document.documentElement.dataset.pack = P;
   part('boss').textContent = W.boss;
   part('score').innerHTML = g ? `<span class="chip L">${g.laws.L}/${Core.WIN.L}</span><span class="chip F">${g.laws.F}/${Core.WIN.F}</span>` : '';
-  view.innerHTML = themed(g ? vGame(g) : vPack() + vTable() + vRules() + vSettings(), W as unknown as Record<string, string>);
+  view.innerHTML = themed(g ? vGame(g) : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
 }
 
 /** The words of the theme of what is on screen (D12): the game's, or before a game the one chosen at the table. */
@@ -561,6 +562,12 @@ function vVoteAi(g: Game): string {
 }
 
 /* ---------- settings ---------- */
+/** The finished games kept on this device (D23), and the button that exports them. */
+function vHistory(): string {
+  const n = kept();
+  return `<section class="card" id="history"><span class="label">Suas partidas</span><p class="hint" id="historytext">${n ? `${n} ${n === 1 ? 'partida terminada guardada' : 'partidas terminadas guardadas'} neste aparelho (as últimas ${Core.HISTORY_MAX}).` : 'Nenhuma partida terminada ainda.'} Só ficam aqui: nada sai do aparelho sozinho. Exporte o arquivo e mande para ajustar a IA ao jeito que as pessoas jogam de verdade.</p>
+    ${n ? `<button class="btn block" data-act="exportgames" id="exportgames">Exportar partidas</button><button class="more" data-act="wipe" id="wipe">${ui.confirmWipe ? 'Toque de novo para apagar todas' : 'Apagar as partidas guardadas'}</button>` : ''}</section>`;
+}
 function vSettings(): string {
   const t = S.theme || 'auto', opt = (v: string, label: string): string => `<button class="${t === v ? 'on' : ''}" data-act="theme" data-t="${v}" aria-pressed="${t === v}">${label}</button>`;
   const l = S.look || 'poster', sty = (v: string, label: string): string => `<button class="${l === v ? 'on' : ''}" data-act="look" data-l="${v}" aria-pressed="${l === v}">${label}</button>`;

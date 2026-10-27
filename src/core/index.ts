@@ -2,7 +2,7 @@
 import { BOT_NAMES, botName, LEVELS, boardOf, HITLER_KNOWS_UPTO, powerAt, specialElect, addName, answerVeto, askVeto, canNominate, canVeto, SMALL_TABLE, VETO_FROM, canTarget, chancellorDiscard, checkNames, FASCISTS, DECK_F, DECK_L, endPower, execute, investigate, investigated, knows, lawName, MAX_PLAYERS, MIN_PLAYERS, NAME_MAX, newGame, nominate, partyOf, POWERS, presidentDiscard, revealNext, seeded, shuffle, HITLER_ZONE, TRACKER_MAX, vote, WIN } from './game';
 import { AI, believe, decide, decideWhy, drawOdds, QUIET } from './ai';
 import { botStep, botTurn, castVotes, claims, coach, crux, suspicion, hasAi, humansAlive, say, talk, review, talker, TALKS, thoughts, trail, turn, viewOf } from './judge';
-import { readGame, readState } from './save';
+import { HISTORY_MAX, historyFile, readGame, readHistory, readState } from './save';
 import { PACKS, WORDS, words } from './words';
 import { normEntries, normEntry } from './source';
 
@@ -12,6 +12,6 @@ export const Core = {
   presidentDiscard, chancellorDiscard, canVeto, askVeto, answerVeto, canTarget, specialElect, investigate, investigated, endPower, execute,
   LEVELS, BOT_NAMES, botName, AI, believe, decide, decideWhy, drawOdds, QUIET, TALKS, trail, review, talker, talk, coach, thoughts, suspicion, crux, viewOf, turn, botTurn, botStep, castVotes, claims, say, hasAi, humansAlive,
   PACKS, WORDS, words,
-  readGame, readState, normEntry, normEntries
+  readGame, readState, readHistory, historyFile, HISTORY_MAX, normEntry, normEntries
 };
 export type * from './types';

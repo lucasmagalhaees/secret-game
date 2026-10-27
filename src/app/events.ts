@@ -3,6 +3,7 @@ import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
 import { blurField, confetti, decree, flash, render, stamp, toast } from './render';
+import { exportGames, keep, wipe } from './history';
 import { S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
@@ -20,6 +21,7 @@ function play(next: Game, msg?: string, undo: Game | null = null): void {
   render();
   if (msg && changed) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
+    keep(next);                                                              // kept on the device for export (D23)
     confetti(next.winner); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
   }
   tick();
@@ -154,7 +156,8 @@ export function initEvents(): void {
   document.addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
-    if (a !== 'clear') ui.confirmClear = false;                              // the second tap has to come right after the first
+    if (a !== 'clear') ui.confirmClear = false;
+    if (a !== 'wipe') ui.confirmWipe = false;                              // the second tap has to come right after the first
     if (a === 'addname') addName();
     else if (a === 'rmname') { setTable(S.names.filter((_, j) => j !== i), flags().filter((_, j) => j !== i)); ui.msg = ''; render(); }
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
@@ -166,6 +169,8 @@ export function initEvents(): void {
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
+    else if (a === 'exportgames') void exportGames();
+    else if (a === 'wipe') { if (ui.confirmWipe) { ui.confirmWipe = false; wipe(); } else ui.confirmWipe = true; render(); }
     else if (a === 'clear') { if (ui.confirmClear) { ui.confirmClear = false; ui.msg = ''; setTable([], []); } else ui.confirmClear = true; render(); }
     else if (a === 'flip') { const next = { ...S }; if (d.v === 'on') next.flip = true; else delete next.flip; setS(next); saveS(); render(); }
     else if (a === 'more') { ui.more = !ui.more; render(); }

@@ -280,6 +280,17 @@ Modelo de uma decisão:
   - O sensor fecha o segredo quando o celular fica de tela para baixo. Deitado, segurando o celular acima do rosto, ele fica nessa mesma posição. Das duas opções do pedido, escolhi deixar desligado de início, com um botão para ligar no cartão "Aparência". Sair do app continua fechando o segredo, porque isso não engana.
 - **Não sei:** se alguém vai querer o sensor ligado. Se ninguém quiser, dá para tirar de vez.
 
+## D23. Partidas guardadas no aparelho, para exportar
+
+- **Contexto (27/10/2026):** "pq n vc n coleta metricas dos meus jogos, pra ir refinando a logica conforme eu vou jogando e treinando a IA?" Escolhido entre as opções: "guardando as partidas no celular com o botão de exportar". E: "esse projeto n precisa de servidor, eh desnecessario".
+- **Decisão:** requisito 38 do `CLAUDE.md`. Isso muda o escopo: antes, histórico de partidas ficava de fora. Agora as partidas terminadas são guardadas, mas só para exportar, sem tela de histórico.
+- **Interpretações que precisaram ser feitas:**
+  - Fica guardada a partida inteira, inclusive o raciocínio das IAs, porque é com ele que se vê onde a IA errou sobre a pessoa. A chave é separada da do app (`secrethitler.history.v1`), para uma lista longa não deixar cada jogada mais lenta de salvar.
+  - O limite é de 30 partidas, umas 2 a 3 MB. Se faltar espaço, as mais antigas saem primeiro. Partida encerrada no meio não é guardada.
+  - Para exportar, uso o compartilhar do celular quando ele aceita arquivo, porque é o caminho mais curto até mandar o arquivo numa conversa. Quando não aceita, o arquivo é baixado.
+  - Os dados servem para calibrar as taxas que as IAs supõem (teste do chanceler, disfarce do Hitler, mentiras, votos) pelo que pessoas fazem de verdade. As IAs não aprendem o estilo de uma pessoa: isso seria metajogo (D10).
+- **Não sei:** como o Safari do iPhone se comporta ao compartilhar um `.json`. Não testei num iPhone.
+
 ## Pendências
 
 | Pendência | Quem resolve |

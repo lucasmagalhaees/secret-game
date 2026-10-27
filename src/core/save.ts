@@ -1,7 +1,7 @@
 /* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
    never breaks the page: the names and the theme still come back. */
 import { LEVELS, MAX_PLAYERS, NAME_MAX, WIN } from './game';
-import type { AppState, Event, Game, Law, Level, Phase, Player, Role, Trace } from './types';
+import type { AppState, Event, Game, Law, Level, Phase, Player, Role, Saved, Trace } from './types';
 
 const ROLES: Role[] = ['liberal', 'fascista', 'hitler'];
 const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'special', 'execute', 'over'];
@@ -38,6 +38,21 @@ export function readGame(x: unknown): Game | null {
 const isTrace = (x: unknown, n: number): x is Trace[] => Array.isArray(x) && x.every((t: Trace) => !!t && typeof t === 'object' && isIdx(t.seat, n) && typeof t.ask === 'string' && Number.isInteger(t.a) && Number.isInteger(t.at)
   && (t.hand === undefined || isLaws(t.hand)) && !!t.why && Array.isArray(t.why.text) && t.why.text.every(l => typeof l === 'string')
   && (t.why.rows === undefined || (Array.isArray(t.why.rows) && t.why.rows.every(r => !!r && isIdx(r.seat, n) && typeof r.f === 'number' && typeof r.h === 'number' && (r.v === undefined || typeof r.v === 'number')))));
+
+/** How many finished games the device keeps (D23): the oldest go first. */
+export const HISTORY_MAX = 30;
+/** The finished games kept on the device, as they were read back: only finished games that hold together, the newest
+ *  HISTORY_MAX. Anything else is dropped. */
+export function readHistory(x: unknown): Saved[] {
+  if (!Array.isArray(x)) return [];
+  return x.flatMap((r: Saved) => {
+    const game = r && typeof r === 'object' && Number.isFinite(r.at) ? readGame(r.game) : null;
+    return game && game.phase === 'over' ? [{ at: r.at, game }] : [];
+  }).slice(-HISTORY_MAX);
+}
+/** The file the games are exported as (D23): what app and version made it, when, and the games. */
+export const historyFile = (games: Saved[], version: string | null, now: number): { app: string; format: 1; version: string | null; exported: number; games: Saved[] } =>
+  ({ app: 'secret-hitler', format: 1, version, exported: now, games });
 
 /** The person's notes (D12): seat → the party they marked; anything else is dropped. */
 function readNotes(x: unknown): { notes?: Record<string, Law> } {
