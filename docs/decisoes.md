@@ -24,6 +24,7 @@ Modelo de uma decisão:
 7. Telas mais claras, modo escuro revisado, animações, estilo art déco e desenhos de animais (D7).
 8. Endereço de produção (D8).
 9. Mais animações e melhorias: carta virando, distribuição, descarte, carimbo, poderes, confete, vibração, sons, resumo, esconder sozinho, ajuda e desfazer (D9).
+10. Jogar sozinho contra a IA, em quatro níveis, com um juiz que só mostra a cada IA o que o lugar dela saberia (D10).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -112,6 +113,37 @@ Modelo de uma decisão:
   - Virado para baixo é o celular com mais de 150° de inclinação; o iPhone só informa isso depois de a pessoa permitir, pedido no primeiro toque em "mostrar".
   - Com "reduzir movimento", nada anima e nada espera (o descarte segue na hora); os testes ponta a ponta rodam assim, mais uma rodada com movimento.
 - **Não sei:** como os sons soam no alto-falante de um celular, e se a permissão de movimento do iPhone aparece como esperado.
+
+## D10. Jogar sozinho contra a IA
+
+- **Contexto (26/10/2026):** "eu quero conseguir jogar sozinho … com e contra jogadores controlados pela IA". Depois: "pode ter níveis de dificuldade … baseado no quanto eles compram um blefe, o quanto eles vão contando as cartas", com o truco (D3 e requisito 9 do truco) de referência: "a IA, no modo extremo, ela já começa a contar as cartas. Ela não faz metajogo"; e "as IAs não podem extrapolar o comando delas … uma IA mestre e outras IAs … para garantir que nenhuma extrapole a sua função".
+- **Decisão:** lugares da IA na mesa, quatro níveis como no truco (fácil, médio, difícil, extremo), e um juiz (`src/core/judge.ts`) no papel da "IA mestre": é o único código que segura a partida inteira; a cada vez, monta a visão de um lugar (o que aquela pessoa saberia sentada ali), faz uma pergunta com as respostas permitidas e joga a resposta pelas regras. O código que decide (`src/core/ai.ts`) só recebe essa visão. Requisitos 18 a 21 do `CLAUDE.md`.
+- **Como a IA pensa:** pesa todas as divisões de papéis que cabem no que ela sabe pelo quanto cada uma explica o que aconteceu (leis de cada governo, o que presidente e chanceler disseram, investigações, quem foi eleito chanceler na zona do Hitler sem a partida acabar, quem foi eliminado sem a partida acabar). Os níveis mudam o descuido, a memória, quanto acredita no que ouve (comprar blefe) e, no extremo, a conta do baralho (a chance de cada mão pelas leis que ainda podem sair). Como fascista, mente quando a verdade entrega, coordena a história com o aliado e, do difícil para cima, deixa o Hitler limpo antes da 3ª lei fascista e elimina quem pegou um aliado mentindo; no extremo, só conta "tirei 3 fascistas" quando a conta do baralho deixa isso crível.
+- **Interpretações que precisaram ser feitas:**
+  - "IA" aqui é regra e conta no próprio aparelho, sem servidor nem modelo de linguagem: o app continua uma página estática, sem custo e sem internet.
+  - "Jogar sozinho" e "com poucos": a IA completa qualquer mesa que tenha pelo menos uma pessoa. Com mais de uma pessoa, o celular continua passando de mão para os segredos.
+  - Com IA na mesa, o voto deixa de ser em voz alta: cada pessoa toca no próprio voto e as IAs votam junto (a IA não ouve a sala). Todos os votos ficam no registro, como na mesa de verdade.
+  - A IA precisa ouvir o que as pessoas dizem: depois de governar, investigar ou espiar, a pessoa escolhe o que diz (pode mentir ou ficar calada) até a próxima eleição. As IAs falam sempre; as liberais dizem a verdade.
+  - O nível vale para todas as IAs da mesa, dos dois lados.
+  - "Não faz metajogo": nenhuma IA muda o jeito de jogar pelo jeito que as outras jogam nem pelo histórico de partidas anteriores.
+- **Balanceamento (26/10/2026, pedido do Lucas):** "os fascistas da IA têm que melhorar também … o jogo tem que ficar o mais balanceado possível … não pode ficar um jogo tendencioso para nenhum dos lados". A primeira versão deixava os liberais vencerem 28% no fácil e 65% no extremo, e o nível dos fascistas quase não pesava. A medição também tinha um erro: a mesa inteira votava no nível do presidente; agora cada lugar decide no próprio nível (`Player.level`, só usado pelas medições). O que mudou:
+  - Fascistas do difícil para cima pensam em como a mesa vai ver cada jogada (`image`): para cada jeito de jogar a mão, calculam, com o mesmo raciocínio da mesa, quanto mais desconfiariam deles e do Hitler, contra o valor de uma lei fascista. O Hitler que não conhece o time faz o mesmo com a própria imagem.
+  - Fascistas do difícil para cima indicam o Hitler sempre que podem a partir da 3ª lei fascista, e investigam o Hitler para abonar ("é liberal").
+  - Descuido em dois: `noise` (escolher e votar sem pensar) e `slip` (descartar a lei errada). No fácil, errar a lei 30% das vezes entregava o jogo aos fascistas, porque o baralho é quase só fascista.
+  - Calibrados por medição, mantendo a ordem dos níveis: memória do fácil 2 → 4 governos; `lie` (quanto desconfia do que ouve) 0 / 0,3 / 0,35 / 0,4, antes 0 / 0,4 / 0,7 / 0,85. Acreditar que o fascista mente quase sempre deixava o liberal certeiro demais.
+- **Medido (26/10/2026, `node scripts/ai_bench.mjs 400`, 6.400 partidas só de IA, mesas de 5 a 10):** vitórias liberais, liberais no nível da linha e fascistas no da coluna:
+
+  | liberais \ fascistas | fácil | médio | difícil | extremo |
+  |---|---|---|---|---|
+  | fácil | 48% | 39% | 22% | 21% |
+  | médio | 69% | 51% | 39% | 37% |
+  | difícil | 81% | 69% | 47% | 44% |
+  | extremo | 85% | 72% | 52% | 47% |
+
+  Com a mesa toda no mesmo nível (a diagonal, que é o jogo do app), os liberais vencem entre 47% e 51%. Fora da diagonal, quem tem o nível maior vence mais, dos dois lados. Erro da medida: cerca de 2,5 pontos para cada lado. Todas as partidas terminaram.
+- **Medido também (mesmo comando, 1.200 partidas por nível, uma IA média no lugar de "você"):** como liberal, você vence 51% no fácil, 53% no médio, 45% no difícil e 45% no extremo; como fascista, 57%, 48%, 43% e 38%. O nível agora é dificuldade dos dois lados.
+- **Corrigido junto:** depois de um veto aceito o baralho não era reabastecido, e o presidente seguinte podia tirar menos de 3 leis (achado por uma partida só de IA que travou; agora há um caso para isso).
+- **Não sei:** como a IA se sai contra gente de verdade (só foi medida contra ela mesma); se os textos das falas soam naturais; quanto tempo de "pensando" é confortável num celular.
 
 ## Pendências
 

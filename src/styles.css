@@ -326,3 +326,19 @@ button.law{transition:transform .15s,opacity .15s}
 [data-look="deco"] .helpbtn,[data-look="deco"] .helptext,[data-look="deco"] .undo{border-width:1px;border-color:var(--gold)}
 
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important;transition:none !important}.confetti{display:none}.turn.go .back{display:none}}
+
+/* ---------- players run by the app (D10) ---------- */
+small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;border:1.5px solid currentColor;vertical-align:2px;opacity:.8}
+.row .btn.ghost{flex:0 0 auto}
+#solo .segm button{letter-spacing:.04em}
+.thinking{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}
+.dots-wait{display:inline-flex;gap:4px;margin-left:2px}
+.dots-wait i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:wait 1s infinite ease-in-out}
+.dots-wait i:nth-child(2){animation-delay:.15s}.dots-wait i:nth-child(3){animation-delay:.3s}
+@keyframes wait{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.voter{display:grid;gap:6px;margin:10px 0}
+.voter .btn.on{outline:3px solid var(--fg);outline-offset:2px}
+.claim .pick .btn{font-size:15px}
+.timeline .hands{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
+.mini{display:inline-block;font:800 10px/1 var(--display);font-style:normal;padding:2px 4px;margin-left:2px;color:var(--surface)}
+.mini.L{background:var(--lib)}.mini.F{background:var(--fas)}

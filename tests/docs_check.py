@@ -54,6 +54,8 @@ CONSTANTS = [
     (r'HITLER_ZONE = 3;', '3 ou mais leis fascistas (`HITLER_ZONE`)'),
     (r'VETO_FROM = 5;', 'Veto a partir da 5ª lei fascista (`VETO_FROM`)'),
     (r'SMALL_TABLE = 5;', 'com 5 vivos ou menos (`SMALL_TABLE`)'),
+    (r'export const THINK = 1200;', 'A IA age 1,2 s depois (`THINK`)'),
+    (r"LEVELS: Level\[\] = \['facil', 'medio', 'dificil', 'extremo'\]", 'fácil, médio, difícil e extremo (`LEVELS`'),
     (r"FASCISTS: Record<number, number> = \{ 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4 \}", '(`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10)'),
     (r"small: \{ 3: 'peek', 4: 'execute', 5: 'execute' \}", 'com 5 ou 6 jogadores, na 3ª olha as próximas 3 leis'),
     (r"medium: \{ 2: 'investigate', 3: 'special', 4: 'execute', 5: 'execute' \}", 'com 7 ou 8, na 2ª investiga o partido de alguém e na 3ª convoca eleição especial'),
@@ -76,6 +78,11 @@ for p in CORE:
     src = p.read_text(encoding='utf-8')
     for token in ('document.', 'window.', 'localStorage', 'sessionStorage', 'fetch(', 'navigator.', 'XMLHttpRequest', "from '../app"):
         check(f'{p.name} does not touch {token}', token not in src)
+
+# 6b. the app players are blind: the code that decides gets the view of one seat, never the game, and asks no one
+ai = read('src/core/ai.ts')
+check('src/core/ai.ts never sees the game: no Game in it, nothing from the judge', not re.search(r'\bGame\b', ai) and "from './judge'" not in ai and 'View' in ai)
+check('only the judge asks the app players', [p.name for p in CORE if 'decide(' in p.read_text(encoding='utf-8') and p.name not in ('ai.ts', 'index.ts')] == ['judge.ts'])
 
 # 7. TypeScript as the spec says: strict, no unused names, nothing switched off
 ts = json.loads(read('tsconfig.json'))['compilerOptions']

@@ -1,6 +1,6 @@
 # Secret Hitler
 
-Jogo de cartas de dedução social no estilo Secret Hitler, liberais contra fascistas, jogado em um celular só que passa de mão em mão (5 a 10 pessoas na mesma sala).
+Jogo de cartas de dedução social no estilo Secret Hitler, liberais contra fascistas, jogado em um celular só que passa de mão em mão (5 a 10 lugares na mesma sala). Dá para jogar sozinho ou com poucas pessoas: a IA ocupa os outros lugares (D10).
 
 
 Idioma da interface: português do Brasil, informal. Comentários no código: inglês.
@@ -17,8 +17,8 @@ Idioma da interface: português do Brasil, informal. Comentários no código: in
 
 
 - Não adicionar backend, login nem banco sem pedido. O app é uma página estática.
-- Um aparelho só, passando de mão: sem partida pela internet, sem um celular por jogador.
-- As regras são as do Secret Hitler original (D6). A única diferença é de meio: a votação é em voz alta e o celular só registra o resultado.
+- Um aparelho só, passando de mão: sem partida pela internet, sem um celular por jogador. Os jogadores da IA rodam no próprio aparelho, sem servidor e sem modelo de linguagem: são regras e contas no `src/core/` (D10).
+- As regras são as do Secret Hitler original (D6). A única diferença é de meio: a votação é em voz alta e o celular só registra o resultado (com IA na mesa, cada pessoa toca no próprio voto: requisito 20).
 - Fora por enquanto: histórico de partidas.
 
 ## Regras contra alucinação (valem para qualquer IA trabalhando aqui)
@@ -52,6 +52,8 @@ O que cada peça do harness cobre:
 | Hook de parada (`.claude/hooks/verify-on-stop.sh`) | Encerrar a tarefa com checagem falhando |
 | `docs/verificacao.md` | Tratar suposição como fato |
 | `docs/decisoes.md` | Depender da memória de uma conversa |
+| `src/core/judge.ts` (o juiz) + `View` + `docs_check.py` | Uma IA ver mais do que o lugar dela veria, ou fazer mais do que a vez dela pede |
+| `scripts/ai_bench.mjs` (fora do `verify.sh`) | Dizer que um nível joga melhor que outro sem ter medido |
 
 ## Requisitos do produto
 
@@ -59,8 +61,8 @@ O que cada peça do harness cobre:
 1. Mesa de 5 a 10 jogadores (`MIN_PLAYERS`, `MAX_PLAYERS`), em ordem de assento, guardada no aparelho.
 2. Papéis sorteados: um Hitler e fascistas conforme a mesa (`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10); o resto liberal.
 3. Cada um vê o próprio papel em segredo. Os fascistas veem os outros fascistas e o Hitler, em linhas separadas (Hitler numa, os outros fascistas noutra); com 5 ou 6 jogadores (`HITLER_KNOWS_UPTO`) o Hitler também vê o fascista, com mais ele não vê ninguém; os liberais não veem ninguém.
-4. Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`). Com menos de 3 para tirar, o lixo volta e é embaralhado.
-5. Rodada: o presidente indica o chanceler, a mesa vota em voz alta (Ja! ou Nein!) e o celular só registra se o governo foi eleito (mais Ja! que Nein!) ou rejeitado. Eleito, o presidente tira 3 leis e descarta 1; o chanceler descarta 1 das 2 e a outra é aprovada.
+4. Baralho de 17 leis: 11 fascistas (`DECK_F`) e 6 liberais (`DECK_L`). Com menos de 3 para tirar no fim de uma sessão (lei aprovada, caos ou veto aceito), o lixo volta e é embaralhado.
+5. Rodada: o presidente indica o chanceler, a mesa vota em voz alta (Ja! ou Nein!) e o celular só registra se o governo foi eleito (mais Ja! que Nein!) ou rejeitado (com IA na mesa, requisito 20). Eleito, o presidente tira 3 leis e descarta 1; o chanceler descarta 1 das 2 e a outra é aprovada.
 6. Limite de mandato: o último presidente e o último chanceler eleitos não podem ser chanceler; com 5 vivos ou menos (`SMALL_TABLE`), só o último chanceler.
 7. 3 governos seguidos sem lei (`TRACKER_MAX`, rejeição ou veto) aprovam a lei do topo, sem poder, e zeram o limite de mandato.
 8. Poderes do presidente pela lei fascista aprovada, pelo tabuleiro da mesa (`POWERS`, pelo número de jogadores que começaram): com 5 ou 6 jogadores, na 3ª olha as próximas 3 leis; com 7 ou 8, na 2ª investiga o partido de alguém e na 3ª convoca eleição especial; com 9 ou 10, na 1ª e na 2ª investiga e na 3ª convoca eleição especial; em toda mesa, na 4ª e na 5ª elimina alguém. Ninguém é investigado duas vezes; o Hitler aparece como fascista. Na eleição especial o presidente escolhe o próximo presidente (qualquer outro vivo, sem limite de mandato) e depois dessa rodada a ordem segue de quem convocou.
@@ -73,6 +75,10 @@ O que cada peça do harness cobre:
 15. Cada fase tem uma explicação curta no botão "?".
 16. No fim, o resumo da partida mostra cada governo e a lei que saiu, as rejeições, os vetos, o caos, os poderes e o que cada investigação mostrou de verdade.
 17. Som e vibração (`S.quiet` desliga os dois): sons feitos na hora, sem arquivo, só para o que a mesa toda já sabe (carimbo da votação, papel do descarte, martelo da lei e da eliminação, fanfarra do fim); vibração ao abrir um segredo, ao eleger e ao eliminar. Só o Android deixa uma página vibrar.
+18. Jogadores da IA (D10): na mesa, "+ IA" põe um lugar da IA (nomes de `BOT_NAMES`), e "Completar a mesa até" completa até 5 a 10 lugares; precisa de pelo menos uma pessoa. Quatro níveis: fácil, médio, difícil e extremo (`LEVELS`, regulados em `AI`, `src/core/ai.ts`): quanto escolhem e votam sem pensar e quanto erram a lei que descartam, de quantos governos lembram, quanto acreditam no que ouvem (compram blefe), se contam as leis que ainda podem sair do baralho, e, como fascistas, quanto mentem, quanto pensam em como a mesa vai ver cada jogada e se jogam a longo prazo (deixar o Hitler limpo antes da 3ª lei fascista, indicar e investigar o Hitler para abonar, eliminar o liberal que pegou um aliado mentindo). Não fazem metajogo. Os dois lados sobem de nível juntos, e cada nível é calibrado para nenhum lado levar vantagem: com a mesa toda no mesmo nível, os liberais vencem perto de metade das partidas (D10, medido com `scripts/ai_bench.mjs`).
+19. Nenhuma IA vê mais do que o lugar dela: o juiz (`src/core/judge.ts`) monta a visão (`viewOf`) com o próprio papel, o time só para quem o conhece pela regra 3, as leis que passaram pela mão dela, o que ela viu com os próprios poderes, e o que a mesa toda viu e ouviu. Faz uma pergunta por vez, com as respostas permitidas, e uma resposta fora delas não é jogada. O código das IAs (`src/core/ai.ts`) só recebe a visão (`View`), nunca a partida (o `docs_check.py` confere).
+20. Com IA na mesa: cada pessoa toca no próprio voto, as IAs votam junto e todos os votos ficam no registro. Quem foi presidente, chanceler, investigou ou espiou pode dizer à mesa o que viu (mentir ou ficar calado) até a próxima eleição; as IAs falam sempre, e os liberais dizem a verdade. A IA age 1,2 s depois (`THINK`) para dar para acompanhar, mostrando quem está decidindo o quê e nada do segredo; ver o próprio papel é na hora. Com uma pessoa só, o portão do segredo diz "Só para os seus olhos". Quem é eliminado assiste até o fim.
+21. O resumo do fim mostra também, de cada governo, as leis que o presidente tirou e as que passou, e o que cada um disse.
 
 ## Arquitetura
 
@@ -87,7 +93,9 @@ Sem DOM, sem rede e sem armazenamento (conferido pelo `docs_check.py`, e pelo `t
 | Módulo | O que tem |
 |---|---|
 | `src/core/types.ts` | As formas dos dados: `Game`, `Player`, `Law`, `Phase`, `AppState`, `Entry`, `Json` |
-| `src/core/game.ts` | As regras: `newGame`, `revealNext`, `nominate`, `vote`, `presidentDiscard`, `chancellorDiscard`, `askVeto`, `answerVeto`, `investigate`, `endPower`, `execute`, as constantes da mesa e `seeded`/`shuffle` (o acaso entra como função) |
+| `src/core/game.ts` | As regras: `newGame` (com os lugares da IA e o nível), `revealNext`, `nominate`, `vote`, `presidentDiscard`, `chancellorDiscard`, `askVeto`, `answerVeto`, `investigate`, `endPower`, `execute`, as constantes da mesa e `seeded`/`shuffle` (o acaso entra como função) |
+| `src/core/judge.ts` | O juiz entre a partida e as IAs: `viewOf` (o que cada lugar pode saber), `turn`/`botTurn` (de quem é a vez), `botStep` (a jogada da IA, pelas regras), `castVotes` (os votos um a um) e `claims`/`say` (o que cada um diz à mesa). Único código que segura a partida inteira e pergunta algo às IAs |
+| `src/core/ai.ts` | As IAs, cegas de propósito: `decide` responde a pergunta da visão; `believe` pesa todas as divisões de papéis possíveis pelo que aconteceu (leis, falas, investigações; no extremo, contando o baralho com `drawOdds`); os níveis em `AI` |
 | `src/core/save.ts` | `readGame` e `readState`: lê o que foi guardado, descartando a partida que não fecha |
 | `src/core/source.ts` | Os leitores da fonte de dados (`normEntry`, `normEntries`). Único lugar que conhece o formato dela |
 | `src/core/index.ts` | O objeto `Core`, que a página usa e os testes exercitam |
@@ -101,7 +109,7 @@ Sem DOM, sem rede e sem armazenamento (conferido pelo `docs_check.py`, e pelo `t
 | `src/app/api.ts` | `getJSON` (toda chamada passa por ele, com tempo máximo) e `loadEntries`. Sem fonte configurada, não chama nada |
 | `src/app/render.ts` | `render` e as telas de cada fase, a faixa de quem governa, o portão dos segredos (`gateKey`), o que se mexe (só o que acabou de mudar), `toast`, `blurField` |
 | `src/app/art.ts` | Os desenhos, caricaturas em SVG no próprio código: `portrait` (o papel: pássaro liberal de uniforme azul, jacaré fascista de uniforme marrom e quepe preto, naja de casaco e braçadeira gritando num púlpito para o Hitler) e `seal` (o símbolo do partido nas leis e no tabuleiro: balança e caveira, sem personagem) |
-| `src/app/events.ts` | Um listener delegado por `data-act`; o único lugar que usa `Math.random`; o desfazer, o descarte que espera a carta cair e o esconder sozinho (`visibilitychange`, `deviceorientation`) |
+| `src/app/events.ts` | Um listener delegado por `data-act`; o único lugar que usa `Math.random`; o relógio das IAs (`tick`); os votos e as falas das pessoas numa mesa com IA; o desfazer, o descarte que espera a carta cair e o esconder sozinho (`visibilitychange`, `deviceorientation`) |
 | `src/app/fx.ts` | Som (Web Audio, sintetizado), vibração e `later` (espera a animação, ou não espera quando o aparelho pede menos movimento) |
 | `src/app/update.ts` | Registro do service worker, aviso de versão nova (`initUpdates`, `applyUpdate`, `checkNow`) e `builtFrom`, o commit da página |
 | `src/main.ts` | Entrada: liga os listeners, expõe `window.__APP`, pinta a tela e registra o service worker |
@@ -117,7 +125,7 @@ Renderização é `innerHTML` a partir do estado. Todo texto que não veio do pr
 
 ### Estado no `localStorage`
 
-`secrethitler.v1`: `{ v: 1, names: [...], game: Game | null, theme, look }`. `theme` é `'light'` ou `'dark'`; sem o campo, segue o aparelho. `look` é `'deco'`; sem o campo, o estilo é o pôster. `quiet` é `true` com som e vibração desligados; sem o campo, ligados. A partida inteira fica guardada, inclusive papéis e a ordem do baralho: quem abrir as ferramentas do navegador vê tudo. É um jogo entre amigos na mesma mesa, não um cofre. O que está aberto na tela (`ui`) não é guardado.
+`secrethitler.v1`: `{ v: 1, names: [...], ai, level, game: Game | null, theme, look }`. `ai` diz, nome a nome, quais lugares são da IA (sem o campo, nenhum); `level` é o nível da IA (sem o campo, médio). `theme` é `'light'` ou `'dark'`; sem o campo, segue o aparelho. `look` é `'deco'`; sem o campo, o estilo é o pôster. `quiet` é `true` com som e vibração desligados; sem o campo, ligados. A partida inteira fica guardada, inclusive papéis e a ordem do baralho: quem abrir as ferramentas do navegador vê tudo. É um jogo entre amigos na mesma mesa, não um cofre. O que está aberto na tela (`ui`) não é guardado.
 
 ## Fonte de dados
 
@@ -152,6 +160,7 @@ pip install -r tests/requirements.txt && playwright install chromium
 scripts/verify.sh            # tudo: tipos, build, docs, core, unit, contract, autoteste da checagem de produção, e2e claro e escuro, pwa e cobertura
 scripts/verify.sh --quick    # sem o e2e (poucos segundos)
 node tests/core.mjs          # os casos do núcleo, sem navegador
+node scripts/ai_bench.mjs    # mede os níveis da IA, partidas só de IA (alguns minutos; fora do verify.sh)
 npm run dev                  # servidor de desenvolvimento do Vite
 ```
 O `verify.sh` começa pelo `tsc` e pelo build; se um dos dois falha, os testes nem rodam. **Todo teste usa `dist/`**, o que o build gerou: o que é testado é o que é publicado. Todos abrem `dist/index.html` do disco, menos o `pwa.py`, que serve `dist/` por um servidor local (service worker não existe em página aberta do disco). A exceção é o `core.mjs`, que constrói `src/core` sozinho e roda no Node.
@@ -160,7 +169,7 @@ Os casos do núcleo ficam em `tests/unit.cases.mjs`. Regra nova entra ali primei
 
 **Cobertura:** com `APP_COVERAGE=1` (o `verify.sh` completo liga sozinho), cada suíte grava quais funções e trechos do script de `dist/index.html` executou. `python3 tests/cov.py` junta tudo e falha abaixo de 95% das funções e 90% do código. Teste que recarrega a página usa `cov.reload(pg)` em vez de `pg.reload()`.
 
-`e2e.py` abre a página num tamanho de celular, com a rede bloqueada, e joga partidas inteiras pela tela: monta a mesa (nome vazio, repetido, mesa cheia, nome com marcação aparecendo como texto), troca o tema, confere que cada papel só aparece depois do toque, empilha papéis e baralho por `window.__APP.S` para a partida ser sempre a mesma, e passa por rejeições e caos, limite de mandato, os poderes da mesa de 7 (investigar, eleição especial, eliminar), veto recusado e aceito, vitória fascista pelo Hitler chanceler vitória liberal pelo Hitler eliminado e uma mesa de 5 (o Hitler vê o fascista, a 3ª lei fascista deixa espiar), troca de estilo, a lei nova carimbando no tabuleiro e a faixa de quem governa, o desfazer, a ajuda, o segredo que se esconde sozinho, o carimbo da votação, o resumo da partida, o confete; tudo com "reduzir movimento" ligado, e no fim uma rodada com movimento para ver a carta virar, as leis serem distribuídas e o descarte esperar a carta cair. Confere também que a partida volta depois de recarregar, que nada passa da largura da tela e que não há erro de script. Capturas em `tests/shots/`.
+`e2e.py` abre a página num tamanho de celular, com a rede bloqueada, e joga partidas inteiras pela tela: monta a mesa (nome vazio, repetido, mesa cheia, nome com marcação aparecendo como texto), troca o tema, confere que cada papel só aparece depois do toque, empilha papéis e baralho por `window.__APP.S` para a partida ser sempre a mesma, e passa por rejeições e caos, limite de mandato, os poderes da mesa de 7 (investigar, eleição especial, eliminar), veto recusado e aceito, vitória fascista pelo Hitler chanceler vitória liberal pelo Hitler eliminado e uma mesa de 5 (o Hitler vê o fascista, a 3ª lei fascista deixa espiar), troca de estilo, a lei nova carimbando no tabuleiro e a faixa de quem governa, o desfazer, a ajuda, o segredo que se esconde sozinho, o carimbo da votação, o resumo da partida, o confete; tudo com "reduzir movimento" ligado, e no fim uma rodada com movimento para ver a carta virar, as leis serem distribuídas e o descarte esperar a carta cair. Contra a IA: completa a mesa, escolhe o nível, confere que a IA aparece pensando sem mostrar segredo, que o celular só abre para a pessoa, que o voto é por pessoa, e joga a partida inteira sozinho (recarregando no meio, e a IA continua sozinha); depois, duas pessoas e IAs (votos um a um, e a IA jogando até o fim quando as duas saem). Confere também que a partida volta depois de recarregar, que nada passa da largura da tela e que não há erro de script. Capturas em `tests/shots/`.
 
 `pwa.py` publica o build e depois uma "versão seguinte" e confere: a página fica guardada, a primeira instalação não anuncia nada, o app abre com o site fora do ar, a versão nova é anunciada, o app em uso só troca depois do toque, a cópia antiga é apagada, publicar de novo sem mudar o app não avisa, e fechar e abrir de novo entra na versão que esperava. O build precisa estar num repositório git, porque a tela mostra o commit.
 

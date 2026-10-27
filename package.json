@@ -1,7 +1,7 @@
 {
   "name": "secret-hitler",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Jogo de dedução social: liberais contra fascistas, num celular passando de mão em mão.",
   "type": "module",
   "engines": {
