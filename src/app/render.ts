@@ -1,5 +1,6 @@
 import { Core } from '../core';
 import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Role, Trace } from '../core';
+import type { EndTab } from './state';
 import { portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { S, ui } from './state';
@@ -54,9 +55,26 @@ function vTable(): string {
     : '<p class="empty" id="empty">Ninguém na mesa ainda. Coloque os nomes na ordem em que vocês estão sentados.</p>';
   h += `<div class="row"><div class="field"><input id="name" maxlength="${Core.NAME_MAX}" autocomplete="off" placeholder="nome do jogador" value="${esc(ui.name)}" aria-label="Nome do jogador"></div><button class="btn" data-act="addname">Pôr</button><button class="btn ghost" data-act="addbot"${n >= Core.MAX_PLAYERS ? ' disabled' : ''}>+ IA</button></div>`;
   h += ui.msg ? `<p class="msg" id="msg">${esc(ui.msg)}</p>` : '';
-  h += `<button class="btn block" data-act="start"${n < Core.MIN_PLAYERS ? ' disabled' : ''}>Começar com ${n} ${n === 1 ? 'jogador' : 'jogadores'}</button></section>`;
+  const short = Core.MIN_PLAYERS - n;
+  h += short > 0
+    ? `<button class="btn block" data-act="start" disabled>Faltam ${short} para começar</button>${n ? `<button class="btn ghost block" data-act="fill" data-n="${Core.MIN_PLAYERS}" id="fillmin">Completar com ${short} da IA</button>` : '<p class="hint">Ponha os nomes, ou só o seu e complete com a IA.</p>'}</section>`
+    : `<button class="btn block" data-act="start">Começar com ${n} jogadores</button></section>`;
   return h + vSolo();
 }
+/** The choices of a game against the app that are not needed to start one (D18): the training role, the speed, the
+ *  trainer and the minutes. Closed, one line says how they are set. */
+function vMore(): string {
+  return `<div id="moreopts">
+    <p class="hint">Seu papel (treino)</p><div class="segm roles" role="group" aria-label="Seu papel">${(['', 'liberal', 'fascista', 'hitler'] as const).map(r => `<button class="${(S.train || '') === r ? 'on' : ''}" data-act="train" data-v="${r}" aria-pressed="${(S.train || '') === r}">${r ? role(r) : 'Sorteado'}</button>`).join('')}</div>
+    <p class="hint" id="traintext">${S.train ? `Você vai ser ${role(S.train).toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
+    <p class="hint">Velocidade da IA</p><div class="segm" role="group" aria-label="Velocidade da IA">${(['lenta', 'normal', 'rapida'] as const).map(v => `<button class="${(S.speed || 'normal') === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${(S.speed || 'normal') === v}">${{ lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' }[v]}</button>`).join('')}</div>
+    <p class="hint">Dicas do treinador</p><div class="segm" role="group" aria-label="Dicas do treinador"><button class="${S.coach ? '' : 'on'}" data-act="coach" data-v="off" aria-pressed="${!S.coach}">Desligadas</button><button class="${S.coach ? 'on' : ''}" data-act="coach" data-v="on" aria-pressed="${!!S.coach}">Ligadas</button></div>
+    <p class="hint">${S.coach ? 'Depois de cada governo, o treinador faz as contas com o que só você sabe: a chance da mão que o presidente disse, se as falas fecham, e quem parece mais {f}.' : 'Ligadas, o treinador explica o que dá para tirar de cada governo.'}</p>
+    <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
+    <p class="hint">${S.assist ? 'A ata mostra cada lei, quem governou e quem votou {ja} no governo que a aprovou, e soma por jogador. Só o que a mesa toda viu.' : 'Ligada, a partida ganha uma ata com quem aprovou cada lei.'}</p>
+  </div>`;
+}
+const moreSum = (): string => `Seu papel: ${S.train ? role(S.train).toLowerCase() : 'sorteado'} · velocidade ${({ lenta: 'lenta', normal: 'normal', rapida: 'rápida' } as const)[S.speed || 'normal']} · treinador ${S.coach ? 'ligado' : 'desligado'} · ata ${S.assist ? 'ligada' : 'desligada'}`;
 /** Playing alone, or with fewer people than a table needs: the app plays the other seats, at the level chosen. */
 function vSolo(): string {
   const lv = S.level || 'medio', bots = (S.ai || []).filter(Boolean).length;
@@ -65,13 +83,8 @@ function vSolo(): string {
   return `<section class="card" id="solo"><span class="label">Contra a IA</span><p class="hint">Jogue sozinho ou com poucos: ponha o seu nome e complete a mesa com jogadores da IA. Cada IA só sabe o que aquele lugar saberia na mesa.</p>
     <p class="hint">Completar a mesa até</p><div class="segm" role="group" aria-label="Tamanho da mesa">${[5, 6, 7, 8, 9, 10].map(size).join('')}</div>
     <p class="hint">Nível da IA</p><div class="segm" role="group" aria-label="Nível da IA">${Core.LEVELS.map(lvl).join('')}</div><p class="hint" id="leveltext">${LEVEL[lv][1]}</p>
-    <p class="hint">Seu papel (treino)</p><div class="segm roles" role="group" aria-label="Seu papel">${(['', 'liberal', 'fascista', 'hitler'] as const).map(r => `<button class="${(S.train || '') === r ? 'on' : ''}" data-act="train" data-v="${r}" aria-pressed="${(S.train || '') === r}">${r ? role(r) : 'Sorteado'}</button>`).join('')}</div>
-    <p class="hint" id="traintext">${S.train ? `Você vai ser ${role(S.train).toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
-    <p class="hint">Velocidade da IA</p><div class="segm" role="group" aria-label="Velocidade da IA">${(['lenta', 'normal', 'rapida'] as const).map(v => `<button class="${(S.speed || 'normal') === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${(S.speed || 'normal') === v}">${{ lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' }[v]}</button>`).join('')}</div>
-    <p class="hint">Dicas do treinador</p><div class="segm" role="group" aria-label="Dicas do treinador"><button class="${S.coach ? '' : 'on'}" data-act="coach" data-v="off" aria-pressed="${!S.coach}">Desligadas</button><button class="${S.coach ? 'on' : ''}" data-act="coach" data-v="on" aria-pressed="${!!S.coach}">Ligadas</button></div>
-    <p class="hint">${S.coach ? 'Depois de cada governo, o treinador faz as contas com o que só você sabe: a chance da mão que o presidente disse, se as falas fecham, e quem parece mais {f}.' : 'Ligadas, o treinador explica o que dá para tirar de cada governo.'}</p>
-    <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
-    <p class="hint">${S.assist ? 'A ata mostra cada lei, quem governou e quem votou {ja} no governo que a aprovou, e soma por jogador. Só o que a mesa toda viu.' : 'Ligada, a partida ganha uma ata com quem aprovou cada lei.'}</p>
+    <button class="more" data-act="more" id="moretoggle" aria-expanded="${ui.more}" aria-controls="moreopts">${ui.more ? 'Menos opções ▴' : 'Mais opções ▾'}</button>
+    ${ui.more ? vMore() : `<p class="hint" id="moresum">${moreSum()}</p>`}
     ${bots ? `<p class="hint">${bots} ${bots === 1 ? 'lugar é' : 'lugares são'} da IA.</p>` : ''}</section>`;
 }
 /** The theme of the game (D12): the same rules, other sides, other names, other drawings. */
@@ -82,7 +95,9 @@ function vPack(): string {
     <p class="hint" id="packtext">${cur === 'comunismo' ? 'Os comunistas são o time escondido e o Stalin é o líder deles. Vota-se Da! ou Niet!. As regras são as mesmas; as IAs ganham nomes de liberais e comunistas.' : 'O jogo original: os fascistas são o time escondido e o Hitler é o líder deles.'}</p></section>`;
 }
 function vRules(): string {
-  return `<section class="card" id="rules"><span class="label">Como joga</span><ul class="rules">
+  const head = `<section class="card" id="rules"><span class="label">Como joga</span><p>Liberais contra {fs}, e o {boss} escondido entre os {fs}. Ganha quem aprovar ${Core.WIN.L} leis liberais ou ${Core.WIN.F} {fs} primeiro.</p><button class="more" data-act="rules" id="rulestoggle" aria-expanded="${ui.rules}" aria-controls="ruleslist">${ui.rules ? 'Esconder as regras ▴' : 'Ver as regras ▾'}</button>`;
+  if (!ui.rules) return `${head}</section>`;
+  return `${head}<ul class="rules" id="ruleslist">
     <li>Baralho de ${Core.DECK_F + Core.DECK_L} leis: ${Core.DECK_F} {fs} e ${Core.DECK_L} liberais. Os liberais vencem com ${Core.WIN.L} leis liberais; os {fs}, com ${Core.WIN.F} {fs}.</li>
     <li>Os {fs} se conhecem e sabem quem é o {boss}. Com 5 ou 6 jogadores o {boss} também sabe quem é o {f}; com 7 ou mais, não sabe. Os liberais não conhecem ninguém.</li>
     <li>A cada rodada o presidente indica o chanceler e a mesa vota. Eleito, o presidente tira 3 leis e descarta 1; o chanceler recebe 2, descarta 1 e a outra vira lei.</li>
@@ -102,7 +117,15 @@ function vGame(g: Game): string {
   const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek', 'talk'].includes(bot.ask) ? bot : null;   // talk and claims happen beside the phase, not instead of it
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
   // what the person has to do comes first; what helps them decide (their claim, the trainer) right after it
-  return vUndo() + vStatus(g) + vHelp(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vClaims(g) + vCoach(g) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`) + vDock(g);
+  const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`);
+  if (g.phase === 'over') {
+    // the end, in tabs (D18): the result first; the whole game and the record one tap away
+    const tabs: [EndTab, string][] = [['res', 'Resultado'], ['jogo', 'Resumo'], ['log', 'Registro']];
+    const bar = `<div class="segm endtabs" role="tablist" aria-label="Fim de jogo">${tabs.map(([k, l]) => `<button role="tab" id="tab-${k}" class="${ui.endTab === k ? 'on' : ''}" data-act="endtab" data-v="${k}" aria-selected="${ui.endTab === k}">${l}</button>`).join('')}</div>`;
+    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vThoughts(g) + vPlayers(g) + vBoard(g);
+    return card + bar + body + vDock(g);
+  }
+  return vUndo() + vStatus(g) + vSeats(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -149,7 +172,7 @@ const HELP: Record<string, string> = {
   peek: 'Só o presidente olha as 3 próximas leis do baralho, na ordem. Elas continuam lá.',
   special: 'O presidente escolhe quem é o próximo presidente. Depois dessa rodada, a ordem volta a partir de quem convocou.',
   execute: 'O presidente elimina alguém. Se for o {boss}, os liberais vencem. O papel de quem sai não é revelado.',
-  over: 'Fim de jogo. Abaixo, o resumo da partida, inclusive o que cada investigação mostrou de verdade.'
+  over: 'Fim de jogo. Na aba Resumo, cada governo, inclusive o que cada investigação mostrou de verdade.'
 };
 const HELP_AI: Record<string, string> = {
   vote: 'Cada pessoa toca no próprio voto; as IAs votam junto, e todos os votos aparecem. Mais {ja} que {nein} elege; empate rejeita.',
@@ -157,7 +180,7 @@ const HELP_AI: Record<string, string> = {
 };
 function vHelp(g: Game): string {
   const text = (Core.hasAi(g) && HELP_AI[g.phase]) || HELP[g.phase];
-  return `<div class="help"><button class="helpbtn" data-act="help" aria-expanded="${ui.help}" aria-controls="helptext">?</button>${ui.help ? `<p class="helptext" id="helptext">${text}${Core.hasAi(g) ? ` IA no nível ${LEVEL[g.level || 'medio'][0].toLowerCase()}.` : ''}</p>` : ''}</div>`;
+  return `<div class="help"><button class="helpbtn" data-act="help" aria-expanded="${ui.help}" aria-controls="helptext"><b aria-hidden="true">${ui.help ? '✕' : '?'}</b>${ui.help ? 'Fechar a explicação' : 'Como funciona esta fase'}</button>${ui.help ? `<p class="helptext" id="helptext">${text}${Core.hasAi(g) ? ` IA no nível ${LEVEL[g.level || 'medio'][0].toLowerCase()}.` : ''}</p>` : ''}</div>`;
 }
 
 /** The game, round by round, at the end: who governed, which law came out, and what was secret then. */
@@ -299,7 +322,7 @@ function vThoughts(g: Game): string {
  *  for every other seat, liberal or the hidden side, as the person marks it. What the person knows for sure comes
  *  marked and cannot be changed: their team (by rule 3) and what their own investigations showed. Only when there is
  *  one person at the table, so no one else sees it; at the end the roles are on the table anyway. */
-function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => string } | null {
+function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => string; party: (i: number) => Law | ''; sure: (i: number) => boolean } | null {
   const me = solo(g);
   if (me < 0 || g.phase === 'over' || g.phase === 'reveal') return null;
   const sure = new Map<number, [string, Law]>();
@@ -314,10 +337,20 @@ function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => str
     const btn = (v: '' | Law, label: string): string => `<button class="${(mark || '') === v ? 'on' : ''} ${v}" data-act="note" data-i="${i}" data-v="${v}" aria-pressed="${(mark || '') === v}">${label}</button>`;
     return `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(g.players[i].name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`;
   };
-  return { me, cell };
+  return { me, cell, party: (i: number): Law | '' => sure.get(i)?.[1] || notes[i] || '', sure: (i: number): boolean => sure.has(i) };
 }
-/** The notebook as a side panel (D14): a tab on the right edge of the screen opens it over the game, and it closes
- *  again with the same tab; on a wide screen it stays open beside the game. */
+/** The whole table at a glance, at the top (D18): every seat in order, who is president and chancellor, who is out, and,
+ *  playing alone, what the person knows or marked of each (the colour) and, with the live suspicion on, how much each
+ *  app player suspects them. */
+function vSeats(g: Game): string {
+  if (g.phase === 'reveal') return '';
+  const kit = noteKit(g), me = solo(g), live = S.live && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
+  return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
+    const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
+    const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}`;
+    return `<li class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}">${esc(p.name)}${tags}</li>`;
+  }).join('')}</ul>`;
+}
 /** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */
 const GAP = '<div class="dock-gap" aria-hidden="true"></div>';
 /** The bar at the bottom with what opens beside the game (D17): the notebook and the reasoning of the app players. It
@@ -331,6 +364,8 @@ function vDock(g: Game): string {
   if (!btns.length) return GAP;
   return `${vDrawer(g)}${vMind(g)}<nav class="dock" aria-label="Painéis">${btns.join('')}</nav>${GAP}`;
 }
+/** The notebook as a side panel (D14): the bar at the bottom opens it over the game, and closes it again; on a wide
+ *  screen it stays open beside the game. */
 function vDrawer(g: Game): string {
   const kit = noteKit(g);
   if (!kit) return '';

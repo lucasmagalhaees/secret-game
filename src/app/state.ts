@@ -17,16 +17,19 @@ export function setS(next: AppState): void { S = next; }
 /** What is on screen: nothing here is saved, so a reload always closes whatever secret was open.
  *  `open` is the secret screen being shown (see gateKey in render.ts); `pick` the card or player tapped and not yet
  *  confirmed; `name` the name being typed on the table screen. */
-export interface Ui { msg: string; name: string; open: string; pick: number | null; confirmEnd: boolean; help: boolean; undo: Game | null; busy: boolean; votes: Record<number, boolean>; think: number | null; mind: boolean; mindSeat: number | null; mindOf: number | null }
+export interface Ui { msg: string; name: string; open: string; pick: number | null; confirmEnd: boolean; help: boolean; undo: Game | null; busy: boolean; votes: Record<number, boolean>; think: number | null; mind: boolean; mindSeat: number | null; mindOf: number | null; more: boolean; rules: boolean; endTab: EndTab }
+/** The tabs at the end of a game (D18): the result, the whole game, the record. */
+export type EndTab = 'res' | 'jogo' | 'log';
 /** `help` is the explanation of the phase, open or not; `undo` the game as it was before the last public choice (a
  *  nomination or a vote result), which can be taken back until anything else happens; `busy` holds taps while a
  *  discarded card is still falling; `votes` the votes the people at a table with app players have tapped and not yet
  *  counted; `think`, when set, how long an app player takes to act (the tests set 0); unset, the speed chosen; `mind`
- *  the panel with the reasoning of the app players (D16) open or not, `mindSeat` the one looked at and `mindOf` about whom. */
+ *  the panel with the reasoning of the app players (D16) open or not, `mindSeat` the one looked at and `mindOf` about whom;
+ *  `more` the other choices of a game against the app shown, `rules` the rules shown, `endTab` the tab at the end (D18). */
 export const THINK = 1200;
 /** How long an app player takes to act at each speed (D13), so a person can follow; normal is THINK. */
 export const SPEEDS: Record<Speed, number> = { lenta: 2400, normal: THINK, rapida: 500 };
-export const ui: Ui = { msg: '', name: '', open: '', pick: null, confirmEnd: false, help: false, undo: null, busy: false, votes: {}, think: null, mind: false, mindSeat: null, mindOf: null };
+export const ui: Ui = { msg: '', name: '', open: '', pick: null, confirmEnd: false, help: false, undo: null, busy: false, votes: {}, think: null, mind: false, mindSeat: null, mindOf: null, more: false, rules: false, endTab: 'res' };
 
 /** The theme (the device's, unless one was chosen) and the style. Both go on <html>, and into the colour of the browser bars. */
 export function applyTheme(): void {
