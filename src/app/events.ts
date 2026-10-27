@@ -87,15 +87,16 @@ function addName(): void {
   setTable(r.names, [...flags(), false]); ui.msg = ''; ui.name = ''; render();
   $<HTMLInputElement>('#name')?.focus();
 }
-/** One more seat for the app, or as many as it takes to make a table of n. */
+/** A table of n: seats of the app added, or the last ones taken away (D20). People are never taken away here: if
+ *  there are more people than n, the message says to take someone out with ×. */
 function addBots(n: number): void {
   let names = S.names, ai = flags();
   if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
   if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
   blurField();
   while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack)]; ai = [...ai, true]; }
-  if (names.length > n) { ui.msg = `A mesa já tem ${names.length} lugares.`; }
-  else ui.msg = '';
+  while (names.length > n && ai.lastIndexOf(true) >= 0) { const k = ai.lastIndexOf(true); names = names.filter((_, j) => j !== k); ai = ai.filter((_, j) => j !== k); }
+  ui.msg = names.length > n ? `São ${names.length} pessoas na mesa: tire alguém pelo × para ficar com ${n}.` : '';
   setTable(names, ai); render();
 }
 /** Another theme (D12): the seats of the app get names of that theme; the people keep theirs. */
@@ -143,7 +144,7 @@ type Orientation = { requestPermission?: () => Promise<string> };
 let askedOrientation = false;
 /** iPhones only report the phone's position after the person allows it, and only from a tap. */
 function askOrientation(): void {
-  if (askedOrientation) return;
+  if (askedOrientation || !S.flip) return;
   askedOrientation = true;
   const D = (window as unknown as { DeviceOrientationEvent?: Orientation }).DeviceOrientationEvent;
   if (D && typeof D.requestPermission === 'function') D.requestPermission().catch(() => { /* refused: the screen just does not hide by itself */ });
@@ -153,6 +154,7 @@ export function initEvents(): void {
   document.addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
+    if (a !== 'clear') ui.confirmClear = false;                              // the second tap has to come right after the first
     if (a === 'addname') addName();
     else if (a === 'rmname') { setTable(S.names.filter((_, j) => j !== i), flags().filter((_, j) => j !== i)); ui.msg = ''; render(); }
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
@@ -164,6 +166,8 @@ export function initEvents(): void {
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
+    else if (a === 'clear') { if (ui.confirmClear) { ui.confirmClear = false; ui.msg = ''; setTable([], []); } else ui.confirmClear = true; render(); }
+    else if (a === 'flip') { const next = { ...S }; if (d.v === 'on') next.flip = true; else delete next.flip; setS(next); saveS(); render(); }
     else if (a === 'more') { ui.more = !ui.more; render(); }
     else if (a === 'rules') { ui.rules = !ui.rules; render(); }
     else if (a === 'theme') { const t = d.t as Theme | 'auto'; if (t === 'auto') delete S.theme; else S.theme = t; saveS(); applyTheme(); render(); }
@@ -219,5 +223,6 @@ export function initEvents(): void {
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target as HTMLElement).id === 'name') addName(); });
   // a secret never stays on screen when the app goes to the background or the phone is put face down
   document.addEventListener('visibilitychange', () => { if (document.hidden) hide('Segredo escondido: o app saiu da tela.'); });
-  window.addEventListener('deviceorientation', e => { if (e.beta !== null && Math.abs(e.beta) > 150) hide('Segredo escondido: o celular foi virado para baixo.'); });
+  // face down closes a secret only when the person turned it on (D20): lying down, the phone looks face down too
+  window.addEventListener('deviceorientation', e => { if (S.flip && e.beta !== null && Math.abs(e.beta) > 150) hide('Segredo escondido: o celular foi virado para baixo.'); });
 }

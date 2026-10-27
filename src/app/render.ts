@@ -55,6 +55,7 @@ function vTable(): string {
     : '<p class="empty" id="empty">Ninguém na mesa ainda. Coloque os nomes na ordem em que vocês estão sentados.</p>';
   h += `<div class="row"><div class="field"><input id="name" maxlength="${Core.NAME_MAX}" autocomplete="off" placeholder="nome do jogador" value="${esc(ui.name)}" aria-label="Nome do jogador"></div><button class="btn" data-act="addname">Pôr</button><button class="btn ghost" data-act="addbot"${n >= Core.MAX_PLAYERS ? ' disabled' : ''}>+ IA</button></div>`;
   h += ui.msg ? `<p class="msg" id="msg">${esc(ui.msg)}</p>` : '';
+  h += n ? `<button class="more" data-act="clear" id="clear">${ui.confirmClear ? 'Toque de novo para tirar todos' : 'Limpar a mesa'}</button>` : '';
   const short = Core.MIN_PLAYERS - n;
   h += short > 0
     ? `<button class="btn block" data-act="start" disabled>Faltam ${short} para começar</button>${n ? `<button class="btn ghost block" data-act="fill" data-n="${Core.MIN_PLAYERS}" id="fillmin">Completar com ${short} da IA</button>` : '<p class="hint">Ponha os nomes, ou só o seu e complete com a IA.</p>'}</section>`
@@ -78,10 +79,10 @@ const moreSum = (): string => `Seu papel: ${S.train ? role(S.train).toLowerCase(
 /** Playing alone, or with fewer people than a table needs: the app plays the other seats, at the level chosen. */
 function vSolo(): string {
   const lv = S.level || 'medio', bots = (S.ai || []).filter(Boolean).length;
-  const size = (k: number): string => `<button data-act="fill" data-n="${k}">${k}</button>`;
+  const now = S.names.length, size = (k: number): string => `<button class="${now === k ? 'on' : ''}" data-act="fill" data-n="${k}" aria-pressed="${now === k}">${k}</button>`;
   const lvl = (l: Level): string => `<button class="${lv === l ? 'on' : ''}" data-act="level" data-v="${l}" aria-pressed="${lv === l}">${LEVEL[l][0]}</button>`;
   return `<section class="card" id="solo"><span class="label">Contra a IA</span><p class="hint">Jogue sozinho ou com poucos: ponha o seu nome e complete a mesa com jogadores da IA. Cada IA só sabe o que aquele lugar saberia na mesa.</p>
-    <p class="hint">Completar a mesa até</p><div class="segm" role="group" aria-label="Tamanho da mesa">${[5, 6, 7, 8, 9, 10].map(size).join('')}</div>
+    <p class="hint">Lugares na mesa (põe ou tira IA)</p><div class="segm" role="group" aria-label="Lugares na mesa">${[5, 6, 7, 8, 9, 10].map(size).join('')}</div>
     <p class="hint">Nível da IA</p><div class="segm" role="group" aria-label="Nível da IA">${Core.LEVELS.map(lvl).join('')}</div><p class="hint" id="leveltext">${LEVEL[lv][1]}</p>
     <button class="more" data-act="more" id="moretoggle" aria-expanded="${ui.more}" aria-controls="moreopts">${ui.more ? 'Menos opções ▴' : 'Mais opções ▾'}</button>
     ${ui.more ? vMore() : `<p class="hint" id="moresum">${moreSum()}</p>`}
@@ -564,7 +565,9 @@ function vSettings(): string {
   const t = S.theme || 'auto', opt = (v: string, label: string): string => `<button class="${t === v ? 'on' : ''}" data-act="theme" data-t="${v}" aria-pressed="${t === v}">${label}</button>`;
   const l = S.look || 'poster', sty = (v: string, label: string): string => `<button class="${l === v ? 'on' : ''}" data-act="look" data-l="${v}" aria-pressed="${l === v}">${label}</button>`;
   const built = builtFrom();
-  return `<section class="card" id="look"><span class="label">Aparência</span><p class="hint">Estilo</p><div class="segm" role="group" aria-label="Estilo">${sty('poster', 'Pôster')}${sty('deco', 'Art déco')}</div><p class="hint">Tema</p><div class="segm" role="group" aria-label="Tema">${opt('auto', 'Automático')}${opt('light', 'Claro')}${opt('dark', 'Escuro')}</div><p class="hint">Som e vibração</p><div class="segm" role="group" aria-label="Som e vibração"><button class="${S.quiet ? '' : 'on'}" data-act="fx" data-v="on" aria-pressed="${!S.quiet}">Ligados</button><button class="${S.quiet ? 'on' : ''}" data-act="fx" data-v="off" aria-pressed="${!!S.quiet}">Desligados</button></div></section>
+  return `<section class="card" id="look"><span class="label">Aparência</span><p class="hint">Estilo</p><div class="segm" role="group" aria-label="Estilo">${sty('poster', 'Pôster')}${sty('deco', 'Art déco')}</div><p class="hint">Tema</p><div class="segm" role="group" aria-label="Tema">${opt('auto', 'Automático')}${opt('light', 'Claro')}${opt('dark', 'Escuro')}</div><p class="hint">Som e vibração</p><div class="segm" role="group" aria-label="Som e vibração"><button class="${S.quiet ? '' : 'on'}" data-act="fx" data-v="on" aria-pressed="${!S.quiet}">Ligados</button><button class="${S.quiet ? 'on' : ''}" data-act="fx" data-v="off" aria-pressed="${!!S.quiet}">Desligados</button></div>
+    <p class="hint">Esconder o segredo ao virar o celular para baixo</p><div class="segm" role="group" aria-label="Esconder ao virar o celular"><button class="${S.flip ? '' : 'on'}" data-act="flip" data-v="off" aria-pressed="${!S.flip}">Desligado</button><button class="${S.flip ? 'on' : ''}" data-act="flip" data-v="on" aria-pressed="${!!S.flip}">Ligado</button></div>
+    <p class="hint" id="fliptext">${S.flip ? 'Um segredo aberto se fecha quando o celular fica de tela para baixo. Deitado, o sensor pode achar que o celular foi virado.' : 'Um segredo aberto se fecha quando o app sai da tela. Ligado, também se fecha com o celular de tela para baixo.'}</p></section>
     <section class="card" id="about"><span class="label">Versão do app</span><p class="hint" id="version">${built ? `Versão ${esc(built.slice(0, 7))}.` : 'Versão de desenvolvimento.'} ${canUpdate() ? 'O app fica guardado neste aparelho: abre na hora e também sem internet.' : 'Neste endereço o app não fica guardado no aparelho.'}</p>${canUpdate() ? '<button class="btn ghost block" data-act="checkupdate">Procurar versão nova</button>' : ''}</section>`;
 }
 /** The vote result, stamped over the screen for a moment. */
