@@ -235,6 +235,18 @@ Modelo de uma decisão:
   - Numa mesa com IA, com uma pessoa ou mais, a aba fica na borda esquerda (as anotações ficam na direita), e nunca fica aberta sozinha em tela larga.
 - **Não sei:** se o painel em tela de celular, com textos longos, fica legível o bastante para caçar bug; e se alguém vai querer exportar isso em arquivo.
 
+## D17. A tela da partida não esconde a jogada
+
+- **Contexto (27/10/2026):** "dá pra melhorar a usabilidade? UI/UX?". Joguei uma partida contra a IA em 393 px e propus 9 pontos; o pedido foi "quero que priorize os de 1 a 4".
+- **Decisão:** requisito 35 do `CLAUDE.md`. Os quatro: as abas laterais cobriam o texto e os botões; a fase da vez ficava abaixo das dicas; o Ja! parecia desativado (texto creme sobre azul-claro no tema escuro, contraste perto de 1,5:1); as animações caíam em cima do que se lia.
+- **Interpretações que precisaram ser feitas:**
+  - As duas abas viraram uma barra fixa embaixo, com espaço reservado no fim da página. Qualquer aba presa na borda cobriria alguma coisa numa tela de 393 px.
+  - Só um painel aberto por vez, porque no celular um cobriria o outro. Em tela larga as anotações continuam fixas ao lado, como antes.
+  - O carimbo da votação e o anúncio da lei ficaram menores e vão para a faixa de quem governa, logo abaixo do topo. É o que menos atrapalha por 1 ou 2 segundos.
+  - Os avisos curtos ("Franco indicou Lu") ficam no espaço da barra de baixo, por cima dos botões dela, e deixam o toque passar.
+  - O texto sobre as cores cheias de partido (votos, papéis, tabuleiro) passou a seguir o tema: escuro no tema escuro, claro no claro.
+- **Não sei:** se cobrir os botões da barra por 3,5 s com o aviso incomoda no uso real. Os itens 5 a 9 da lista (mesa no topo, tela inicial mais curta, botão de começar, "?" maior, fim de jogo em abas) ficaram para depois.
+
 ## Pendências
 
 | Pendência | Quem resolve |

@@ -101,7 +101,8 @@ function vGame(g: Game): string {
   entering = key !== seenPhase; seenPhase = key;
   const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek', 'talk'].includes(bot.ask) ? bot : null;   // talk and claims happen beside the phase, not instead of it
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
-  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + vCoach(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + vDrawer(g) + vMind(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
+  // what the person has to do comes first; what helps them decide (their claim, the trainer) right after it
+  return vUndo() + vStatus(g) + vHelp(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vClaims(g) + vCoach(g) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`) + vDock(g);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -317,13 +318,25 @@ function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => str
 }
 /** The notebook as a side panel (D14): a tab on the right edge of the screen opens it over the game, and it closes
  *  again with the same tab; on a wide screen it stays open beside the game. */
+/** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */
+const GAP = '<div class="dock-gap" aria-hidden="true"></div>';
+/** The bar at the bottom with what opens beside the game (D17): the notebook and the reasoning of the app players. It
+ *  has its own room at the end of the page, so it never covers what the game shows. */
+function vDock(g: Game): string {
+  const kit = noteKit(g), n = Object.keys(S.notes || {}).length, notes = !!S.notesOpen, mind = ui.mind;
+  const btns = [
+    kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
+    Core.hasAi(g) ? `<button class="dock-btn${mind ? ' open' : ''}" data-act="mind" id="mindtoggle" aria-expanded="${mind}" aria-controls="mind"><span aria-hidden="true">${mind ? '✕' : '🧠'}</span> Raciocínio</button>` : ''
+  ].filter(Boolean);
+  if (!btns.length) return GAP;
+  return `${vDrawer(g)}${vMind(g)}<nav class="dock" aria-label="Painéis">${btns.join('')}</nav>${GAP}`;
+}
 function vDrawer(g: Game): string {
   const kit = noteKit(g);
   if (!kit) return '';
-  const n = Object.keys(S.notes || {}).length, open = !!S.notesOpen;
+  const open = !!S.notesOpen;
   const rows = g.players.map((p, i) => (i === kit.me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}</span>${kit.cell(i, true)}</li>`)).join('');
-  return `<button class="drawer-tab${open ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${open}" aria-controls="drawer">${open ? '✕' : '✎'}<span>Anotações${n ? ` · ${n}` : ''}</span></button>
-    <aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê. O que você sabe de certeza já vem marcado.</p><ul class="names noted" id="notes">${rows}</ul></aside>`;
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê. O que você sabe de certeza já vem marcado.</p><ul class="names noted" id="notes">${rows}</ul></aside>`;
 }
 /* ---------- the reasoning of the app players (D16), to find bugs ----------
    What each one believes of everyone now, how that changed and with what, and why it made each decision. It shows the
@@ -363,10 +376,9 @@ const signed = (d: number): string => `${d >= 0 ? '+' : '−'}${Math.round(Math.
 function vMind(g: Game): string {
   if (!Core.hasAi(g)) return '';
   const open = ui.mind, over = g.phase === 'over', bots = g.players.map((p, i) => (p.ai ? i : -1)).filter(i => i >= 0);
-  const tab = `<button class="drawer-tab mind-tab${open ? ' open' : ''}" data-act="mind" id="mindtoggle" aria-expanded="${open}" aria-controls="mind">${open ? '✕' : '🧠'}<span>Raciocínio das IAs</span></button>`;
-  if (!open) return `${tab}<aside class="drawer mind" id="mind" aria-label="Raciocínio das IAs"></aside>`;
+  if (!open) return `<aside class="drawer mind" id="mind" aria-label="Raciocínio das IAs"></aside>`;
   if (!over && !S.debug) {
-    return `${tab}<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span><p>Mostra o que cada IA pensa e por que fez cada jogada, para achar bug.</p><p class="hint"><b>Estraga a partida:</b> aparecem os papéis de todos, as mãos de leis e as mentiras. No fim do jogo abre sem aviso.</p><button class="btn block" data-act="debug" data-v="on" id="mindon">Mostrar mesmo assim</button></aside>`;
+    return `<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span><p>Mostra o que cada IA pensa e por que fez cada jogada, para achar bug.</p><p class="hint"><b>Estraga a partida:</b> aparecem os papéis de todos, as mãos de leis e as mentiras. No fim do jogo abre sem aviso.</p><button class="btn block" data-act="debug" data-v="on" id="mindon">Mostrar mesmo assim</button></aside>`;
   }
   const seat = ui.mindSeat !== null && bots.includes(ui.mindSeat) ? ui.mindSeat : bots[0];
   const p = g.players[seat], k = Core.AI[(p.level || g.level || 'medio') as Level], mood = p.mood ?? 0, me = solo(g);
@@ -382,7 +394,7 @@ function vMind(g: Game): string {
   const decisions = mine.length ? `<ol class="mind-log">${mine.map(t => `<li><b class="what">${traceLabel(g, t)}</b>${t.why.text.map(l => `<p>${whyText(g, l)}</p>`).join('')}${table(t)}</li>`).join('')}</ol>` : '<p class="hint">Nenhuma decisão ainda.</p>';
   const head = `<p class="mind-head"><b>${name(g, seat)}</b> · <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span> · ${LEVEL[(p.level || g.level || 'medio') as Level][0]} · ${mood > 0.15 ? 'confiante' : mood < -0.15 ? 'desconfiada' : 'equilibrada'} (${mood >= 0 ? '+' : '−'}${Math.abs(mood).toFixed(2)})${p.alive ? '' : ' · eliminada'}</p>
     <p class="hint">Lembra ${k.memory >= 99 ? 'de tudo' : `dos últimos ${k.memory} governos, investigações e eliminações`} · acha que quem é do lado escondido mente ${pct(k.lie)} das vezes · ${k.count ? 'conta' : 'não conta'} as leis que ainda podem sair · decide sem pensar ${pct(k.noise)} das vezes${p.role === 'liberal' ? '' : ` · mente ${pct(k.act)} das vezes`}.</p>`;
-  return `${tab}<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span>${pick}${head}
+  return `<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span>${pick}${head}
     <span class="label">O que ${name(g, seat)} acha de cada um agora</span><p class="hint">Chance de ser do lado escondido (a barra) e de ser o {boss}. Toque num nome para ver por que.${knows.filter(Boolean).length > 1 ? ' Quem está marcado com "sabe" ela conhece pela regra, e as contas dela usam isso.' : ''}</p><ul class="names mind-bel">${bel}</ul>
     <span class="label">Por que ${name(g, seat)} pensa isso de ${of === me ? 'você' : name(g, of)}</span><p class="hint">Cada momento que mexeu na conta, com antes e depois.${k.memory < 99 ? ` Ela esquece o que passou de ${k.memory} eventos, então um número também pode mudar porque algo antigo saiu da memória.` : ''}</p>${story}
     <span class="label">Decisões de ${name(g, seat)}, da última para a primeira</span>${decisions}
@@ -455,7 +467,7 @@ function vPhase(g: Game): string {
       return `<section class="card" id="phase"><span class="label">Nova rodada</span><p class="big"><b>${pres}</b> é o presidente. Escolha o chanceler:</p>${pickList(g, i => Core.canNominate(g, i), 'nominate')}${g.lastChanc !== null ? '<p class="hint">O último governo eleito não pode voltar como chanceler.</p>' : ''}</section>`;
     case 'vote':
       if (Core.hasAi(g)) return vVoteAi(g);
-      return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${pres}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">Todo mundo vota junto, em voz alta: {ja} ou {nein} Mais {ja} que {nein} elege; empate rejeita.</p><div class="pick"><button class="btn elect" data-act="elect" data-v="1">Eleito</button><button class="btn ghost" data-act="elect" data-v="0">Rejeitado</button></div>${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}</section>`;
+      return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${pres}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">Todo mundo vota junto, em voz alta: {ja} ou {nein} Mais {ja} que {nein} elege; empate rejeita.</p><div class="pick"><button class="btn vote L" data-act="elect" data-v="1">Eleito</button><button class="btn vote F" data-act="elect" data-v="0">Rejeitado</button></div>${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}</section>`;
     case 'president':
       return gated(g, 'Presidente', () => `<p>Toque na lei que vai pro lixo. As outras duas vão pro chanceler.</p><div class="hand">${g.hand.map((l, k) => law(l, k)).join('')}</div><button class="btn block" data-act="pdiscard"${ui.pick === null ? ' disabled' : ''}>Descartar e passar</button>`);
     case 'chancellor':
@@ -484,7 +496,7 @@ function vPhase(g: Game): string {
 /** The vote at a table with app players: each person taps their own vote; the app players vote when the last one is in. */
 function vVoteAi(g: Game): string {
   const people = Core.humansAlive(g), one = people.length === 1;
-  const row = (i: number): string => `<div class="voter"${one ? '' : ` id="voter-${i}"`}>${one ? '' : `<b>${name(g, i)}</b>`}<div class="pick"><button class="btn elect${ui.votes[i] === true ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="1" aria-pressed="${ui.votes[i] === true}">{ja}</button><button class="btn ghost${ui.votes[i] === false ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="0" aria-pressed="${ui.votes[i] === false}">{nein}</button></div></div>`;
+  const row = (i: number): string => `<div class="voter"${one ? '' : ` id="voter-${i}"`}>${one ? '' : `<b>${name(g, i)}</b>`}<div class="pick"><button class="btn vote L${ui.votes[i] === true ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="1" aria-pressed="${ui.votes[i] === true}">${ui.votes[i] === true ? '✓ ' : ''}{ja}</button><button class="btn vote F${ui.votes[i] === false ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="0" aria-pressed="${ui.votes[i] === false}">${ui.votes[i] === false ? '✓ ' : ''}{nein}</button></div></div>`;
   return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${name(g, g.pres)}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">${one ? 'Seu voto' : 'Cada pessoa toca no próprio voto'}; as IAs votam junto. Mais {ja} que {nein} elege; empate rejeita.</p>${people.map(row).join('')}${one ? '' : `<button class="btn block" data-act="countvotes"${people.every(i => typeof ui.votes[i] === 'boolean') ? '' : ' disabled'}>Abrir os votos</button>`}${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}</section>`;
 }
 

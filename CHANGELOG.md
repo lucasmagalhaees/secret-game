@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.14.0]
+
+### Alterado
+- Na partida, o que você tem que fazer vem primeiro; a dica do treinador vem depois.
+- Anotações e Raciocínio abrem por uma barra embaixo, que não cobre mais o jogo; um painel por vez.
+- Ja! e Nein! com o mesmo peso, cada um na cor do seu lado; o escolhido fica cheio e com ✓.
+- O anúncio da lei e o carimbo da votação aparecem em cima da faixa de quem governa, não da jogada; os avisos curtos ficam na barra de baixo.
+
+### Corrigido
+- Texto ilegível sobre azul e vermelho no tema escuro (votos, papéis, tabuleiro).
+
 ## [0.13.0]
 
 ### Adicionado
