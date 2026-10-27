@@ -259,6 +259,18 @@ Modelo de uma decisão:
   - Abas do fim: Resultado, Resumo, Registro. O raciocínio das IAs continua na barra de baixo.
 - **Não sei:** se a faixa de lugares, com 9 ou 10 pessoas, ocupa linhas demais no celular; com 7 são três linhas.
 
+## D19. Jogadas boas e ruins no fim
+
+- **Contexto (27/10/2026):** "no final quero que me sugira quais jogadas foram boas e ruins dependendo se o modo assist tiver on".
+- **Decisão:** requisito 37 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - "Dependendo se o modo assist tiver on" quer dizer que aparece só com a assistência ligada. Com ela desligada, a aba Resultado mostra um botão que a liga.
+  - Vale para cada pessoa na mesa, não só quando se joga sozinho. No fim os papéis já estão abertos para todos.
+  - Uma jogada é julgada de dois jeitos juntos: pelo que deu e pelo que dava para saber na hora. Para "o que dava para saber", uso as contas do nível extremo, feitas só com o que aquele lugar sabia. Uma indicação, um voto, uma eliminação ou uma eleição especial que deu errado só conta como ruim se, pelas contas, havia opção claramente melhor (10 pontos de diferença na indicação, eliminação e eleição especial; 3 pontos acima do risco de um par qualquer no voto). Assim o primeiro voto, às cegas, nunca é chamado de ruim.
+  - O liberal é julgado pelas leis (jogar fora uma liberal pesa 3), pelas mentiras e por onde pôs a confiança. O lado escondido é julgado por empurrar lei do time sem a mesa perceber: se a desconfiança da mesa sobre ele subiu 15 pontos ou mais, a lei sai como jogada ruim. Também conta a história que não fechou e cobrir ou entregar aliado.
+  - Peso para ordenar: eliminar o Hitler ou eleger o Hitler na zona vale 5, jogar fora uma liberal vale 3, e os votos certos valem 0,5 ou 1. Aparecem 4 de cada lado, e "Ver todas" mostra o resto.
+- **Não sei:** se os pesos batem com o que um jogador experiente chamaria de jogada boa ou ruim. Também não sei se o lado escondido deveria ser julgado pelo voto.
+
 ## Pendências
 
 | Pendência | Quem resolve |

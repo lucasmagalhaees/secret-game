@@ -122,7 +122,7 @@ function vGame(g: Game): string {
     // the end, in tabs (D18): the result first; the whole game and the record one tap away
     const tabs: [EndTab, string][] = [['res', 'Resultado'], ['jogo', 'Resumo'], ['log', 'Registro']];
     const bar = `<div class="segm endtabs" role="tablist" aria-label="Fim de jogo">${tabs.map(([k, l]) => `<button role="tab" id="tab-${k}" class="${ui.endTab === k ? 'on' : ''}" data-act="endtab" data-v="${k}" aria-selected="${ui.endTab === k}">${l}</button>`).join('')}</div>`;
-    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vThoughts(g) + vPlayers(g) + vBoard(g);
+    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vThoughts(g) + vReview(g) + vPlayers(g) + vBoard(g);
     return card + bar + body + vDock(g);
   }
   return vUndo() + vStatus(g) + vSeats(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
@@ -303,6 +303,30 @@ function vCoach(g: Game): string {
 /** At the end (D13): how much each app player that did not know the person's role suspected them, law by law. A small
  *  line per player (one series each: no legend needed), the last value beside it. Tooltips on the points. */
 let thoughtsCache: { key: string; html: string } | null = null;
+/** At the end, with assistance on (D19): for each person at the table, the plays that were clearly good and clearly
+ *  bad, the heaviest first. With assistance off, a button to turn it on. Worked out once per finished game. */
+let reviewCache: { key: string; plays: Map<number, ReturnType<typeof Core.review>> } | null = null;
+const SHOW = 4;
+function vReview(g: Game): string {
+  const people = g.players.map((p, i) => (p.ai ? -1 : i)).filter(i => i >= 0);
+  if (!people.length || !g.hist.length) return '';
+  if (!S.assist) return `<section class="card" id="review"><span class="label">Suas jogadas</span><p class="hint">Com a assistência ligada, o app aponta as jogadas boas e ruins de cada pessoa na mesa.</p><button class="btn ghost block" data-act="assist" data-v="on" id="reviewon">Ver jogadas boas e ruins</button></section>`;
+  const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => p.name).join()}`;
+  if (!reviewCache || reviewCache.key !== key) reviewCache = { key, plays: new Map(people.map(i => [i, Core.review(g, i)])) };
+  const one = people.length === 1;
+  return people.map(i => {
+    const all = reviewCache?.plays.get(i) || [], open = ui.allPlays;
+    const pick = (good: boolean): ReturnType<typeof Core.review> => all.filter(x => x.good === good).sort((a, b) => b.weight - a.weight || a.at - b.at);
+    const list = (xs: ReturnType<typeof Core.review>, good: boolean): string => xs.length
+      ? `<ul class="plays ${good ? 'good' : 'bad'}">${(open ? xs : xs.slice(0, SHOW)).map(x => `<li>${whyText(g, x.text)}</li>`).join('')}</ul>`
+      : `<p class="hint">${good ? 'Nenhuma que se destacou.' : 'Nenhuma jogada claramente ruim.'}</p>`;
+    const good = pick(true), bad = pick(false), more = good.length > SHOW || bad.length > SHOW;
+    return `<section class="card review" id="review${one ? '' : `-${i}`}"><span class="label">${one ? 'Suas jogadas' : `Jogadas de ${name(g, i)}`} · ${role(g.players[i].role).toLowerCase()}</span>
+      <p class="hint">Pelo que deu certo ou errado, e pelo que dava para saber na hora: uma jogada que deu errado sem ter como saber não conta como ruim.</p>
+      <b class="plays-head good">Boas</b>${list(good, true)}<b class="plays-head bad">Ruins</b>${list(bad, false)}
+      ${more ? `<button class="more" data-act="allplays" aria-expanded="${open}">${open ? 'Mostrar só as principais ▴' : `Ver todas (${good.length + bad.length}) ▾`}</button>` : ''}</section>`;
+  }).join('');
+}
 function vThoughts(g: Game): string {
   const me = solo(g);
   if (me < 0) return '';

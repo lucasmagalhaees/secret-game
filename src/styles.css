@@ -488,3 +488,11 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .more{display:inline-flex;align-items:center;min-height:44px;font:800 13px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--fg);text-decoration:underline;text-underline-offset:4px}
 #moreopts{display:contents}
 .endtabs{position:sticky;top:calc(62px + env(safe-area-inset-top));z-index:5;background:var(--bg)}
+/* D19: the review of a person's plays, at the end */
+.plays{list-style:none;padding:0;margin:6px 0 12px;display:grid;gap:8px}
+.plays li{border-left:5px solid var(--line);padding:4px 10px;font-size:15px;line-height:1.4}
+.plays.good li{border-left-color:var(--lib)}
+.plays.bad li{border-left-color:var(--fas)}
+.plays-head{display:block;margin-top:8px;font:800 12px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}
+.plays-head.good{color:var(--lib)}.plays-head.bad{color:var(--fas)}
+.plays.good li::before{content:"✓ ";font-weight:800;color:var(--lib)}.plays.bad li::before{content:"✗ ";font-weight:800;color:var(--fas)}

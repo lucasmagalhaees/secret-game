@@ -206,6 +206,11 @@ with sync_playwright() as p:
     assert 'Ana investigou Caio: era fascista' in ' '.join(txt('#summary').split()), txt('#summary')
     assert 'eliminou' in txt('#summary') and 'rejeitados' in txt('#summary') and 'Caos' in txt('#summary') and 'vetaram' in txt('#summary'), txt('#summary')
     pg.click('#tab-log'); assert pg.locator('#log li').count() > 10; pg.click('#tab-res')
+    # D19: the good and bad plays of each person, only with the assistance on
+    assert pg.locator('.card.review').count() == 0 and pg.locator('#reviewon').count() == 1, 'assistance off: a button, not the review'
+    pg.click('#reviewon'); assert pg.locator('.card.review').count() == 7 and pg.locator('.plays li').count() > 0, 'one review per person at the table'
+    rv = txt('#view'); assert '{p' not in rv and '{f' not in rv and 'undefined' not in rv and 'NaN' not in rv
+    pg.evaluate('(() => { delete window.__APP.S.assist; })()'); pg.click('#tab-res')
     assert overflow() == 0; shot(f's4-fim-{THEME}.png')
 
     # again with the same table, then ending a game halfway
@@ -355,6 +360,9 @@ with sync_playwright() as p:
     assert (pg.locator('#crux-end').count() == 1) == (crux is not None), 'a fascist sees the moment that raised the suspicion the most'
     if crux: assert 'ponto crucial' in txt('#crux-end').lower() and f"{round(crux['after'] * 100)}%" in txt('#crux-end')
     assert pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
+    plays = pg.evaluate('window.__APP.Core.review(window.__APP.S.game, 6)')
+    assert pg.locator('#review').count() == 1 and 'Suas jogadas' in txt('#review') and pg.locator('#review .plays li').count() == min(4, sum(1 for x in plays if x['good'])) + min(4, sum(1 for x in plays if not x['good'])), ('the review of the person, the main plays of each kind', plays)
+    if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     # at the end, the reasoning opens freely: every decision of the chosen app player, with its reason and the options weighed
     pg.evaluate('(() => { delete window.__APP.S.debug; })()'); pg.click('#mindtoggle'); assert 'Estraga' not in txt('#mind')
