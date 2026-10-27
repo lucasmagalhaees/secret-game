@@ -318,6 +318,15 @@ with sync_playwright() as p:
     pg.click('#mindtoggle'); pg.evaluate('scrollTo(0, 0)')
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
+    # D22: while an app player tells the table about its hand, the phase it holds still shows it deciding: never the gate
+    # of its secret, as if the person should open it
+    kept = pg.evaluate('JSON.stringify(window.__APP.S.game)')
+    pg.evaluate('''(() => { const g = window.__APP.S.game, a = g.players.findIndex(p => p.ai);
+      g.hist.push({ k: 'gov', pres: a, chanc: 6, law: 'L', drew: ['F', 'L', 'L'], got: ['L', 'L'] });
+      g.pres = a; g.chanc = null; g.phase = 'investigated'; g.target = 6; })()''')
+    pg.click('[data-act=help]'); pg.click('[data-act=help]')
+    assert pg.locator('.handoff').count() == 0 and pg.locator('#thinking').count() == 1, ('an app player\'s secret never shows a gate', txt('#phase'))
+    pg.evaluate(f'window.__APP.S.game = JSON.parse({kept!r})'); pg.click('[data-act=help]'); pg.click('[data-act=help]')
     pg.evaluate('window.__APP.ui.think = 0')
     pg.click('[data-act=help]'); assert 'IA no nível extremo' in txt('#helptext'); pg.click('[data-act=help]')
     me, seen, reloaded = 6, set(), False

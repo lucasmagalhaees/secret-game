@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
-import { blurField, confetti, decree, flash, render, stamp, toast } from './render';
+import { beat, blurField, confetti, decree, flash, render, stamp, toast } from './render';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
@@ -15,8 +15,10 @@ const rand = (): number => Math.random();
  *  gets its confetti and its fanfare here, whatever ended it. */
 function play(next: Game, msg?: string, undo: Game | null = null): void {
   const before = S.game, changed = next !== before;
+  // an app player only spoke (a claim, a talk): the phase is the same, so what the person opened, picked or voted stays (D22)
+  const spoke = !!before && changed && next.phase === before.phase && beat(next) === beat(before) && next.pres === before.pres && next.chanc === before.chanc;
   setS({ ...S, game: next }); saveS();
-  if (changed) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
+  if (changed && !spoke) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
   if (msg && changed) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {

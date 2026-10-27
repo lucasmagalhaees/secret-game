@@ -299,6 +299,9 @@ Modelo de uma decisão:
 - **Contexto (27/10/2026):** "a animacao do claim de votacao ta mt rapida, mal dá tempo de ler o que o presidente e o chaceler disseram que receberam".
 - **Decisão:** requisito 31 do `CLAUDE.md`.
 - **Interpretações que precisaram ser feitas:** fiz duas coisas. Depois que uma IA diz à mesa o que recebeu, investigou ou espiou, a próxima jogada espera mais (`CLAIM_HOLD`). E o que o último governo, ou a última investigação, disse fica escrito numa linha abaixo da faixa da mesa até o próximo. Assim não depende de pegar o aviso passando.
+- **Dois bugs no mesmo assunto (27/10/2026):** "aparece pra ver a carta de um jogador IA, fora que a telinha de acao fica tremendo pq toda hora eh sobrescrita por eventos enquanto o presidas vota".
+  - Enquanto uma IA falava da própria mão, a tela mostrava a fase pelo lado de quem joga, e quando a fase era de um segredo da IA aparecia o portão "Sou X, mostrar". Agora a fase de uma IA mostra sempre a IA decidindo.
+  - A cada fala ou conversa de IA, a fase entrava de novo, deslizando, e um segredo aberto ou um voto meio contado se perdia. A tela só considera que a fase mudou quando o jogo anda de verdade (governo, rejeição, poder, eleição), não com o que se diz ao lado.
 - **Não sei:** se os 2,5 s a mais no normal bastam para quem lê devagar. A velocidade "lenta" dá 4 s.
 
 ## Pendências

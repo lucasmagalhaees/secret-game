@@ -31,7 +31,7 @@ import type { Law, Level, Party, Role, Seen, View, Why } from './types';
  *    passing the fascist one with a liberal one (D21), and says so: the chancellor shows its side by what it enacts. */
 export interface Knobs { noise: number; memory: number; lie: number; count: boolean; act: number; trust: number; wary: number; plan: boolean; image: number; slip: number; test: number }
 export const AI: Record<Level, Knobs> = {
-  facil: { noise: 0.3, slip: 0.1, memory: 5, lie: 0.1, count: false, act: 0.25, trust: 0, wary: 0.5, plan: false, image: 0, test: 0 },
+  facil: { noise: 0.3, slip: 0.1, memory: 5, lie: 0.1, count: false, act: 0.4, trust: 0, wary: 0.5, plan: false, image: 0, test: 0 },
   medio: { noise: 0.1, slip: 0.1, memory: 6, lie: 0.3, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false, image: 0, test: 0 },
   dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1, test: 0.3 },
   extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1, test: 0.3 }
@@ -54,7 +54,7 @@ export const TEST_GUESS = 0.15;
 export const BOSS_CLEAN = 0.6;
 /** What the extreme level reads in the votes (D21): a fascist who knows the government has a teammate in it votes Ja
  *  this often; anyone else votes Ja about this often, whatever their side. */
-export const ALLY_JA = 0.9, ANY_JA = 0.6;
+export const ALLY_JA = 0.8, ANY_JA = 0.6;
 /** How often anyone, liberal or not, plays a law against its own side by mistake (a wrong tap): no single play is
  *  ever taken as proof (D21). */
 export const SLIP_GUESS = 0.03;
@@ -453,7 +453,13 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
   const pub = believe(v, true);
   if (v.ask === 'vote') {
     if (v.chanc === hitler && v.laws.F >= HITLER_ZONE) { why(`O chanceler é o {boss} e já há ${HITLER_ZONE} leis {fs}: elegê-lo ganha o jogo. {ja}`); return 1; }
-    if (isAlly(v.pres) || isAlly(v.chanc as number) || v.pres === v.me || v.chanc === v.me) { why('Há um aliado (ou ela mesma) no governo: {ja}'); return 1; }
+    if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; }
+    if (isAlly(v.pres) || isAlly(v.chanc as number)) {
+      // the extreme level knows its votes are read (D21): on a government the table already doubts, it votes like a
+      // liberal would, now and then, so as not to stand out next to its teammate
+      if (k.count && !liberalJa(v, pub) && rand() < 0.8) { why('Há um aliado no governo, mas a mesa desconfia dele: votou {nein} para não aparecer junto.'); return 0; }
+      why('Há um aliado no governo: {ja}'); return 1;
+    }
     if (v.tracker === TRACKER_MAX - 1 && rand() < 0.5) { why('Mais uma rejeição traz o caos, que costuma tirar lei {f}: {nein}'); return 0; }   // the chaos plays for the fascists
     why('Nenhum aliado no governo: votou como um liberal votaria pelo que a mesa viu, para não destoar.');
     return liberalJa(v, pub) ? 1 : 0;

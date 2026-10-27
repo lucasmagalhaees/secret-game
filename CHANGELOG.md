@@ -10,6 +10,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 
 ### Corrigido
 - Um liberal que testava o chanceler virava 100% fascista para a IA.
+- Às vezes aparecia o botão para ver a carta de uma IA.
+- A tela da fase tremia e entrava de novo a cada fala de IA, e um segredo aberto ou um voto se perdia.
 - A IA muito desconfiada rejeitava todo governo na primeira rodada.
 
 ## [0.17.0]
