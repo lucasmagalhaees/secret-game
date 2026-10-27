@@ -9,7 +9,7 @@
    changes how careful it is, how much it remembers, how much it believes what it hears, and whether it counts the laws
    still in the deck. A fascist knows its team and plays for it, lying about its hand when the truth would give it away;
    Hitler, when he does not know his team, plays like a liberal so he can be elected later. */
-import { DECK_F, DECK_L, HITLER_ZONE, TRACKER_MAX } from './game';
+import { DECK_F, DECK_L, HITLER_KNOWS_UPTO, HITLER_ZONE, TRACKER_MAX } from './game';
 import type { Law, Level, Party, Role, Seen, View, Why } from './types';
 
 /** What each level does differently:
@@ -26,13 +26,15 @@ import type { Law, Level, Party, Role, Seen, View, Why } from './types';
  *    that pass liberal laws) and eliminates the liberals who caught a teammate lying;
  *  - image: as a fascist with a hand to play, how much looking suspicious to the table costs, against a fascist law
  *    worth 1 (0: it does not think about it). It works out how the table would see each way to play the hand, with the
- *    same reasoning the table uses. */
-export interface Knobs { noise: number; memory: number; lie: number; count: boolean; act: number; trust: number; wary: number; plan: boolean; image: number; slip: number }
+ *    same reasoning the table uses;
+ *  - test: as a liberal president with 1 fascist and 2 liberal laws, how often it tests a chancellor it is unsure of by
+ *    passing the fascist one with a liberal one (D22), and says so: the chancellor shows its side by what it enacts. */
+export interface Knobs { noise: number; memory: number; lie: number; count: boolean; act: number; trust: number; wary: number; plan: boolean; image: number; slip: number; test: number }
 export const AI: Record<Level, Knobs> = {
-  facil: { noise: 0.3, slip: 0.1, memory: 5, lie: 0.1, count: false, act: 0.25, trust: 0, wary: 0.5, plan: false, image: 0 },
-  medio: { noise: 0.1, slip: 0.1, memory: 6, lie: 0.3, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false, image: 0 },
-  dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1 },
-  extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1 }
+  facil: { noise: 0.3, slip: 0.1, memory: 5, lie: 0.1, count: false, act: 0.4, trust: 0, wary: 0.5, plan: false, image: 0, test: 0 },
+  medio: { noise: 0.1, slip: 0.1, memory: 6, lie: 0.3, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false, image: 0, test: 0 },
+  dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1, test: 0.3 },
+  extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1, test: 0.3 }
 };
 /** The answer to 'talk' that means keeping quiet (D13). */
 export const QUIET = 1000;
@@ -40,6 +42,25 @@ export const QUIET = 1000;
 export const MOOD = 0.2;
 /** How often a liberal thinks a fascist lets a liberal law through on purpose (the same at every level). */
 const TRUST_GUESS = 0.15;
+/** The chancellor test (D22), as everyone reckons it, at every level: how often a liberal president with 1 fascist and
+ *  2 liberal laws passes the fascist one on, to see what the chancellor enacts. A liberal who tests says so (its claim
+ *  is the truth), so "I drew 2 liberals and passed you one of each" raises suspicion without proving anything. A
+ *  fascist can hide behind it too, by telling the truth where it could have lied: that is in the lie rate already,
+ *  since a fascist who does not lie tells the truth. */
+export const TEST_GUESS = 0.15;
+/** What the levels that read the long game (`plan`, D22) know the hidden leader does: before HITLER_ZONE fascist laws
+ *  he lets liberal laws through to look clean, and his team hands him liberal laws to pass; this is how often. The
+ *  levels below take him for any other fascist (TRUST_GUESS). */
+export const BOSS_CLEAN = 0.6;
+/** What the extreme level reads in the votes (D22): a fascist who knows the government has a teammate in it votes Ja
+ *  this often; anyone else votes Ja about this often, whatever their side. */
+export const ALLY_JA = 0.8, ANY_JA = 0.6;
+/** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
+ *  teammate for chancellor this many times more often than chance would. */
+export const ALLY_PICK = 1.5;
+/** How often anyone, liberal or not, plays a law against its own side by mistake (a wrong tap): no single play is
+ *  ever taken as proof (D22). */
+export const SLIP_GUESS = 0.03;
 
 const fasc = (r: Role): boolean => r !== 'liberal';
 const nF = (laws: Law[]): number => laws.filter(l => l === 'F').length;
@@ -64,37 +85,41 @@ export const chancStory = (m: number, law: Law | undefined): number => (law === 
 
 /** The fascist laws a president passes on with d drawn: a liberal throws a fascist one away when he can; a fascist
  *  keeps them, now and then letting a liberal one through. */
-function passOdds(d: number, fascist: boolean): [number, number][] {
+function passOdds(d: number, fascist: boolean, trust: number, test: number): [number, number][] {
   const lo = Math.max(0, d - 1), hi = Math.min(2, d);
-  if (!fascist || lo === hi) return [[fascist ? hi : lo, 1]];
-  return [[hi, 1 - TRUST_GUESS], [lo, TRUST_GUESS]];
+  if (lo === hi) return [[lo, 1]];
+  if (fascist) return [[hi, 1 - trust], [lo, trust]];
+  const off = d === 1 ? test : SLIP_GUESS;                                  // one of each from 1F 2L: a test (D22); two F from 2F 1L: a slip
+  return [[lo, 1 - off], [hi, off]];
 }
 /** How likely this law comes out of a hand with m fascist laws. */
-function lawOdds(m: number, fascist: boolean, law: Law | undefined): number {
+function lawOdds(m: number, fascist: boolean, law: Law | undefined, trust: number): number {
   if (m === 0) return law === 'L' ? 1 : 0;
   if (m === 2) return law === 'F' ? 1 : 0;
-  return !fascist ? (law === 'L' ? 1 : 0) : law === 'F' ? 1 - TRUST_GUESS : TRUST_GUESS;
+  return !fascist ? (law === 'L' ? 1 - SLIP_GUESS : SLIP_GUESS) : law === 'F' ? 1 - trust : trust;
 }
 /** How likely a chancellor asks to veto (and it goes through) with m fascist laws in hand. */
 const vetoOdds = (m: number, fascist: boolean): number => (fascist ? (m === 0 ? 0.8 : 0.05) : m === 2 ? 0.8 : 0.02);
 /** How likely someone says `said` when the truth is `truth` and the story is `story`. */
 function sayOdds(said: number | undefined, truth: number, story: number, fascist: boolean, lie: number): number {
   if (said === undefined || said < 0) return 1;
-  if (!fascist || story === truth) return said === truth ? 1 : 0;
+  if (!fascist) return said === truth ? 1 - SLIP_GUESS : SLIP_GUESS / 3;    // a liberal tells the truth, but a wrong tap is never proof
+  if (story === truth) return said === truth ? 1 : 0;
   return (said === truth ? 1 - lie : 0) + (said === story ? lie : 0);
 }
 
 /** How well one government (or veto) is explained by who was fascist in it. */
-function govOdds(e: Extract<Seen, { k: 'gov' | 'veto' }>, fp: boolean, fc: boolean, pd: number[], lie: number, knownD: number | null): number {
+/** `tp` and `tc`: how often the president and the chancellor, if fascist, let a liberal law through in this world. */
+function govOdds(e: Extract<Seen, { k: 'gov' | 'veto' }>, fp: boolean, fc: boolean, pd: number[], lie: number, knownD: number | null, tp = TRUST_GUESS, tc = TRUST_GUESS, test = TEST_GUESS): number {
   const D = e.drew && e.drew.length ? [nF(e.drew)] : knownD !== null ? [knownD] : [0, 1, 2, 3];
   const got = e.got && e.got.length ? nF(e.got) : null, law = e.k === 'veto' ? undefined : e.law;
   let sum = 0;
   for (const d of D) {
     const p = D.length === 1 ? 1 : pd[d];
     if (!p) continue;
-    for (const [m, pm] of passOdds(d, fp)) {
+    for (const [m, pm] of passOdds(d, fp, tp, test)) {
       if (got !== null && m !== got) continue;
-      const out = e.k === 'veto' ? vetoOdds(m, fc) : lawOdds(m, fc, law);
+      const out = e.k === 'veto' ? vetoOdds(m, fc) : lawOdds(m, fc, law, tc);
       if (!out) continue;
       sum += p * pm * out * sayOdds(e.pc, d, presStory(d, m, law), fp, lie) * sayOdds(e.cc, m, chancStory(m, law), fc, lie);
     }
@@ -135,14 +160,30 @@ export function believe(v: View, outside = false): Beliefs {
   })();
   const ws = worlds(v, outside).map(roles => {
     let w = 1, L = 0, F = 0, knownD: number | null = null;
+    const gone = new Set<number>(), knowsTeam = (j: number): boolean => roles[j] === 'fascista' || (roles[j] === 'hitler' && v.n <= HITLER_KNOWS_UPTO);
     v.hist.forEach((e, i) => {
       const fresh = i >= remember;
+      if (e.k === 'vote' && k.count && fresh) {
+        // the extreme level reads the votes: a fascist votes Ja for a government with a teammate in it
+        const team = fasc(roles[e.pres]) || fasc(roles[e.chanc]);
+        for (let j = 0; j < v.n; j++) {
+          if (gone.has(j) || j === e.pres || j === e.chanc || mine(j)) continue;
+          const ja = e.ja.includes(j), p = knowsTeam(j) && team ? ALLY_JA : ANY_JA;
+          w *= ja ? p : 1 - p;
+        }
+        return;
+      }
+      // who a president nominated: a fascist who knows its team leans to a teammate (the levels that read the long game)
+      if ((e.k === 'gov' || e.k === 'veto' || e.k === 'rej') && fresh && k.plan && !mine(e.pres) && knowsTeam(e.pres) && fasc(roles[e.chanc])) w *= ALLY_PICK;
       if (e.k === 'gov' || e.k === 'veto') {
         const own = mine(e.pres) || mine(e.chanc);
         if (fresh || own) {
           const pd = k.count ? drawOdds(Math.max(0, DECK_F - F), Math.max(0, DECK_L - L)) : drawOdds(DECK_F, DECK_L);
           const ev = outside ? { ...e, drew: undefined, got: undefined } : e;
-          const p = govOdds(ev, fasc(roles[e.pres]), fasc(roles[e.chanc]), pd, k.lie, k.count ? knownD : null);
+          // the levels that read the long game know the hidden leader keeps clean early, helped by his team (D22)
+          const early = k.plan && F < HITLER_ZONE, boss = (j: number): boolean => roles[j] === 'hitler';
+          const tp = early && (boss(e.pres) || (fasc(roles[e.pres]) && boss(e.chanc))) ? BOSS_CLEAN : TRUST_GUESS, tc = early && boss(e.chanc) ? BOSS_CLEAN : TRUST_GUESS;
+          const p = govOdds(ev, fasc(roles[e.pres]), fasc(roles[e.chanc]), pd, k.lie, k.count || k.plan ? knownD : null, tp, tc, k.plan ? TEST_GUESS : TEST_GUESS / 2);
           w *= own ? p : 0.03 + 0.97 * p;
           if (F >= HITLER_ZONE && roles[e.chanc] === 'hitler') w *= 0.001;   // Hitler elected there would have won
         }
@@ -153,6 +194,9 @@ export function believe(v: View, outside = false): Beliefs {
         e.law === 'F' ? F++ : L++;
       } else if (e.k === 'peek') {
         if (mine(e.by) && e.saw) knownD = nF(e.saw);
+        // what someone else says the next 3 laws are: the truth if they are liberal, which the next president's story
+        // then has to match (the levels that read the long game check it)
+        else if (k.plan && e.said !== undefined && e.said >= 0 && !fasc(roles[e.by])) knownD = e.said;
       } else if (e.k === 'inv') {
         if (mine(e.by) && e.party) w *= (fasc(roles[e.target]) ? 'F' : 'L') === e.party ? 1 : 0;
         else if (fresh && e.said && e.said !== '-') {
@@ -161,7 +205,14 @@ export function believe(v: View, outside = false): Beliefs {
             : truth === 'F' ? (e.said === 'L' ? k.lie : 1 - k.lie) : e.said === 'F' ? k.lie / 2 : 1 - k.lie / 2;
           w *= 0.03 + 0.97 * p;
         }
-      } else if (e.k === 'exec' && fresh && roles[e.target] === 'hitler') w *= 0.001;   // the game went on
+      } else if (e.k === 'exec') {
+        gone.add(e.target);
+        if (fresh && roles[e.target] === 'hitler') w *= 0.001;                 // the game went on
+        // the levels that read the long game: a fascist who knows its team hardly ever eliminates a teammate
+        if (fresh && k.plan && !mine(e.by) && knowsTeam(e.by) && fasc(roles[e.target])) w *= 0.15;
+      } else if (e.k === 'special' && fresh && k.plan && !mine(e.by) && knowsTeam(e.by) && !fasc(roles[e.target])) {
+        w *= 0.5;                                                              // and hands the presidency to a teammate when it can
+      }
     });
     return { roles, w };
   });
@@ -205,14 +256,15 @@ function liberalJa(v: View, b: Beliefs): boolean {
   for (let x = 0; x < others.length; x++) for (let y = x + 1; y < others.length; y++) { base += risk(b, [others[x], others[y]]); pairs++; }
   base = pairs ? base / pairs : 1;
   // the temper of this player: the wary one wants a government clearly cleaner than most, the trusting one goes along
-  const slack = 0.05 + MOOD * v.mood + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
+  // never below zero: even the most wary one accepts a government no riskier than any other pair (D22)
+  const slack = Math.max(0, 0.05 + MOOD * v.mood) + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
   rows(b, gov.filter(i => i !== v.me));
   if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) {
     why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);
     return false;
   }
   const r = risk(b, gov.filter(i => i !== v.me)), ok = r <= base + slack;
-  why(`Chance de ter alguém do lado escondido neste governo: ${pc(r)}. Num par qualquer da mesa: ${pc(base)}. Aceita até ${pc(base + slack)} (folga de 5%, ${v.mood >= 0 ? '+' : ''}${pc(MOOD * v.mood)} do temperamento${v.tracker === TRACKER_MAX - 1 ? ', +20% porque mais uma rejeição traz o caos' : ''}): ${ok ? '{ja}' : '{nein}'}`);
+  why(`Chance de ter alguém do lado escondido neste governo: ${pc(r)}. Num par qualquer da mesa: ${pc(base)}. Aceita até ${pc(base + slack)} (folga de 5%, ${v.mood >= 0 ? '+' : ''}${pc(MOOD * v.mood)} do temperamento${0.05 + MOOD * v.mood < 0 ? ', nunca abaixo de zero' : ''}${v.tracker === TRACKER_MAX - 1 ? ', +20% porque mais uma rejeição traz o caos' : ''}): ${ok ? '{ja}' : '{nein}'}`);
   return ok;
 }
 
@@ -281,7 +333,16 @@ function speak(v: View, rand: () => number): number {
 /** A liberal: plays its side by what it believes. */
 function liberal(v: View, rand: () => number): number {
   const o = v.options;
-  if (v.ask === 'pdiscard') { why(v.hand.includes('F') ? 'É liberal: jogou fora uma lei {f} e passou o melhor que tinha.' : 'Só tinha liberais: qualquer uma.'); return Math.max(0, v.hand.indexOf('F')); }
+  if (v.ask === 'pdiscard') {
+    // the chancellor test (D22): with one fascist law in three, pass it on with a liberal one to a chancellor it is
+    // unsure of, while a fascist law still costs little (before the fascists' Hitler zone)
+    const k = AI[v.level];
+    if (k.test && nF(v.hand) === 1 && v.chanc !== null && v.laws.F < HITLER_ZONE - 1) {
+      const c = believe(v).pF[v.chanc];
+      if (c >= 0.25 && c <= 0.75 && rand() < k.test) { why(`Testou ${P(v.chanc)}: passou uma {f} e uma liberal para ver qual ${P(v.chanc)} aprova (tinha ${pc(c)} de dúvida sobre ele). Vai contar a verdade.`); rows(believe(v), [v.chanc]); return v.hand.indexOf('L'); }
+    }
+    why(v.hand.includes('F') ? 'É liberal: jogou fora uma lei {f} e passou o melhor que tinha.' : 'Só tinha liberais: qualquer uma.'); return Math.max(0, v.hand.indexOf('F'));
+  }
   if (v.ask === 'cdiscard') {
     if (nF(v.hand) === 2) { const veto = o.includes(2) && v.tracker < TRACKER_MAX - 1; why(veto ? 'Recebeu 2 {fs}: pediu veto (o caos ainda não está perto).' : `Recebeu 2 {fs}: não tinha como evitar${o.includes(2) ? ' (veto arriscaria o caos)' : ''}.`); return veto ? 2 : 0; }
     why(v.hand.includes('L') ? 'É liberal: aprovou a liberal.' : 'Sem escolha.'); return Math.max(0, v.hand.indexOf('F'));
@@ -316,6 +377,8 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
     const e = lastOwn(v, ['gov', 'veto'], e => e.pres === v.me);
     if (!e?.drew || !e.got) return -1;
     const d = nF(e.drew), m = nF(e.got), law = e.k === 'veto' ? undefined : e.law, story = presStory(d, m, law);
+    // the chancellor enacted the liberal law it was handed: a planning fascist can own up to "a test" instead of lying (D22)
+    if (AI[v.level].plan && d === 1 && m === 1 && law === 'L' && rand() < 0.5) { why('Passou uma {f} e uma liberal e o chanceler aprovou a liberal: disse a verdade, como se tivesse sido um teste.'); return d; }
     const lie = story !== d && rand() < act;
     why(story === d ? `Disse a verdade (${nmF(d, 3)}): não a entrega.` : lie ? `Tirou ${nmF(d, 3)} e passou ${nmF(m, 2)}; a verdade a entregaria. Mentiu: ${nmF(story, 3)}, a história que faz o que passou parecer forçado.` : `A verdade (${nmF(d, 3)}) a entrega, mas ela não mentiu desta vez (o nível mente ${pc(act)} das vezes).`);
     return lie ? story : d;
@@ -395,7 +458,13 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
   const pub = believe(v, true);
   if (v.ask === 'vote') {
     if (v.chanc === hitler && v.laws.F >= HITLER_ZONE) { why(`O chanceler é o {boss} e já há ${HITLER_ZONE} leis {fs}: elegê-lo ganha o jogo. {ja}`); return 1; }
-    if (isAlly(v.pres) || isAlly(v.chanc as number) || v.pres === v.me || v.chanc === v.me) { why('Há um aliado (ou ela mesma) no governo: {ja}'); return 1; }
+    if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; }
+    if (isAlly(v.pres) || isAlly(v.chanc as number)) {
+      // the extreme level knows its votes are read (D22): on a government the table already doubts, it votes like a
+      // liberal would, now and then, so as not to stand out next to its teammate
+      if (k.count && !liberalJa(v, pub) && rand() < 0.8) { why('Há um aliado no governo, mas a mesa desconfia dele: votou {nein} para não aparecer junto.'); return 0; }
+      why('Há um aliado no governo: {ja}'); return 1;
+    }
     if (v.tracker === TRACKER_MAX - 1 && rand() < 0.5) { why('Mais uma rejeição traz o caos, que costuma tirar lei {f}: {nein}'); return 0; }   // the chaos plays for the fascists
     why('Nenhum aliado no governo: votou como um liberal votaria pelo que a mesa viu, para não destoar.');
     return liberalJa(v, pub) ? 1 : 0;
@@ -405,7 +474,8 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     if (v.laws.F >= HITLER_ZONE && o.includes(hitler) && (k.plan || pub.pH[hitler] < 0.5)) { why(`Já há ${HITLER_ZONE} leis {fs}: indicou o {boss}, ${P(hitler)}, para ganhar se a mesa o eleger.`); return hitler; }
     if (groom && o.includes(hitler) && rand() < 0.5) { why(`Indicou o {boss}, ${P(hitler)}, para ele aprovar uma liberal e parecer limpo.`); return hitler; }
     const mates = o.filter(isAlly);
-    if (mates.length && rand() < 0.6) { const m = best(mates, i => pub.pF[i], rand); why(`Indicou um aliado, ${P(m)}, o que a mesa menos desconfia.`); return m; }
+    // the levels that read the long game know nominations are read (D22): they pick a teammate less often
+    if (mates.length && rand() < (k.plan ? 0.35 : 0.6)) { const m = best(mates, i => pub.pF[i], rand); why(`Indicou um aliado, ${P(m)}, o que a mesa menos desconfia.`); return m; }
     const libs = o.filter(i => !isAlly(i)).length ? o.filter(i => !isAlly(i)) : o, pick = best(libs, i => pub.pF[i], rand);
     why(`Indicou ${P(pick)}, quem a mesa acha mais limpo, para parecer liberal.`); return pick;
   }

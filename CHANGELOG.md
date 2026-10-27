@@ -7,6 +7,24 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 ### Adicionado
 - Suas partidas: toda partida terminada fica guardada no aparelho (as últimas 30), e dá para exportar um arquivo com elas para calibrar a IA.
 
+## [0.19.0]
+
+### Alterado
+- A IA não é mais ingênua: nenhuma jogada sozinha vira certeza. No difícil e no extremo ela conhece o teste do chanceler (e testa), o Hitler que se disfarça com lei liberal no começo, confere a espiada com a mão do presidente e lê indicações, eliminações e eleições especiais. O extremo também lê os votos. Os fascistas se adaptam a isso.
+
+### Corrigido
+- Um liberal que testava o chanceler virava 100% fascista para a IA.
+- A IA muito desconfiada rejeitava todo governo na primeira rodada.
+
+## [0.18.0]
+
+### Alterado
+- Depois que uma IA diz o que recebeu, a próxima espera mais. O que o último governo disse fica escrito abaixo da mesa.
+
+### Corrigido
+- Às vezes aparecia o botão para ver a carta de uma IA.
+- A tela da fase tremia e entrava de novo a cada fala de IA, e um segredo aberto ou um voto se perdia.
+
 ## [0.17.0]
 
 ### Alterado

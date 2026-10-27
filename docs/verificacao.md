@@ -27,6 +27,8 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | Jogadas boas e ruins no fim, só com a assistência (por pessoa, sozinho ou com várias pessoas; botão para ligar quando está desligada); jogada errada sem ter como saber não conta como ruim | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (136 casos) | 27/10/2026 |
 | Mesa menor num toque (tira as últimas IAs, nunca pessoa), limpar a mesa com dois toques; o celular de tela para baixo só fecha o segredo com a opção ligada | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (137 casos) | 27/10/2026 |
 | Partidas terminadas guardadas no aparelho (só as que fecham, as últimas 30), exportadas num arquivo com tudo, apagadas com dois toques | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (139 casos) | 27/10/2026 |
+| Depois de uma fala de IA, a próxima espera mais e o que o governo disse fica escrito; a fase de uma IA nunca mostra o portão do segredo; fala de IA não faz a fase entrar de novo nem fecha segredo | `python3 tests/e2e.py dark` e `light` | 27/10/2026 |
+| IA não ingênua: nenhuma jogada vira certeza, teste do chanceler, disfarce do Hitler, espiada conferida, indicações, votos (extremo), eliminação e eleição especial; balanceamento: liberais 52% a 55% com a mesa no mesmo nível | `node tests/core.mjs` (145 casos); `node scripts/ai_bench.mjs 200` | 27/10/2026 |
 | Depois de um veto aceito, o baralho é reabastecido | caso em `tests/unit.cases.mjs` | 26/10/2026 |
 | A produção (https://secret-game-gamma.vercel.app) serve o commit da `main` | Página lida: `meta app-commit` = `6e6e539` | 13/10/2026 |
 

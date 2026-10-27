@@ -2,9 +2,9 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
-import { blurField, confetti, decree, flash, render, stamp, toast } from './render';
+import { beat, blurField, confetti, decree, flash, render, stamp, toast } from './render';
 import { exportGames, keep, wipe } from './history';
-import { S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
+import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
 /* ================= events =================
@@ -16,8 +16,10 @@ const rand = (): number => Math.random();
  *  gets its confetti and its fanfare here, whatever ended it. */
 function play(next: Game, msg?: string, undo: Game | null = null): void {
   const before = S.game, changed = next !== before;
+  // an app player only spoke (a claim, a talk): the phase is the same, so what the person opened, picked or voted stays (D21)
+  const spoke = !!before && changed && next.phase === before.phase && beat(next) === beat(before) && next.pres === before.pres && next.chanc === before.chanc;
   setS({ ...S, game: next }); saveS();
-  if (changed) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
+  if (changed && !spoke) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
   if (msg && changed) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
@@ -40,8 +42,11 @@ export function tick(): void {
     if (S.game !== g) return;
     const next = Core.botStep(g, rand);
     if (next) botPlayed(g, next);
-  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal']);
+  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal'] + takeHold());
 }
+/** A claim was just told: the next step waits for it to be read (D21). Taken once. */
+let hold = false;
+const takeHold = (): number => { const h = hold; hold = false; return h ? CLAIM_HOLD[S.speed || 'normal'] : 0; };
 /** What everyone notices when a vote is counted: the stamp, and the vibration when it elects. */
 function voted(before: Game, next: Game): void {
   const e = [...next.hist].reverse().find(x => x.k === 'vote');
@@ -50,6 +55,8 @@ function voted(before: Game, next: Game): void {
 }
 /** An app player did something: the same sounds and marks as when a person does it, and the line it adds to the log. */
 function botPlayed(before: Game, next: Game): void {
+  const told = Core.botTurn(before)?.ask;
+  hold = told === 'pc' || told === 'cc' || told === 'inv' || told === 'peek';
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
