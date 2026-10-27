@@ -284,6 +284,79 @@ const ANIMALS: Record<Exclude<Region, 'mundo'>, { L: string; F: string; C: strin
   asia: { L: 'tigre', F: 'komodo', C: 'raposa' },
   europa: { L: 'cegonha', F: 'javali', C: 'lince' }
 };
+/* The leader of the hidden side on each continent (D24): a long grey coat with a plain red armband over a lectern for
+   the fascists' leader, yelling; a khaki tunic with gold shoulder boards and a pipe for the communists' leader. */
+const bossBody = (): string => `<path d="M22 118 C20 94 28 76 44 70 L76 70 C92 76 100 94 98 118Z" fill="#4a4e55" ${o()}/>
+  <path d="M44 70 L60 92 L76 70" fill="#383b41" ${o(2)}/>
+  <path d="M28 86 C32 78 40 74 44 76 L42 102 C36 102 30 98 28 94Z" fill="#383b41" ${o(2)}/><path d="M29 88 L42 86 L42 95 L29 96Z" fill="${RED}" ${o(1.6)}/>
+  <path d="M26 74 l14 -4 l2 4 l-14 5Z M94 74 l-14 -4 l-2 4 l14 5Z" fill="${GOLD}" ${o(1.3)}/>`;
+const lectern = `<path d="M34 98 H86 L80 120 H40Z" fill="#8a5a34" ${o()}/><path d="M34 98 H86 L84 104 H36Z" fill="#a46e43" ${o(1.6)}/><rect x="44" y="107" width="32" height="7" fill="${RED}" ${o(1.4)}/>`;
+const bossCap = `<path d="M41 24 C38 4 82 2 79 24Z" fill="#26221f" ${o()}/><path d="M42 22 H78" stroke="${RED}" stroke-width="3.2"/><path d="M36 24 H84 C82 29 72 31 60 31 C48 31 38 29 36 24Z" fill="#26221f" ${o(1.8)}/><circle cx="60" cy="13" r="3.4" fill="${GOLD}" ${o(1.3)}/>`;
+const shout = `<path d="M26 54 l-6 -3 M24 62 l-7 0 M94 54 l6 -3 M96 62 l7 0" fill="none" stroke="${W}" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>`;
+const chiefBody = (): string => `<path d="M22 118 C20 94 30 76 46 72 L76 72 C92 76 100 94 98 118Z" fill="#8a865f" ${o()}/>
+  <path d="M60 74 V118" fill="none" ${o(1.6)}/>
+  <circle cx="64" cy="86" r="2.6" fill="${GOLD}" ${o(1.2)}/><circle cx="64" cy="98" r="2.6" fill="${GOLD}" ${o(1.2)}/><circle cx="64" cy="110" r="2.6" fill="${GOLD}" ${o(1.2)}/>
+  <path d="M40 88 h12 v8 h-12Z M70 88 h12 v8 h-12Z" fill="#6f6b48" ${o(1.6)}/>
+  <path d="M26 78 l16 -4 l2 6 l-16 4Z M94 78 l-16 -4 l-2 6 l16 4Z" fill="${GOLD}" ${o(1.3)}/>`;
+const chiefCap = `<path d="M38 26 C36 6 84 6 82 26Z" fill="#7d7a55" ${o()}/><path d="M39 24 H81" stroke="#5f5c3d" stroke-width="3.4"/><path d="M36 26 H84 C82 31 72 32 60 32 C48 32 38 31 36 26Z" fill="#2b2a22" ${o(1.8)}/>${star(60, 15, 5.6, RED)}`;
+const pipe = (x: number, y: number): string => `<path d="M${x} ${y} L${x + 18} ${y + 4} L${x + 20} ${y} L${x + 26} ${y} C${x + 30} ${y} ${x + 32} ${y + 4} ${x + 30} ${y + 8} C${x + 28} ${y + 12} ${x + 22} ${y + 12} ${x + 20} ${y + 8} L${x + 18} ${y + 8} L${x - 2} ${y + 4}Z" fill="#4a2e1c" ${o(1.6)}/><path d="M${x + 28} ${y - 4} c-2 -4 2 -6 0 -10 M${x + 33} ${y - 6} c-2 -4 2 -6 0 -10" fill="none" stroke="${W}" stroke-width="2" stroke-linecap="round" opacity=".7"/>`;
+const stache = (y: number, c = '#2a1d14'): string => `<path d="M40 ${y} C46 ${y - 8} 54 ${y - 6} 60 ${y - 4} C66 ${y - 6} 74 ${y - 8} 80 ${y} C74 ${y + 2} 66 ${y} 60 ${y + 2} C54 ${y} 46 ${y + 2} 40 ${y}Z" fill="${c}" ${o(1.6)}/>`;
+const angry = (y = 40, gap = 10, iris = '#f6e36b'): string => look('F', iris, y, gap);
+const LEADERS: Record<string, () => string> = {
+  piranha: () => `<path d="M32 46 L20 36 L22 50Z M88 46 L100 36 L98 50Z" fill="#7d8790" ${o()}/>
+    <path d="M34 44 C34 28 46 20 60 20 C76 20 86 30 86 46 C86 62 76 72 60 72 C46 72 34 62 34 44Z" fill="#8f9aa3" ${o()}/>
+    <path d="M36 50 C40 70 80 70 84 50 C78 58 66 56 60 56 C54 56 42 58 36 50Z" fill="#d65a3a" ${o(1.8)}/>
+    <path d="M42 54 C50 66 70 66 78 54 C70 58 50 58 42 54Z" fill="#5a1414" ${o(1.6)}/>
+    <path d="M44 55 l3 5 l3 -4.4 l3 5 l3 -4.6 l3 5 l3 -5 l3 5 l3 -4.6 l3 5 l3 -5" fill="${W}" ${o(1)}/>
+    <path d="M46 64 l3 -4 l3 4 l3 -4 l3 4 l3 -4 l3 4 l3 -4 l3 4" fill="${W}" ${o(1)}/>
+    ${angry(40, 12, '#f2c02e')}${shout}`,
+  crocodilo: () => `<path d="M40 50 C36 32 50 24 66 26 C82 28 98 30 110 34 C116 36 116 42 110 44 L92 46 C80 46 62 48 50 50Z" fill="#7b7a3c" ${o()}/>
+    <path d="M44 54 C58 56 82 60 108 66 C114 68 114 74 108 74 C90 74 64 70 48 64Z" fill="#7b7a3c" ${o()}/>
+    <path d="M50 50 C62 50 86 48 108 44 L108 66 C84 60 62 56 48 54Z" fill="#7d1d1a" ${o(1.6)}/>
+    <path d="M70 47 l2 5 l2 -5 M80 46 l2 5 l2 -5 M90 45 l2 5 l2 -5 M100 44 l2 5 l2 -5 M74 58 l2 -5 l2 5 M86 61 l2 -5 l2 5 M98 64 l2 -5 l2 5" fill="${W}" ${o(1)}/>
+    ${spots([[56, 34, 1.8], [64, 30, 1.6], [86, 33, 1.5], [96, 35, 1.5]], '#5a5a2a')}
+    <ellipse cx="72" cy="35" rx="5.4" ry="4.4" fill="#f6e36b" ${o(1.5)}/><rect x="71" y="31.8" width="2.2" height="6.4" rx="1.1" fill="${K}"/>
+    <path d="M64 28 L80 33" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="110" cy="37" rx="2" ry="1.4" fill="${K}"/>${shout}`,
+  escorpiao: () => `<path d="M84 64 C104 56 110 30 96 12 C90 6 82 8 84 16" fill="none" stroke="${K}" stroke-width="11" stroke-linecap="round"/>
+    <path d="M84 64 C104 56 110 30 96 12 C90 6 82 8 84 16" fill="none" stroke="#6b3e22" stroke-width="7" stroke-linecap="round"/>
+    <path d="M100 52 l-6 -2 M106 36 l-7 1 M102 20 l-6 3" stroke="${K}" stroke-width="1.6"/>
+    <path d="M84 16 L76 22 L86 22Z" fill="#c9302c" ${o(1.4)}/>
+    <path d="M30 56 C18 50 16 36 26 32 L32 42 L36 34 C44 40 42 54 30 56Z M90 56 C102 50 104 36 94 32 L88 42 L84 34 C76 40 78 54 90 56Z" fill="#6b3e22" ${o()}/>
+    <path d="M38 46 C38 30 48 22 60 22 C72 22 82 30 82 46 C82 60 72 68 60 68 C48 68 38 60 38 46Z" fill="#7a4a2a" ${o()}/>
+    <path d="M44 34 H76 M42 44 H78" fill="none" stroke="#5a341c" stroke-width="2"/>
+    <path d="M48 56 C52 66 68 66 72 56 C66 59 54 59 48 56Z" fill="#5a1414" ${o(1.6)}/><path d="M50 57 l2 4 l2 -3.4 M66 57 l2 4 l2 -3.4" fill="${W}" ${o(1)}/>
+    ${angry(42, 9, '#e8442e')}<circle cx="56" cy="34" r="1.6" fill="${K}"/><circle cx="64" cy="34" r="1.6" fill="${K}"/>${shout}`,
+  morcego: () => `<path d="M40 42 L20 0 L56 30Z M80 42 L100 0 L64 30Z" fill="#4b3f45" ${o()}/><path d="M38 32 L26 10 L50 30Z M82 32 L94 10 L70 30Z" fill="#c98a8a"/>
+    <path d="M36 46 C36 30 46 22 60 22 C74 22 84 30 84 46 C84 62 74 70 60 70 C46 70 36 62 36 46Z" fill="#4b3f45" ${o()}/>
+    <path d="M54 46 L60 38 L66 46 L64 52 L56 52Z" fill="#7a5a62" ${o(1.4)}/>
+    <path d="M46 56 C50 68 70 68 74 56 C68 60 52 60 46 56Z" fill="#5a1414" ${o(1.6)}/><path d="M50 57 l2.4 6 l2.4 -5.4 M65 57 l2.4 6 l2.4 -5.4" fill="${W}" ${o(1)}/>
+    ${angry(40, 11, '#e8442e')}${shout}`,
+  oculos: () => `<circle cx="36" cy="24" r="10" fill="#2a2420" ${o()}/><circle cx="84" cy="24" r="10" fill="#2a2420" ${o()}/>
+    <path d="M30 46 C28 26 42 16 60 16 C78 16 92 26 90 46 C88 62 76 72 60 72 C44 72 32 62 30 46Z" fill="#2a2420" ${o()}/>
+    <path d="M42 34 C46 28 56 30 56 38 C56 46 48 50 44 46 Z M78 34 C74 28 64 30 64 38 C64 46 72 50 76 46 Z" fill="#e8d6a8" ${o(1.2)}/>
+    <ellipse cx="60" cy="54" rx="15" ry="11" fill="#e8d6a8" ${o(1.8)}/><ellipse cx="60" cy="47" rx="5.6" ry="4" fill="${K}"/>
+    ${stache(57)}<path d="M54 63 C58 65 62 65 66 63" fill="none" ${o(2)}/>${pipe(66, 62)}${angry(39, 10, W)}`,
+  bufalo: () => `<path d="M40 26 C20 22 8 34 12 50 C16 40 24 36 34 38Z M80 26 C100 22 112 34 108 50 C104 40 96 36 86 38Z" fill="#cfc6b2" ${o()}/>
+    <path d="M34 28 C44 20 76 20 86 28 C80 32 40 32 34 28Z" fill="#b8ae98" ${o(1.6)}/>
+    <path d="M36 44 C36 30 46 24 60 24 C74 24 84 30 84 44 C84 62 76 74 60 74 C44 74 36 62 36 44Z" fill="#3a3330" ${o()}/>
+    <ellipse cx="60" cy="60" rx="14" ry="10" fill="#5a504a" ${o(1.8)}/><ellipse cx="54" cy="60" rx="2.4" ry="3.2" fill="${K}"/><ellipse cx="66" cy="60" rx="2.4" ry="3.2" fill="${K}"/>
+    ${stache(66)}${pipe(66, 70)}${angry(42, 11, W)}`,
+  iaque: () => `<path d="M38 28 C24 24 20 10 30 4 C30 14 36 18 44 22Z M82 28 C96 24 100 10 90 4 C90 14 84 18 76 22Z" fill="#e9e1cc" ${o()}/>
+    <path d="M30 40 C28 24 42 18 60 18 C78 18 92 24 90 40 L94 70 L84 64 L80 76 L70 68 L60 80 L50 68 L40 76 L36 64 L26 70Z" fill="#4a3428" ${o()}/>
+    <ellipse cx="60" cy="56" rx="13" ry="10" fill="#8a6a54" ${o(1.8)}/><ellipse cx="55" cy="56" rx="2.2" ry="3" fill="${K}"/><ellipse cx="65" cy="56" rx="2.2" ry="3" fill="${K}"/>
+    ${stache(63, '#e9e1cc')}${pipe(66, 66)}${angry(40, 11, W)}`,
+  morsa: () => `<path d="M30 46 C28 26 42 18 60 18 C78 18 92 26 90 46 C88 62 76 70 60 70 C44 70 32 62 30 46Z" fill="#9a6a4a" ${o()}/>
+    <path d="M38 52 C40 42 52 40 60 46 C68 40 80 42 82 52 C80 62 68 64 60 58 C52 64 40 62 38 52Z" fill="#c69a74" ${o(1.8)}/>
+    ${spots([[46, 50, 1], [50, 54, 1], [44, 56, 1], [74, 50, 1], [70, 54, 1], [76, 56, 1]], K)}
+    <path d="M50 60 C48 72 50 84 54 90 C56 82 56 70 56 60Z M70 60 C72 72 70 84 66 90 C64 82 64 70 64 60Z" fill="#f4ecd8" ${o(1.6)}/>
+    <ellipse cx="60" cy="44" rx="4" ry="3" fill="${K}"/>${pipe(72, 58)}${angry(36, 11, W)}`
+};
+const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
+  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'bufalo' }, asia: { H: 'escorpiao', S: 'iaque' }, europa: { H: 'morcego', S: 'morsa' }
+};
+const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
+  ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`
+  : `${spot}${bossBody()}${LEADERS[BOSSES[region].H]()}${bossCap}${lectern}`;
 const member = (s: Side, animal: string): string => `${spot}${torso(s)}${HEADS[animal](s)}${cap(s)}`;
 
 const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox="0 0 120 120" aria-hidden="true" focusable="false">${body}</svg>`;
@@ -291,6 +364,7 @@ const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox=
 /** The big picture on a role card. In the communist theme (D12) the hidden side is the wolf and its leader the bear;
  *  on a continent (D24), the liberal and the member of the hidden side are that continent's animals. */
 export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+  if (r === 'hitler' && region !== 'mundo' && BOSSES[region]) return svg(leader(pack, region), 'art');
   if (r !== 'hitler' && region !== 'mundo' && ANIMALS[region]) {
     const a = ANIMALS[region], s: Side = r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F';
     return svg(member(s, a[s]), 'art');
