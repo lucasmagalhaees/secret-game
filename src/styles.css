@@ -405,3 +405,9 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 .spark-line{fill:none;stroke:var(--fas);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .spark-base{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
 .spark-dot{fill:var(--fas);stroke:var(--surface);stroke-width:1}
+.notes-toggle{display:block;width:100%;margin:2px 0 6px;padding:10px 12px;min-height:44px;text-align:left;border:2px dashed var(--line);background:transparent;color:var(--fg);font:800 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.notes-toggle[aria-expanded="true"]{border-style:solid}
+[data-look="deco"] .notes-toggle{border-width:1px;border-color:var(--gold)}
+.tag.mark{font-size:11px;padding:4px 8px}
+.tag.mark.L{background:var(--lib);border-color:var(--lib);color:var(--surface)}
+.tag.mark.F{background:var(--fas);border-color:var(--fas);color:var(--surface)}

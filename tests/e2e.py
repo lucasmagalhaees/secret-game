@@ -257,11 +257,13 @@ with sync_playwright() as p:
     pg.click('[data-act=open]'); assert pg.locator('#role').count() == 1 and 'Fascista' in txt('#role') and 'escolheu ser fascista' in txt('#trained'); pg.click('[data-act=hiderole]')
     assert pg.locator('#ata').count() == 1 and 'Nenhuma lei ainda' in txt('#ata')
     # the notebook: a fascist at a table of 7 knows Hitler and the other fascist; the rest is marked by hand, and kept
-    assert pg.locator('#notes .sure-tag').count() == 2 and pg.locator('#notes [data-act=note]').count() == 4 * 3
+    assert pg.locator('#notes .sure-tag').count() == 2 and pg.locator('#notes [data-act=note]').count() == 0, 'the notebook starts closed, what is known shown'
+    pg.click('#notestoggle'); assert pg.locator('#notes [data-act=note]').count() == 4 * 3 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true'
     first = pg.locator('#notes [data-act=note][data-v=L]').first.get_attribute('data-i')
     pg.locator('#notes [data-act=note][data-v=L]').first.click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
+    pg.click('#notestoggle'); assert pg.locator('#notes [data-act=note]').count() == 0 and pg.locator('#notes .tag.mark.F').count() == 1 and '1 marcado' in txt('#notestoggle'), 'closed, the marks stay in view'
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     pg.evaluate('window.__APP.ui.think = 0')

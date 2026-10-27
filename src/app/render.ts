@@ -206,7 +206,7 @@ function vPlayers(g: Game): string {
   const dead = new Set(g.players.filter(p => !p.alive).map(p => p.name)), fresh = [...dead].filter(x => !seenDead.has(x));
   seenDead = dead;
   const kit = noteKit(g), notes = S.notes || {};
-  return `<section class="card" id="players"><span class="label">${kit ? 'Jogadores e suas anotações' : 'Jogadores'}</span>${kit ? '<p class="hint">Só você vê as anotações. O que você sabe de certeza já vem marcado.</p>' : ''}<ul class="names${kit ? ' noted' : ''}"${kit ? ' id="notes"' : ''}>${g.players.map((p, i) => {
+  return `<section class="card" id="players"><span class="label">${kit ? 'Jogadores e suas anotações' : 'Jogadores'}</span>${kit ? `<button class="notes-toggle" data-act="notesopen" aria-expanded="${!!S.notesOpen}" id="notestoggle">${S.notesOpen ? '▾ Fechar anotações' : `▸ Anotar${Object.keys(notes).length ? ` (${Object.keys(notes).length} ${Object.keys(notes).length === 1 ? 'marcado' : 'marcados'})` : ''}`}</button>${S.notesOpen ? '<p class="hint">Só você vê as anotações. O que você sabe de certeza já vem marcado.</p>' : ''}` : ''}<ul class="names${kit ? ' noted' : ''}"${kit ? ' id="notes"' : ''}>${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
     return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}</span>${kit ? kit.cell(i) : ''}</li>`;
@@ -261,6 +261,7 @@ function noteKit(g: Game): { me: number; cell: (i: number) => string } | null {
   const cell = (i: number): string => {
     if (i === me) return '<span class="tag you">Você</span>';
     const known = sure.get(i), mark = notes[i];
+    if (!known && !S.notesOpen) return mark ? `<span class="tag mark ${mark}">${mark === 'L' ? W.libs : W.short}</span>` : '';
     const btn = (v: '' | Law, label: string): string => `<button class="${(mark || '') === v ? 'on' : ''} ${v}" data-act="note" data-i="${i}" data-v="${v}" aria-pressed="${(mark || '') === v}">${label}</button>`;
     return known ? `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>`
       : `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(g.players[i].name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`;
