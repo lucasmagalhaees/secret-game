@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.19.0]
+
+### Alterado
+- A IA não é mais ingênua: nenhuma jogada sozinha vira certeza. No difícil e no extremo ela conhece o teste do chanceler (e testa), o Hitler que se disfarça com lei liberal no começo, confere a espiada com a mão do presidente e lê indicações, eliminações e eleições especiais. O extremo também lê os votos. Os fascistas se adaptam a isso.
+
+### Corrigido
+- Um liberal que testava o chanceler virava 100% fascista para a IA.
+- A IA muito desconfiada rejeitava todo governo na primeira rodada.
+
 ## [0.18.0]
 
 ### Alterado
