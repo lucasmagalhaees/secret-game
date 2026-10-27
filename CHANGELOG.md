@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.13.0]
+
+### Adicionado
+- Raciocínio das IAs (para achar bug): o que cada IA pensa de cada jogador, o que mexeu nessa conta e o motivo de cada decisão, com as opções que ela comparou. Mostra os papéis: durante a partida, só depois de um aviso.
+
+### Corrigido
+- A cobertura contava errado os caracteres depois de um emoji no script (o navegador conta em UTF-16).
+
 ## [0.12.0]
 
 ### Adicionado

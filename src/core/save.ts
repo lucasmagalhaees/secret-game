@@ -1,7 +1,7 @@
 /* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
    never breaks the page: the names and the theme still come back. */
 import { LEVELS, MAX_PLAYERS, NAME_MAX, WIN } from './game';
-import type { AppState, Event, Game, Law, Level, Phase, Player, Role } from './types';
+import type { AppState, Event, Game, Law, Level, Phase, Player, Role, Trace } from './types';
 
 const ROLES: Role[] = ['liberal', 'fascista', 'hitler'];
 const PHASES: Phase[] = ['reveal', 'nominate', 'vote', 'president', 'chancellor', 'veto', 'investigate', 'investigated', 'peek', 'special', 'execute', 'over'];
@@ -31,8 +31,13 @@ export function readGame(x: unknown): Game | null {
   // the history came later: a game saved before it has none, and that is not damage
   const hist = g.hist === undefined ? [] : g.hist;
   if (!Array.isArray(hist) || !hist.every((e: Event) => !!e && typeof e === 'object' && typeof e.k === 'string')) return null;
-  return { ...g, hist };
+  // the record of why the players run by the app decided (D16) is only for looking at: damaged, it is dropped, not the game
+  const { trace, ...rest } = g;
+  return { ...rest, hist, ...(isTrace(trace, n) ? { trace } : {}) };
 }
+const isTrace = (x: unknown, n: number): x is Trace[] => Array.isArray(x) && x.every((t: Trace) => !!t && typeof t === 'object' && isIdx(t.seat, n) && typeof t.ask === 'string' && Number.isInteger(t.a) && Number.isInteger(t.at)
+  && (t.hand === undefined || isLaws(t.hand)) && !!t.why && Array.isArray(t.why.text) && t.why.text.every(l => typeof l === 'string')
+  && (t.why.rows === undefined || (Array.isArray(t.why.rows) && t.why.rows.every(r => !!r && isIdx(r.seat, n) && typeof r.f === 'number' && typeof r.h === 'number' && (r.v === undefined || typeof r.v === 'number')))));
 
 /** The person's notes (D12): seat → the party they marked; anything else is dropped. */
 function readNotes(x: unknown): { notes?: Record<string, Law> } {
@@ -42,9 +47,9 @@ function readNotes(x: unknown): { notes?: Record<string, Law> } {
 }
 /** Everything saved, as it was read from the device. */
 export function readState(x: unknown): AppState {
-  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown; ai?: unknown; level?: unknown; train?: unknown; assist?: unknown; pack?: unknown; notes?: unknown; notesOpen?: unknown; live?: unknown; coach?: unknown; speed?: unknown }) : {};
+  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown; ai?: unknown; level?: unknown; train?: unknown; assist?: unknown; pack?: unknown; notes?: unknown; notesOpen?: unknown; live?: unknown; coach?: unknown; speed?: unknown; debug?: unknown }) : {};
   const flags = Array.isArray(o.ai) ? o.ai : [];
   const seats = (Array.isArray(o.names) ? o.names : []).map((s, i) => ({ s, ai: flags[i] === true })).filter((x): x is { s: string; ai: boolean } => typeof x.s === 'string' && !!x.s.trim()).slice(0, MAX_PLAYERS);
   const names = seats.map(x => x.s.slice(0, NAME_MAX)), ai = seats.map(x => x.ai);
-  return { v: 1, names, game: readGame(o.game), ...(ai.some(Boolean) ? { ai } : {}), ...(LEVELS.includes(o.level as Level) ? { level: o.level as Level } : {}), ...(ROLES.includes(o.train as Role) ? { train: o.train as Role } : {}), ...(o.assist === true ? { assist: true as const } : {}), ...(o.pack === 'comunismo' ? { pack: 'comunismo' as const } : {}), ...readNotes(o.notes), ...(o.notesOpen === true ? { notesOpen: true as const } : {}), ...(o.live === true ? { live: true as const } : {}), ...(o.coach === true ? { coach: true as const } : {}), ...(o.speed === 'lenta' || o.speed === 'rapida' ? { speed: o.speed } : {}), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
+  return { v: 1, names, game: readGame(o.game), ...(ai.some(Boolean) ? { ai } : {}), ...(LEVELS.includes(o.level as Level) ? { level: o.level as Level } : {}), ...(ROLES.includes(o.train as Role) ? { train: o.train as Role } : {}), ...(o.assist === true ? { assist: true as const } : {}), ...(o.pack === 'comunismo' ? { pack: 'comunismo' as const } : {}), ...readNotes(o.notes), ...(o.notesOpen === true ? { notesOpen: true as const } : {}), ...(o.live === true ? { live: true as const } : {}), ...(o.coach === true ? { coach: true as const } : {}), ...(o.debug === true ? { debug: true as const } : {}), ...(o.speed === 'lenta' || o.speed === 'rapida' ? { speed: o.speed } : {}), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
 }

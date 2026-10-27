@@ -431,3 +431,34 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 .crux small{display:block;font:800 11px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .crux p{margin:6px 0 4px;font-size:15px}
 .crux>b{font:800 16px/1 var(--display);color:var(--fas)}
+/* the minutes number their laws themselves ("1ª", "2ª"): no list numbers beside them */
+.timeline.ata-list{list-style:none;padding-left:0}
+/* the reasoning of the app players (D16): a panel on the left edge, never docked (it shows the roles) */
+.drawer-tab.mind-tab{right:auto;left:0;top:calc(50% + 120px);border-right:2px solid var(--line);border-left:0;box-shadow:3px 3px 0 rgba(0,0,0,.25);transition:left .25s ease}
+.drawer-tab.mind-tab span{transform:none}
+.drawer-tab.mind-tab.open{right:auto;left:min(360px,90vw)}
+.drawer.mind{right:auto;left:0;width:min(360px,90vw);border-left:0;border-right:3px solid var(--line);box-shadow:8px 0 0 rgba(0,0,0,.12);transform:translateX(-105%);z-index:46}
+.drawer.mind.open{transform:none}
+[data-look="deco"] .drawer.mind{border-right:1px solid var(--gold)}
+[data-look="deco"] .drawer-tab.mind-tab{border:1px solid var(--gold);border-left:0}
+@media (min-width:1400px){.drawer.mind{transform:translateX(-105%);visibility:hidden;top:calc(62px + env(safe-area-inset-top));bottom:0;max-height:none;left:0;right:auto;border:0;border-right:3px solid var(--line);padding:14px 14px 20px}.drawer.mind.open{transform:none;visibility:visible}.drawer-tab.mind-tab{display:flex}}
+.drawer.mind .label{display:block;margin-top:14px}
+.drawer.mind .label:first-child{margin-top:0}
+.mind-who{display:flex;flex-wrap:wrap;gap:6px}
+.mind-who .btn{padding:6px 8px;font-size:13px;min-height:0}
+.mind-head{margin:10px 0 4px}
+.mind-bel li{padding:0}
+.mind-bel li.on{outline:2px solid var(--fg);outline-offset:-2px}
+.mind-bel button{all:unset;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 6px;cursor:pointer}
+.mind-bel .boss{flex-basis:100%;text-align:right;opacity:.75}
+.mind-trail,.mind-log{list-style:none;padding:0;margin:6px 0;display:grid;gap:8px}
+.mind-trail li,.mind-log li{border-left:4px solid var(--line);padding:4px 8px;font-size:14px;line-height:1.35}
+.mind-trail li.up{border-left-color:var(--fas)}
+.mind-trail li.down{border-left-color:var(--lib)}
+.mind-trail li .d{display:block}
+.mind-log p{margin:4px 0 0}
+.mind-log .what{display:block}
+.mind-rows{border-collapse:collapse;margin-top:6px;font-size:13px;width:100%}
+.mind-rows th,.mind-rows td{padding:2px 4px;text-align:right;border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent)}
+.mind-rows th:first-child,.mind-rows td:first-child{text-align:left}
+.mind-rows tr.on td{font-weight:800}

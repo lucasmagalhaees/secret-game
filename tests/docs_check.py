@@ -84,7 +84,10 @@ for p in CORE:
 # 6b. the app players are blind: the code that decides gets the view of one seat, never the game, and asks no one
 ai = read('src/core/ai.ts')
 check('src/core/ai.ts never sees the game: no Game in it, nothing from the judge', not re.search(r'\bGame\b', ai) and "from './judge'" not in ai and 'View' in ai)
-check('only the judge asks the app players', [p.name for p in CORE if 'decide(' in p.read_text(encoding='utf-8') and p.name not in ('ai.ts', 'index.ts')] == ['judge.ts'])
+check('only the judge asks the app players', [p.name for p in CORE if re.search(r'\bdecide(Why)?\(', p.read_text(encoding='utf-8')) and p.name not in ('ai.ts', 'index.ts')] == ['judge.ts'])
+# D16: the reasons the app players gave are written down for people to look at, never handed back to an app player
+view = re.search(r'export interface View \{.*?\n\}', read('src/core/types.ts'), re.S)
+check('the record of reasons (Game.trace) never reaches an app player: not in View, not read in ai.ts', bool(view) and 'trace' not in view.group(0) and not re.search(r'\btrace\b', ai))
 
 # 7. TypeScript as the spec says: strict, no unused names, nothing switched off
 ts = json.loads(read('tsconfig.json'))['compilerOptions']

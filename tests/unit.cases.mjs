@@ -198,7 +198,7 @@ export default function cases(Core) {
   eq('whose turn: a question with no possible answer is never asked', Core.botTurn(ai7({ phase: 'nominate', pres: 1, lastChanc: 2, players: ai7().players.map((p, i) => (i === 1 || i === 2 ? p : { ...p, alive: false })) })), null);
   eq('whose turn: nobody at a table of people only, nobody after the end', [Core.botTurn(base), Core.botTurn(ai7({ phase: 'over' })), Core.botStep(base, rand)], [null, null, null]);
   // whole games with only players run by the app: every step is a move the rules accept, and every game ends
-  let ended = 0, played = 0, moved = true, kept = true, honest = true;
+  let ended = 0, played = 0, moved = true, kept = true, honest = true, explained = true;
   for (const level of Core.LEVELS) for (let n = Core.MIN_PLAYERS; n <= Core.MAX_PLAYERS; n++) {
     const r = Core.seeded(n * 31 + level.length), names = Core.BOT_NAMES.fascismo.slice(0, n);
     let g = Core.newGame(names, r, { ai: names.map(() => true), level }).game;
@@ -209,9 +209,20 @@ export default function cases(Core) {
       if (!Core.readGame(JSON.parse(JSON.stringify(g)))) kept = false;
     }
     played++; if (g.phase === 'over' && g.winner) ended++;
+    const back = Core.readGame(JSON.parse(JSON.stringify(g)));
+    if (!g.trace || !g.trace.length || !back || !back.trace || back.trace.length !== g.trace.length || !g.trace.every(t => g.players[t.seat].ai && t.why.text.length && t.why.text.every(l => typeof l === 'string' && l.length && !l.includes('undefined') && !l.includes('NaN')))) explained = false;
     for (const e of g.hist) if ((e.k === 'gov' || e.k === 'veto') && g.players[e.pres].role === 'liberal' && e.pc !== undefined && e.pc !== e.drew.filter(l => l === 'F').length) honest = false;
   }
   eq('games with only app players, every level, every table size: every step moves, every state can be saved, every game ends, liberals never lie', [ended, moved, kept, honest], [played, true, true, true]);
+  eq('reasoning (D16): every decision of an app player is recorded with its reason, in words, and the record is saved', explained, true);
+  const wv = Core.viewOf(ai7({ phase: 'vote', pres: 3, chanc: 4 }), 5, 'vote', [1, 0]), r3 = Core.seeded(3), r4 = Core.seeded(3), w = Core.decideWhy(wv, r3);
+  eq('reasoning: the answer with a reason is the same answer, draw for draw; a vote tells the risk it weighed, with the government in the rows', [w.a, w.a === Core.decide(wv, r4), r3() === r4(), w.why.text.some(l => l.includes('Chance de ter alguém do lado escondido')) || w.why.text.some(l => l.includes('sem pensar')), (w.why.rows || []).map(x => x.seat).sort()], [w.a, true, true, true, [3, 4]]);
+  const iv = Core.decideWhy(Core.viewOf(ai7({ phase: 'investigate', pres: 5, hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'L', pc: 1, cc: 0 }] }), 5, 'investigate', [0, 1, 2, 3, 4, 6]), () => 0.99);
+  eq('reasoning: a liberal investigating says it picks the one it doubts the most, and shows that doubt for each', [Core.viewOf(ai7({}), 5, 'vote', [1, 0]).role, iv.why.text.some(l => l.includes('mais dúvida')), iv.why.rows.length, iv.why.rows.every(x => typeof x.v === 'number')], ['liberal', true, 6, true]);
+  const tg = ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'L', pc: 1, cc: 0 }, { k: 'rej', pres: 4, chanc: 6 }, { k: 'gov', pres: 0, chanc: 5, law: 'F', pc: 3, cc: 1 }] }), tr = Core.trail(tg, 6);
+  eq('belief trail: from the start and after each law, what the seat believed of each, from its own seat (a liberal is sure only of itself)', [tr.map(x => x.at), tr.every(x => x.f.length === 7 && x.f.every(f => f >= 0 && f <= 1)), tr[0].f[6], tr[2].f[0] > tr[0].f[0]], [[-1, 0, 2], true, 0, true]);
+  const tr1 = { seat: 1, ask: 'vote', a: 1, at: 0, why: { text: ['x'] } };
+  eq('read game: the record of reasons comes back; damaged, only it is dropped; the reasoning panel switch is kept', [Core.readGame({ ...el, trace: [tr1] }).trace.length, 'trace' in Core.readGame({ ...el, trace: [{ ...tr1, seat: 99 }] }), 'trace' in Core.readGame({ ...el, trace: 'x' }), Core.readState({ debug: true }).debug, 'debug' in Core.readState({ debug: 1 })], [1, false, false, true, false]);
   eq('read state: the training role and the assistance are kept; nonsense is dropped', [Core.readState({ train: 'hitler', assist: true }).train, Core.readState({ assist: true }).assist, 'train' in Core.readState({ train: 'rei' }), 'assist' in Core.readState({ assist: 'yes' }), Core.readGame({ ...el, train: 'rei' }), !!Core.readGame({ ...el, train: 'liberal' })], ['hitler', true, false, false, null, true]);
   eq('read state: which seats the app plays and the level are kept; nonsense is dropped', [Core.readState({ names: ['a', 3, 'b'], ai: [false, true, true] }).ai, 'ai' in Core.readState({ names: ['a'], ai: [false] }), Core.readState({ level: 'extremo' }).level, 'level' in Core.readState({ level: 'x' })], [[false, true], false, 'extremo', false]);
   eq('read game: a bad app seat, level or hand drawn is damage', [Core.readGame({ ...el, players: el.players.map(p => ({ ...p, ai: 1 })) }), Core.readGame({ ...el, level: 'x' }), Core.readGame({ ...el, drew: ['X'] }), !!Core.readGame({ ...el, level: 'dificil', drew: deck('FFL') })], [null, null, null, true]);

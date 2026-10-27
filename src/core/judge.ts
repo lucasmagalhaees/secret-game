@@ -5,10 +5,10 @@
    what was offered is not played: the first allowed option is. So no player run by the app sees more than its seat or
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
-import { believe, decide, drawOdds, QUIET } from './ai';
+import { believe, decideWhy, drawOdds, QUIET } from './ai';
 import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, investigate, nominate, presidentDiscard, revealNext, specialElect, vote } from './game';
 import { words } from './words';
-import type { Ask, Event, Game, Gov, Law, Level, Role, Seen, Talk, View } from './types';
+import type { Ask, Event, Game, Gov, Law, Level, Role, Seen, Talk, Trace, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
 const isAi = (g: Game, i: number): boolean => !!g.players[i]?.ai;
@@ -168,9 +168,10 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
   if (g.phase !== 'vote' || g.chanc === null) return g;
   const alive = seats(g, i => g.players[i].alive);
   if (alive.some(i => !isAi(g, i) && typeof votes[i] !== 'boolean')) return g;
-  const ja = alive.filter(i => (isAi(g, i) ? ask(g, i, 'vote', [1, 0], rand) === 1 : votes[i]));
+  const ts: Trace[] = [];
+  const ja = alive.filter(i => { if (!isAi(g, i)) return votes[i]; const r = ask(g, i, 'vote', [1, 0], rand); ts.push(r.t); return r.a === 1; });
   const nein = alive.filter(i => !ja.includes(i)), list = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ') || 'ninguém';
-  const n: Game = { ...g, log: [...g.log, `Votos. ${words(g.pack).ja}: ${list(ja)}. ${words(g.pack).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
+  const n: Game = { ...traced(g, ts), log: [...g.log, `Votos. ${words(g.pack).ja}: ${list(ja)}. ${words(g.pack).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
   return vote(n, ja.length > nein.length, rand);
 }
 
@@ -199,10 +200,21 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
     ask: q, options: [...options], hand, hist: g.hist.map(e => seenBy(e, me))
   };
 }
-/** Asks one seat one question, through its view; an answer outside the options is taken as the first option. */
-function ask(g: Game, seat: number, q: Ask, options: number[], rand: () => number): number {
-  const a = decide(viewOf(g, seat, q, options), rand);
-  return options.includes(a) ? a : options[0];
+/** Asks one seat one question, through its view; an answer outside the options is taken as the first option. Comes
+ *  back with the answer and the record of it, with the reason the seat gave (D16). */
+function ask(g: Game, seat: number, q: Ask, options: number[], rand: () => number): { a: number; t: Trace } {
+  const v = viewOf(g, seat, q, options), d = decideWhy(v, rand), a = options.includes(d.a) ? d.a : options[0];
+  return { a, t: { seat, ask: q, a, at: g.hist.length, ...(v.hand.length ? { hand: v.hand } : {}), why: d.why } };
+}
+/** The game with these decisions added to the record of them. */
+const traced = (g: Game, ts: Trace[]): Game => (ts.length ? { ...g, trace: [...(g.trace ?? []), ...ts] } : g);
+
+/** What one player run by the app believed of everyone (D16), from the start and after each law, veto, chaos,
+ *  investigation, peek or elimination: the chance of each seat being on the hidden side (f) and of being its leader (h),
+ *  reckoned from its own seat with what it knew then. `at` is the index in the history (-1, the start). */
+export function trail(g: Game, seat: number): { at: number; f: number[]; h: number[] }[] {
+  const marks = g.hist.map((e, i) => (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos' || e.k === 'inv' || e.k === 'peek' || e.k === 'exec' ? i : -1)).filter(i => i >= 0);
+  return [-1, ...marks].map(at => { const b = believe(viewOf({ ...g, hist: g.hist.slice(0, at + 1) }, seat, 'vote', [1, 0])); return { at, f: b.pF, h: b.pH }; });
 }
 
 /* ---------- whose turn ---------- */
@@ -243,7 +255,8 @@ export function botStep(g: Game, rand: () => number): Game | null {
   if (t.ask === 'reveal') return revealNext(g);
   if (t.ask === 'see') return endPower(g);
   if (t.ask === 'votes') return castVotes(g, {}, rand);
-  const a = ask(g, t.seat, t.ask, t.options, rand);
+  const r = ask(g, t.seat, t.ask, t.options, rand), a = r.a;
+  g = traced(g, [r.t]);
   switch (t.ask) {
     case 'pc': case 'cc': case 'inv': case 'peek': return say(g, t.seat, t.ask, a);
     case 'talk': return talk(g, t.seat, a);

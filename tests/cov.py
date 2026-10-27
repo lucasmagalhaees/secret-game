@@ -55,17 +55,21 @@ def report(min_functions=None, min_chars=None, show=40):
     html = (ROOT / 'dist' / 'index.html').read_text(encoding='utf-8')         # the built page: what the tests load and what ships
     a = html.index('<script type="module">') + len('<script type="module">'); b = html.index('</script>', a)
     src = html[a:b]                                 # V8 reports offsets inside the inline script, not inside the page
+    # ...and counts them in UTF-16 units, as JavaScript strings do: a character outside the basic plane (an emoji) is two
+    # units for V8 and one character for Python. `units` maps each unit to its character, so the offsets line up.
+    units = [i for i, ch in enumerate(src) for _ in range(2 if ord(ch) > 0xFFFF else 1)]
+    N = len(units)
     runs = sorted(OUT.glob('*.json')) if OUT.exists() else []
     if not runs:
         print('cobertura: nenhuma medição encontrada (rode os testes com APP_COVERAGE=1)'); return 1
-    covered = bytearray(len(src) + 1)
+    covered = bytearray(N + 1)
     functions = {}
     for run in runs:
         for script in json.loads(run.read_text()):
-            layer = bytearray(len(src) + 1)
+            layer = bytearray(N + 1)
             for fn in sorted(script['functions'], key=lambda f: (f['ranges'][0]['startOffset'], -f['ranges'][0]['endOffset'])):
                 first = fn['ranges'][0]
-                if first['endOffset'] > len(src) + 1:
+                if first['endOffset'] > N + 1:
                     print(f'cobertura: {run.name} foi medido com outro build de dist/index.html; apague tests/.coverage e rode de novo'); return 1
                 if fn['functionName'] or first['startOffset'] > 0:      # the script's own top-level wrapper is not a function to cover
                     key = (fn['functionName'], first['startOffset'], first['endOffset'])
@@ -74,11 +78,11 @@ def report(min_functions=None, min_chars=None, show=40):
                     n = r['endOffset'] - r['startOffset']
                     layer[r['startOffset']:r['endOffset']] = (b'\x01' if r['count'] > 0 else b'\x00') * n
             covered = bytearray(x | y for x, y in zip(covered, layer))   # executed in any run counts
-    code = [i for i, ch in enumerate(src) if not ch.isspace()]
+    code = [u for u, i in enumerate(units) if not src[i].isspace()]
     hit = sum(1 for i in code if covered[i])
     called = sum(1 for v in functions.values() if v)
     pf, pc = 100 * called / max(1, len(functions)), 100 * hit / max(1, len(code))
-    line = lambda off: html.count('\n', 0, a + off) + 1
+    line = lambda off: html.count('\n', 0, a + units[min(off, N - 1)]) + 1
     print(f'cobertura de dist/index.html ({len(runs)} execuções: {", ".join(r.stem for r in runs)})')
     print(f'  funções chamadas: {called}/{len(functions)} ({pf:.1f}%)')
     print(f'  código executado: {pc:.1f}% dos caracteres do script')
