@@ -83,6 +83,8 @@ export interface Game {
   drew?: Law[];
   /** How the players run by the app play; only at a table that has them. */
   level?: Level;
+  /** Training: the role the person chose before the game (D11); absent when it was dealt at random. */
+  train?: Role;
   /** In 'investigated': who was investigated. */
   target: number | null;
   winner: Winner | null; why: string;
@@ -92,8 +94,8 @@ export interface Game {
   hist: Event[];
 }
 
-/** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the game in course, the theme, the style and whether sound and vibration are off. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level }
+/** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the game in course, the theme, the style and whether sound and vibration are off. */
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true }
 
 /** An entry as the source describes it, once read by `normEntry`. */
 export interface Entry { id: string; name: string; value: number }

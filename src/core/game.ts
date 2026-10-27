@@ -35,9 +35,15 @@ export const powerAt = (g: Game, n: number): Power | undefined => POWERS[boardOf
 
 /** The levels of the players run by the app, easiest first (D10). */
 export const LEVELS: Level[] = ['facil', 'medio', 'dificil', 'extremo'];
-/** Names for the players run by the app, taken in order, skipping any already at the table. */
-export const BOT_NAMES = ['Ada', 'Beto', 'Cida', 'Dino', 'Elza', 'Fred', 'Gina', 'Hugo', 'Iara', 'Juca'];
-export const botName = (names: string[]): string => BOT_NAMES.find(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR'))) || `IA ${names.length + 1}`;
+/** Names for the players run by the app (D11): politicians of the 1930s, liberals and fascists mixed. The name says
+ *  nothing about the role: roles are dealt at random, so Churchill may well be the fascist. Hitler is not among them
+ *  (he is a role). */
+export const BOT_NAMES = ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Blum', 'Mosley', 'Azaña', 'Goebbels', 'Beneš', 'Plínio Salgado', 'Matteotti', 'Quisling'];
+/** A name for one more player run by the app: one of BOT_NAMES not yet at the table, at random (`rand`) or the first. */
+export function botName(names: string[], rand?: () => number): string {
+  const free = BOT_NAMES.filter(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR')));
+  return free.length ? free[rand ? Math.floor(rand() * free.length) : 0] : `IA ${names.length + 1}`;
+}
 
 /** A small seeded generator (mulberry32): numbers in [0, 1). */
 export function seeded(seed: number): () => number {
@@ -79,14 +85,20 @@ export function addName(names: string[], name: string): { ok: true; names: strin
 }
 
 /** A new game: roles dealt at random, the deck shuffled, the first president drawn. `ai` marks the seats the app plays,
- *  at `level`. */
-export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
+ *  at `level`. `train` (D11, training against the app): the role the one person at the table wants; the roles are
+ *  still dealt at random, and then that seat swaps with one that got it. */
+export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
   const c = checkNames(names);
   if (!c.ok) return c;
   const k = FASCISTS[c.names.length];
   const roles = shuffle<Role>(['hitler', ...Array(k - 1).fill('fascista'), ...Array(c.names.length - k).fill('liberal')], rand);
+  const people = c.names.map((_, i) => i).filter(i => !opts.ai?.[i]), train = opts.train && people.length === 1 && opts.ai?.some(Boolean) && ['liberal', 'fascista', 'hitler'].includes(opts.train) ? opts.train : undefined;
+  if (train && roles[people[0]] !== train) {
+    const other = roles.indexOf(train);
+    [roles[people[0]], roles[other]] = [roles[other], roles[people[0]]];
+  }
   const players: Player[] = c.names.map((name, i) => ({ name, role: roles[i], alive: true, ...(opts.ai?.[i] ? { ai: true as const } : {}) }));
-  const level = players.some(p => p.ai) ? { level: opts.level && LEVELS.includes(opts.level) ? opts.level : 'medio' as Level } : {};
+  const level = players.some(p => p.ai) ? { level: opts.level && LEVELS.includes(opts.level) ? opts.level : 'medio' as Level, ...(train ? { train } : {}) } : {};
   const deck = shuffle<Law>([...Array(DECK_F).fill('F'), ...Array(DECK_L).fill('L')], rand);
   const pres = Math.floor(rand() * players.length);
   return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level } };

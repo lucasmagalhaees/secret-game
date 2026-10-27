@@ -25,6 +25,7 @@ Modelo de uma decisão:
 8. Endereço de produção (D8).
 9. Mais animações e melhorias: carta virando, distribuição, descarte, carimbo, poderes, confete, vibração, sons, resumo, esconder sozinho, ajuda e desfazer (D9).
 10. Jogar sozinho contra a IA, em quatro níveis, com um juiz que só mostra a cada IA o que o lugar dela saberia (D10).
+11. Treino com papel escolhido, nomes históricos para as IAs, ata com quem aprovou cada lei e o anúncio da lei aprovada (D11).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -144,6 +145,17 @@ Modelo de uma decisão:
 - **Medido também (mesmo comando, 1.200 partidas por nível, uma IA média no lugar de "você"):** como liberal, você vence 51% no fácil, 53% no médio, 45% no difícil e 45% no extremo; como fascista, 57%, 48%, 43% e 38%. O nível agora é dificuldade dos dois lados.
 - **Corrigido junto:** depois de um veto aceito o baralho não era reabastecido, e o presidente seguinte podia tirar menos de 3 leis (achado por uma partida só de IA que travou; agora há um caso para isso).
 - **Não sei:** como a IA se sai contra gente de verdade (só foi medida contra ela mesma); se os textos das falas soam naturais; quanto tempo de "pensando" é confortável num celular.
+
+## D11. Treino, nomes históricos, ata e anúncio da lei
+
+- **Contexto (27/10/2026):** "quero uma opção de treino onde posso escolher meu papel quando jogo contra IAs, quero nomes reais de liberais e fascistas no jogo, quero uma opção de assistência que mostra na ata quem aprovou cada lei"; e logo depois: "precisa ter uma animação ali pra na hora da aprovação da lei, exemplo A aprovou lei B". Sobre os nomes, perguntei e o Lucas escolheu "históricos, misturados": nomes de políticos reais dos anos 30, sem ligação com o papel sorteado.
+- **Decisão:** requisitos 22 a 25 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - Nomes: Churchill, Roosevelt, Blum, Azaña, Beneš e Matteotti (liberais e democratas da época); Mussolini, Franco, Mosley, Goebbels, Plínio Salgado e Quisling (fascistas). O Hitler fica de fora porque é papel. O nome nunca segue o papel: se seguisse, entregaria o jogo. Como no truco (D6 de lá), das figuras reais só se usa o nome; o que elas "dizem" são as falas do jogo ("disse que tirou 2 fascistas").
+  - Treino: só vale com uma pessoa na mesa. Com mais de uma, a escolha de uma entregaria algo às outras. O papel escolhido entra por troca com o lugar que o tirou, então o resto da mesa continua sorteado. As IAs não ficam sabendo.
+  - "Na ata quem aprovou cada lei": a ata é um cartão novo, com cada lei, o presidente e o chanceler, e quem votou Ja! no governo que a aprovou, mais a soma por jogador. É só informação pública, a mesma que daria para anotar num papel; não mostra mão, partido nem papel. Sem IA na mesa, o celular não guarda os votos (são em voz alta), e a ata diz isso.
+  - A animação vale em toda mesa, com IA ou sem: a lei aprovada entra no alto da tela com os nomes do presidente e do chanceler ("O caos aprovou" quando entra pelo caos). Com "reduzir movimento", o aviso aparece parado pelo mesmo tempo.
+- **Não sei:** se os nomes históricos incomodam alguém na mesa; se a ata deixa o jogo fácil demais (por isso ela é desligável e vem desligada).
 
 ## Pendências
 

@@ -117,8 +117,11 @@ with sync_playwright() as p:
     def govern(chanc, law):
         nominate(chanc); votes(True); assert G()['phase'] == 'president', G()['log'][-1]
         hand('p', law); pg.click('[data-act=pdiscard]'); assert G()['phase'] == 'chancellor'
-        hand('c', law); pg.click('[data-act=cdiscard]')
+        g0 = G(); hand('c', law); pg.click('[data-act=cdiscard]')
         assert pg.locator('#board .slot.new').count() == (0 if G()['phase'] == 'over' else 1), 'the new law stamps onto the board'
+        made = 'liberal' if G()['laws']['L'] > g0['laws']['L'] else 'fascista'
+        who = f"{g0['players'][g0['pres']]['name']} e {g0['players'][g0['chanc']]['name']}"
+        assert pg.locator('#decree:not([hidden])').count() == 1 and who in txt('#decree') and f'lei {made}' in txt('#decree'), ('who approved the law, over the screen', txt('#decree'))
 
     # three governments rejected: the top law goes in by itself
     # help for the phase, open and closed
@@ -235,6 +238,9 @@ with sync_playwright() as p:
     pg.click('[data-act=fill][data-n="5"]'); assert 'já tem 7 lugares' in txt('#msg')
     pg.click('[data-act=level][data-v=extremo]')
     assert pg.locator('[data-act=level][data-v=extremo]').get_attribute('aria-pressed') == 'true' and 'Conta as cartas' in txt('#leveltext')
+    assert sum(1 for x in pg.locator('#names li b').all_text_contents() if x in ('Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Blum', 'Mosley', 'Azaña', 'Goebbels', 'Beneš', 'Plínio Salgado', 'Matteotti', 'Quisling')) == 6, 'the app players get names of politicians of the 1930s'
+    pg.click('[data-act=train][data-v=fascista]'); assert 'Você vai ser fascista' in txt('#traintext')
+    pg.click('[data-act=assist][data-v=on]'); assert pg.locator('[data-act=assist][data-v=on]').get_attribute('aria-pressed') == 'true'
     pg.locator('#names li').nth(0).locator('[data-act=rmname]').click(); pg.click('[data-act=start]')
     assert 'pelo menos uma pessoa' in txt('#msg') and G() is None, 'a table of the app alone does not start'
     pg.fill('#name', 'Lu'); pg.press('#name', 'Enter')                     # Lu sits last: seat 6
@@ -243,8 +249,10 @@ with sync_playwright() as p:
     pg.click('[data-act=start]')
     pg.wait_for_function('window.__APP.S.game.reveal === 6')
     assert G()['level'] == 'extremo' and sum(1 for x in G()['players'] if x.get('ai')) == 6
+    assert G()['players'][6]['role'] == 'fascista' and G()['train'] == 'fascista', 'training: the role chosen'
     assert 'Só para os seus olhos' in txt('#phase') and 'Passe o celular' not in txt('#phase') and txt('#phase .who') == 'Lu', 'alone, nobody to pass the phone to'
-    pg.click('[data-act=open]'); assert pg.locator('#role').count() == 1; pg.click('[data-act=hiderole]')
+    pg.click('[data-act=open]'); assert pg.locator('#role').count() == 1 and 'Fascista' in txt('#role') and 'escolheu ser fascista' in txt('#trained'); pg.click('[data-act=hiderole]')
+    assert pg.locator('#ata').count() == 1 and 'Nenhuma lei ainda' in txt('#ata')
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     pg.evaluate('window.__APP.ui.think = 0')
@@ -263,6 +271,7 @@ with sync_playwright() as p:
             assert pg.locator('#phase [data-act=elect]').count() == 0 and pg.locator('#phase [data-act=myvote]').count() == 2; seen.add('vote')
         if pg.locator('.claim').count():
             seen.add('claim'); assert 'Pode mentir' in txt('.claim')
+        if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
         if step == 40 and not reloaded:
             cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
         for sel in ORDER:
@@ -274,7 +283,10 @@ with sync_playwright() as p:
             pg.wait_for_timeout(20)
     g = G(); log = '\n'.join(g['log'])
     assert g['phase'] == 'over' and g['winner'] in ('L', 'F'), g['log'][-5:]
-    assert {'vote'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    laws = sum(1 for e in g['hist'] if e['k'] in ('gov', 'chaos'))
+    assert pg.locator('#ata .timeline li.gov').count() == laws and 'Ja!:' in txt('#ata') and pg.locator('#ata .tally li').count() > 0, 'the minutes: every law, and who voted Ja! for it'
+    pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#showata'); assert pg.locator('#ata').count() == 1
+    assert {'vote', 'decree'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     assert pg.locator('#summary').count() == 1 and pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
 
@@ -329,4 +341,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas), animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes históricos, ata), anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

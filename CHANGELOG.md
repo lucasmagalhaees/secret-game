@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.9.0]
+
+### Adicionado
+- Treino contra a IA: escolher o próprio papel (liberal, fascista ou Hitler).
+- As IAs com nomes de políticos dos anos 30, liberais e fascistas misturados, sorteados (o nome não diz o papel).
+- Assistência: ata com cada lei, quem governou e quem votou Ja!, e a soma por jogador.
+- A lei aprovada aparece no alto da tela: "A e B aprovaram lei fascista".
+
 ## [0.8.0]
 
 ### Adicionado
