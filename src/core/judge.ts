@@ -98,6 +98,9 @@ export interface Coach {
   odds: { who: number; said: number; p: number } | null;
   /** The last government's story does not hold together: one of the two lied (or a liberal law was thrown away). */
   clash: boolean;
+  /** The last president passed one fascist and one liberal law though he says he drew 2 liberal ones: a chancellor test
+   *  (D21), from a liberal testing or from someone hiding behind one. */
+  test: boolean;
   /** Who looks most like the hidden side, by what this seat knows: the chance of each, highest first. */
   suspects: { seat: number; f: number; boss: number }[];
   /** How the table sees this seat, from what everyone saw: the chance it is on the hidden side. */
@@ -106,18 +109,19 @@ export interface Coach {
 /** What a careful player sitting at `seat` could work out from what that seat knows (its own view, nothing more). */
 export function coach(g: Game, seat: number): Coach {
   const i = lastIndex(g, ['gov', 'veto']), e = g.hist[i] as Gov | undefined;
-  let odds: Coach['odds'] = null, clash = false;
+  let odds: Coach['odds'] = null, clash = false, test = false;
   if (e && e.pc !== undefined && e.pc >= 0) {
     const before = g.hist.slice(0, i), F = before.filter(x => (x.k === 'gov' || x.k === 'chaos') && x.law === 'F').length, L = before.filter(x => (x.k === 'gov' || x.k === 'chaos') && x.law === 'L').length;
     odds = { who: e.pres, said: e.pc, p: drawOdds(Math.max(0, DECK_F - F), Math.max(0, DECK_L - L))[e.pc] };
   }
   if (e && e.cc !== undefined && e.cc >= 0) {
-    clash = (e.pc !== undefined && e.pc >= 0 && Math.max(0, e.pc - 1) !== e.cc) || (e.law === 'F' && e.cc < 2);
+    test = e.pc === 1 && e.cc === 1;
+    clash = !test && ((e.pc !== undefined && e.pc >= 0 && Math.max(0, e.pc - 1) !== e.cc) || (e.law === 'F' && e.cc < 2));
   }
   const v = { ...viewOf(g, seat, 'vote', [1, 0]), level: 'extremo' as Level }, b = believe(v);
   const suspects = g.players.map((p, j) => ({ seat: j, f: b.pF[j], boss: b.pH[j], alive: p.alive }))
     .filter(x => x.seat !== seat && x.alive && v.known[x.seat] === null).sort((x, y) => y.f - x.f).slice(0, 3).map(({ seat: s, f, boss }) => ({ seat: s, f, boss }));
-  return { odds, clash, suspects, seen: believe(v, true).pF[seat] };
+  return { odds, clash, test, suspects, seen: believe(v, true).pF[seat] };
 }
 /** At the end: how much each player run by the app that did not know `me` suspected them, from the start and after each
  *  law, investigation or elimination (the same reasoning those players used, from their own seats). */
@@ -220,8 +224,13 @@ export function review(g: Game, me: number): Play[] {
       if (lib) {
         if (pres && e.drew && e.got) {
           if (e.drew.includes('L') && !e.got.includes('L')) add(i, false, 3, `Presidente com ${P(mate)}: você tirou ${hand(nF(e.drew), 3)} e passou ${hand(nF(e.got), 2)}, jogando fora a liberal.`);
+          else if (nF(e.drew) === 1 && nF(e.got) === 1) {         // the chancellor test (D21): judged by what it cost and what it showed
+            if (law === 'F') add(i, false, 2, `Você testou ${P(mate)} passando uma {f} e uma liberal, e ${P(mate)} aprovou a {f}: o teste mostrou um {f}, mas custou uma lei.`);
+            else if (law === 'L') add(i, true, 0.5, `Você testou ${P(mate)} passando uma {f} e uma liberal, e ${P(mate)} aprovou a liberal${side(mate) === 'L' ? ': era liberal mesmo' : ', mas era {f} jogando limpo'}.`);
+            if (e.pc !== undefined && e.pc >= 0 && e.pc !== 1) add(i, false, 1, `No teste, você não contou que tinha tirado 2 liberais: quem ouve acha que você é {f}. Teste se conta.`);
+          }
           else if (e.drew.includes('F') && e.drew.includes('L')) add(i, true, 1, `Presidente com ${P(mate)}: você tirou ${hand(nF(e.drew), 3)} e jogou fora uma {f}.`);
-          if (e.pc !== undefined && e.pc >= 0 && e.pc !== nF(e.drew)) add(i, false, 1.5, `Você disse que tirou ${hand(e.pc, 3)}, mas tirou ${hand(nF(e.drew), 3)}. Liberal que mente confunde a mesa e vira suspeito.`);
+          if (e.pc !== undefined && e.pc >= 0 && e.pc !== nF(e.drew) && !(nF(e.drew) === 1 && nF(e.got) === 1)) add(i, false, 1.5, `Você disse que tirou ${hand(e.pc, 3)}, mas tirou ${hand(nF(e.drew), 3)}. Liberal que mente confunde a mesa e vira suspeito.`);
         }
         if (!pres && e.got) {
           if (law === 'F' && e.got.includes('L')) add(i, false, 3, `Chanceler de ${P(mate)}: você recebeu ${hand(nF(e.got), 2)} e aprovou a {f}.`);
@@ -242,7 +251,8 @@ export function review(g: Game, me: number): Play[] {
         else add(i, false, 1, `Você deixou passar uma liberal com ${P(mate)} sem ganhar confiança (${pc(before)} → ${pc(after)}).`);
       }
       const mine = pres ? e.pc : e.cc, truth = nF(pres ? e.drew : e.got);
-      if (e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && mine !== truth) add(i, false, 1.5, `A sua história não fechou com a de ${P(mate)}: o presidente disse ${hand(e.pc, 3)} e o chanceler disse ${hand(e.cc, 2)}. Quem ouviu soube que alguém mentiu.`);
+      if (pres && law === 'L' && nF(e.drew) === 1 && nF(e.got) === 1 && e.pc === 1) add(i, true, 0.5, `Você passou uma {f} e uma liberal e contou a verdade, como num teste: ${P(mate)} aprovou a liberal e a sua história fecha.`);
+      if (e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1) && mine !== truth) add(i, false, 1.5, `A sua história não fechou com a de ${P(mate)}: o presidente disse ${hand(e.pc, 3)} e o chanceler disse ${hand(e.cc, 2)}. Quem ouviu soube que alguém mentiu.`);
       return;
     }
     if (e.k === 'inv' && e.by === me) {

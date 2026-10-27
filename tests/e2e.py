@@ -341,6 +341,7 @@ with sync_playwright() as p:
         if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
             seen.add('seats'); assert pg.locator('#seats li').count() == 7 and 'você' in txt('#seats').lower() and pg.locator('#seats li.F').count() >= 2, ('the table at the top, with what the person knows', txt('#seats'))
             assert 'Como funciona esta fase' in txt('[data-act=help]'), 'the help button says what it is'
+        if pg.locator('#said').count(): seen.add('said'); assert 'disse' in txt('#said'), txt('#said')
         if pg.locator('#coach').count():
             seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
             assert pg.evaluate("!!(document.querySelector('#phase').compareDocumentPosition(document.querySelector('#coach')) & Node.DOCUMENT_POSITION_FOLLOWING)"), 'what the person has to do comes before the trainer'
@@ -361,7 +362,7 @@ with sync_playwright() as p:
     assert pg.evaluate("getComputedStyle(document.querySelector('#ata .timeline')).listStyleType") == 'none', 'the minutes number the laws once (1ª, 2ª), not twice'
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
     assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
-    assert {'vote', 'decree', 'coach', 'seats'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert {'vote', 'decree', 'coach', 'seats', 'said'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
     crux = pg.evaluate('window.__APP.Core.crux(window.__APP.S.game, 6, "end")')
