@@ -2,16 +2,13 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
-## [0.18.0]
+## [0.19.0]
 
 ### Alterado
 - A IA não é mais ingênua: nenhuma jogada sozinha vira certeza. No difícil e no extremo ela conhece o teste do chanceler (e testa), o Hitler que se disfarça com lei liberal no começo, confere a espiada com a mão do presidente e lê eliminações e eleições especiais. O extremo também lê os votos.
-- Depois que uma IA diz o que recebeu, a próxima espera mais. O que o último governo disse fica escrito abaixo da mesa.
 
 ### Corrigido
 - Um liberal que testava o chanceler virava 100% fascista para a IA.
-- Às vezes aparecia o botão para ver a carta de uma IA.
-- A tela da fase tremia e entrava de novo a cada fala de IA, e um segredo aberto ou um voto se perdia.
 - A IA muito desconfiada rejeitava todo governo na primeira rodada.
 
 ## [0.17.0]

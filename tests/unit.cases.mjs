@@ -234,7 +234,7 @@ export default function cases(Core) {
   eq('review: voting Ja! for a government with Hitler in the first round, with nothing to go on, is not called bad', firstVote.filter(x => !x.good).length, 0);
   eq('review: names come as {pN}, never as text that could hold markup; no undefined or NaN', [tossed, keptL, pushed].flat().every(x => !/undefined|NaN/.test(x.text) && !NAMES.some(nm => x.text.includes(nm))), true);
   eq('read state: closing a secret with the phone face down is kept only when turned on (D20)', [Core.readState({ flip: true }).flip, 'flip' in Core.readState({ flip: 'yes' }), 'flip' in Core.readState({})], [true, false, false]);
-  // the chancellor test (D21): Duda (3, liberal) drew 1F 2L, passed one of each to Edu (4), said so; Edu enacted the liberal
+  // the chancellor test (D22): Duda (3, liberal) drew 1F 2L, passed one of each to Edu (4), said so; Edu enacted the liberal
   const tested = ai7({ phase: 'nominate', level: 'dificil', hist: [{ k: 'vote', pres: 3, chanc: 4, ja: [0, 1, 2, 3, 4, 5, 6] }, { k: 'gov', pres: 3, chanc: 4, law: 'L', drew: deck('FLL'), got: deck('FL'), pc: 1, cc: 1 }] });
   const fromChanc = Core.believe(Core.viewOf(tested, 4, 'vote', [1, 0])).pF[3], fromOut = Core.believe(Core.viewOf(tested, 5, 'vote', [1, 0])).pF[3], prior = Core.believe(Core.viewOf(ai7({ level: 'dificil' }), 4, 'vote', [1, 0])).pF[3];
   eq('chancellor test: the tested chancellor, and the table, suspect the tester more, but never take one play as proof', [fromChanc > prior + 0.1, fromChanc < 0.9, fromOut > prior, fromOut < 0.9], [true, true, true, true]);
@@ -244,12 +244,14 @@ export default function cases(Core) {
   eq('chancellor test: a liberal of the hard levels tests a chancellor it is unsure of (throws a liberal law away); easier levels never do', [deck('FLL')[Core.decide(tv('dificil'), () => 0.1)], deck('FLL')[Core.decide(tv('medio'), () => 0.1)], deck('FLL')[Core.decide(tv('dificil'), () => 0.9)]], ['L', 'F', 'F']);
   const rt = rv([{ k: 'gov', pres: 3, chanc: 4, law: 'L', drew: deck('FLL'), got: deck('FL'), pc: 1, cc: 1 }], 3), rf = rv([{ k: 'gov', pres: 3, chanc: 1, law: 'F', drew: deck('FLL'), got: deck('FL'), pc: 1, cc: 2 }], 3);
   eq('review: a test that showed a liberal is a small good play; one that cost a fascist law is a bad one; neither is called throwing a liberal away or lying', [rt.every(x => x.good) && rt.some(x => x.text.includes('testou')), rf.some(x => !x.good && x.text.includes('custou')), [...rt, ...rf].some(x => x.text.includes('mente'))], [true, true, false]);
-  // not naive (D21): the levels that read the long game know Hitler keeps clean early, check spied hands, read votes
+  // not naive (D22): the levels that read the long game know Hitler keeps clean early, check spied hands, read votes
   const at = (level, hist, seat = 6) => Core.believe(Core.viewOf(ai7({ level, hist }), seat, 'vote', [1, 0]));
   const clean = [{ k: 'gov', pres: 3, chanc: 0, law: 'L', pc: 1, cc: 1 }, { k: 'gov', pres: 4, chanc: 0, law: 'L', pc: 1, cc: 1 }];
   eq('not naive: a chancellor who let liberal laws through early is still a Hitler suspect for the hard levels, cleared for the easy ones', at('dificil', clean).pH[0] > at('medio', clean).pH[0], true);
   const spied = [{ k: 'peek', by: 5, said: 0 }, { k: 'gov', pres: 3, chanc: 4, law: 'F', pc: 3, cc: 2 }];
   eq('not naive: a president whose hand does not match what someone spied is caught by the hard levels', at('dificil', spied).pF[3] + at('dificil', spied).pF[5] > at('medio', spied).pF[3] + at('medio', spied).pF[5], true);
+  const picks = [{ k: 'rej', pres: 1, chanc: 2 }, { k: 'rej', pres: 1, chanc: 2 }];
+  eq('not naive: the hard levels read who a president keeps nominating', at('dificil', picks).pF[2] > at('medio', picks).pF[2], true);
   const votes = [{ k: 'vote', pres: 3, chanc: 1, ja: [0, 1, 2, 3] }, { k: 'gov', pres: 3, chanc: 1, law: 'F', pc: 2, cc: 2 }];
   eq('not naive: the extreme level reads who voted Ja for a government that turned out fascist', at('extremo', votes).pF[2] > at('dificil', votes).pF[2], true);
   const tr1 = { seat: 1, ask: 'vote', a: 1, at: 0, why: { text: ['x'] } };

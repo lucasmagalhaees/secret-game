@@ -99,7 +99,7 @@ export interface Coach {
   /** The last government's story does not hold together: one of the two lied (or a liberal law was thrown away). */
   clash: boolean;
   /** The last president passed one fascist and one liberal law though he says he drew 2 liberal ones: a chancellor test
-   *  (D21), from a liberal testing or from someone hiding behind one. */
+   *  (D22), from a liberal testing or from someone hiding behind one. */
   test: boolean;
   /** Who looks most like the hidden side, by what this seat knows: the chance of each, highest first. */
   suspects: { seat: number; f: number; boss: number }[];
@@ -224,7 +224,7 @@ export function review(g: Game, me: number): Play[] {
       if (lib) {
         if (pres && e.drew && e.got) {
           if (e.drew.includes('L') && !e.got.includes('L')) add(i, false, 3, `Presidente com ${P(mate)}: você tirou ${hand(nF(e.drew), 3)} e passou ${hand(nF(e.got), 2)}, jogando fora a liberal.`);
-          else if (nF(e.drew) === 1 && nF(e.got) === 1) {         // the chancellor test (D21): judged by what it cost and what it showed
+          else if (nF(e.drew) === 1 && nF(e.got) === 1) {         // the chancellor test (D22): judged by what it cost and what it showed
             if (law === 'F') add(i, false, 2, `Você testou ${P(mate)} passando uma {f} e uma liberal, e ${P(mate)} aprovou a {f}: o teste mostrou um {f}, mas custou uma lei.`);
             else if (law === 'L') add(i, true, 0.5, `Você testou ${P(mate)} passando uma {f} e uma liberal, e ${P(mate)} aprovou a liberal${side(mate) === 'L' ? ': era liberal mesmo' : ', mas era {f} jogando limpo'}.`);
             if (e.pc !== undefined && e.pc >= 0 && e.pc !== 1) add(i, false, 1, `No teste, você não contou que tinha tirado 2 liberais: quem ouve acha que você é {f}. Teste se conta.`);
@@ -244,7 +244,7 @@ export function review(g: Game, me: number): Play[] {
       const before = seen(voteOf(i)), after = seen(i + 1), up = after - before;
       const couldF = (pres ? e.drew : e.got)?.includes('F');
       if (law === 'F') {
-        if (up >= 0.15) add(i, false, 2, `Saiu lei {f} do seu governo com ${P(mate)}, mas a mesa percebeu: a chance de você ser {f}, pelo que todos viram, foi de ${pc(before)} para ${pc(after)}.`);
+        if (up >= 0.15) add(i, false, 2, `Saiu lei {f} do seu governo com ${P(mate)}, mas a mesa percebeu: a chance de você ser {f}, pelo que todos viram, subiu (${pc(before)} → ${pc(after)}).`);
         else add(i, true, 1.5, `Saiu lei {f} do seu governo com ${P(mate)}, e a mesa quase não desconfiou mais de você (${pc(before)} → ${pc(after)}).`);
       } else if (law === 'L' && couldF) {
         if (up <= -0.1) add(i, true, 1, `Você deixou passar uma liberal com ${P(mate)} e limpou a sua barra (${pc(before)} → ${pc(after)}).`);

@@ -318,15 +318,6 @@ with sync_playwright() as p:
     pg.click('#mindtoggle'); pg.evaluate('scrollTo(0, 0)')
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
-    # D22: while an app player tells the table about its hand, the phase it holds still shows it deciding: never the gate
-    # of its secret, as if the person should open it
-    kept = pg.evaluate('JSON.stringify(window.__APP.S.game)')
-    pg.evaluate('''(() => { const g = window.__APP.S.game, a = g.players.findIndex(p => p.ai);
-      g.hist.push({ k: 'gov', pres: a, chanc: 6, law: 'L', drew: ['F', 'L', 'L'], got: ['L', 'L'] });
-      g.pres = a; g.chanc = null; g.phase = 'investigated'; g.target = 6; })()''')
-    pg.click('[data-act=help]'); pg.click('[data-act=help]')
-    assert pg.locator('.handoff').count() == 0 and pg.locator('#thinking').count() == 1, ('an app player\'s secret never shows a gate', txt('#phase'))
-    pg.evaluate(f'window.__APP.S.game = JSON.parse({kept!r})'); pg.click('[data-act=help]'); pg.click('[data-act=help]')
     pg.evaluate('window.__APP.ui.think = 0')
     pg.click('[data-act=help]'); assert 'IA no nível extremo' in txt('#helptext'); pg.click('[data-act=help]')
     me, seen, reloaded = 6, set(), False
@@ -350,7 +341,6 @@ with sync_playwright() as p:
         if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
             seen.add('seats'); assert pg.locator('#seats li').count() == 7 and 'você' in txt('#seats').lower() and pg.locator('#seats li.F').count() >= 2, ('the table at the top, with what the person knows', txt('#seats'))
             assert 'Como funciona esta fase' in txt('[data-act=help]'), 'the help button says what it is'
-        if pg.locator('#said').count(): seen.add('said'); assert 'disse' in txt('#said'), txt('#said')
         if pg.locator('#coach').count():
             seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
             assert pg.evaluate("!!(document.querySelector('#phase').compareDocumentPosition(document.querySelector('#coach')) & Node.DOCUMENT_POSITION_FOLLOWING)"), 'what the person has to do comes before the trainer'
@@ -371,7 +361,7 @@ with sync_playwright() as p:
     assert pg.evaluate("getComputedStyle(document.querySelector('#ata .timeline')).listStyleType") == 'none', 'the minutes number the laws once (1ª, 2ª), not twice'
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
     assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
-    assert {'vote', 'decree', 'coach', 'seats', 'said'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert {'vote', 'decree', 'coach', 'seats'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
     crux = pg.evaluate('window.__APP.Core.crux(window.__APP.S.game, 6, "end")')
