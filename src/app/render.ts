@@ -60,6 +60,10 @@ function vSolo(): string {
   return `<section class="card" id="solo"><span class="label">Contra a IA</span><p class="hint">Jogue sozinho ou com poucos: ponha o seu nome e complete a mesa com jogadores da IA. Cada IA só sabe o que aquele lugar saberia na mesa.</p>
     <p class="hint">Completar a mesa até</p><div class="segm" role="group" aria-label="Tamanho da mesa">${[5, 6, 7, 8, 9, 10].map(size).join('')}</div>
     <p class="hint">Nível da IA</p><div class="segm" role="group" aria-label="Nível da IA">${Core.LEVELS.map(lvl).join('')}</div><p class="hint" id="leveltext">${LEVEL[lv][1]}</p>
+    <p class="hint">Seu papel (treino)</p><div class="segm" role="group" aria-label="Seu papel">${(['', 'liberal', 'fascista', 'hitler'] as const).map(r => `<button class="${(S.train || '') === r ? 'on' : ''}" data-act="train" data-v="${r}" aria-pressed="${(S.train || '') === r}">${r ? ROLE[r] : 'Sorteado'}</button>`).join('')}</div>
+    <p class="hint" id="traintext">${S.train ? `Você vai ser ${ROLE[S.train].toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
+    <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
+    <p class="hint">${S.assist ? 'A ata mostra cada lei, quem governou e quem votou Ja! no governo que a aprovou, e soma por jogador. Só o que a mesa toda viu.' : 'Ligada, a partida ganha uma ata com quem aprovou cada lei.'}</p>
     ${bots ? `<p class="hint">${bots} ${bots === 1 ? 'lugar é' : 'lugares são'} da IA.</p>` : ''}</section>`;
 }
 function vRules(): string {
@@ -82,7 +86,7 @@ function vGame(g: Game): string {
   entering = key !== seenPhase; seenPhase = key;
   const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek'].includes(bot.ask) ? bot : null;
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
-  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vSummary(g) : '') + vBoard(g) + vPlayers(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
+  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vSummary(g) : '') + vBoard(g) + vAta(g) + vPlayers(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -191,8 +195,28 @@ function vPlayers(g: Game): string {
     return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}"><span>${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'}</span>${tag}</li>`;
   }).join('')}</ul></section>`;
 }
+/** The minutes, with assistance on (D11): every law, the government that made it and who voted Ja! for that
+ *  government, and the count for each player. Only what the whole table saw: never a hand, a party or a role. */
+function vAta(g: Game): string {
+  if (!S.assist) return '';
+  const rows: string[] = [], tally = g.players.map(() => ({ L: 0, F: 0 }));
+  let n = 0;
+  g.hist.forEach((e, i) => {
+    if (e.k !== 'gov' && e.k !== 'veto' && e.k !== 'chaos') return;
+    const v = e.k === 'chaos' ? undefined : [...g.hist.slice(0, i)].reverse().find((x): x is Extract<Event, { k: 'vote' }> => x.k === 'vote' && x.pres === e.pres && x.chanc === e.chanc);
+    const ja = v ? v.ja.map(j => name(g, j)).join(', ') : '';
+    if (e.k === 'chaos') { n++; rows.push(`<li class="gov ${e.law}"><b>${n}ª</b> <span class="role ${e.law}">${e.law === 'L' ? 'liberal' : 'fascista'}</span> pelo caos, sem governo</li>`); return; }
+    if (e.k === 'gov') { n++; if (e.law) { for (const j of v ? v.ja : [e.pres, e.chanc]) tally[j][e.law]++; } }
+    const head = e.k === 'gov' ? `<b>${n}ª</b> <span class="role ${e.law}">${e.law === 'L' ? 'liberal' : 'fascista'}</span>` : '<b>Veto</b>';
+    rows.push(`<li class="${e.k === 'gov' ? `gov ${e.law}` : 'rej'}">${head} ${name(g, e.pres)} (pres.) + ${name(g, e.chanc)} (chanc.)<small class="hands">${v ? `Ja!: ${ja}` : 'votos em voz alta, sem registro'}</small></li>`);
+  });
+  const who = g.players.map((p, i) => ({ i, t: tally[i] })).filter(x => x.t.L + x.t.F).sort((a, b) => b.t.F - a.t.F || a.t.L - b.t.L);
+  return `<section class="card" id="ata"><span class="label">Ata · assistência</span>${rows.length ? `<ol class="timeline">${rows.join('')}</ol>` : '<p class="hint">Nenhuma lei ainda.</p>'}
+    ${who.length ? `<p class="hint">Aprovou (governou ou votou Ja!), por jogador:</p><ul class="tally">${who.map(x => `<li><span>${name(g, x.i)}</span><span><i class="mini F">F</i> ${x.t.F} <i class="mini L">L</i> ${x.t.L}</span></li>`).join('')}</ul>` : ''}
+    <button class="btn ghost block" data-act="assist" data-v="off">Esconder a ata</button></section>`;
+}
 function vLog(g: Game): string {
-  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary><ol class="log">${[...g.log].reverse().map(l => `<li>${esc(l)}</li>`).join('')}</ol></details>`;
+  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}<ol class="log">${[...g.log].reverse().map(l => `<li>${esc(l)}</li>`).join('')}</ol></details>`;
 }
 
 /** The key of the secret a phase shows, and who may see it; null for a phase with nothing secret. The log grows every
@@ -230,7 +254,8 @@ function vPhase(g: Game): string {
         const row = (cls: string, label: string, who: string): string => who ? `<div class="ally ${cls}"><small>${label}</small><span>${who}</span></div>` : '';
         const info = me.role === 'fascista' ? `<div class="allies" id="allies">${row('H', 'Hitler', names('hitler'))}${row('F', 'Outros fascistas', names('fascista'))}</div>`
           : me.role === 'hitler' ? (mates.length ? `<div class="allies" id="allies">${row('F', 'Seu fascista', names('fascista'))}</div><p class="hint">Ele sabe quem você é.</p>` : '<p>Você não sabe quem são os fascistas. Eles sabem quem você é.</p>') : '<p>Você não sabe quem é quem. Ache o Hitler.</p>';
-        return `${turn(`<div class="role-card ${Core.partyOf(me.role)}${me.role === 'hitler' ? ' H' : ''}" id="role">${portrait(me.role)}<small>Você é</small><b>${ROLE[me.role]}</b></div>`)}${info}<button class="btn block" data-act="hiderole">Entendi, esconder</button>`;
+        const trained = g.train && !me.ai ? `<p class="hint" id="trained">Treino: você escolheu ser ${ROLE[g.train].toLowerCase()}.</p>` : '';
+        return `${turn(`<div class="role-card ${Core.partyOf(me.role)}${me.role === 'hitler' ? ' H' : ''}" id="role">${portrait(me.role)}<small>Você é</small><b>${ROLE[me.role]}</b></div>`)}${info}${trained}<button class="btn block" data-act="hiderole">Entendi, esconder</button>`;
       });
     case 'nominate':
       return `<section class="card" id="phase"><span class="label">Nova rodada</span><p class="big"><b>${pres}</b> é o presidente. Escolha o chanceler:</p>${pickList(g, i => Core.canNominate(g, i), 'nominate')}${g.lastChanc !== null ? '<p class="hint">O último governo eleito não pode voltar como chanceler.</p>' : ''}</section>`;
@@ -290,6 +315,16 @@ export function flash(): void {
   const f = part('flash');
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   setTimeout(() => { f.hidden = true; }, 900);
+}
+/** A law has just been enacted: who made it, over the screen for a moment (D11). The text comes from the code and the
+ *  names go through esc(). */
+let decreeTimer: ReturnType<typeof setTimeout> | undefined;
+export function decree(g: Game, e: Gov | Extract<Event, { k: 'chaos' }>): void {
+  const d = part('decree'), law = (e.law || 'F') as Law;
+  const who = e.k !== 'gov' && e.k !== 'veto' ? `<span class="who">O caos</span><span>aprovou</span>` : `<span class="who">${name(g, e.pres)} e ${name(g, e.chanc)}</span><span>aprovaram</span>`;
+  d.innerHTML = `<div class="decree-card ${law}">${seal(law)}${who}<b>lei ${law === 'L' ? 'liberal' : 'fascista'}</b></div>`;
+  d.hidden = false; d.classList.remove('go'); void d.offsetWidth; d.classList.add('go');
+  clearTimeout(decreeTimer); decreeTimer = setTimeout(() => { d.hidden = true; }, 2200);
 }
 /** Confetti in the colour of the side that won. */
 export function confetti(winner: Party): void {

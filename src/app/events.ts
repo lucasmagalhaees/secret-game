@@ -1,8 +1,8 @@
 import { Core } from '../core';
-import type { Ask, Game, Level, Theme } from '../core';
+import type { Ask, Game, Level, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
-import { blurField, confetti, flash, render, stamp, toast } from './render';
+import { blurField, confetti, decree, flash, render, stamp, toast } from './render';
 import { S, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
@@ -93,14 +93,14 @@ function addBots(n: number): void {
   if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
   if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
   blurField();
-  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names)]; ai = [...ai, true]; }
+  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand)]; ai = [...ai, true]; }
   if (names.length > n) { ui.msg = `A mesa já tem ${names.length} lugares.`; }
   else ui.msg = '';
   setTable(names, ai); render();
 }
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
-  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level });
+  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   ui.msg = ''; ui.help = false; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
 }
@@ -110,9 +110,12 @@ function lawMsg(before: Game, after: Game): string {
   if (after.laws.L > before.laws.L) return 'Lei liberal aprovada.';
   return '';
 }
-/** A law went on the table (from a government or from the chaos): the gavel. */
+/** A law went on the table (from a government or from the chaos): the gavel, and who made it over the screen. */
 function gavelIf(before: Game, after: Game): void {
-  if (after.laws.L + after.laws.F > before.laws.L + before.laws.F) sound('gavel');
+  if (after.laws.L + after.laws.F <= before.laws.L + before.laws.F) return;
+  sound('gavel');
+  const e = after.hist.slice(before.hist.length).reverse().find(x => x.k === 'gov' || x.k === 'chaos');
+  if (e && (e.k === 'gov' || e.k === 'chaos')) decree(after, e);
 }
 /** The discarded card falls off the screen first; taps wait for it. */
 function discard(then: () => void): void {
@@ -145,6 +148,8 @@ export function initEvents(): void {
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
     else if (a === 'fill') addBots(Number(d.n));
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
+    else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
+    else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
     else if (a === 'theme') { const t = d.t as Theme | 'auto'; if (t === 'auto') delete S.theme; else S.theme = t; saveS(); applyTheme(); render(); }
     else if (a === 'look') { if (d.l === 'deco') S.look = 'deco'; else delete S.look; saveS(); applyTheme(); render(); }
