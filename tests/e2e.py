@@ -30,6 +30,13 @@ with sync_playwright() as p:
     pg.goto((ROOT / 'dist' / 'index.html').as_uri()); pg.wait_for_function('window.__APP && window.__APP.S')
     txt = lambda sel: pg.text_content(sel).replace('\xa0', ' ')      # the words in the page; CSS may show them in capitals
     overflow = lambda: pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
+    # D17: what pops up over the screen lands on the strip under the header, never on the card of the phase
+    over_phase = lambda sel: pg.evaluate('''sel => { scrollTo(0, 0); const o = document.querySelector(sel).getBoundingClientRect(), p = document.querySelector('#phase').getBoundingClientRect();
+        return !(o.bottom <= p.top || o.top >= p.bottom || o.right <= p.left || o.left >= p.right); }''', sel)
+    # the contrast of each vote button, its text against its own background (WCAG: at least 4.5 to 1)
+    vote_contrast = lambda: pg.evaluate('''() => [...document.querySelectorAll('.btn.vote')].map(b => {
+        const rgb = c => c.match(/[\\d.]+/g).slice(0, 3).map(Number), lum = c => { const [r, g, b] = rgb(c).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+        const st = getComputedStyle(b), a = lum(st.color), z = lum(st.backgroundColor); return (Math.max(a, z) + .05) / (Math.min(a, z) + .05); })''')
     shot = lambda name: pg.screenshot(path=str(SHOTS / name), full_page=True)
     G = lambda: pg.evaluate('window.__APP.S.game')
     wait = lambda: pg.wait_for_function('window.__APP && window.__APP.S')
@@ -122,6 +129,7 @@ with sync_playwright() as p:
         made = 'liberal' if G()['laws']['L'] > g0['laws']['L'] else 'fascista'
         who = f"{g0['players'][g0['pres']]['name']} e {g0['players'][g0['chanc']]['name']}"
         assert pg.locator('#decree:not([hidden])').count() == 1 and who in txt('#decree') and f'lei {made}' in txt('#decree'), ('who approved the law, over the screen', txt('#decree'))
+        if G()['phase'] != 'over': assert not over_phase('#decree .decree-card'), 'the law that passed shows over the strip at the top, not over the phase'
 
     # three governments rejected: the top law goes in by itself
     # help for the phase, open and closed
@@ -132,6 +140,7 @@ with sync_playwright() as p:
     pg.click('#undo'); assert G()['phase'] == 'nominate' and G()['chanc'] is None and pg.locator('#undo').count() == 0
     nominate(4); votes(False)
     assert pg.evaluate('document.getElementById("stamp").hidden') is False and 'Rejeitado' in txt('#stamp'), 'the vote result is stamped on the screen'
+    assert not over_phase('#stamp'), 'the stamp lands on the strip at the top, not on the phase'
     assert G()['tracker'] == 1 and pg.locator('#tracker.bump').count() == 1, 'the tracker shakes when it moves'
     pg.click('#undo'); assert G()['phase'] == 'vote' and G()['tracker'] == 0 and G()['chanc'] == 4
     votes(False); assert G()['tracker'] == 1 and G()['pres'] == 4 and 'rejeitado' in txt('#toast')
@@ -276,6 +285,11 @@ with sync_playwright() as p:
     assert 'Lu (você)' in txt('#mind .mind-bel') and 'Por que' in txt('#mind') and 'No começo' in txt('#mind .mind-trail'), txt('#mind')
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0; shot(f's5-raciocinio-{THEME}.png')
     pg.click('#mindtoggle'); assert not pg.locator('#mind').is_visible()
+    # D17: the panels open from a bar at the bottom that has its own room: scrolled to the end, nothing is under it
+    pg.evaluate('scrollTo(0, document.documentElement.scrollHeight)')
+    assert pg.evaluate("Math.max(...[...document.querySelectorAll('main .card, #app .card')].map(c => c.getBoundingClientRect().bottom)) <= document.querySelector('.dock').getBoundingClientRect().top"), 'nothing is under the bar at the bottom'
+    pg.click('#notestoggle'); pg.click('#mindtoggle'); assert pg.locator('#mind').is_visible() and not pg.locator('#drawer').is_visible() and pg.evaluate('window.__APP.S.notesOpen') is None, 'one panel at a time'
+    pg.click('#mindtoggle'); pg.evaluate('scrollTo(0, 0)')
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     pg.evaluate('window.__APP.ui.think = 0')
@@ -292,12 +306,15 @@ with sync_playwright() as p:
             assert txt('#phase .who') == 'Lu', 'the phone only ever opens for the person'
         if g['phase'] == 'vote' and g['players'][me]['alive']:
             assert pg.locator('#phase [data-act=elect]').count() == 0 and pg.locator('#phase [data-act=myvote]').count() == 2; seen.add('vote')
+            assert min(vote_contrast()) >= 4.5, ('Ja! and Nein! readable', vote_contrast())
         if pg.locator('.claim').count():
             seen.add('claim'); assert 'Pode mentir' in txt('.claim')
         if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
         body = pg.evaluate('document.body.innerText')
         assert 'undefined' not in body and 'NaN' not in body, [l for l in body.split('\n') if 'undefined' in l or 'NaN' in l]
-        if pg.locator('#coach').count(): seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
+        if pg.locator('#coach').count():
+            seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
+            assert pg.evaluate("!!(document.querySelector('#phase').compareDocumentPosition(document.querySelector('#coach')) & Node.DOCUMENT_POSITION_FOLLOWING)"), 'what the person has to do comes before the trainer'
         if step == 40 and not reloaded:
             cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
         for sel in ORDER:
