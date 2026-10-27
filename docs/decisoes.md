@@ -317,6 +317,16 @@ Modelo de uma decisão:
   - Os dados servem para calibrar as taxas que as IAs supõem (teste do chanceler, disfarce do Hitler, mentiras, votos) pelo que pessoas fazem de verdade. As IAs não aprendem o estilo de uma pessoa: isso seria metajogo (D10).
 - **Não sei:** como o Safari do iPhone se comporta ao compartilhar um `.json`. Não testei num iPhone.
 
+## D24. Nomes das IAs por continente
+
+- **Contexto (27/10/2026):** "quero poder escolhes facistas, comunistas e liberais por continente, pode usar o nome de lula mas troque por polvo para evitar qualquer problema judicial, quero fidel castro, hugo chavez, nicolas maduro etc, pinochet, etc".
+- **Decisão:** requisito 22 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - "Continente" virou cinco opções: Mundo (as listas de antes), Américas, Europa, Ásia e África. Cada uma tem 12 nomes por tema, os dois lados misturados, para dar uma mesa de 10 sem repetir. A escolha fica no cartão "Tema do jogo" porque também depende do tema.
+  - As Américas incluem os pedidos: Fidel, Chávez, Maduro e "Polvo" no tema comunista, Pinochet no tema fascista. O resto é escolha minha, com nomes conhecidos de cada continente.
+  - A maioria das figuras já morreu. As vivas são Maduro e "Polvo". O cartão diz que o nome é só apelido de jogo e que o papel é sorteado, então quem tem nome de liberal pode ser o Hitler ou o Stalin. Os nomes nunca dizem nada: as falas são as do jogo.
+- **Não sei:** se algum nome de algum continente incomoda alguém da mesa. Dá para trocar a lista sem mexer em mais nada.
+
 ## Pendências
 
 | Pendência | Quem resolve |

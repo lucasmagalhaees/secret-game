@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
+import type { Ask, Game, Law, Level, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
 import { beat, blurField, confetti, decree, flash, render, stamp, toast } from './render';
@@ -103,17 +103,18 @@ function addBots(n: number): void {
   if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
   if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
   blurField();
-  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack)]; ai = [...ai, true]; }
+  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack, S.region)]; ai = [...ai, true]; }
   while (names.length > n && ai.lastIndexOf(true) >= 0) { const k = ai.lastIndexOf(true); names = names.filter((_, j) => j !== k); ai = ai.filter((_, j) => j !== k); }
   ui.msg = names.length > n ? `São ${names.length} pessoas na mesa: tire alguém pelo × para ficar com ${n}.` : '';
   setTable(names, ai); render();
 }
 /** Another theme (D12): the seats of the app get names of that theme; the people keep theirs. */
-function setPack(pack: Pack | undefined): void {
+function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): void {
   const ai = flags(), names: string[] = S.names.map((x, i) => (ai[i] ? '' : x));
-  for (let i = 0; i < names.length; i++) if (ai[i]) names[i] = Core.botName(names.filter(Boolean), rand, pack);
+  for (let i = 0; i < names.length; i++) if (ai[i]) names[i] = Core.botName(names.filter(Boolean), rand, pack, region);
   const next = { ...S, names };
   if (pack) next.pack = pack; else delete next.pack;
+  if (region !== 'mundo') next.region = region; else delete next.region;
   setS(next); saveS(); render();
 }
 function start(): void {
@@ -171,6 +172,7 @@ export function initEvents(): void {
     else if (a === 'fill') addBots(Number(d.n));
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
     else if (a === 'pack') setPack(d.v === 'comunismo' ? 'comunismo' : undefined);
+    else if (a === 'region') setPack(S.pack, (Core.REGIONS as string[]).includes(d.v || '') ? d.v as Region : 'mundo');   // the app seats take names of that continent (D24)
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
     else if (a === 'coach') { const next = { ...S }; if (d.v === 'on') next.coach = true; else delete next.coach; setS(next); saveS(); render(); }
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }

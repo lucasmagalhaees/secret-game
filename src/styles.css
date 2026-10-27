@@ -500,3 +500,4 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .said{margin:0;padding:8px 12px;border-left:5px solid var(--line);background:var(--surface);font-size:14px;line-height:1.4}
 .said small{display:block;font:800 10px/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 [data-look="deco"] .said{border-left-color:var(--gold)}
+.segm.regions button{font-size:13px;letter-spacing:0;text-transform:none;padding:0 2px;min-width:0}

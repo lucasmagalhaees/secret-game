@@ -435,6 +435,10 @@ with sync_playwright() as p:
     pg.click('[data-act=pack][data-v=comunismo]')
     reds = pg.evaluate('window.__APP.Core.BOT_NAMES.comunismo')
     assert txt('#boss') == 'Stalin' and sum(1 for x in pg.locator('#names li b').all_text_contents() if x in reds) == 5, 'the app seats take names of the theme'
+    # D24: names by continent: the app seats change to names of the Americas
+    pg.click('[data-act=region][data-v=americas]'); ams = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.americas')
+    assert pg.evaluate('window.__APP.S.region') == 'americas' and all(x in ams for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and overflow() == 0, 'the app seats take names of the Americas'
+    pg.click('[data-act=region][data-v=mundo]'); assert pg.evaluate('window.__APP.S.region') is None
     assert 'Liberais x Comunistas' in txt('#pack') and 'comunistas' in txt('#rules') and 'Stalin' in txt('#rules') and 'fascis' not in (txt('#table') + txt('#solo') + txt('#rules')).lower()
     for x in list(range(pg.locator('#names li').count())):
         if pg.locator('#names li').nth(0).locator('small.ai').count() == 0: pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()

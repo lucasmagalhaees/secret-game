@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.21.0]
+
+### Adicionado
+- Nomes das IAs por continente: Mundo, Américas, Europa, Ásia ou África, em cada tema. Nas Américas, Fidel, Chávez, Maduro, "Polvo", Pinochet e outros.
+
 ## [0.20.0]
 
 ### Adicionado

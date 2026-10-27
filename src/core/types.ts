@@ -9,6 +9,8 @@ export type Theme = 'light' | 'dark';
 export type Speed = 'lenta' | 'normal' | 'rapida';
 /** The theme of the game (D12): liberals against fascists (the original), or against communists. Same rules. */
 export type Pack = 'fascismo' | 'comunismo';
+/** Where the names of the app players come from (D24). */
+export type Region = 'mundo' | 'americas' | 'europa' | 'asia' | 'africa';
 /** The style of the app: the 1930s poster (the default) or art deco. */
 export type Look = 'poster' | 'deco';
 
@@ -109,7 +111,7 @@ export interface Game {
 }
 
 /** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the person's notes on the game in course (`notes`, seat → party) and whether their side panel is open (`notesOpen`), whether the live suspicion shows (`live`), whether the trainer gives tips (`coach`), how fast the app's players act (`speed`), the game in course, the theme, the style and whether sound and vibration are off. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; notesOpen?: true; live?: true; coach?: true; speed?: Speed; debug?: true; flip?: true }
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; notesOpen?: true; live?: true; coach?: true; speed?: Speed; debug?: true; flip?: true; region?: Region }
 
 /** A finished game kept on the device for export (D23): when it ended (ms since 1970) and the whole game. */
 export interface Saved { at: number; game: Game }
