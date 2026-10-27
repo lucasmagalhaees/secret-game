@@ -126,7 +126,16 @@ export default function cases(Core) {
 
   /* players run by the app (D10) */
   eq('levels, easiest first; names for the app players skip those at the table', [Core.LEVELS, Core.botName(['churchill', 'Roosevelt']), Core.botName([])], [['facil', 'medio', 'dificil', 'extremo'], 'Mussolini', 'Churchill']);
-  eq('names for the app players: politicians of the 1930s, at random among the free ones; Hitler is a role, not a name', [Core.BOT_NAMES.length >= Core.MAX_PLAYERS - 1, Core.BOT_NAMES.includes('Hitler'), Core.BOT_NAMES.includes(Core.botName(['Churchill'], Core.seeded(4))), Core.botName(['Churchill'], () => 0), Core.botName(Core.BOT_NAMES)], [true, false, true, 'Mussolini', `IA ${Core.BOT_NAMES.length + 1}`]);
+  const BN = Core.BOT_NAMES.fascismo;
+  eq('names for the app players: well-known politicians, at random among the free ones; Hitler is a role, not a name', [BN.length >= Core.MAX_PLAYERS - 1, BN.includes('Hitler'), BN.includes(Core.botName(['Churchill'], Core.seeded(4))), Core.botName(['Churchill'], () => 0), Core.botName(BN)], [true, false, true, 'Mussolini', `IA ${BN.length + 1}`]);
+  /* the communist theme (D12): the same rules, other words */
+  eq('themes: the words of each; an unknown theme is the original', [Core.PACKS, Core.words().boss, Core.words('comunismo').boss, Core.words('comunismo').f, Core.words('comunismo').ja, Core.words('x').f], [['fascismo', 'comunismo'], 'Hitler', 'Stalin', 'comunista', 'Da!', 'fascista']);
+  eq('themes: names of liberals and communists, Stalin left out; the theme picks the list', [Core.BOT_NAMES.comunismo.length >= Core.MAX_PLAYERS - 1, Core.BOT_NAMES.comunismo.includes('Stalin'), Core.botName([], () => 0, 'comunismo'), Core.BOT_NAMES.comunismo.includes(Core.botName(['Lenin'], Core.seeded(2), 'comunismo'))], [true, false, 'Kennedy', true]);
+  const red = Core.newGame(NAMES, Core.seeded(3), { pack: 'comunismo' }).game;
+  const redStacked = { ...red, players: base.players, pres: 3, phase: 'vote', chanc: 4, reveal: 7, deck: deck('FFFLLL') };
+  const redLaw = Core.chancellorDiscard(Core.presidentDiscard(Core.vote(redStacked, true, rand), 0), 0, rand);
+  eq('themes: the game keeps its theme and speaks it; the rules are the same', [red.pack, 'pack' in g0, redLaw.log.at(-1).startsWith('Lei comunista aprovada'), redLaw.laws, Core.vote({ ...redStacked, chanc: 0, laws: { L: 0, F: 3 } }, true, rand).why, Core.execute({ ...redStacked, phase: 'execute' }, 0).why], ['comunismo', false, true, { L: 0, F: 1 }, 'Stalin (Ana) foi eleito chanceler: os comunistas vencem.', 'Stalin (Ana) foi eliminado: os liberais vencem.']);
+  eq('read state: the theme and the notes are kept; nonsense is dropped', [Core.readState({ pack: 'comunismo', notes: { 1: 'F', 2: 'L', x: 'F', 3: 'Q' } }).pack, Core.readState({ notes: { 1: 'F', 2: 'L', x: 'F', 3: 'Q' } }).notes, 'pack' in Core.readState({ pack: 'monarquia' }), 'notes' in Core.readState({ notes: { a: 1 } }), Core.readGame({ ...el, pack: 'monarquia' }), !!Core.readGame({ ...el, pack: 'comunismo' })], ['comunismo', { 1: 'F', 2: 'L' }, false, false, null, true]);
   const solo = (train, seed) => Core.newGame(NAMES, Core.seeded(seed), { ai: [false, true, true, true, true, true, true], level: 'medio', train }).game;
   eq('training: the one person gets the role chosen, the table keeps its roles, and the game remembers the choice', ['liberal', 'fascista', 'hitler'].flatMap(r => [1, 2, 3].map(sd => { const g = solo(r, sd), roles = g.players.map(p => p.role); return g.players[0].role === r && g.train === r && roles.filter(x => x === 'hitler').length === 1 && roles.filter(x => x === 'liberal').length === 4; })).every(Boolean), true);
   eq('training: without app players, with more than one person, or with a role that does not exist, the role is dealt as usual', ['train' in Core.newGame(NAMES, Core.seeded(1), { train: 'hitler' }).game, 'train' in Core.newGame(NAMES, Core.seeded(1), { ai: [false, false, true, true, true, true, true], train: 'hitler' }).game, 'train' in solo('rei', 1)], [false, false, false]);
@@ -147,7 +156,7 @@ export default function cases(Core) {
 
   // deciding: rand near 1 means no careless moment and no trick
   const hi = () => 0.99;
-  const view = (over) => ({ me: 4, role: 'liberal', level: 'medio', n: 7, alive: Array(7).fill(true), known: [null, null, null, null, 'liberal', null, null], fascists: 3, laws: { L: 0, F: 0 }, tracker: 0, pres: 3, chanc: 4, lastPres: null, lastChanc: null, ask: 'vote', options: [1, 0], hand: [], hist: [], ...over });
+  const view = (over) => ({ me: 4, role: 'liberal', level: 'medio', mood: 0, n: 7, alive: Array(7).fill(true), known: [null, null, null, null, 'liberal', null, null], fascists: 3, laws: { L: 0, F: 0 }, tracker: 0, pres: 3, chanc: 4, lastPres: null, lastChanc: null, ask: 'vote', options: [1, 0], hand: [], hist: [], ...over });
   eq('a liberal president throws a fascist law away; a liberal chancellor makes the liberal one', [Core.decide(view({ me: 3, known: [null, null, null, 'liberal', null, null, null], ask: 'pdiscard', options: [0, 1, 2], hand: deck('LFF') }), hi), Core.decide(view({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi)], [1, 0]);
   const knowAll = ['hitler', 'fascista', 'fascista', 'liberal', 'liberal', 'liberal', 'liberal'];
   eq('a fascist chancellor makes the fascist law, and asks to veto two liberal ones', [Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi), Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1, 2], hand: deck('LL'), laws: { L: 0, F: 5 } }), hi)], [1, 2]);
@@ -191,7 +200,7 @@ export default function cases(Core) {
   // whole games with only players run by the app: every step is a move the rules accept, and every game ends
   let ended = 0, played = 0, moved = true, kept = true, honest = true;
   for (const level of Core.LEVELS) for (let n = Core.MIN_PLAYERS; n <= Core.MAX_PLAYERS; n++) {
-    const r = Core.seeded(n * 31 + level.length), names = Core.BOT_NAMES.slice(0, n);
+    const r = Core.seeded(n * 31 + level.length), names = Core.BOT_NAMES.fascismo.slice(0, n);
     let g = Core.newGame(names, r, { ai: names.map(() => true), level }).game;
     for (let step = 0; step < 600 && g.phase !== 'over'; step++) {
       const next = Core.botStep(g, r);
@@ -207,6 +216,7 @@ export default function cases(Core) {
   eq('read state: which seats the app plays and the level are kept; nonsense is dropped', [Core.readState({ names: ['a', 3, 'b'], ai: [false, true, true] }).ai, 'ai' in Core.readState({ names: ['a'], ai: [false] }), Core.readState({ level: 'extremo' }).level, 'level' in Core.readState({ level: 'x' })], [[false, true], false, 'extremo', false]);
   eq('read game: a bad app seat, level or hand drawn is damage', [Core.readGame({ ...el, players: el.players.map(p => ({ ...p, ai: 1 })) }), Core.readGame({ ...el, level: 'x' }), Core.readGame({ ...el, drew: ['X'] }), !!Core.readGame({ ...el, level: 'dificil', drew: deck('FFL') })], [null, null, null, true]);
 
+  eq('themes: what the table says and the votes use the words of the theme', [Core.castVotes({ ...ai7({ phase: 'vote', chanc: 4 }), pack: 'comunismo' }, { 0: true }, Core.seeded(5)).log.find(l => l.startsWith('Votos.')).startsWith('Votos. Da!: Ana'), Core.say({ ...ai7({ phase: 'nominate', pres: 4, hist: [{ k: 'gov', pres: 0, chanc: 3, law: 'L', drew: deck('FFL'), got: deck('FL') }] }), pack: 'comunismo' }, 0, 'pc', 2).log.at(-1)], [true, 'Ana (presidente) disse que tirou 2 comunistas e 1 liberal.']);
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));

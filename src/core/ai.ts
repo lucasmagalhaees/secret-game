@@ -29,11 +29,13 @@ import type { Law, Level, Party, Role, Seen, View } from './types';
  *    same reasoning the table uses. */
 export interface Knobs { noise: number; memory: number; lie: number; count: boolean; act: number; trust: number; wary: number; plan: boolean; image: number; slip: number }
 export const AI: Record<Level, Knobs> = {
-  facil: { noise: 0.3, slip: 0.1, memory: 4, lie: 0, count: false, act: 0.25, trust: 0, wary: 0.5, plan: false, image: 0 },
+  facil: { noise: 0.3, slip: 0.1, memory: 5, lie: 0.1, count: false, act: 0.25, trust: 0, wary: 0.5, plan: false, image: 0 },
   medio: { noise: 0.1, slip: 0.1, memory: 6, lie: 0.3, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false, image: 0 },
   dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1 },
   extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1 }
 };
+/** How far the temper of a player (View.mood, -1 to 1) moves the risk it accepts in a government. */
+export const MOOD = 0.2;
 /** How often a liberal thinks a fascist lets a liberal law through on purpose (the same at every level). */
 const TRUST_GUESS = 0.15;
 
@@ -188,7 +190,8 @@ function liberalJa(v: View, b: Beliefs): boolean {
   let base = 0, pairs = 0;
   for (let x = 0; x < others.length; x++) for (let y = x + 1; y < others.length; y++) { base += risk(b, [others[x], others[y]]); pairs++; }
   base = pairs ? base / pairs : 1;
-  const slack = 0.05 + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
+  // the temper of this player: the wary one wants a government clearly cleaner than most, the trusting one goes along
+  const slack = 0.05 + MOOD * v.mood + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
   if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) return false;
   return risk(b, gov.filter(i => i !== v.me)) <= base + slack;
 }

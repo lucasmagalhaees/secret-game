@@ -7,6 +7,7 @@
    player tells the table about its hand. */
 import { decide } from './ai';
 import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, investigate, nominate, presidentDiscard, revealNext, specialElect, vote } from './game';
+import { words } from './words';
 import type { Ask, Event, Game, Gov, Law, Level, Role, Seen, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
@@ -52,15 +53,15 @@ export function say(g: Game, seat: number, what: Ask, v: number): Game {
   if (what === 'pc' || what === 'cc') {
     const i = lastIndex(g, ['gov', 'veto']);
     const line = quiet ? `${who} não disse o que ${what === 'pc' ? 'tirou' : 'recebeu'}.`
-      : what === 'pc' ? `${who} (presidente) disse que tirou ${fN(v, 3, 'fascista', 'liberal')}.` : `${who} (chanceler) disse que recebeu ${fN(v, 2, 'fascista', 'liberal')}.`;
+      : what === 'pc' ? `${who} (presidente) disse que tirou ${fN(v, 3, words(g.pack).f, 'liberal')}.` : `${who} (chanceler) disse que recebeu ${fN(v, 2, words(g.pack).f, 'liberal')}.`;
     return set(i, what === 'pc' ? { pc: v } : { cc: v }, line);
   }
   if (what === 'inv') {
     const i = lastIndex(g, ['inv']), e = g.hist[i] as Extract<Event, { k: 'inv' }>;
-    return set(i, { said: quiet ? '-' : v ? 'F' : 'L' }, quiet ? `${who} não disse o que viu na investigação.` : `${who} disse que ${g.players[e.target].name} é ${v ? 'fascista' : 'liberal'}.`);
+    return set(i, { said: quiet ? '-' : v ? 'F' : 'L' }, quiet ? `${who} não disse o que viu na investigação.` : `${who} disse que ${g.players[e.target].name} é ${v ? words(g.pack).f : 'liberal'}.`);
   }
   const i = lastIndex(g, ['peek']);
-  return set(i, { said: v }, quiet ? `${who} não disse o que espiou.` : `${who} disse que as próximas 3 leis são ${fN(v, 3, 'fascista', 'liberal')}.`);
+  return set(i, { said: v }, quiet ? `${who} não disse o que espiou.` : `${who} disse que as próximas 3 leis são ${fN(v, 3, words(g.pack).f, 'liberal')}.`);
 }
 
 /* ---------- the votes, where the app plays some seats ---------- */
@@ -72,7 +73,7 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
   if (alive.some(i => !isAi(g, i) && typeof votes[i] !== 'boolean')) return g;
   const ja = alive.filter(i => (isAi(g, i) ? ask(g, i, 'vote', [1, 0], rand) === 1 : votes[i]));
   const nein = alive.filter(i => !ja.includes(i)), list = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ') || 'ninguém';
-  const n: Game = { ...g, log: [...g.log, `Votos. Ja!: ${list(ja)}. Nein!: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
+  const n: Game = { ...g, log: [...g.log, `Votos. ${words(g.pack).ja}: ${list(ja)}. ${words(g.pack).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
   return vote(n, ja.length > nein.length, rand);
 }
 
@@ -96,7 +97,7 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
   const known: (Role | null)[] = g.players.map((p, i) => (i === me || all ? p.role : null));
   const hand: Law[] = (q === 'pdiscard' || q === 'cdiscard' || q === 'veto') ? [...g.hand] : [];
   return {
-    me, role, level: (g.players[me].level || g.level || 'medio') as Level, n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
+    me, role, level: (g.players[me].level || g.level || 'medio') as Level, mood: g.players[me].mood ?? 0, n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
     laws: { ...g.laws }, tracker: g.tracker, pres: g.pres, chanc: g.chanc, lastPres: g.lastPres, lastChanc: g.lastChanc,
     ask: q, options: [...options], hand, hist: g.hist.map(e => seenBy(e, me))
   };

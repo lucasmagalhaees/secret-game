@@ -26,6 +26,7 @@ Modelo de uma decisão:
 9. Mais animações e melhorias: carta virando, distribuição, descarte, carimbo, poderes, confete, vibração, sons, resumo, esconder sozinho, ajuda e desfazer (D9).
 10. Jogar sozinho contra a IA, em quatro níveis, com um juiz que só mostra a cada IA o que o lugar dela saberia (D10).
 11. Treino com papel escolhido, nomes históricos para as IAs, ata com quem aprovou cada lei e o anúncio da lei aprovada (D11).
+12. Tema liberais x comunistas, nomes mais conhecidos, anotações da pessoa e votos variados (D12).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -156,6 +157,29 @@ Modelo de uma decisão:
   - "Na ata quem aprovou cada lei": a ata é um cartão novo, com cada lei, o presidente e o chanceler, e quem votou Ja! no governo que a aprovou, mais a soma por jogador. É só informação pública, a mesma que daria para anotar num papel; não mostra mão, partido nem papel. Sem IA na mesa, o celular não guarda os votos (são em voz alta), e a ata diz isso.
   - A animação vale em toda mesa, com IA ou sem: a lei aprovada entra no alto da tela com os nomes do presidente e do chanceler ("O caos aprovou" quando entra pelo caos). Com "reduzir movimento", o aviso aparece parado pelo mesmo tempo.
 - **Não sei:** se os nomes históricos incomodam alguém na mesa; se a ata deixa o jogo fácil demais (por isso ela é desligável e vem desligada).
+
+## D12. Tema liberais x comunistas, nomes conhecidos, anotações e votos
+
+- **Contexto (27/10/2026):**
+  - "quero nomes mais conhecidos de fascistas e liberais, e faz o seguinte, inclui uma versão onde são fascistas x comunistas … um novo modo de temas e nomes". Perguntei quem é a maioria e quem é o time escondido, e o Lucas respondeu "liberais x comunistas"; para o desenho, "comunistas é lobo branco e o stalin é um urso".
+  - "avaliar se as votações estão balanceadas".
+  - "quero tbm um bloco de anotações do jogador humano marcando quem é liberal e quem é fascista, se eu conheço os papéis eles já vêm marcados, senão eu vou marcando"; "Libs, Nazis and Coms pode ser abreviação".
+- **Decisão:** requisitos 22, 26 e 27 do `CLAUDE.md`; temperamento das IAs no 18.
+- **Interpretações que precisaram ser feitas:**
+  - O tema novo troca os fascistas pelos comunistas, e o Hitler pelo Stalin, como time escondido. Regras, poderes, IAs e balanceamento são os mesmos: por dentro o lado escondido continua sendo `F`. Os votos viram Da!/Niet!, e o alto da tela diz "Secret Stalin".
+  - Nomes "mais conhecidos":
+    - Liberais x Fascistas: Churchill, Roosevelt, De Gaulle, Truman, Eisenhower e Kennedy; Mussolini, Franco, Goebbels, Göring, Himmler e Salazar.
+    - Liberais x Comunistas: Kennedy, Reagan, Thatcher, Churchill, Truman e Roosevelt; Lenin, Mao, Fidel, Che, Trotsky e Ho Chi Minh.
+    - Não ficam presos aos anos 30, para serem conhecidos.
+  - Anotações: só com uma pessoa na mesa (com mais gente, as outras veriam). Vem marcado o que a pessoa sabe de certeza pelas regras: o time (fascista vê fascistas e Hitler; Hitler na mesa de 5 ou 6 vê o fascista) e o resultado das próprias investigações.
+- **Votações (medido em 27/10/2026, 800 partidas só de IA por nível):** os lados estavam equilibrados, mas a votação era monótona.
+  - 82% dos governos eram eleitos, e no difícil e no extremo 55% das votações eram unânimes: as IAs liberais com a mesma informação votavam em bloco.
+  - Cada IA ganhou um temperamento sorteado (`mood`, de -1 a 1, que move em até 0,2 o risco que ela aceita num governo).
+  - Depois: unânimes 13% a 31% conforme o nível; eleitos cerca de 82%, porque os presidentes indicam quem parece mais limpo.
+  - O sinal continua lá: um liberal vota Ja! em cerca de 80% dos governos limpos e em cerca de 53% dos que têm fascista. Os fascistas votam Ja! em cerca de 92% dos governos com aliado e 76% dos sem.
+  - O fácil foi recalibrado depois disso: memória de 5 governos e `lie` 0,1.
+- **Balanceamento depois disso (27/10/2026, `node scripts/ai_bench.mjs 400`):** com a mesa no mesmo nível, os liberais vencem 49% no fácil, 53% no médio, 47% no difícil e 47% no extremo (erro de cerca de 2,5 pontos). "Você" (uma IA média num lugar): como liberal, 52%, 49%, 44% e 44%; como fascista, 61%, 56%, 45% e 43%. O tema não entra na conta, porque por dentro o jogo é o mesmo.
+- **Não sei:** se os nomes e o tema incomodam alguém na mesa; se o caderno deixa o jogo fácil demais (ele só anota o que a pessoa já sabe ou acha).
 
 ## Pendências
 

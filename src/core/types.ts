@@ -5,6 +5,8 @@
 export type Json = any;
 
 export type Theme = 'light' | 'dark';
+/** The theme of the game (D12): liberals against fascists (the original), or against communists. Same rules. */
+export type Pack = 'fascismo' | 'comunismo';
 /** The style of the app: the 1930s poster (the default) or art deco. */
 export type Look = 'poster' | 'deco';
 
@@ -19,8 +21,10 @@ export type Role = 'liberal' | 'fascista' | 'hitler';
 export type Level = 'facil' | 'medio' | 'dificil' | 'extremo';
 
 /** `ai`: the seat is played by the app, not by a person at the table; `level`, a level of its own for that seat (the
- *  measurements use it to put one level against another; the app gives every seat the level of the game). */
-export interface Player { name: string; role: Role; alive: boolean; ai?: true; level?: Level }
+ *  measurements use it to put one level against another; the app gives every seat the level of the game); `mood`, the
+ *  temper of a player run by the app, from -1 (wary) to 1 (trusting), drawn at the start: two of them that know the same
+ *  do not always vote the same. */
+export interface Player { name: string; role: Role; alive: boolean; ai?: true; level?: Level; mood?: number }
 
 /** Where the game is. The phases that show something secret are gated by the page: the phone goes to one person first. */
 export type Phase =
@@ -85,6 +89,8 @@ export interface Game {
   level?: Level;
   /** Training: the role the person chose before the game (D11); absent when it was dealt at random. */
   train?: Role;
+  /** The theme (D12); absent, the original one. */
+  pack?: Pack;
   /** In 'investigated': who was investigated. */
   target: number | null;
   winner: Winner | null; why: string;
@@ -94,8 +100,8 @@ export interface Game {
   hist: Event[];
 }
 
-/** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the game in course, the theme, the style and whether sound and vibration are off. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true }
+/** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the person's notes on the game in course (`notes`, seat → party), the game in course, the theme, the style and whether sound and vibration are off. */
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party> }
 
 /** An entry as the source describes it, once read by `normEntry`. */
 export interface Entry { id: string; name: string; value: number }
@@ -125,7 +131,7 @@ export type Seen =
  *  the others only for a fascist, or for Hitler at a small table); `hand` the laws in its hand, when the question is
  *  about them. */
 export interface View {
-  me: number; role: Role; level: Level;
+  me: number; role: Role; level: Level; mood: number;
   n: number; alive: boolean[]; known: (Role | null)[]; fascists: number;
   laws: { L: number; F: number }; tracker: number;
   pres: number; chanc: number | null; lastPres: number | null; lastChanc: number | null;
