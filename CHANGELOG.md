@@ -2,6 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.17.0]
+
+### Alterado
+- "Lugares na mesa" também diminui a mesa: tira as últimas IAs num toque. "Limpar a mesa" tira todos, com dois toques.
+- Virar o celular para baixo não fecha mais o segredo, a não ser que você ligue isso em "Aparência". Deitado, o sensor se enganava.
+
 ## [0.16.0]
 
 ### Adicionado

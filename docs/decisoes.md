@@ -271,6 +271,15 @@ Modelo de uma decisão:
   - Peso para ordenar: eliminar o Hitler ou eleger o Hitler na zona vale 5, jogar fora uma liberal vale 3, e os votos certos valem 0,5 ou 1. Aparecem 4 de cada lado, e "Ver todas" mostra o resto.
 - **Não sei:** se os pesos batem com o que um jogador experiente chamaria de jogada boa ou ruim. Também não sei se o lado escondido deveria ser julgado pelo voto.
 
+## D20. Mesa menor num toque; virar o celular não fecha mais o segredo sozinho
+
+- **Contexto (27/10/2026):** "Não tem como diminuir a quantidade de pessoas da mesa de uma forma rápida. E deveria ter como. Tirar essa regra que o celular tem que estar virado para baixo para ele mostrar a carta. Isso às vezes é muito chato quando eu estou deitado e ele não pega bem esse sensor. Ou isso pode ser simplesmente desativado."
+- **Decisão:** requisitos 13 e 18 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - "Completar a mesa até" virou "Lugares na mesa". Escolher um número menor tira as últimas IAs da lista. Pessoa nunca sai por esse caminho: se houver mais pessoas que o número escolhido, a mensagem pede para tirar alguém pelo ×. O número atual aparece marcado. "Limpar a mesa" tira todo mundo, com dois toques.
+  - O sensor fecha o segredo quando o celular fica de tela para baixo. Deitado, segurando o celular acima do rosto, ele fica nessa mesma posição. Das duas opções do pedido, escolhi deixar desligado de início, com um botão para ligar no cartão "Aparência". Sair do app continua fechando o segredo, porque isso não engana.
+- **Não sei:** se alguém vai querer o sensor ligado. Se ninguém quiser, dá para tirar de vez.
+
 ## Pendências
 
 | Pendência | Quem resolve |

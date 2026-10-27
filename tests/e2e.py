@@ -49,7 +49,8 @@ with sync_playwright() as p:
     pg.click('#rulestoggle'); assert pg.locator('#ruleslist li').count() >= 5; pg.click('#rulestoggle'); assert pg.locator('#ruleslist').count() == 0
     pg.fill('#name', 'Xu'); pg.press('#name', 'Enter'); assert 'Faltam 4' in txt('[data-act=start]') and 'Completar com 4 da IA' in txt('#fillmin')
     pg.click('#fillmin'); assert pg.locator('#names li').count() == 5 and not pg.locator('[data-act=start]').is_disabled() and 'Começar com 5 jogadores' in txt('[data-act=start]')
-    for _ in range(5): pg.locator('#names li').nth(0).locator('[data-act=rmname]').click()
+    pg.click('#clear'); assert pg.locator('#names li').count() == 5 and 'Toque de novo' in txt('#clear'), 'clearing the table takes two taps'
+    pg.click('#clear'); assert pg.locator('#names li').count() == 0 and pg.locator('#clear').count() == 0
     assert pg.locator('#empty').count() == 1
     assert pg.locator('select').count() == 0, 'no select of the system: its list is drawn by the device, with colours of its own'
     pg.click('[data-act=addname]'); assert 'Escreve um nome' in txt('#msg')
@@ -89,6 +90,9 @@ with sync_playwright() as p:
     assert pg.locator('[data-act=fx][data-v=on]').get_attribute('aria-pressed') == 'true'
     pg.click('[data-act=fx][data-v=off]'); assert saved().get('quiet') is True and pg.locator('[data-act=fx][data-v=off]').get_attribute('aria-pressed') == 'true'
     pg.click('[data-act=fx][data-v=on]'); assert 'quiet' not in saved()
+    # D20: closing a secret when the phone is face down is off unless the person turns it on (lying down fools the sensor)
+    assert pg.locator('[data-act=flip][data-v=off]').get_attribute('aria-pressed') == 'true' and 'flip' not in saved()
+    pg.click('[data-act=flip][data-v=on]'); assert saved().get('flip') is True and 'tela para baixo' in txt('#fliptext')
     # opened from the disk there is no service worker, and the screen says so
     assert 'não fica guardado' in txt('#version') and pg.locator('[data-act=checkupdate]').count() == 0, txt('#version')
 
@@ -241,8 +245,10 @@ with sync_playwright() as p:
     pg.evaluate('''() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; }''')
     assert pg.locator('#role').count() == 0 and 'saiu da tela' in txt('#toast'), 'hidden when the app goes away'
     pg.click('[data-act=open]'); pg.evaluate("window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { beta: 175 }))")
-    assert pg.locator('#role').count() == 0 and 'virado para baixo' in txt('#toast'), 'hidden when the phone is face down'
-    pg.click('[data-act=open]')
+    assert pg.locator('#role').count() == 0 and 'virado para baixo' in txt('#toast'), 'hidden when the phone is face down, with that turned on'
+    pg.evaluate('(() => { delete window.__APP.S.flip; })()')
+    pg.click('[data-act=open]'); pg.evaluate("window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { beta: 175 }))")
+    assert pg.locator('#role').count() == 1, 'with it off (the default), a phone face down, or a person lying down, keeps the secret open'
     for i in range(5):
         if i: pg.click('[data-act=open]')
         pg.click('[data-act=hiderole]')
@@ -261,7 +267,9 @@ with sync_playwright() as p:
     assert pg.locator('#names li').count() == 7 and pg.locator('#names small.ai').count() == 6 and '6 lugares são da IA' in txt('#solo')
     pg.click('[data-act=addbot]'); assert pg.locator('#names li').count() == 8
     pg.locator('#names li').nth(7).locator('[data-act=rmname]').click(); assert pg.locator('#names li').count() == 7
-    pg.click('[data-act=fill][data-n="5"]'); assert 'já tem 7 lugares' in txt('#msg')
+    # D20: the size of the table goes down as fast as it goes up: the last seats of the app go away, never a person
+    pg.click('[data-act=fill][data-n="5"]'); assert pg.locator('#names li').count() == 5 and pg.locator('#names small.ai').count() == 4 and 'Lu' in txt('#names') and pg.get_attribute('[data-act=fill][data-n="5"]', 'aria-pressed') == 'true'
+    pg.click('[data-act=fill][data-n="7"]'); assert pg.locator('#names li').count() == 7 and pg.locator('#names small.ai').count() == 6
     pg.click('[data-act=level][data-v=extremo]')
     assert pg.locator('[data-act=level][data-v=extremo]').get_attribute('aria-pressed') == 'true' and 'Conta as cartas' in txt('#leveltext')
     assert sum(1 for x in pg.locator('#names li b').all_text_contents() if x in pg.evaluate('window.__APP.Core.BOT_NAMES.fascismo')) == 6, 'the app players get names of well-known politicians'
