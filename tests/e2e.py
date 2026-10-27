@@ -241,6 +241,9 @@ with sync_playwright() as p:
     assert sum(1 for x in pg.locator('#names li b').all_text_contents() if x in pg.evaluate('window.__APP.Core.BOT_NAMES.fascismo')) == 6, 'the app players get names of well-known politicians'
     pg.click('[data-act=train][data-v=fascista]'); assert 'Você vai ser fascista' in txt('#traintext')
     pg.click('[data-act=assist][data-v=on]'); assert pg.locator('[data-act=assist][data-v=on]').get_attribute('aria-pressed') == 'true'
+    pg.click('[data-act=coach][data-v=on]'); assert 'treinador faz as contas' in txt('#solo')
+    pg.click('[data-act=speed][data-v=rapida]'); assert pg.evaluate('window.__APP.S.speed') == 'rapida'
+    pg.click('[data-act=speed][data-v=normal]'); assert pg.evaluate('window.__APP.S.speed') is None
     pg.locator('#names li').nth(0).locator('[data-act=rmname]').click(); pg.click('[data-act=start]')
     assert 'pelo menos uma pessoa' in txt('#msg') and G() is None, 'a table of the app alone does not start'
     pg.fill('#name', 'Lu'); pg.press('#name', 'Enter')                     # Lu sits last: seat 6
@@ -278,6 +281,7 @@ with sync_playwright() as p:
         if pg.locator('.claim').count():
             seen.add('claim'); assert 'Pode mentir' in txt('.claim')
         if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
+        if pg.locator('#coach').count(): seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
         if step == 40 and not reloaded:
             cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
         for sel in ORDER:
@@ -292,7 +296,9 @@ with sync_playwright() as p:
     laws = sum(1 for e in g['hist'] if e['k'] in ('gov', 'chaos'))
     assert pg.locator('#ata .timeline li.gov').count() == laws and 'Ja!:' in txt('#ata') and pg.locator('#ata .tally li').count() > 0, 'the minutes: every law, and who voted Ja! for it'
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#showata'); assert pg.locator('#ata').count() == 1
-    assert {'vote', 'decree'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert {'vote', 'decree', 'coach'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
+    assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
     assert pg.locator('#summary').count() == 1 and pg.locator('#players small.ai').count() == 6 and pg.locator('#players .role').count() == 7
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
 
@@ -379,4 +385,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

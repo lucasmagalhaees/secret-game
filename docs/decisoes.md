@@ -27,6 +27,7 @@ Modelo de uma decisão:
 10. Jogar sozinho contra a IA, em quatro níveis, com um juiz que só mostra a cada IA o que o lugar dela saberia (D10).
 11. Treino com papel escolhido, nomes históricos para as IAs, ata com quem aprovou cada lei e o anúncio da lei aprovada (D11).
 12. Tema liberais x comunistas, nomes mais conhecidos, anotações da pessoa e votos variados (D12).
+13. As IAs conversam, dicas do treinador, o que as IAs pensavam de você e velocidade da IA (D13).
 
 ## D1. Página estática, núcleo puro e deploy na Vercel
 
@@ -180,6 +181,24 @@ Modelo de uma decisão:
   - O fácil foi recalibrado depois disso: memória de 5 governos e `lie` 0,1.
 - **Balanceamento depois disso (27/10/2026, `node scripts/ai_bench.mjs 400`):** com a mesa no mesmo nível, os liberais vencem 49% no fácil, 53% no médio, 47% no difícil e 47% no extremo (erro de cerca de 2,5 pontos). "Você" (uma IA média num lugar): como liberal, 52%, 49%, 44% e 44%; como fascista, 61%, 56%, 45% e 43%. O tema não entra na conta, porque por dentro o jogo é o mesmo.
 - **Não sei:** se os nomes e o tema incomodam alguém na mesa; se o caderno deixa o jogo fácil demais (ele só anota o que a pessoa já sabe ou acha).
+
+## D13. Conversa, treinador, o que pensavam de você, velocidade
+
+- **Contexto (27/10/2026):** propus melhorias e o Lucas pediu "faz o 1-4":
+  1. as IAs conversam (acusam e defendem);
+  2. dicas do treinador com as contas;
+  3. no fim, o que as IAs pensavam de você;
+  4. a velocidade da IA.
+- **Decisão:** requisitos 28 a 31 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - Conversa: até 2 IAs por rodada, no começo da rodada, cada uma uma frase ("Desconfio de X", "Confio em Y") ou calada. A pessoa não fala por enquanto (só diz o que viu, como já fazia).
+  - As IAs não levam a conversa em conta nas contas delas. Se levassem, os fascistas aprenderiam a usá-la e o balanceamento da D10 mudaria; do jeito que está, a conversa é informação para as pessoas. O liberal fala o que acha de verdade, e isso é tão confiável quanto ele.
+  - Treinador: separado do treino de papel (D11), porque serve em qualquer partida contra a IA com uma pessoa só. As contas são as do nível extremo, com só o que o lugar da pessoa sabe; nada de papel alheio.
+  - O que pensavam de você: só das IAs que não sabiam o seu papel (as do seu time sabiam, e a conta delas seria 0 ou 100%). Uma linha pequena por IA, do começo ao fim, em vez de um gráfico com 9 cores.
+  - Velocidade: lenta 2,4 s, normal 1,2 s (como antes), rápida 0,5 s. Ver o próprio papel continua na hora.
+  - Anotações no lugar certo (27/10/2026, "as anotações têm que aparecer do lado da mesa de jogo, senão fica muito perdido … eu tenho que scrollar a tela toda hora"): o caderno passou para dentro da lista de jogadores, cada anotação na linha do jogador, e a lista subiu para logo abaixo da fase da vez, acima do tabuleiro.
+- **Balanceamento conferido (27/10/2026, `node scripts/ai_bench.mjs 300`):** com a conversa, a mesa no mesmo nível dá vitórias liberais de 47%, 46%, 46% e 47% (erro de cerca de 3 pontos); "você" (uma IA média num lugar) vence como liberal 49%, 51%, 47% e 47%, e como fascista 57%, 51%, 46% e 42%.
+- **Não sei:** se as falas soam naturais numa partida inteira; se as dicas deixam o treino fácil demais (por isso vêm desligadas).
 
 ## Pendências
 

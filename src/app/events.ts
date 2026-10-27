@@ -3,7 +3,7 @@ import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
 import { blurField, confetti, decree, flash, render, stamp, toast } from './render';
-import { S, applyTheme, saveS, setS, ui } from './state';
+import { S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
 /* ================= events =================
@@ -38,7 +38,7 @@ export function tick(): void {
     if (S.game !== g) return;
     const next = Core.botStep(g, rand);
     if (next) botPlayed(g, next);
-  }, t.ask === 'reveal' ? 0 : ui.think);
+  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal']);
 }
 /** What everyone notices when a vote is counted: the stamp, and the vibration when it elects. */
 function voted(before: Game, next: Game): void {
@@ -160,6 +160,8 @@ export function initEvents(): void {
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
     else if (a === 'pack') setPack(d.v === 'comunismo' ? 'comunismo' : undefined);
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
+    else if (a === 'coach') { const next = { ...S }; if (d.v === 'on') next.coach = true; else delete next.coach; setS(next); saveS(); render(); }
+    else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
     else if (a === 'theme') { const t = d.t as Theme | 'auto'; if (t === 'auto') delete S.theme; else S.theme = t; saveS(); applyTheme(); render(); }

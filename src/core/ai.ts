@@ -34,6 +34,8 @@ export const AI: Record<Level, Knobs> = {
   dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1 },
   extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1 }
 };
+/** The answer to 'talk' that means keeping quiet (D13). */
+export const QUIET = 1000;
 /** How far the temper of a player (View.mood, -1 to 1) moves the risk it accepts in a government. */
 export const MOOD = 0.2;
 /** How often a liberal thinks a fascist lets a liberal law through on purpose (the same at every level). */
@@ -209,6 +211,7 @@ function lastOwn<K extends Seen['k']>(v: View, kinds: K[], who: (e: Extract<Seen
 export function decide(v: View, rand: () => number): number {
   const k = AI[v.level], o = v.options;
   if (!o.length) return -1;
+  if (v.ask === 'talk') return speak(v, rand);
   const talk = v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek';
   const hand = v.ask === 'pdiscard' || v.ask === 'cdiscard' || v.ask === 'veto';
   if (!talk && rand() < (hand ? k.slip : k.noise)) return o[Math.floor(rand() * o.length)];
@@ -217,6 +220,29 @@ export function decide(v: View, rand: () => number): number {
   const hitler = v.known.indexOf('hitler');
   const ans = all ? fascist(v, rand, allies, hitler) : v.role === 'hitler' ? hidden(v, rand) : liberal(v, rand);
   return o.includes(ans) ? ans : o[0];
+}
+
+/** What a player says between rounds (D13). A liberal (and Hitler, who plays like one) says what it believes: whom it
+ *  suspects most, or, if nobody stands out, whom it trusts. A fascist piles on the liberal the table already doubts, or
+ *  vouches for a teammate. The easy level talks less. */
+function speak(v: View, rand: () => number): number {
+  const k = AI[v.level], o = v.options, others = v.alive.map((a, i) => (a && i !== v.me ? i : -1)).filter(i => i >= 0);
+  if (!others.length || rand() < (v.level === 'facil' ? 0.5 : 0.15)) return QUIET;
+  const base = v.fascists / Math.max(1, v.n - 1), all = fasc(v.role) && v.known.every(r => r !== null);
+  const pick = (i: number, trust: boolean): number => { const a = 2 * i + (trust ? 1 : 0); return o.includes(a) ? a : QUIET; };
+  if (all) {
+    const pub = believe(v, true), libs = others.filter(i => v.known[i] === 'liberal'), mates = others.filter(i => v.known[i] !== 'liberal');
+    const target = best(libs, i => -pub.pF[i], rand);
+    if (libs.length && (pub.pF[target] >= base || rand() < k.act * 0.5)) return pick(target, false);
+    if (mates.length && rand() < 0.5) return pick(best(mates, i => pub.pF[i], rand), true);
+    return QUIET;
+  }
+  const b = believe(v), free = others.filter(i => v.known[i] === null);
+  if (!free.length) return QUIET;
+  const worst = best(free, i => -b.pF[i], rand), clean = best(free, i => b.pF[i], rand);
+  if (b.pF[worst] >= base + 0.2) return pick(worst, false);
+  if (b.pF[clean] <= base * 0.5) return pick(clean, true);
+  return QUIET;
 }
 
 /** A liberal: plays its side by what it believes. */

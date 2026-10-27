@@ -5,6 +5,8 @@
 export type Json = any;
 
 export type Theme = 'light' | 'dark';
+/** How fast the players run by the app act (D13). */
+export type Speed = 'lenta' | 'normal' | 'rapida';
 /** The theme of the game (D12): liberals against fascists (the original), or against communists. Same rules. */
 export type Pack = 'fascismo' | 'comunismo';
 /** The style of the app: the 1930s poster (the default) or art deco. */
@@ -53,7 +55,11 @@ export type Event =
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
   | { k: 'exec'; by: number; target: number; role: Role }
-  | { k: 'vote'; pres: number; chanc: number; ja: number[] };
+  | { k: 'vote'; pres: number; chanc: number; ja: number[] }
+  | Talk;
+/** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
+ *  ('trust'), or keeps quiet ('quiet', about -1). The players run by the app do not weigh it: it is for the people. */
+export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet' };
 /** An elected government: the law it made (or a veto, with no law). `drew` are the 3 laws the president drew and `got`
  *  the 2 the chancellor got: secret at the time. `pc` and `cc` are what the president and the chancellor told the table
  *  afterwards, as the number of fascist laws (-1: they kept quiet). A 'vote' event exists only where the phone took
@@ -100,8 +106,8 @@ export interface Game {
   hist: Event[];
 }
 
-/** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the person's notes on the game in course (`notes`, seat → party), the game in course, the theme, the style and whether sound and vibration are off. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party> }
+/** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the person's notes on the game in course (`notes`, seat → party), whether the trainer gives tips (`coach`), how fast the app's players act (`speed`), the game in course, the theme, the style and whether sound and vibration are off. */
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; coach?: true; speed?: Speed }
 
 /** An entry as the source describes it, once read by `normEntry`. */
 export interface Entry { id: string; name: string; value: number }
@@ -111,8 +117,10 @@ export interface Entry { id: string; name: string; value: number }
  *  - 1 or 0 (yes or no): 'vote', 'veto' (the president answering a veto);
  *  - the index of the law to throw away: 'pdiscard' (0 to 2), 'cdiscard' (0 or 1; 2 asks for a veto, when allowed);
  *  - what to tell the table, as a number of fascist laws: 'pc' (president, 0 to 3), 'cc' (chancellor, 0 to 2),
- *    'peek' (0 to 3); or a party, 'inv' (0 liberal, 1 fascist). */
-export type Ask = 'nominate' | 'vote' | 'pdiscard' | 'cdiscard' | 'veto' | 'investigate' | 'special' | 'execute' | 'pc' | 'cc' | 'inv' | 'peek';
+ *    'peek' (0 to 3); or a party, 'inv' (0 liberal, 1 fascist);
+ *  - what to say between rounds, 'talk' (D13): 2 × seat to suspect that seat, 2 × seat + 1 to trust it, QUIET to keep
+ *    quiet. */
+export type Ask = 'nominate' | 'vote' | 'pdiscard' | 'cdiscard' | 'veto' | 'investigate' | 'special' | 'execute' | 'pc' | 'cc' | 'inv' | 'peek' | 'talk';
 
 /** The history as one seat may know it: the secret parts (laws drawn and passed, a party seen, the laws spied, the role
  *  of who was eliminated) only where that seat saw them. */
@@ -124,7 +132,8 @@ export type Seen =
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
   | { k: 'exec'; by: number; target: number }
-  | { k: 'vote'; pres: number; chanc: number; ja: number[] };
+  | { k: 'vote'; pres: number; chanc: number; ja: number[] }
+  | Talk;
 
 /** Everything one player run by the app gets to decide with, built by the judge (`viewOf`): what that person could know
  *  sitting at the table, and nothing more. `known` is the role of each seat as far as this player knows it (its own;

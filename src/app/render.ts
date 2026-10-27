@@ -67,6 +67,9 @@ function vSolo(): string {
     <p class="hint">Nível da IA</p><div class="segm" role="group" aria-label="Nível da IA">${Core.LEVELS.map(lvl).join('')}</div><p class="hint" id="leveltext">${LEVEL[lv][1]}</p>
     <p class="hint">Seu papel (treino)</p><div class="segm roles" role="group" aria-label="Seu papel">${(['', 'liberal', 'fascista', 'hitler'] as const).map(r => `<button class="${(S.train || '') === r ? 'on' : ''}" data-act="train" data-v="${r}" aria-pressed="${(S.train || '') === r}">${r ? role(r) : 'Sorteado'}</button>`).join('')}</div>
     <p class="hint" id="traintext">${S.train ? `Você vai ser ${role(S.train).toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
+    <p class="hint">Velocidade da IA</p><div class="segm" role="group" aria-label="Velocidade da IA">${(['lenta', 'normal', 'rapida'] as const).map(v => `<button class="${(S.speed || 'normal') === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${(S.speed || 'normal') === v}">${{ lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' }[v]}</button>`).join('')}</div>
+    <p class="hint">Dicas do treinador</p><div class="segm" role="group" aria-label="Dicas do treinador"><button class="${S.coach ? '' : 'on'}" data-act="coach" data-v="off" aria-pressed="${!S.coach}">Desligadas</button><button class="${S.coach ? 'on' : ''}" data-act="coach" data-v="on" aria-pressed="${!!S.coach}">Ligadas</button></div>
+    <p class="hint">${S.coach ? 'Depois de cada governo, o treinador faz as contas com o que só você sabe: a chance da mão que o presidente disse, se as falas fecham, e quem parece mais {f}.' : 'Ligadas, o treinador explica o que dá para tirar de cada governo.'}</p>
     <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
     <p class="hint">${S.assist ? 'A ata mostra cada lei, quem governou e quem votou {ja} no governo que a aprovou, e soma por jogador. Só o que a mesa toda viu.' : 'Ligada, a partida ganha uma ata com quem aprovou cada lei.'}</p>
     ${bots ? `<p class="hint">${bots} ${bots === 1 ? 'lugar é' : 'lugares são'} da IA.</p>` : ''}</section>`;
@@ -98,7 +101,7 @@ function vGame(g: Game): string {
   entering = key !== seenPhase; seenPhase = key;
   const bot = Core.botTurn(g), acting = bot && !['pc', 'cc', 'inv', 'peek'].includes(bot.ask) ? bot : null;
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
-  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vSummary(g) : '') + vBoard(g) + vAta(g) + vPlayers(g) + vNotes(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
+  return vUndo() + vStatus(g) + vHelp(g) + vClaims(g) + vCoach(g) + phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`) + vWatching(g) + (g.phase === 'over' ? vThoughts(g) + vSummary(g) : '') + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + (g.phase === 'over' ? '' : `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>`);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -167,7 +170,7 @@ function vSummary(g: Game): string {
       case 'gov': return `<li class="gov ${e.law}">${n(e.pres)} + ${n(e.chanc)} aprovaram lei ${pl(e.law as Law)}${hands(e)}</li>`;
       case 'rej': return `<li class="rej">${n(e.pres)} + ${n(e.chanc)} rejeitados</li>`;
       case 'veto': return `<li class="rej">${n(e.pres)} + ${n(e.chanc)} vetaram as duas leis${hands(e)}</li>`;
-      case 'vote': return '';
+      case 'vote': case 'talk': return '';
       case 'chaos': return `<li class="gov ${e.law}">Caos: entrou lei ${pl(e.law)}</li>`;
       case 'inv': return `<li class="inv">${n(e.by)} investigou ${n(e.target)}: era ${pl(e.party)}${e.said && e.said !== '-' ? `<small class="hands">disse ${e.said === 'L' ? 'liberal' : W.f}${e.said !== e.party ? ' — mentiu' : ''}</small>` : ''}</li>`;
       case 'peek': return `<li>${n(e.by)} espiou as próximas 3 leis${e.saw ? `<small class="hands">viu ${cards(e.saw)}${e.said !== undefined && e.said >= 0 ? ` (disse ${e.said}F)` : ''}</small>` : ''}</li>`;
@@ -202,29 +205,67 @@ function vBoard(g: Game): string {
 function vPlayers(g: Game): string {
   const dead = new Set(g.players.filter(p => !p.alive).map(p => p.name)), fresh = [...dead].filter(x => !seenDead.has(x));
   seenDead = dead;
-  return `<section class="card" id="players"><span class="label">Jogadores</span><ul class="names">${g.players.map((p, i) => {
-    const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Presidente</span>' : i === g.chanc ? '<span class="tag">Chanceler</span>' : '';
-    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}"><span>${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'}</span>${tag}</li>`;
+  const kit = noteKit(g), notes = S.notes || {};
+  return `<section class="card" id="players"><span class="label">${kit ? 'Jogadores e suas anotações' : 'Jogadores'}</span>${kit ? '<p class="hint">Só você vê as anotações. O que você sabe de certeza já vem marcado.</p>' : ''}<ul class="names${kit ? ' noted' : ''}"${kit ? ' id="notes"' : ''}>${g.players.map((p, i) => {
+    const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
+    const mark = kit && i !== kit.me ? notes[i] || '' : '';
+    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}</span>${kit ? kit.cell(i) : ''}</li>`;
   }).join('')}</ul></section>`;
 }
-/** The notebook of the one person at a table with app players (D12): for every other seat, liberal or the hidden
- *  side, as the person marks it. What the person knows for sure comes marked and cannot be changed: their team (by
- *  rule 3) and what their own investigations showed. Shown only when there is one person at the table, so no one else
- *  sees it; at the end the roles are on the table anyway. */
-function vNotes(g: Game): string {
-  const people = g.players.map((p, i) => (p.ai ? -1 : i)).filter(i => i >= 0);
-  if (!Core.hasAi(g) || people.length !== 1 || g.phase === 'over' || g.phase === 'reveal') return '';
-  const me = people[0], sure = new Map<number, [string, Law]>();
+/** The one person at a table with app players, or -1. */
+const solo = (g: Game): number => { const p = g.players.map((x, i) => (x.ai ? -1 : i)).filter(i => i >= 0); return Core.hasAi(g) && p.length === 1 ? p[0] : -1; };
+const pct = (x: number): string => `${Math.round(x * 100)}%`;
+/** The trainer's tips (D13): what a careful player could work out from the person's own seat, after each government. */
+function vCoach(g: Game): string {
+  const me = solo(g);
+  if (!S.coach || me < 0 || !g.players[me].alive || g.phase === 'reveal' || g.phase === 'over') return '';
+  const c = Core.coach(g, me), tips: string[] = [];
+  if (c.odds) {
+    const of = (n: number): string => (n === 0 ? '3 liberais' : n === 3 ? '3 {fs}' : n === 1 ? '1 {f} e 2 liberais' : '2 {fs} e 1 liberal');
+    tips.push(`${name(g, c.odds.who)} disse que tirou ${of(c.odds.said)}. Pelas leis que ainda podem sair, a chance disso era de <b>${pct(c.odds.p)}</b>.${c.odds.p < 0.2 ? ' É pouco: desconfie.' : ''}`);
+  }
+  if (c.clash) tips.push('A história do último governo <b>não fecha</b>: o que o presidente disse que passou não bate com o que o chanceler disse que recebeu (ou com a lei que saiu). Alguém ali mentiu.');
+  if (c.suspects.length) tips.push(`Pelas contas, com o que só você sabe: ${c.suspects.map(x => `<b>${name(g, x.seat)}</b> ${pct(x.f)}${x.boss >= 0.2 ? ` (${pct(x.boss)} de ser o {boss})` : ''}`).join(', ')} de chance de serem {fs}.`);
+  if (g.players[me].role !== 'liberal') tips.push(`Como a mesa te vê, pelo que todos viram: <b>${pct(c.seen)}</b> de chance de você ser {f}.${c.seen >= 0.5 ? ' Cuidado: você está na mira.' : ''}`);
+  return tips.length ? `<section class="card coach" id="coach"><span class="label">Dica do treinador</span>${tips.map(t => `<p>${t}</p>`).join('')}</section>` : '';
+}
+/** At the end (D13): how much each app player that did not know the person's role suspected them, law by law. A small
+ *  line per player (one series each: no legend needed), the last value beside it. Tooltips on the points. */
+let thoughtsCache: { key: string; html: string } | null = null;
+function vThoughts(g: Game): string {
+  const me = solo(g);
+  if (me < 0) return '';
+  const key = `${g.log.length}:${g.players.map(p => p.name).join()}`;
+  if (thoughtsCache && thoughtsCache.key === key) return thoughtsCache.html;
+  const rows = Core.thoughts(g, me).sort((a, b) => b.series[b.series.length - 1] - a.series[a.series.length - 1]);
+  const W0 = 120, H0 = 48, line = (s: number[]): string => {
+    const x = (i: number): number => (s.length > 1 ? 4 + (i * (W0 - 8)) / (s.length - 1) : W0 / 2), y = (v: number): number => H0 - 4 - v * (H0 - 8);
+    const pts = s.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    return `<svg class="spark" viewBox="0 0 ${W0} ${H0}" role="img" aria-label="Desconfiança de ${pct(s[0])} a ${pct(s[s.length - 1])}"><line x1="4" x2="${W0 - 4}" y1="${y(s[0]).toFixed(1)}" y2="${y(s[0]).toFixed(1)}" class="spark-base"/><polyline points="${pts}" class="spark-line"/>${s.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i === s.length - 1 ? 3 : 2}" class="spark-dot"><title>${i ? `Depois do ${i}º acontecimento` : 'No começo'}: ${pct(v)}</title></circle>`).join('')}</svg>`;
+  };
+  const html = rows.length ? `<section class="card" id="thoughts"><span class="label">O que as IAs pensavam de você</span><p class="hint">A chance que cada IA dava de você ser {f}, do começo ao fim, lei a lei. A linha tracejada é o começo.</p><ul class="thoughts">${rows.map(r => `<li><span>${name(g, r.seat)} <span class="role ${Core.partyOf(g.players[r.seat].role)}">${role(g.players[r.seat].role)}</span></span>${line(r.series)}<b><small>${pct(r.series[0])} →</small> ${pct(r.series[r.series.length - 1])}</b></li>`).join('')}</ul></section>` : '';
+  thoughtsCache = { key, html };
+  return html;
+}
+/** The notebook of the one person at a table with app players (D12), right in the list of players, next to the game:
+ *  for every other seat, liberal or the hidden side, as the person marks it. What the person knows for sure comes
+ *  marked and cannot be changed: their team (by rule 3) and what their own investigations showed. Only when there is
+ *  one person at the table, so no one else sees it; at the end the roles are on the table anyway. */
+function noteKit(g: Game): { me: number; cell: (i: number) => string } | null {
+  const me = solo(g);
+  if (me < 0 || g.phase === 'over' || g.phase === 'reveal') return null;
+  const sure = new Map<number, [string, Law]>();
   for (const k of Core.knows(g, me)) sure.set(g.players.findIndex(p => p.name === k.name), [role(k.role), 'F']);
-  for (const e of g.hist) if (e.k === 'inv' && e.by === me && !sure.has(e.target)) sure.set(e.target, [`${party(e.party)} (você investigou)`, e.party]);
+  for (const e of g.hist) if (e.k === 'inv' && e.by === me && !sure.has(e.target)) sure.set(e.target, [`${party(e.party)} (investigou)`, e.party]);
   const notes = S.notes || {};
-  const row = (p: Game['players'][number], i: number): string => {
-    if (i === me) return '';
+  const cell = (i: number): string => {
+    if (i === me) return '<span class="tag you">Você</span>';
     const known = sure.get(i), mark = notes[i];
     const btn = (v: '' | Law, label: string): string => `<button class="${(mark || '') === v ? 'on' : ''} ${v}" data-act="note" data-i="${i}" data-v="${v}" aria-pressed="${(mark || '') === v}">${label}</button>`;
-    return `<li class="${known ? `sure ${known[1]}` : mark || ''}${p.alive ? '' : ' dead'}"><span>${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}</span>${known ? `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>` : `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(p.name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`}</li>`;
+    return known ? `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>`
+      : `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(g.players[i].name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`;
   };
-  return `<section class="card" id="notes"><span class="label">Suas anotações</span><p class="hint">Só você vê. O que você sabe de certeza já vem marcado; o resto, marque como achar.</p><ul class="names">${g.players.map(row).join('')}</ul></section>`;
+  return { me, cell };
 }
 /** The minutes, with assistance on (D11): every law, the government that made it and who voted Ja! for that
  *  government, and the count for each player. Only what the whole table saw: never a hand, a party or a role. */

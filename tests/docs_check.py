@@ -55,6 +55,8 @@ CONSTANTS = [
     (r'VETO_FROM = 5;', 'Veto a partir da 5ª lei fascista (`VETO_FROM`)'),
     (r'SMALL_TABLE = 5;', 'com 5 vivos ou menos (`SMALL_TABLE`)'),
     (r'export const THINK = 1200;', 'A IA age 1,2 s depois (`THINK`)'),
+    (r'export const TALKS = 2;', 'até 2 IAs (`TALKS`)'),
+    (r"SPEEDS: Record<Speed, number> = \{ lenta: 2400, normal: THINK, rapida: 500 \}", '(`SPEEDS`: 2,4 s, 1,2 s e 0,5 s)'),
     (r"LEVELS: Level\[\] = \['facil', 'medio', 'dificil', 'extremo'\]", 'fácil, médio, difícil e extremo (`LEVELS`'),
     (r"FASCISTS: Record<number, number> = \{ 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4 \}", '(`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10)'),
     (r"small: \{ 3: 'peek', 4: 'execute', 5: 'execute' \}", 'com 5 ou 6 jogadores, na 3ª olha as próximas 3 leis'),

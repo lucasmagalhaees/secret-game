@@ -217,6 +217,23 @@ export default function cases(Core) {
   eq('read game: a bad app seat, level or hand drawn is damage', [Core.readGame({ ...el, players: el.players.map(p => ({ ...p, ai: 1 })) }), Core.readGame({ ...el, level: 'x' }), Core.readGame({ ...el, drew: ['X'] }), !!Core.readGame({ ...el, level: 'dificil', drew: deck('FFL') })], [null, null, null, true]);
 
   eq('themes: what the table says and the votes use the words of the theme', [Core.castVotes({ ...ai7({ phase: 'vote', chanc: 4 }), pack: 'comunismo' }, { 0: true }, Core.seeded(5)).log.find(l => l.startsWith('Votos.')).startsWith('Votos. Da!: Ana'), Core.say({ ...ai7({ phase: 'nominate', pres: 4, hist: [{ k: 'gov', pres: 0, chanc: 3, law: 'L', drew: deck('FFL'), got: deck('FL') }] }), pack: 'comunismo' }, 0, 'pc', 2).log.at(-1)], [true, 'Ana (presidente) disse que tirou 2 comunistas e 1 liberal.']);
+  /* the app players talk between rounds; the trainer; what they thought (D13) */
+  const chat = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'rej', pres: 3, chanc: 4 }] });
+  const first = Core.talker(chat);
+  eq('talk: once something happened, at the start of a round, an app player speaks; nobody before anything happened, nor out of the nomination', [first !== null && chat.players[first].ai === true, Core.talker(ai7({ phase: 'nominate', hist: [] })), Core.talker({ ...chat, phase: 'vote', chanc: 4 }), Core.botTurn(chat).ask], [true, null, null, 'talk']);
+  const t1 = Core.talk(chat, first, 2 * 5), t2 = Core.talk(t1, Core.talker(t1), Core.QUIET);
+  eq('talk: what is said goes in the log and the history; quiet leaves no line; at most TALKS a round, each once', [t1.log.at(-1), t1.hist.at(-1), t2.hist.at(-1).say, t2.log.length === t1.log.length, Core.talker(t2), Core.TALKS], [`${chat.players[first].name}: "Desconfio de Fê."`, { k: 'talk', by: first, about: 5, say: 'acc' }, 'quiet', true, null, 2]);
+  eq('talk: only the one whose turn it is, about someone else in the game', [Core.talk(chat, first === 1 ? 2 : 1, 10) === chat, Core.talk(chat, first, 2 * first) === chat, Core.talk(chat, first, 2 * 5 + 1).log.at(-1).includes('Confio em Fê')], [true, true, true]);
+  eq('talk: a new round opens the talk again', Core.talker({ ...t2, hist: [...t2.hist, { k: 'rej', pres: 0, chanc: 1 }] }) !== null, true);
+  eq('talk: a liberal app player says what it believes, never about itself; the answer is always an option', [0, 1, 2, 3].map(sd => { const v = Core.viewOf({ ...chat, hist: [{ k: 'gov', pres: 5, chanc: 6, law: 'F', pc: 3, cc: 2 }] }, 4, 'talk', [2, 3, 10, 11, 12, 13, Core.QUIET]); const a = Core.decide(v, Core.seeded(sd)); return v.options.includes(a) && (a === Core.QUIET || a >> 1 !== 4); }).every(Boolean), true);
+  const coached = Core.coach(ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 5, chanc: 6, law: 'F', drew: deck('FFL'), got: deck('FF'), pc: 3, cc: 1 }] }), 0);
+  eq('trainer: the chance of the hand the president said, the story that does not hold, the most suspected first', [Math.round(coached.odds.p * 1000), coached.odds.who, coached.clash, coached.suspects.length, coached.suspects[0].f >= coached.suspects[2].f, coached.suspects.some(x => x.seat === 0)], [243, 5, true, 3, true, false]);
+  eq('trainer: a fascist is not shown what it knows; the table\'s view of the seat is there', [Core.coach(ai7({ phase: 'nominate' }), 1).suspects.length, typeof Core.coach(ai7({ phase: 'nominate' }), 1).seen], [0, 'number']);
+  const told2 = ai7({ phase: 'over', hist: [{ k: 'gov', pres: 0, chanc: 3, law: 'F', pc: 3, cc: 2 }, { k: 'rej', pres: 3, chanc: 4 }, { k: 'gov', pres: 4, chanc: 0, law: 'F', pc: 2, cc: 2 }] });
+  const th = Core.thoughts(told2, 0);
+  eq('what they thought: only app players that did not know the person, from the start and after each law', [th.map(x => x.seat), th.every(x => x.series.length === 3 && x.series.every(v => v >= 0 && v <= 1))], [[3, 4, 5, 6], true]);
+  eq('read state: tips and speed are kept; nonsense is dropped', [Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, 'lenta', false, false]);
+
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));
