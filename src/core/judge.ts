@@ -6,9 +6,9 @@
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
 import { believe, decideWhy, drawOdds, QUIET } from './ai';
-import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, investigate, nominate, presidentDiscard, revealNext, specialElect, vote } from './game';
+import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
-import type { Ask, Event, Game, Gov, Law, Level, Role, Seen, Talk, Trace, View } from './types';
+import type { Ask, Event, Game, Gov, Law, Level, Party, Role, Seen, Talk, Trace, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
 const isAi = (g: Game, i: number): boolean => !!g.players[i]?.ai;
@@ -159,6 +159,133 @@ export function crux(g: Game, me: number, mode: 'end' | 'live'): { at: number; b
     prev = now;
   }
   return top;
+}
+
+/* ---------- the review of a person's plays, at the end (D19) ---------- */
+/** One play of a person, judged at the end: good or bad, how much it weighed in the game, and why, in words with {pN}
+ *  for the name of seat N and the theme's words. `at` is the index in the history. */
+export interface Play { at: number; good: boolean; weight: number; text: string }
+/** The plays of seat `me` that were clearly good or clearly bad (D19), judged two ways at once: by what came of them,
+ *  now that every role is known, and by what that seat could have known then, reckoned as the extreme level would from
+ *  that seat (its own role and team, its own hands and investigations, and what everyone saw). A play that went wrong
+ *  without any way of knowing is not called bad; a lucky one is not praised much. Liberals are judged by laws and trust
+ *  placed well; the hidden side by laws pushed through without the table catching on. */
+export function review(g: Game, me: number): Play[] {
+  const out: Play[] = [], P = (i: number): string => `{p${i}}`, pc = (x: number): string => `${Math.round(x * 100)}%`;
+  const side = (i: number): Party => partyOf(g.players[i].role), lib = side(me) === 'L';
+  const nF = (ls?: Law[]): number => (ls || []).filter(l => l === 'F').length;
+  const hand = (n: number, of: number): string => (of === 3 ? ['3 liberais', '1 {f} e 2 liberais', '2 {fs} e 1 liberal', '3 {fs}'] : ['2 liberais', '1 {f} e 1 liberal', '2 {fs}'])[n] ?? '';
+  const upTo = (n: number): Game => ({ ...g, hist: g.hist.slice(0, n) });
+  const mind = (n: number) => believe({ ...viewOf(upTo(n), me, 'vote', [1, 0]), level: 'extremo' as Level });
+  const seen = (n: number): number => believe({ ...viewOf(upTo(n), me, 'vote', [1, 0]), level: 'extremo' as Level }, true).pF[me];
+  const alive = (n: number): number[] => g.players.map((_, i) => i).filter(i => !g.hist.slice(0, n).some(e => e.k === 'exec' && e.target === i));
+  const lawsF = (n: number): number => g.hist.slice(0, n).filter(e => (e.k === 'gov' || e.k === 'chaos') && e.law === 'F').length;
+  const add = (at: number, good: boolean, weight: number, text: string): void => { out.push({ at, good, weight, text }); };
+  // who could have been nominated chancellor at that moment: alive, not the president, not barred by the last government
+  const eligible = (n: number): number[] => {
+    const h = g.hist.slice(0, n), last = [...h].reverse().find((e): e is Gov => e.k === 'gov' || e.k === 'veto'), chaos = h.map(e => e.k).lastIndexOf('chaos') > h.lastIndexOf(last as Event);
+    const live = alive(n);
+    return live.filter(i => i !== me && (!last || chaos || (i !== last.chanc && (live.length <= SMALL_TABLE || i !== last.pres))));
+  };
+  // the vote that elected or rejected this government: the one right before it, if votes were taken one by one
+  const voteOf = (i: number): number => (g.hist[i - 1]?.k === 'vote' ? i - 1 : i);
+  const nominated = (i: number, c: number, made: Law | undefined): void => {
+    const at = voteOf(i), b = mind(at), opts = eligible(at), zone = lawsF(at) >= HITLER_ZONE;
+    const score = (j: number): number => b.pF[j] + (zone ? 2 * b.pH[j] : 0), top = opts.reduce((a, j) => (score(j) < score(a) ? j : a), opts[0] ?? c);
+    if (lib) {
+      if (side(c) === 'F' && score(c) - score(top) >= 0.1) add(i, false, made === 'F' ? 2.5 : 2, `Você indicou ${P(c)}, que era {f}${made === 'F' ? ', e saiu lei {f}' : ''}. Com o que você sabia, ${P(c)} tinha ${pc(b.pF[c])} de chance de ser {f}; ${P(top)} era a opção mais limpa (${pc(b.pF[top])}).`);
+      else if (side(c) === 'L' && made === 'L' && score(c) - score(top) < 0.05) add(i, true, 1, `Você indicou ${P(c)}, a opção mais limpa pelas contas (${pc(b.pF[c])}), e saiu lei liberal.`);
+    } else if (side(c) === 'F' && made === 'F') add(i, true, 1, `Você indicou um aliado, ${P(c)}, e saiu lei {f}.`);
+  };
+  g.hist.forEach((e, i) => {
+    if (e.k === 'vote' && e.ja !== undefined && alive(i).includes(me)) {
+      const next = g.hist[i + 1], elected = next ? next.k !== 'rej' : g.phase === 'over', gov = [e.pres, e.chanc], dirty = gov.some(j => side(j) === 'F');
+      const ja = e.ja.includes(me), lost = elected && !next && g.winner === 'F' && g.players[e.chanc].role === 'hitler' && lawsF(i) >= HITLER_ZONE;
+      if (!lib) { if (lost && ja) add(i, true, 3, e.chanc === me ? `A mesa elegeu você, o {boss}, chanceler com ${HITLER_ZONE} leis {fs} na mesa: vitória.` : `Você votou {ja} no {boss}, ${P(e.chanc)}, para chanceler com ${HITLER_ZONE} leis {fs} na mesa: vitória.`); return; }
+      if (gov.includes(me)) return;
+      const b = mind(i), others = alive(i).filter(j => j !== me), f = others.reduce((a, j) => a + b.pF[j], 0) / Math.max(1, others.length);
+      const risk = 1 - gov.reduce((a, j) => a * (1 - b.pF[j]), 1), base = 1 - (1 - f) ** 2, bad = gov.filter(j => side(j) === 'F');
+      const who = `${bad.map(j => (g.players[j].role === 'hitler' ? `${P(j)} (o {boss})` : P(j))).join(' e ')} ${bad.length > 1 ? 'eram {fs}' : 'era {f}'}`;
+      const law = next && next.k === 'gov' ? next.law : undefined;
+      if (ja && dirty && elected && risk >= base + 0.03) add(i, false, lost ? 5 : law === 'F' ? 2 : 1.5, `Você votou {ja} em ${P(e.pres)} + ${P(e.chanc)}, e ${who}${lost ? ': o {boss} virou chanceler e os {fs} ganharam' : law === 'F' ? ', e saiu lei {f}' : ''}. Com o que você sabia, o risco desse governo era ${pc(risk)}, mais que o de um par qualquer (${pc(base)}).`);
+      else if (!ja && dirty) add(i, true, elected ? 0.5 : 1, `Você votou {nein} em ${P(e.pres)} + ${P(e.chanc)}${elected ? '' : ', e o governo caiu'}: ${who}.`);
+      else if (!ja && !dirty && !elected && risk < base - 0.03) add(i, false, 0.5, `Você votou {nein} em ${P(e.pres)} + ${P(e.chanc)}, dois liberais, e o governo caiu. Pelas contas o risco era baixo (${pc(risk)}, contra ${pc(base)} de um par qualquer).`);
+      return;
+    }
+    if (e.k === 'gov' || e.k === 'veto') {
+      const law = e.k === 'gov' ? e.law : undefined;
+      if (e.pres === me) nominated(i, e.chanc, law);
+      if (e.pres !== me && e.chanc !== me) return;
+      const pres = e.pres === me, mate = pres ? e.chanc : e.pres;
+      if (lib) {
+        if (pres && e.drew && e.got) {
+          if (e.drew.includes('L') && !e.got.includes('L')) add(i, false, 3, `Presidente com ${P(mate)}: você tirou ${hand(nF(e.drew), 3)} e passou ${hand(nF(e.got), 2)}, jogando fora a liberal.`);
+          else if (e.drew.includes('F') && e.drew.includes('L')) add(i, true, 1, `Presidente com ${P(mate)}: você tirou ${hand(nF(e.drew), 3)} e jogou fora uma {f}.`);
+          if (e.pc !== undefined && e.pc >= 0 && e.pc !== nF(e.drew)) add(i, false, 1.5, `Você disse que tirou ${hand(e.pc, 3)}, mas tirou ${hand(nF(e.drew), 3)}. Liberal que mente confunde a mesa e vira suspeito.`);
+        }
+        if (!pres && e.got) {
+          if (law === 'F' && e.got.includes('L')) add(i, false, 3, `Chanceler de ${P(mate)}: você recebeu ${hand(nF(e.got), 2)} e aprovou a {f}.`);
+          else if (law === 'L' && e.got.includes('F')) add(i, true, 1, `Chanceler de ${P(mate)}: você recebeu ${hand(nF(e.got), 2)} e aprovou a liberal.`);
+          else if (e.k === 'veto') add(i, !e.got.includes('L'), e.got.includes('L') ? 2 : 1, e.got.includes('L') ? `Você vetou e jogou fora uma liberal (recebeu ${hand(nF(e.got), 2)}).` : `Você recebeu 2 {fs} e conseguiu o veto: nenhuma lei {f}.`);
+          if (e.cc !== undefined && e.cc >= 0 && e.cc !== nF(e.got)) add(i, false, 1.5, `Você disse que recebeu ${hand(e.cc, 2)}, mas recebeu ${hand(nF(e.got), 2)}. Liberal que mente confunde a mesa e vira suspeito.`);
+        }
+        return;
+      }
+      // the hidden side: a law pushed through is good, unless the table caught on
+      const before = seen(voteOf(i)), after = seen(i + 1), up = after - before;
+      const couldF = (pres ? e.drew : e.got)?.includes('F');
+      if (law === 'F') {
+        if (up >= 0.15) add(i, false, 2, `Saiu lei {f} do seu governo com ${P(mate)}, mas a mesa percebeu: a chance de você ser {f}, pelo que todos viram, foi de ${pc(before)} para ${pc(after)}.`);
+        else add(i, true, 1.5, `Saiu lei {f} do seu governo com ${P(mate)}, e a mesa quase não desconfiou mais de você (${pc(before)} → ${pc(after)}).`);
+      } else if (law === 'L' && couldF) {
+        if (up <= -0.1) add(i, true, 1, `Você deixou passar uma liberal com ${P(mate)} e limpou a sua barra (${pc(before)} → ${pc(after)}).`);
+        else add(i, false, 1, `Você deixou passar uma liberal com ${P(mate)} sem ganhar confiança (${pc(before)} → ${pc(after)}).`);
+      }
+      const mine = pres ? e.pc : e.cc, truth = nF(pres ? e.drew : e.got);
+      if (e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && mine !== truth) add(i, false, 1.5, `A sua história não fechou com a de ${P(mate)}: o presidente disse ${hand(e.pc, 3)} e o chanceler disse ${hand(e.cc, 2)}. Quem ouviu soube que alguém mentiu.`);
+      return;
+    }
+    if (e.k === 'inv' && e.by === me) {
+      const t = e.target, said = e.said && e.said !== '-' ? e.said : null;
+      if (lib) {
+        const b = mind(i), done = g.hist.slice(0, i).filter((x): x is Extract<Event, { k: 'inv' }> => x.k === 'inv').map(x => x.target);
+        const opts = alive(i).filter(j => j !== me && !done.includes(j)), doubt = (j: number): number => b.pF[j] * (1 - b.pF[j]);
+        const alt = opts.reduce((a, j) => (doubt(j) > doubt(a) ? j : a), opts[0] ?? t);
+        if (side(t) === 'F') add(i, true, 2, `Você investigou ${P(t)} e achou um {f}.`);
+        else if ((b.pF[t] < 0.15 || b.pF[t] > 0.85) && alt !== t) add(i, false, 1, `Você investigou ${P(t)}, de quem já dava para ter quase certeza (${pc(b.pF[t])} de ser {f}). ${P(alt)} era a maior dúvida (${pc(b.pF[alt])}).`);
+        if (said && said !== e.party) add(i, false, 1.5, `Você disse que ${P(t)} é ${said === 'L' ? 'liberal' : '{f}'}, mas viu ${e.party === 'L' ? 'liberal' : '{f}'}. Liberal que mente confunde a mesa.`);
+      } else if (said && side(t) === 'F' && said === 'L') add(i, true, 1, `Você investigou um aliado, ${P(t)}, e disse que é liberal: cobriu o time.`);
+      else if (said && side(t) === 'L' && said === 'F') add(i, true, 1, `Você investigou ${P(t)}, liberal, e disse que é {f}: jogou a desconfiança nele.`);
+      else if (said && side(t) === 'F' && said === 'F') add(i, false, 2, `Você entregou um aliado: disse que ${P(t)} é {f}.`);
+      return;
+    }
+    if (e.k === 'exec' && e.by === me) {
+      const t = e.target, role = g.players[t].role;
+      if (lib && side(t) === 'F') add(i, true, role === 'hitler' ? 5 : 3, role === 'hitler' ? `Você eliminou o {boss}, ${P(t)}: vitória.` : `Você eliminou ${P(t)}, que era {f}.`);
+      else if (lib) {
+        const b = mind(i), opts = alive(i).filter(j => j !== me), top = opts.reduce((a, j) => (b.pF[j] > b.pF[a] ? j : a), opts[0] ?? t);
+        if (b.pF[top] - b.pF[t] >= 0.1) add(i, false, 3, `Você eliminou ${P(t)}, que era liberal: o seu lado perdeu um voto. Com o que você sabia, ${P(t)} tinha ${pc(b.pF[t])} de chance de ser {f}, e ${P(top)} tinha ${pc(b.pF[top])}.`);
+      }
+      else add(i, side(t) === 'L', side(t) === 'L' ? 2 : 3, side(t) === 'L' ? `Você eliminou ${P(t)}, um liberal.` : `Você eliminou ${P(t)}, que era do seu time.`);
+      return;
+    }
+    if (e.k === 'special' && e.by === me) {
+      const t = e.target;
+      if (lib && side(t) === 'L') add(i, true, 1, `Na eleição especial, você deu a presidência a ${P(t)}, um liberal.`);
+      else if (lib) {
+        const b = mind(i), opts = alive(i).filter(j => j !== me), top = opts.reduce((a, j) => (b.pF[j] < b.pF[a] ? j : a), opts[0] ?? t);
+        if (b.pF[t] - b.pF[top] >= 0.1) add(i, false, 2, `Na eleição especial, você deu a presidência a ${P(t)}, que era {f}. Com o que você sabia, ${P(t)} tinha ${pc(b.pF[t])} de chance de ser {f}; ${P(top)} tinha ${pc(b.pF[top])}.`);
+      }
+      else if (side(t) === 'F') add(i, true, 1, `Na eleição especial, você deu a presidência a um aliado, ${P(t)}.`);
+    }
+  });
+  // the hidden leader elected chancellor at the end, nominated by this seat
+  if (g.phase === 'over' && g.winner === 'F' && g.chanc !== null && g.pres === me && g.players[g.chanc].role === 'hitler' && g.why.includes('eleito chanceler')) {
+    const at = g.hist.length - 1;
+    if (lib) add(at, false, 5, `Você indicou ${P(g.chanc)} para chanceler com ${HITLER_ZONE} leis {fs} na mesa. Era o {boss}, e os {fs} ganharam.`);
+    else add(at, true, 3, `Você indicou o {boss}, ${P(g.chanc)}, para chanceler com ${HITLER_ZONE} leis {fs} na mesa, e a mesa elegeu: vitória.`);
+  }
+  return out;
 }
 
 /* ---------- the votes, where the app plays some seats ---------- */

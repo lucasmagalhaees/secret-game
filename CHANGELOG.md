@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.16.0]
+
+### Adicionado
+- No fim, com a assistência ligada: as suas jogadas boas e ruins, com o porquê. Cada jogada é julgada pelo que deu e pelo que dava para saber na hora.
+
 ## [0.15.0]
 
 ### Alterado

@@ -173,6 +173,7 @@ export function initEvents(): void {
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
     else if (a === 'help') { ui.help = !ui.help; render(); }
+    else if (a === 'allplays') { ui.allPlays = !ui.allPlays; render(); }
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
     else if (a === 'mind') { ui.mind = !ui.mind; if (ui.mind && S.notesOpen) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); } render(); }
     else if (a === 'debug') { const next = { ...S }; if (d.v === 'on') next.debug = true; else { delete next.debug; ui.mind = false; } setS(next); saveS(); render(); }
