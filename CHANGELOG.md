@@ -2,6 +2,16 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.21.0]
+
+### Adicionado
+- Continente da partida: Mundo, Américas, Europa, Ásia, África ou Oceania. Muda os nomes das IAs (nas Américas, Fidel, Chávez, Maduro, "Polvo", Pinochet e outros) e os bichos dos cinco papéis.
+
+## [0.20.0]
+
+### Adicionado
+- Suas partidas: toda partida terminada fica guardada no aparelho (as últimas 30), e dá para exportar um arquivo com elas para calibrar a IA.
+
 ## [0.19.0]
 
 ### Alterado

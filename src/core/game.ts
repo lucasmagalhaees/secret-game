@@ -1,7 +1,7 @@
 /* The rules of the game. Pure: a game comes in and a new one goes out; chance comes in as a function (`rand`), so the
    same seed always plays the same game. An action that is not allowed where the game is returns the same game,
    untouched: the page only offers what is allowed, and a stray tap changes nothing. */
-import type { Event, Game, Law, Level, Pack, Party, Player, Role } from './types';
+import type { Event, Game, Law, Level, Pack, Party, Player, Region, Role } from './types';
 import { words } from './words';
 
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
@@ -45,8 +45,31 @@ export const BOT_NAMES: Record<Pack, string[]> = {
 };
 /** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
  *  first. */
-export function botName(names: string[], rand?: () => number, pack: Pack = 'fascismo'): string {
-  const free = (BOT_NAMES[pack] || BOT_NAMES.fascismo).filter(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR')));
+/** Where the names of the app players come from (D24): the whole world (BOT_NAMES), or one continent. In each list,
+ *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. Lula
+ *  goes by "Polvo", as the person asked. */
+export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa', 'oceania'];
+export const REGION_NAMES: Record<Region, string> = { mundo: 'Mundo', americas: 'Américas', europa: 'Europa', asia: 'Ásia', africa: 'África', oceania: 'Oceania' };
+export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
+  fascismo: {
+    mundo: BOT_NAMES.fascismo,
+    oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
+    americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
+    europa: ['Churchill', 'Mussolini', 'De Gaulle', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Göring', 'Mitterrand', 'Pétain'],
+    asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek'],
+    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe']
+  },
+  comunismo: {
+    mundo: BOT_NAMES.comunismo,
+    oceania: BOT_NAMES.comunismo,
+    americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende'],
+    europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'De Gaulle', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
+    asia: ['Gandhi', 'Mao', 'Nehru', 'Ho Chi Minh', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai'],
+    africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe']
+  }
+};
+export function botName(names: string[], rand?: () => number, pack: Pack = 'fascismo', region: Region = 'mundo'): string {
+  const free = ((NAMES_BY[pack] || NAMES_BY.fascismo)[region] || BOT_NAMES[pack] || BOT_NAMES.fascismo).filter(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR')));
   return free.length ? free[rand ? Math.floor(rand() * free.length) : 0] : `IA ${names.length + 1}`;
 }
 
@@ -92,7 +115,7 @@ export function addName(names: string[], name: string): { ok: true; names: strin
 /** A new game: roles dealt at random, the deck shuffled, the first president drawn. `ai` marks the seats the app plays,
  *  at `level`. `train` (D11, training against the app): the role the one person at the table wants; the roles are
  *  still dealt at random, and then that seat swaps with one that got it. */
-export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role; pack?: Pack } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
+export function newGame(names: string[], rand: () => number, opts: { ai?: boolean[]; level?: Level; train?: Role; pack?: Pack; region?: Region } = {}): { ok: true; game: Game } | { ok: false; why: 'count' | 'name' | 'dup' } {
   const c = checkNames(names);
   if (!c.ok) return c;
   const k = FASCISTS[c.names.length];
@@ -107,7 +130,7 @@ export function newGame(names: string[], rand: () => number, opts: { ai?: boolea
   const deck = shuffle<Law>([...Array(DECK_F).fill('F'), ...Array(DECK_L).fill('L')], rand);
   const pres = Math.floor(rand() * players.length);
   players.forEach(p => { if (p.ai) p.mood = Math.round((rand() * 2 - 1) * 100) / 100; });   // drawn last: the deal stays as it was
-  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level, ...(opts.pack === 'comunismo' ? { pack: opts.pack } : {}) } };
+  return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level, ...(opts.pack === 'comunismo' ? { pack: opts.pack } : {}), ...(opts.region && opts.region !== 'mundo' && REGIONS.includes(opts.region) ? { region: opts.region } : {}) } };
 }
 
 /** What player i is told at the start: the fascists see each other and Hitler; Hitler sees the fascist only at a table

@@ -283,6 +283,23 @@ export default function cases(Core) {
   eq('crucial point: the moment that raised the suspicion the most, with the average before and after; at the end and live', [cEnd.at, cEnd.after > cEnd.before, cLive.at, Core.crux(ai7({ phase: 'nominate' }), 0, 'end')], [1, true, 1, null]);
   eq('read state: tips, speed and the open notebook are kept; nonsense is dropped', [Core.readState({ notesOpen: true, live: true }).notesOpen && Core.readState({ live: true }).live, 'notesOpen' in Core.readState({ notesOpen: 1 }), Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, false, true, 'lenta', false, false]);
 
+  /* the names of the app players by continent (D24) */
+  const lists = Core.PACKS.flatMap(p => Core.REGIONS.map(r => Core.NAMES_BY[p][r]));
+  eq('names by continent: every theme and continent has enough different names for a full table', lists.every(l => new Set(l).size === l.length && l.length >= Core.MAX_PLAYERS - 1), true);
+  eq('names by continent: Lula goes by Polvo; the Americas have Fidel, Chávez, Maduro and Pinochet', [lists.some(l => l.includes('Lula')), Core.NAMES_BY.comunismo.americas.includes('Polvo'), ['Fidel', 'Chávez', 'Maduro'].every(x => Core.NAMES_BY.comunismo.americas.includes(x)), Core.NAMES_BY.fascismo.americas.includes('Pinochet')], [false, true, true, true]);
+  const nm = Array.from({ length: 9 }).reduce((acc) => [...acc, Core.botName(acc, Core.seeded(acc.length + 1), 'comunismo', 'americas')], ['Lu']);
+  eq('names by continent: a table filled from one continent takes names from its list only, never twice', [nm.slice(1).every(x => Core.NAMES_BY.comunismo.americas.includes(x)), new Set(nm).size], [true, 10]);
+  const rg = Core.newGame(NAMES, Core.seeded(2), { ai: [false, true, true, true, true, true, true], region: 'africa' }).game;
+  eq('names by continent: the game keeps its continent (for the drawings); the whole world or nonsense keeps none', [rg.region, 'region' in Core.newGame(NAMES, Core.seeded(2), { region: 'mundo' }).game, 'region' in Core.newGame(NAMES, Core.seeded(2), { region: 'marte' }).game, Core.readGame({ ...el, region: 'marte' }), Core.readGame({ ...el, region: 'asia' }).region], ['africa', false, false, null, 'asia']);
+  eq('read state: the continent of the names is kept; the whole world or nonsense is the default', [Core.readState({ region: 'africa' }).region, 'region' in Core.readState({ region: 'mundo' }), 'region' in Core.readState({ region: 'marte' })], ['africa', false, false]);
+
+  /* the finished games kept on the device (D23) */
+  const done = { ...el, phase: 'over', winner: 'L' };
+  const hs = Core.readHistory([{ at: 1, game: done }, { at: 2, game: el }, { at: 'x', game: done }, null, { at: 3, game: { ...done, deck: ['X'] } }]);
+  eq('history: only finished games that hold together, with when they ended; anything else is dropped', [hs.length, hs[0].at, Core.readHistory('x'), Core.readHistory(Array.from({ length: Core.HISTORY_MAX + 5 }, (_, i) => ({ at: i, game: done }))).length], [1, 1, [], Core.HISTORY_MAX]);
+  const hf = Core.historyFile(hs, 'abc', 9);
+  eq('history: the exported file says the app, the format, the version and when', [hf.app, hf.format, hf.version, hf.exported, hf.games.length], ['secret-hitler', 1, 'abc', 9, 1]);
+
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));

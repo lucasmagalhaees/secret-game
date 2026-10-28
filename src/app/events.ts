@@ -1,8 +1,9 @@
 import { Core } from '../core';
-import type { Ask, Game, Law, Level, Pack, Role, Theme } from '../core';
+import type { Ask, Game, Law, Level, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
 import { beat, blurField, confetti, decree, flash, render, stamp, toast } from './render';
+import { exportGames, keep, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
@@ -22,6 +23,7 @@ function play(next: Game, msg?: string, undo: Game | null = null): void {
   render();
   if (msg && changed) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
+    keep(next);                                                              // kept on the device for export (D23)
     confetti(next.winner); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
   }
   tick();
@@ -101,22 +103,23 @@ function addBots(n: number): void {
   if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
   if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
   blurField();
-  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack)]; ai = [...ai, true]; }
+  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack, S.region)]; ai = [...ai, true]; }
   while (names.length > n && ai.lastIndexOf(true) >= 0) { const k = ai.lastIndexOf(true); names = names.filter((_, j) => j !== k); ai = ai.filter((_, j) => j !== k); }
   ui.msg = names.length > n ? `São ${names.length} pessoas na mesa: tire alguém pelo × para ficar com ${n}.` : '';
   setTable(names, ai); render();
 }
 /** Another theme (D12): the seats of the app get names of that theme; the people keep theirs. */
-function setPack(pack: Pack | undefined): void {
+function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): void {
   const ai = flags(), names: string[] = S.names.map((x, i) => (ai[i] ? '' : x));
-  for (let i = 0; i < names.length; i++) if (ai[i]) names[i] = Core.botName(names.filter(Boolean), rand, pack);
+  for (let i = 0; i < names.length; i++) if (ai[i]) names[i] = Core.botName(names.filter(Boolean), rand, pack, region);
   const next = { ...S, names };
   if (pack) next.pack = pack; else delete next.pack;
+  if (region !== 'mundo') next.region = region; else delete next.region;
   setS(next); saveS(); render();
 }
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
-  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack });
+  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   if (S.notes) { const next = { ...S }; delete next.notes; setS(next); }     // a new game starts a clean notebook
   ui.msg = ''; ui.help = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
@@ -161,18 +164,22 @@ export function initEvents(): void {
   document.addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
-    if (a !== 'clear') ui.confirmClear = false;                              // the second tap has to come right after the first
+    if (a !== 'clear') ui.confirmClear = false;
+    if (a !== 'wipe') ui.confirmWipe = false;                              // the second tap has to come right after the first
     if (a === 'addname') addName();
     else if (a === 'rmname') { setTable(S.names.filter((_, j) => j !== i), flags().filter((_, j) => j !== i)); ui.msg = ''; render(); }
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
     else if (a === 'fill') addBots(Number(d.n));
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
     else if (a === 'pack') setPack(d.v === 'comunismo' ? 'comunismo' : undefined);
+    else if (a === 'region') setPack(S.pack, (Core.REGIONS as string[]).includes(d.v || '') ? d.v as Region : 'mundo');   // the app seats take names of that continent (D24)
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
     else if (a === 'coach') { const next = { ...S }; if (d.v === 'on') next.coach = true; else delete next.coach; setS(next); saveS(); render(); }
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
+    else if (a === 'exportgames') void exportGames();
+    else if (a === 'wipe') { if (ui.confirmWipe) { ui.confirmWipe = false; wipe(); } else ui.confirmWipe = true; render(); }
     else if (a === 'clear') { if (ui.confirmClear) { ui.confirmClear = false; ui.msg = ''; setTable([], []); } else ui.confirmClear = true; render(); }
     else if (a === 'flip') { const next = { ...S }; if (d.v === 'on') next.flip = true; else delete next.flip; setS(next); saveS(); render(); }
     else if (a === 'more') { ui.more = !ui.more; render(); }

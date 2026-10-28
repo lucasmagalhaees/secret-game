@@ -375,7 +375,7 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 .packs button{display:grid;justify-items:center;gap:6px;padding:10px 6px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:800 13px/1.15 var(--display);letter-spacing:.04em;text-transform:uppercase;min-height:44px}
 .packs button.on{background:var(--fg);color:var(--surface)}
 .packart{display:flex;justify-content:center}
-.packart svg{width:52px;height:52px}
+.packart svg{width:46px;height:46px;margin:0 -3px}
 [data-look="deco"] .packs button{border-width:1px;border-color:var(--gold)}
 .role-card b{font-size:clamp(28px,9.5vw,42px);overflow-wrap:anywhere}
 #solo .segm.roles{display:grid;grid-template-columns:1fr 1fr}
@@ -500,3 +500,6 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .said{margin:0;padding:8px 12px;border-left:5px solid var(--line);background:var(--surface);font-size:14px;line-height:1.4}
 .said small{display:block;font:800 10px/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 [data-look="deco"] .said{border-left-color:var(--gold)}
+.segm.regions{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--line)}
+.segm.regions button{font-size:13px;letter-spacing:0;text-transform:none;padding:0 2px;min-width:0;border-left:0!important;background:var(--surface)}
+.segm.regions button.on{background:var(--fg);color:var(--surface)}

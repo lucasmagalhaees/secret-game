@@ -306,6 +306,28 @@ Modelo de uma decisão:
 - **Medido (27/10/2026, `node scripts/ai_bench.mjs 200`):** com a mesa no mesmo nível, os liberais vencem 54% no fácil, 52% no médio, 55% no difícil e 52% no extremo (erro de cerca de 3,5 pontos; antes eram 47%, 46%, 46% e 47%). "Você" (uma IA média num lugar) vence como liberal 48%, 54%, 46% e 49%, e como fascista 60%, 53%, 41% e 41%.
 - **Não sei:** se 15% de teste e 60% de disfarce do Hitler batem com mesas de pessoas de verdade. Medi só contra as próprias IAs. As partidas exportadas (quando houver) servem para conferir isso.
 
+## D23. Partidas guardadas no aparelho, para exportar
+
+- **Contexto (27/10/2026):** "pq n vc n coleta metricas dos meus jogos, pra ir refinando a logica conforme eu vou jogando e treinando a IA?" Escolhido entre as opções: "guardando as partidas no celular com o botão de exportar". E: "esse projeto n precisa de servidor, eh desnecessario".
+- **Decisão:** requisito 38 do `CLAUDE.md`. Isso muda o escopo: antes, histórico de partidas ficava de fora. Agora as partidas terminadas são guardadas, mas só para exportar, sem tela de histórico.
+- **Interpretações que precisaram ser feitas:**
+  - Fica guardada a partida inteira, inclusive o raciocínio das IAs, porque é com ele que se vê onde a IA errou sobre a pessoa. A chave é separada da do app (`secrethitler.history.v1`), para uma lista longa não deixar cada jogada mais lenta de salvar.
+  - O limite é de 30 partidas, umas 2 a 3 MB. Se faltar espaço, as mais antigas saem primeiro. Partida encerrada no meio não é guardada.
+  - Para exportar, uso o compartilhar do celular quando ele aceita arquivo, porque é o caminho mais curto até mandar o arquivo numa conversa. Quando não aceita, o arquivo é baixado.
+  - Os dados servem para calibrar as taxas que as IAs supõem (teste do chanceler, disfarce do Hitler, mentiras, votos) pelo que pessoas fazem de verdade. As IAs não aprendem o estilo de uma pessoa: isso seria metajogo (D10).
+- **Não sei:** como o Safari do iPhone se comporta ao compartilhar um `.json`. Não testei num iPhone.
+
+## D24. Nomes e bichos por continente
+
+- **Contexto (27/10/2026):** "quero poder escolhes facistas, comunistas e liberais por continente, pode usar o nome de lula mas troque por polvo para evitar qualquer problema judicial, quero fidel castro, hugo chavez, nicolas maduro etc, pinochet, etc". Depois: "faz sentido mudar a arte baseado nos animais de cada pais? leao pra africa? onça para americas"; "os fascista precisam mudar tbm"; "precisa ter um animal pro hitler e stalin em cada pais"; e a Oceania.
+- **Decisão:** requisito 22 do `CLAUDE.md` e a parte de desenhos da Interface. Os bichos foram escolhidos com a pessoa, papel a papel, com prévia aprovada.
+- **Interpretações que precisaram ser feitas:**
+  - O continente vale para a partida inteira (`Game.region`): nomes das IAs e desenhos. São seis opções: Mundo (o de antes), Américas, Europa, Ásia, África e Oceania. Cada uma tem 12 nomes por tema, os dois lados misturados. A exceção é a Oceania, que usa os nomes do mundo, porque de lá quase não há fascistas e comunistas conhecidos (o resto seria gente viva de golpe em Fiji).
+  - As Américas incluem os pedidos: Fidel, Chávez, Maduro e "Polvo" no tema comunista, Pinochet no tema fascista. A maioria das figuras já morreu; as vivas são Maduro e "Polvo". O cartão diz que o nome é só apelido de jogo e que o papel é sorteado.
+  - Ficaram fora dos vilões a águia (símbolo do Reich) e o gorila na África (macaco representando o continente africano é imagem racista, em qualquer papel). Rato e panda entraram a pedido: o rato é o próprio Hitler, e o panda de cachimbo é sátira de governo.
+  - Cada bicho veste a farda do papel, para o papel continuar reconhecível pela roupa: o liberal de azul, o fascista de marrom, o Hitler de casaco no púlpito, o comunista de túnica vermelha, o Stalin de túnica cáqui com cachimbo.
+- **Não sei:** se o casuar e o ornitorrinco são reconhecíveis para quem não conhece os bichos. O Hitler da Ásia começou escorpião e virou aranha, escolhida entre três prévias (vespa-mandarina, tubarão, aranha).
+
 ## Pendências
 
 | Pendência | Quem resolve |

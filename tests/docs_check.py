@@ -58,6 +58,7 @@ CONSTANTS = [
     (r'export const TALKS = 2;', 'até 2 IAs (`TALKS`)'),
     (r"SPEEDS: Record<Speed, number> = \{ lenta: 2400, normal: THINK, rapida: 500 \}", '(`SPEEDS`: 2,4 s, 1,2 s e 0,5 s)'),
     (r"CLAIM_HOLD: Record<Speed, number> = \{ lenta: 4000, normal: 2500, rapida: 1500 \}", '(`CLAIM_HOLD`: 4 s, 2,5 s e 1,5 s a mais)'),
+    (r"export const HISTORY_MAX = 30;", 'as últimas 30 (`HISTORY_MAX`)'),
     (r"LEVELS: Level\[\] = \['facil', 'medio', 'dificil', 'extremo'\]", 'fácil, médio, difícil e extremo (`LEVELS`'),
     (r"FASCISTS: Record<number, number> = \{ 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4 \}", '(`FASCISTS`: 2 com 5 ou 6, 3 com 7 ou 8, 4 com 9 ou 10)'),
     (r"small: \{ 3: 'peek', 4: 'execute', 5: 'execute' \}", 'com 5 ou 6 jogadores, na 3ª olha as próximas 3 leis'),
