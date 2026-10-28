@@ -7,6 +7,11 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 ### Adicionado
 - Nomes das IAs por continente: Mundo, Américas, Europa, Ásia ou África, em cada tema. Nas Américas, Fidel, Chávez, Maduro, "Polvo", Pinochet e outros.
 
+## [0.21.0]
+
+### Adicionado
+- Continente da partida: Mundo, Américas, Europa, Ásia, África ou Oceania. Muda os nomes das IAs (nas Américas, Fidel, Chávez, Maduro, "Polvo", Pinochet e outros) e os bichos dos cinco papéis.
+
 ## [0.20.0]
 
 ### Adicionado

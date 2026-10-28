@@ -10,7 +10,7 @@ export type Speed = 'lenta' | 'normal' | 'rapida';
 /** The theme of the game (D12): liberals against fascists (the original), or against communists. Same rules. */
 export type Pack = 'fascismo' | 'comunismo';
 /** Where the names of the app players come from (D24). */
-export type Region = 'mundo' | 'americas' | 'europa' | 'asia' | 'africa';
+export type Region = 'mundo' | 'americas' | 'europa' | 'asia' | 'africa' | 'oceania';
 /** The style of the app: the 1930s poster (the default) or art deco. */
 export type Look = 'poster' | 'deco';
 

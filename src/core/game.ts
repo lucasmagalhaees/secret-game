@@ -48,11 +48,12 @@ export const BOT_NAMES: Record<Pack, string[]> = {
 /** Where the names of the app players come from (D24): the whole world (BOT_NAMES), or one continent. In each list,
  *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. Lula
  *  goes by "Polvo", as the person asked. */
-export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa'];
-export const REGION_NAMES: Record<Region, string> = { mundo: 'Mundo', americas: 'Américas', europa: 'Europa', asia: 'Ásia', africa: 'África' };
+export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa', 'oceania'];
+export const REGION_NAMES: Record<Region, string> = { mundo: 'Mundo', americas: 'Américas', europa: 'Europa', asia: 'Ásia', africa: 'África', oceania: 'Oceania' };
 export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
   fascismo: {
     mundo: BOT_NAMES.fascismo,
+    oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
     americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
     europa: ['Churchill', 'Mussolini', 'De Gaulle', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Göring', 'Mitterrand', 'Pétain'],
     asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek'],
@@ -60,6 +61,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
   },
   comunismo: {
     mundo: BOT_NAMES.comunismo,
+    oceania: BOT_NAMES.comunismo,
     americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende'],
     europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'De Gaulle', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
     asia: ['Gandhi', 'Mao', 'Nehru', 'Ho Chi Minh', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai'],
