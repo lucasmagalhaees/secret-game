@@ -198,19 +198,20 @@ const cap = (s: Side): string => s === 'L'
     : `<path d="M42 28 C42 18 50 8 63 -2 C76 8 84 18 84 28Z" fill="#6b7a52" ${o()}/><path d="M42 28 H84 L85 34 H41Z" fill="#56633f" ${o(1.6)}/>${star(63, 17, 6, RED)}`;
 /** Brows: smug (raised) for a liberal, a sneer (down to the middle) for the hidden side; then the eyes. */
 const brows = (s: Side, y: number, gap: number): string => s === 'L'
-  ? `<path d="M${55 - gap} ${y - 8} L${67 - gap} ${y - 9} M${57 + gap} ${y - 9} L${69 + gap} ${y - 8}" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>`
+  ? `<path d="M${54 - gap} ${y - 5} L${68 - gap} ${y - 6.5} M${56 + gap} ${y - 6.5} L${70 + gap} ${y - 5}" fill="none" stroke="${K}" stroke-width="4.2" stroke-linecap="round"/>`
   : `<path d="M${55 - gap} ${y - 10} L${67 - gap} ${y - 6} M${69 + gap} ${y - 10} L${57 + gap} ${y - 6}" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>`;
-const look = (s: Side, iris = '#f6e36b', y = 42, gap = 10, lid = ''): string => `<ellipse cx="${62 - gap}" cy="${y}" rx="4.8" ry="4" fill="${iris}" ${o(1.4)}/><ellipse cx="${62 + gap}" cy="${y}" rx="4.8" ry="4" fill="${iris}" ${o(1.4)}/>
-  ${s === 'L' && lid ? [62 - gap, 62 + gap].map(x => `<circle cx="${x + 0.6}" cy="${y + 0.4}" r="2.6" fill="${K}"/><circle cx="${x + 1.6}" cy="${y - 0.8}" r="0.9" fill="${W}"/>`).join('')
+const look = (s: Side, iris = '#f6e36b', y = 42, gap = 10, lid = ''): string => `<ellipse cx="${62 - gap}" cy="${y}" rx="${s === 'L' && lid ? 5.2 : 4.8}" ry="${s === 'L' && lid ? 3 : 4}" fill="${iris}" ${o(1.4)}/><ellipse cx="${62 + gap}" cy="${y}" rx="${s === 'L' && lid ? 5.2 : 4.8}" ry="${s === 'L' && lid ? 3 : 4}" fill="${iris}" ${o(1.4)}/>
+  ${s === 'L' && lid ? [62 - gap, 62 + gap].map(x => `<circle cx="${x + 0.6}" cy="${y + 0.3}" r="2.2" fill="${K}"/><path d="M${x - 5.4} ${y - 0.6} C${x - 3} ${y - 3.6} ${x + 3} ${y - 3.6} ${x + 5.4} ${y - 0.6}" fill="none" stroke="${lid}" stroke-width="2.4"/><path d="M${x - 5.4} ${y - 0.6} C${x - 3} ${y - 3.4} ${x + 3} ${y - 3.4} ${x + 5.4} ${y - 0.6}" fill="none" ${o(1.4)}/>`).join('')
     : `<rect x="${61 - gap}" y="${y - 3}" width="2.2" height="6" rx="1.1" fill="${K}"/><rect x="${61 + gap}" y="${y - 3}" width="2.2" height="6" rx="1.1" fill="${K}"/>`}${brows(s, y, gap)}`;
 /** A cat's face (jaguar, lion, tiger, lynx): round head, round ears, a white muzzle, whiskers. */
 const cat = (s: Side, fur: string, fur2: string, extra: { behind?: string; marks?: string; ears?: string } = {}): string => `${extra.behind || ''}
-  ${extra.ears || `<circle cx="41" cy="27" r="9" fill="${fur}" ${o()}/><circle cx="41" cy="27" r="4.4" fill="${fur2}"/><circle cx="85" cy="27" r="9" fill="${fur}" ${o()}/><circle cx="85" cy="27" r="4.4" fill="${fur2}"/>`}
-  <path d="M36 46 C36 30 48 22 63 22 C78 22 90 30 90 46 C90 62 78 70 63 70 C48 70 36 62 36 46Z" fill="${fur}" ${o()}/>
+  ${extra.ears || (s === 'L' ? `<path d="M36 34 C34 22 40 16 48 20 L50 28Z M90 34 C92 22 86 16 78 20 L76 28Z" fill="${fur}" ${o()}/><path d="M39 28 C38 23 41 20 45 22 L46 27Z M87 28 C88 23 85 20 81 22 L80 27Z" fill="${fur2}"/>` : `<circle cx="41" cy="27" r="9" fill="${fur}" ${o()}/><circle cx="41" cy="27" r="4.4" fill="${fur2}"/><circle cx="85" cy="27" r="9" fill="${fur}" ${o()}/><circle cx="85" cy="27" r="4.4" fill="${fur2}"/>`)}
+  <path d="${s === 'L' ? 'M38 42 C38 28 49 21 63 21 C77 21 88 28 88 42 L87 54 C85 66 75 74 63 74 C51 74 41 66 39 54Z' : 'M36 46 C36 30 48 22 63 22 C78 22 90 30 90 46 C90 62 78 70 63 70 C48 70 36 62 36 46Z'}" fill="${fur}" ${o()}/>
+  ${s === 'L' ? `<path d="M60 40 L60 50 M66 40 L66 50" fill="none" stroke="${fur2}" stroke-width="2" opacity=".7"/>` : ''}
   ${extra.marks || ''}
-  <ellipse cx="63" cy="57" rx="${s === 'L' ? 10 : 13}" ry="${s === 'L' ? 7.5 : 9}" fill="${W}" ${o(1.8)}/>
-  <path d="M58 49 H68 L63 54Z" fill="${PINK}" ${o(1.4)}/>
-  <path d="${s === 'L' ? 'M58 60 C62 60.5 66 60 69 57.5' : 'M55 59 C59 61 67 61 71 60'}" fill="none" ${o(2)}/>
+  <ellipse cx="63" cy="${s === 'L' ? 60 : 57}" rx="${s === 'L' ? 10 : 13}" ry="${s === 'L' ? 8 : 9}" fill="${W}" ${o(1.8)}/>
+  <path d="${s === 'L' ? 'M58 52 H68 L63 57Z' : 'M58 49 H68 L63 54Z'}" fill="${s === 'L' ? '#4a2e22' : PINK}" ${o(1.4)}/>
+  <path d="${s === 'L' ? 'M63 57 V61 M57 63 C60 64 66 64 70 61.5' : 'M55 59 C59 61 67 61 71 60'}" fill="none" ${o(2)}/>
   ${s === 'L' ? '' : `<path d="M58 60 l1.5 4 l1.5 -3.6 M66 60 l1.5 4 l1.5 -3.6" fill="${W}" ${o(1)}/>`}
   <path d="M48 55 L34 52 M48 58 L34 60 M78 55 L92 52 M78 58 L92 60" fill="none" stroke="${K}" stroke-width="1.4" stroke-linecap="round"/>
   ${look(s, '#f6e36b', 42, 10, fur)}`;
@@ -230,7 +231,7 @@ const beaked = (s: Side, head: string, beak: string, extra: { ruff?: string; mar
   <path d="M76 44 L114 ${s === 'L' ? 50 : 56} L78 56 C74 52 74 48 76 44Z" fill="${beak}" ${o()}/>
   ${s === 'L' ? '' : `<path d="M108 54 C112 58 110 62 106 62" fill="${beak}" ${o(1.6)}/>`}
   <ellipse cx="66" cy="41" rx="6" ry="6.4" fill="${W}" ${o(1.6)}/><circle cx="67.5" cy="42" r="3" fill="${K}"/><circle cx="68.6" cy="40.6" r="1" fill="${W}"/>
-  ${s === 'L' ? `<path d="M58 32 C62 29 68 29 73 32" fill="none" stroke="${K}" stroke-width="3.2" stroke-linecap="round"/>` : `<path d="M58 31 L74 36" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>`}`;
+  ${s === 'L' ? `<path d="M58 35 L74 34" fill="none" stroke="${K}" stroke-width="4" stroke-linecap="round"/><path d="M60 36.5 C63 35 70 35 72.5 37" fill="${head}"/>` : `<path d="M58 31 L74 36" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>`}`;
 const spots = (pts: number[][], c: string, ring = false): string => pts.map(([x, y, r]) => (ring ? `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${c}" stroke-width="1.8"/>` : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`)).join('');
 const HEADS: Record<string, (s: Side) => string> = {
   onca: s => cat(s, '#e9a23b', '#b9741f', { marks: spots([[48, 34, 3], [58, 30, 2.6], [70, 30, 2.6], [80, 34, 3], [44, 48, 2.6], [83, 47, 2.6], [52, 66, 2.2], [75, 65, 2.2]], '#5a3410', true) }),
