@@ -343,21 +343,6 @@ const LEADERS: Record<string, () => string> = {
     ${spots([[56, 34, 1.8], [64, 30, 1.6], [86, 33, 1.5], [96, 35, 1.5]], '#5a5a2a')}
     <ellipse cx="72" cy="35" rx="5.4" ry="4.4" fill="#f6e36b" ${o(1.5)}/><rect x="71" y="31.8" width="2.2" height="6.4" rx="1.1" fill="${K}"/>
     <path d="M64 28 L80 33" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="110" cy="37" rx="2" ry="1.4" fill="${K}"/>${shout}`,
-  vespa: () => `<path d="M50 24 C44 10 36 4 30 6 M70 24 C76 10 84 4 90 6" fill="none" stroke="${K}" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="6" r="2.6" fill="${K}"/><circle cx="90" cy="6" r="2.6" fill="${K}"/>
-    <path d="M34 44 C34 28 46 20 60 20 C74 20 86 28 86 44 C86 58 76 68 60 68 C44 68 34 58 34 44Z" fill="#f2a531" ${o()}/>
-    <path d="M34 40 C34 26 44 26 48 34 C52 44 48 58 40 58 C36 56 34 50 34 40Z M86 40 C86 26 76 26 72 34 C68 44 72 58 80 58 C84 56 86 50 86 40Z" fill="#3a1c14" ${o(1.6)}/>
-    <path d="M38 36 l3 2 M40 44 l3 1 M38 50 l3 0 M82 36 l-3 2 M80 44 l-3 1 M82 50 l-3 0" stroke="#6a3a2a" stroke-width="1.4"/>
-    <path d="M50 58 C46 66 50 74 56 72 L58 64Z M70 58 C74 66 70 74 64 72 L62 64Z" fill="#1f1b19" ${o(1.4)}/>
-    <path d="M54 58 C56 66 64 66 66 58 C62 60 58 60 54 58Z" fill="#5a1414" ${o(1.4)}/>
-    <path d="M50 36 L58 40 M70 36 L62 40" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/><circle cx="56" cy="44" r="2" fill="#e8442e"/><circle cx="64" cy="44" r="2" fill="#e8442e"/>${shout}`,
-  tubarao: () => `<path d="M56 8 L74 -2 L70 20Z" fill="#6f7f8c" ${o()}/>
-    <path d="M30 46 C30 28 44 18 60 18 C76 18 90 28 90 46 C90 62 78 72 60 72 C42 72 30 62 30 46Z" fill="#7f909c" ${o()}/>
-    <path d="M36 52 C40 70 80 70 84 52 C76 58 44 58 36 52Z" fill="#eef0f0" ${o(1.6)}/>
-    <path d="M42 54 C48 70 72 70 78 54 C70 60 50 60 42 54Z" fill="#5a1414" ${o(1.6)}/>
-    <path d="M44 55 l2.4 5 l2.4 -4.4 l2.4 5 l2.4 -4.6 l2.4 5 l2.4 -5 l2.4 5 l2.4 -4.6 l2.4 5 l2.4 -4.6 l2.4 5 l2.4 -4.4 l2.4 4" fill="${W}" ${o(0.9)}/>
-    <path d="M48 66 l2.4 -4 l2.4 4 l2.4 -4 l2.4 4 l2.4 -4 l2.4 4 l2.4 -4 l2.4 4 l2.4 -4" fill="${W}" ${o(0.9)}/>
-    <path d="M32 40 l4 2 M31 46 l4 1 M88 40 l-4 2 M89 46 l-4 1" stroke="#4e5c66" stroke-width="2" stroke-linecap="round"/>
-    ${angry(40, 13, '#1f1b19')}${shout}`,
   aranha: () => `<path d="M38 44 C24 36 14 40 6 54 M38 52 C22 50 12 58 8 72 M82 44 C96 36 106 40 114 54 M82 52 C98 50 108 58 112 72" fill="none" stroke="${K}" stroke-width="7" stroke-linecap="round"/>
     <path d="M38 44 C24 36 14 40 6 54 M38 52 C22 50 12 58 8 72 M82 44 C96 36 106 40 114 54 M82 52 C98 50 108 58 112 72" fill="none" stroke="#4a3426" stroke-width="4" stroke-linecap="round"/>
     <path d="M36 46 C36 30 46 22 60 22 C74 22 84 30 84 46 C84 60 74 70 60 70 C46 70 36 60 36 46Z" fill="#4a3426" ${o()}/>
@@ -367,15 +352,6 @@ const LEADERS: Record<string, () => string> = {
     <path d="M52 34 L58 38 M68 34 L62 38" stroke="${K}" stroke-width="3" stroke-linecap="round"/>
     <path d="M52 54 C48 62 50 70 54 72 C56 66 56 60 56 56Z M68 54 C72 62 70 70 66 72 C64 66 64 60 64 56Z" fill="#1f1b19" ${o(1.4)}/>
     <path d="M56 56 C58 64 62 64 64 56 C62 58 58 58 56 56Z" fill="#5a1414" ${o(1.2)}/>${shout}`,
-  escorpiao: () => `<path d="M84 64 C104 56 110 30 96 12 C90 6 82 8 84 16" fill="none" stroke="${K}" stroke-width="11" stroke-linecap="round"/>
-    <path d="M84 64 C104 56 110 30 96 12 C90 6 82 8 84 16" fill="none" stroke="#6b3e22" stroke-width="7" stroke-linecap="round"/>
-    <path d="M100 52 l-6 -2 M106 36 l-7 1 M102 20 l-6 3" stroke="${K}" stroke-width="1.6"/>
-    <path d="M84 16 L76 22 L86 22Z" fill="#c9302c" ${o(1.4)}/>
-    <path d="M30 56 C18 50 16 36 26 32 L32 42 L36 34 C44 40 42 54 30 56Z M90 56 C102 50 104 36 94 32 L88 42 L84 34 C76 40 78 54 90 56Z" fill="#6b3e22" ${o()}/>
-    <path d="M38 46 C38 30 48 22 60 22 C72 22 82 30 82 46 C82 60 72 68 60 68 C48 68 38 60 38 46Z" fill="#7a4a2a" ${o()}/>
-    <path d="M44 34 H76 M42 44 H78" fill="none" stroke="#5a341c" stroke-width="2"/>
-    <path d="M48 56 C52 66 68 66 72 56 C66 59 54 59 48 56Z" fill="#5a1414" ${o(1.6)}/><path d="M50 57 l2 4 l2 -3.4 M66 57 l2 4 l2 -3.4" fill="${W}" ${o(1)}/>
-    ${angry(42, 9, '#e8442e')}<circle cx="56" cy="34" r="1.6" fill="${K}"/><circle cx="64" cy="34" r="1.6" fill="${K}"/>${shout}`,
   morcego: () => `<path d="M40 42 L20 0 L56 30Z M80 42 L100 0 L64 30Z" fill="#4b3f45" ${o()}/><path d="M38 32 L26 10 L50 30Z M82 32 L94 10 L70 30Z" fill="#c98a8a"/>
     <path d="M36 46 C36 30 46 22 60 22 C74 22 84 30 84 46 C84 62 74 70 60 70 C46 70 36 62 36 46Z" fill="#4b3f45" ${o()}/>
     <path d="M54 46 L60 38 L66 46 L64 52 L56 52Z" fill="#7a5a62" ${o(1.4)}/>
@@ -430,7 +406,7 @@ const LEADERS: Record<string, () => string> = {
     <ellipse cx="60" cy="44" rx="4" ry="3" fill="${K}"/>${pipe(72, 58)}${angry(36, 11, W)}`
 };
 const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
-  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'rinoceronte' }, asia: { H: 'escorpiao', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }, oceania: { H: 'casuar', S: 'coala' }
+  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'rinoceronte' }, asia: { H: 'aranha', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }, oceania: { H: 'casuar', S: 'coala' }
 };
 const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
   ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`

@@ -317,16 +317,6 @@ Modelo de uma decisão:
   - Os dados servem para calibrar as taxas que as IAs supõem (teste do chanceler, disfarce do Hitler, mentiras, votos) pelo que pessoas fazem de verdade. As IAs não aprendem o estilo de uma pessoa: isso seria metajogo (D10).
 - **Não sei:** como o Safari do iPhone se comporta ao compartilhar um `.json`. Não testei num iPhone.
 
-## D24. Nomes das IAs por continente
-
-- **Contexto (27/10/2026):** "quero poder escolhes facistas, comunistas e liberais por continente, pode usar o nome de lula mas troque por polvo para evitar qualquer problema judicial, quero fidel castro, hugo chavez, nicolas maduro etc, pinochet, etc".
-- **Decisão:** requisito 22 do `CLAUDE.md`.
-- **Interpretações que precisaram ser feitas:**
-  - "Continente" virou cinco opções: Mundo (as listas de antes), Américas, Europa, Ásia e África. Cada uma tem 12 nomes por tema, os dois lados misturados, para dar uma mesa de 10 sem repetir. A escolha fica no cartão "Tema do jogo" porque também depende do tema.
-  - As Américas incluem os pedidos: Fidel, Chávez, Maduro e "Polvo" no tema comunista, Pinochet no tema fascista. O resto é escolha minha, com nomes conhecidos de cada continente.
-  - A maioria das figuras já morreu. As vivas são Maduro e "Polvo". O cartão diz que o nome é só apelido de jogo e que o papel é sorteado, então quem tem nome de liberal pode ser o Hitler ou o Stalin. Os nomes nunca dizem nada: as falas são as do jogo.
-- **Não sei:** se algum nome de algum continente incomoda alguém da mesa. Dá para trocar a lista sem mexer em mais nada.
-
 ## D24. Nomes e bichos por continente
 
 - **Contexto (27/10/2026):** "quero poder escolhes facistas, comunistas e liberais por continente, pode usar o nome de lula mas troque por polvo para evitar qualquer problema judicial, quero fidel castro, hugo chavez, nicolas maduro etc, pinochet, etc". Depois: "faz sentido mudar a arte baseado nos animais de cada pais? leao pra africa? onça para americas"; "os fascista precisam mudar tbm"; "precisa ter um animal pro hitler e stalin em cada pais"; e a Oceania.
@@ -336,7 +326,7 @@ Modelo de uma decisão:
   - As Américas incluem os pedidos: Fidel, Chávez, Maduro e "Polvo" no tema comunista, Pinochet no tema fascista. A maioria das figuras já morreu; as vivas são Maduro e "Polvo". O cartão diz que o nome é só apelido de jogo e que o papel é sorteado.
   - Ficaram fora dos vilões a águia (símbolo do Reich) e o gorila na África (macaco representando o continente africano é imagem racista, em qualquer papel). Rato e panda entraram a pedido: o rato é o próprio Hitler, e o panda de cachimbo é sátira de governo.
   - Cada bicho veste a farda do papel, para o papel continuar reconhecível pela roupa: o liberal de azul, o fascista de marrom, o Hitler de casaco no púlpito, o comunista de túnica vermelha, o Stalin de túnica cáqui com cachimbo.
-- **Não sei:** se o casuar e o ornitorrinco são reconhecíveis para quem não conhece os bichos. Os Hitlers da Ásia (escorpião) e da Europa (rato) podem ser trocados (vespa-mandarina, tubarão, aranha; corvo, doninha), conforme a pessoa decidir.
+- **Não sei:** se o casuar e o ornitorrinco são reconhecíveis para quem não conhece os bichos. O Hitler da Ásia começou escorpião e virou aranha, escolhida entre três prévias (vespa-mandarina, tubarão, aranha).
 
 ## Pendências
 

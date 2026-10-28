@@ -92,7 +92,7 @@ function vSolo(): string {
 /** The theme of the game (D12): the same rules, other sides, other names, other drawings. */
 function vPack(): string {
   const cur = S.pack || 'fascismo';
-  const opt = (k: Pack): string => `<button class="${cur === k ? 'on' : ''}" data-act="pack" data-v="${k}" aria-pressed="${cur === k}"><span class="packart">${portrait('liberal', k, S.region)}${portrait(S.region && S.region !== 'mundo' ? 'fascista' : 'hitler', k, S.region)}</span>${Core.WORDS[k].theme}</button>`;
+  const opt = (k: Pack): string => `<button class="${cur === k ? 'on' : ''}" data-act="pack" data-v="${k}" aria-pressed="${cur === k}"><span class="packart">${portrait('liberal', k, S.region)}${portrait('fascista', k, S.region)}${portrait('hitler', k, S.region)}</span>${Core.WORDS[k].theme}</button>`;
   return `<section class="card" id="pack"><span class="label">Tema do jogo</span><div class="packs" role="group" aria-label="Tema do jogo">${Core.PACKS.map(opt).join('')}</div>
     <p class="hint" id="packtext">${cur === 'comunismo' ? 'Os comunistas são o time escondido e o Stalin é o líder deles. Vota-se Da! ou Niet!. As regras são as mesmas; as IAs ganham nomes de liberais e comunistas.' : 'O jogo original: os fascistas são o time escondido e o Hitler é o líder deles.'}</p>
     <p class="hint">Nomes da IA</p><div class="segm regions" role="group" aria-label="Nomes da IA">${Core.REGIONS.map(r => `<button class="${(S.region || 'mundo') === r ? 'on' : ''}" data-act="region" data-v="${r}" aria-pressed="${(S.region || 'mundo') === r}">${Core.REGION_NAMES[r]}</button>`).join('')}</div>

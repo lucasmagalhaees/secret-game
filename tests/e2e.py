@@ -438,8 +438,13 @@ with sync_playwright() as p:
     # D24: names by continent: the app seats change to names of the Americas
     world_art = pg.inner_html('#pack .packart')
     pg.click('[data-act=region][data-v=americas]'); ams = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.americas')
-    assert pg.inner_html('#pack .packart') != world_art and pg.locator('#pack .packart svg').count() == 4, 'the drawings change with the continent'
+    assert pg.inner_html('#pack .packart') != world_art and pg.locator('#pack .packart svg').count() == 6, 'the drawings change with the continent'
     assert pg.evaluate('window.__APP.S.region') == 'americas' and all(x in ams for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and overflow() == 0, 'the app seats take names of the Americas'
+    # every continent shows its cast (liberal, member, leader) on both themes, and none of them overflows the screen
+    for pack in ('fascismo', 'comunismo'):
+        pg.click(f'[data-act=pack][data-v={pack}]')
+        for r in pg.evaluate('window.__APP.Core.REGIONS'):
+            pg.click(f'[data-act=region][data-v={r}]'); assert pg.locator('#pack .packart svg').count() == 6 and overflow() == 0, (pack, r)
     pg.click('[data-act=region][data-v=mundo]'); assert pg.evaluate('window.__APP.S.region') is None
     assert 'Liberais x Comunistas' in txt('#pack') and 'comunistas' in txt('#rules') and 'Stalin' in txt('#rules') and 'fascis' not in (txt('#table') + txt('#solo') + txt('#rules')).lower()
     for x in list(range(pg.locator('#names li').count())):
