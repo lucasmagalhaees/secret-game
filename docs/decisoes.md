@@ -359,6 +359,25 @@ Modelo de uma decisão:
   - Os nomes ficaram curtos, como na mesa: Aécio, Enéas, Manuela, Amoêdo. Só aqui o Lula aparece com o nome; fora da DLC continua "Polvo".
 - **Confirmado (28/10/2026):** "ultra" é o Ustra ("é Ulstra mesmo"); ficou com a grafia certa, Ustra.
 
+## D28. Sem o painel de raciocínio; acerto das anotações no fim
+
+- **Contexto (28/10/2026):** "o racicinio das IAs pode remover, faltou um indicativo de quantos papeis eu deduzi certo baseando nas minhas anotacoes, ai pode contar como boas jogadas no fim do jogo". Antes, a pessoa tinha pedido: "queria dps ver qnts das minhas anotacoes deram match com os papeis reais". E sobre o caderno: "quebrou o layout, poderia ter só o emoji, e faltou o compartilhar tudo que sei ou denunciar todos (que vc resume em denunciar inimigos)".
+- **Decisão:** requisitos 27, 34 e 37 do `CLAUDE.md`. Isto desfaz o painel da D16.
+- **Interpretações que precisaram ser feitas:**
+  - Saiu só o painel da tela. O motivo de cada decisão continua gravado em `Game.trace` e vai no arquivo exportado, porque serve para calibrar a IA (D23). O `S.debug` antigo é descartado ao ler.
+  - O caderno vai com a partida no fim (`Game.notes`). O acerto conta só o que foi deduzido: o time que a pessoa já conhecia e o que as investigações dela mostraram ficam de fora. Cada acerto entra nas jogadas boas, com peso 1. O erro não conta como jogada ruim, porque marcar é anotar e não jogar.
+  - No caderno, os botões viraram só emoji (📣 denuncia, 👍 abona quem está marcado liberal). "Contar tudo" virou "Denunciar inimigos": acusa de uma vez todos do outro lado, que são os marcados do lado oposto ao da pessoa, ou, para quem conhece o time, todos fora dele.
+- **Não sei:** se vale contar erro no caderno como jogada ruim.
+
+## D29. Votos na língua do continente e cartas com as cores dele
+
+- **Contexto (28/10/2026):** "os idiomas de votacao tem refletir nas regioes dos lideres sabe, e se puder dar uma estilizada regional nas cartas ficaria massa".
+- **Decisão:** requisito 22 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - O voto segue a língua dos líderes de cada continente. Mundo e Europa ficam com os votos do original, porque ali estão Hitler e Stalin (alemão e russo). As Américas votam em espanhol, a língua de Pinochet e de Fidel. O Brasil vota em português. A Ásia vota em japonês para os fascistas (Tojo) e em chinês para os comunistas (Mao). A África vota em suaíli e a Oceania em inglês.
+  - "Estilizada regional" virou uma faixa no pé de cada cartão e de cada lei, com as cores do continente: verde, amarelo e azul no Brasil; o padrão andino nas Américas; azul e dourado na Europa; vermelho e dourado na Ásia; o kente na África; azul do mar e areia na Oceania. No Mundo não há faixa.
+- **Não sei:** se a pessoa queria algo mais forte que a faixa, como trocar a fonte ou o fundo por continente.
+
 ## Pendências
 
 | Pendência | Quem resolve |

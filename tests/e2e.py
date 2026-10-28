@@ -309,24 +309,17 @@ with sync_playwright() as p:
     name = G()['players'][int(first)]['name']
     assert f'Lu: "Desconfio de {name}."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'accused: five react, the accused denies it, once a round'
     pg.click('#tellall'); said = [e for e in G()['hist'] if e['k'] == 'talk' and e['by'] == 6]
-    assert len(said) == 3 and pg.locator('#tellall').count() == 0, 'telling all: what is marked or known, once each'; shot(f's5-denunciar-{THEME}.png')
+    assert len(said) == 4 and pg.locator('#tellall').is_disabled() and all(e['say'] == 'acc' and G()['players'][e['about']]['role'] == 'liberal' for e in said), 'denouncing the enemies: a fascist accuses every liberal, once each'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
     # the live suspicion: off by default, on with a tap, one bar per app player
     assert pg.locator('#players .meter').count() == 0
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
-    # the reasoning of the app players (D16): during the game, only after a warning, since it shows the roles
-    assert not pg.locator('#mind').is_visible(); pg.click('#mindtoggle')
-    assert pg.locator('#mind').is_visible() and 'Estraga a partida' in txt('#mind') and pg.locator('#mind .role').count() == 0, 'a warning first, no role on screen'
-    pg.click('#mindon'); assert pg.evaluate('window.__APP.S.debug') is True and pg.locator('#mind .mind-who button').count() == 6 and pg.locator('#mind .mind-bel li').count() == 6, 'then each app player, and what it thinks of each other seat'
-    assert 'Lu (você)' in txt('#mind .mind-bel') and 'Por que' in txt('#mind') and 'No começo' in txt('#mind .mind-trail'), txt('#mind')
-    assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0; shot(f's5-raciocinio-{THEME}.png')
-    pg.click('#mindtoggle'); assert not pg.locator('#mind').is_visible()
     # D17: the panels open from a bar at the bottom that has its own room: scrolled to the end, nothing is under it
     pg.evaluate('scrollTo(0, document.documentElement.scrollHeight)')
     assert pg.evaluate("Math.max(...[...document.querySelectorAll('main .card, #app .card')].map(c => c.getBoundingClientRect().bottom)) <= document.querySelector('.dock').getBoundingClientRect().top"), 'nothing is under the bar at the bottom'
-    pg.click('#notestoggle'); pg.click('#mindtoggle'); assert pg.locator('#mind').is_visible() and not pg.locator('#drawer').is_visible() and pg.evaluate('window.__APP.S.notesOpen') is None, 'one panel at a time'
-    pg.click('#mindtoggle'); pg.evaluate('scrollTo(0, 0)')
+    pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#mindtoggle').count() == 0, 'the reasoning panel is gone (D28)'
+    pg.click('#notestoggle'); pg.evaluate('scrollTo(0, 0)')
     if G()['pres'] != 6:
         assert pg.locator('#thinking').count() == 1 and 'está escolhendo o chanceler' in txt('#thinking') and 'IA' in txt('#thinking'), txt('#phase')
     # D21: while an app player tells the table about its hand, the phase it holds still shows it deciding: never the gate
@@ -393,18 +386,9 @@ with sync_playwright() as p:
     assert pg.locator('#review').count() == 1 and 'Suas jogadas' in txt('#review') and pg.locator('#review .plays li').count() == min(4, sum(1 for x in plays if x['good'])) + min(4, sum(1 for x in plays if not x['good'])), ('the review of the person, the main plays of each kind', plays)
     if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
-    # at the end, the reasoning opens freely: every decision of the chosen app player, with its reason and the options weighed
-    pg.evaluate('(() => { delete window.__APP.S.debug; })()'); pg.click('#mindtoggle'); assert 'Estraga' not in txt('#mind')
-    for k in range(2):
-        seat = int(pg.locator('#mind .mind-who button').nth(k).get_attribute('data-i')); pg.locator('#mind .mind-who button').nth(k).click()
-        mine = pg.evaluate(f'window.__APP.S.game.trace.filter(t => t.seat === {seat}).length')
-        assert mine > 0 and pg.locator('#mind .mind-log > li').count() == mine, (seat, mine)
-    assert pg.locator('#mind .mind-rows').count() > 0 and pg.locator('#mind .mind-rows tr.on').count() > 0, 'the options it compared, the chosen one marked'
-    other = pg.locator('#mind .mind-bel button').nth(1); pick = other.get_attribute('data-i'); other.click()
-    assert pg.locator(f'#mind .mind-bel li.on [data-i="{pick}"]').count() == 1
-    mind = txt('#mind'); assert '{p' not in mind and '{f' not in mind and 'undefined' not in mind and 'NaN' not in mind, mind[:400]
-    assert pg.locator('#mind .mind-trail li').count() >= 1 and (pg.locator('#mind .mind-trail li').count() == 1 or '→' in txt('#mind .mind-trail'))
-    shot(f's6-raciocinio-fim-{THEME}.png'); pg.click('#mindtoggle')
+    assert pg.locator('#notescore').count() == 1 and 'certas' in txt('#notescore') and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
+    # the reasons are still recorded with the game, for the export (D23), though no panel shows them (D28)
+    assert pg.evaluate('window.__APP.S.game.trace.length') > 0 and pg.locator('#mindtoggle').count() == 0
 
     # two people and three app players: the people vote one by one, then the votes open; and if both are out, the app plays on
     pg.click('[data-act=table]')
@@ -457,6 +441,7 @@ with sync_playwright() as p:
     pg.fill('#dlckey', 'unlockresenha'); pg.click('#dlcgo'); assert pg.evaluate('window.__APP.S.dlc') is True and pg.locator('#dlcon').count() == 1
     pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 7 * 2 * 3 and 'polvo' in txt('#gallery-brasil') and 'tucano' in txt('#gallery-brasil'), 'unlocked, the gallery shows Brazil too'; pg.click('#galleryback')
     pg.click('[data-act=region][data-v=brasil]'); br = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.brasil')
+    assert pg.evaluate('document.documentElement.dataset.region') == 'brasil' and 'gradient' in pg.evaluate("getComputedStyle(document.querySelector('#pack')).backgroundImage"), 'the cards wear the colours of the continent (D29)'
     assert all(x in br for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and pg.locator('#pack .packart svg').count() == 6 and overflow() == 0, 'the app seats take names of Brazil'
     # every continent shows its cast (liberal, member, leader) on both themes, and none of them overflows the screen
     for pack in ('fascismo', 'comunismo'):
@@ -517,4 +502,4 @@ with sync_playwright() as p:
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()
-print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo, ponto crucial, raciocínio das IAs), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')
+print(f'e2e ok ({THEME}): mesa, papéis atrás do portão, eleição, caos, leis, limite de mandato, poderes, veto, eleição especial, mesa de 5 (Hitler conhece o fascista, espiar), desfazer, ajuda, segredo que se esconde sozinho, resumo da partida, contra a IA (sozinho e com duas pessoas, treino, nomes, ata, anotações, conversa, treinador, o que pensavam de você, velocidade, painel lateral de anotações, desconfiança ao vivo, ponto crucial, denunciar e reações, acerto das anotações), tema liberais x comunistas, anúncio de quem aprovou cada lei, animações, fim de jogo pelos dois lados, guardado no aparelho, tema, sem estouro de largura e sem erro de script')

@@ -5,14 +5,19 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 ## [0.23.0]
 
 ### Adicionado
-- Denunciar à mesa pelo caderno: "Denunciar" ou "Abonar" um jogador, ou contar tudo o que marcou de uma vez. Cada IA diz se concorda, não sabe ou discorda, e o acusado nega.
+- Denunciar à mesa pelo caderno: 📣 denuncia e 👍 abona um jogador, e "Denunciar inimigos" acusa todos do outro lado de uma vez.
+- No fim, quantos papéis você acertou nas anotações; cada acerto conta como jogada boa. Cada IA diz se concorda, não sabe ou discorda, e o acusado nega.
 - As IAs levam em conta o que se fala na mesa, e pesam o dobro quando a ata confirma.
 - Personalidades das IAs, sorteadas a cada partida: certinho, desconfiado, cético, crítico, centrado, blefador e caótico.
 - DLC Brasil, liberada por senha: nomes de políticos brasileiros e bichos próprios (tucano, bezerro, boi, onça e polvo).
+- Votos na língua do continente (¡Sí!, Sim!, Hai!, Shì!, Ndiyo!, Yes!) e uma faixa com as cores do continente nas cartas e nas leis.
 - Nomes novos: Marulanda, Abimael Guzmán, Ortega, Tiglate-Pileser, Gengis Khan, Tamerlão e Pol Pot no mundo.
 
 ### Mudado
 - O liberal das Américas agora é o condor, no lugar da onça.
+
+### Removido
+- O painel "Raciocínio das IAs". O motivo de cada decisão continua gravado e vai no arquivo exportado.
 
 ### Corrigido
 - O resumo do fim não repete mais a linha do voto quando o mesmo governo foi votado duas vezes.

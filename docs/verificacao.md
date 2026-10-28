@@ -33,6 +33,7 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | Galeria com todos os desenhos (6 continentes, 2 temas, 3 papéis, com o nome do bicho), sem passar da largura da tela | `python3 tests/e2e.py dark` e `light` | 27/10/2026 |
 | Denunciar e abonar pelo caderno (um por um e tudo de uma vez, uma vez por rodada), reações das IAs, personalidades sorteadas por partida, fala pesando o dobro com a ata; balanceamento com tudo isso: liberais 51% a 54% com a mesa no mesmo nível | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (162 casos); `node scripts/ai_bench.mjs 200` | 28/10/2026 |
 | DLC Brasil: só com a senha, nomes e bichos próprios (tucano, bezerro, boi, onça, polvo), galeria com o Brasil depois da senha; condor no lugar da onça liberal | `python3 tests/e2e.py dark` e `light` | 28/10/2026 |
+| Painel de raciocínio removido (o motivo segue gravado); acerto das anotações no fim e nas jogadas boas; denunciar inimigos; votos na língua do continente; faixa com as cores do continente | `python3 tests/e2e.py dark` e `light`; `node tests/core.mjs` (168 casos) | 28/10/2026 |
 | Depois de um veto aceito, o baralho é reabastecido | caso em `tests/unit.cases.mjs` | 26/10/2026 |
 | A produção (https://secret-game-gamma.vercel.app) serve o commit da `main` | Página lida: `meta app-commit` = `6e6e539` | 13/10/2026 |
 

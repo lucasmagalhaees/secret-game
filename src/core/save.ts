@@ -32,8 +32,8 @@ export function readGame(x: unknown): Game | null {
   const hist = g.hist === undefined ? [] : g.hist;
   if (!Array.isArray(hist) || !hist.every((e: Event) => !!e && typeof e === 'object' && typeof e.k === 'string')) return null;
   // the record of why the players run by the app decided (D16) is only for looking at: damaged, it is dropped, not the game
-  const { trace, ...rest } = g;
-  return { ...rest, hist, ...(isTrace(trace, n) ? { trace } : {}) };
+  const { trace, notes, ...rest } = g;
+  return { ...rest, hist, ...(isTrace(trace, n) ? { trace } : {}), ...readNotes(notes) };
 }
 const isTrace = (x: unknown, n: number): x is Trace[] => Array.isArray(x) && x.every((t: Trace) => !!t && typeof t === 'object' && isIdx(t.seat, n) && typeof t.ask === 'string' && Number.isInteger(t.a) && Number.isInteger(t.at)
   && (t.hand === undefined || isLaws(t.hand)) && !!t.why && Array.isArray(t.why.text) && t.why.text.every(l => typeof l === 'string')
@@ -62,9 +62,9 @@ function readNotes(x: unknown): { notes?: Record<string, Law> } {
 }
 /** Everything saved, as it was read from the device. */
 export function readState(x: unknown): AppState {
-  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown; ai?: unknown; level?: unknown; train?: unknown; assist?: unknown; pack?: unknown; notes?: unknown; notesOpen?: unknown; live?: unknown; coach?: unknown; speed?: unknown; debug?: unknown; flip?: unknown; region?: unknown; dlc?: unknown }) : {};
+  const o = x && typeof x === 'object' ? (x as { names?: unknown; game?: unknown; theme?: unknown; look?: unknown; quiet?: unknown; ai?: unknown; level?: unknown; train?: unknown; assist?: unknown; pack?: unknown; notes?: unknown; notesOpen?: unknown; live?: unknown; coach?: unknown; speed?: unknown; flip?: unknown; region?: unknown; dlc?: unknown }) : {};
   const flags = Array.isArray(o.ai) ? o.ai : [];
   const seats = (Array.isArray(o.names) ? o.names : []).map((s, i) => ({ s, ai: flags[i] === true })).filter((x): x is { s: string; ai: boolean } => typeof x.s === 'string' && !!x.s.trim()).slice(0, MAX_PLAYERS);
   const names = seats.map(x => x.s.slice(0, NAME_MAX)), ai = seats.map(x => x.ai);
-  return { v: 1, names, game: readGame(o.game), ...(ai.some(Boolean) ? { ai } : {}), ...(LEVELS.includes(o.level as Level) ? { level: o.level as Level } : {}), ...(ROLES.includes(o.train as Role) ? { train: o.train as Role } : {}), ...(o.assist === true ? { assist: true as const } : {}), ...(o.pack === 'comunismo' ? { pack: 'comunismo' as const } : {}), ...readNotes(o.notes), ...(o.notesOpen === true ? { notesOpen: true as const } : {}), ...(o.live === true ? { live: true as const } : {}), ...(o.coach === true ? { coach: true as const } : {}), ...(o.debug === true ? { debug: true as const } : {}), ...(o.flip === true ? { flip: true as const } : {}), ...(o.dlc === true ? { dlc: true as const } : {}), ...(REGIONS.includes(o.region as Region) && o.region !== 'mundo' ? { region: o.region as Region } : {}), ...(o.speed === 'lenta' || o.speed === 'rapida' ? { speed: o.speed } : {}), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
+  return { v: 1, names, game: readGame(o.game), ...(ai.some(Boolean) ? { ai } : {}), ...(LEVELS.includes(o.level as Level) ? { level: o.level as Level } : {}), ...(ROLES.includes(o.train as Role) ? { train: o.train as Role } : {}), ...(o.assist === true ? { assist: true as const } : {}), ...(o.pack === 'comunismo' ? { pack: 'comunismo' as const } : {}), ...readNotes(o.notes), ...(o.notesOpen === true ? { notesOpen: true as const } : {}), ...(o.live === true ? { live: true as const } : {}), ...(o.coach === true ? { coach: true as const } : {}), ...(o.flip === true ? { flip: true as const } : {}), ...(o.dlc === true ? { dlc: true as const } : {}), ...(REGIONS.includes(o.region as Region) && o.region !== 'mundo' ? { region: o.region as Region } : {}), ...(o.speed === 'lenta' || o.speed === 'rapida' ? { speed: o.speed } : {}), ...(o.theme === 'light' || o.theme === 'dark' ? { theme: o.theme } : {}), ...(o.look === 'deco' ? { look: o.look } : {}), ...(o.quiet === true ? { quiet: true as const } : {}) };
 }
