@@ -466,14 +466,11 @@ function vDrawer(g: Game): string {
     return `<button class="tell ${m}" data-act="denounce" data-i="${i}" data-v="${m === 'L' ? 'trust' : 'acc'}" title="${what}" aria-label="${what}">📣</button>`;
   };
   const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span><span class="note-acts">${kit.cell(i, true)}${say(i)}</span></li>`)).join('');
-  const marked = (m: Law): number[] => g.players.map((_, i) => i).filter(i => i !== me && g.players[i].alive && claimed(i) === m && Core.canDenounce(g, me, i));
-  const libs = marked('L'), hidden = marked('F');
-  const bulk = (xs: number[], m: Law, label: string): string => `<button class="btn ${m === 'L' ? 'ghost ' : ''}block tellall ${m}" data-act="denounceall" data-v="${xs.join(',')}" data-t="${m === 'L' ? 'trust' : 'acc'}" id="tell${m}"${xs.length ? '' : ' disabled'}>📣 ${label}${xs.length ? ` (${xs.length})` : ''}</button>`;
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
   return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. 📣 diz à mesa o que você marcou de alguém, e vale blefar: marque o que quiser que a mesa acredite. Uma vez por rodada para cada um; as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
-    ${bulk(hidden, 'F', `Denunciar ${W.short.toLowerCase()}`)}${bulk(libs, 'L', 'Denunciar liberais')}${heard}</aside>`;
+    ${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
 const whyText = (g: Game, line: string): string => line.replace(/\{p(\d+)\}/g, (_, i: string) => (g.players[+i] ? `<b>${name(g, +i)}</b>` : '?'));

@@ -308,11 +308,8 @@ with sync_playwright() as p:
     pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').click()
     name = G()['players'][int(first)]['name']
     assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
-    pg.click('#tellF'); assert pg.locator('#tellF').is_disabled(), 'every one marked on the hidden side, at once'
-    other = str([i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'][1]); pg.locator(f'#notes [data-act=note][data-i="{other}"][data-v=L]').click()
-    pg.click('#tellL'); said = [e for e in G()['hist'] if e['k'] == 'talk' and e['by'] == 6]
-    assert len(said) == 4 and [e['say'] for e in said].count('trust') == 1 and pg.locator('#tellL').is_disabled(), 'a bluff is a claim too: whatever is marked'; shot(f's5-denunciar-{THEME}.png')
-    pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 2' in txt('#notestoggle'), 'closed, the marks stay in view'
+    assert pg.locator('#tellF, #tellL').count() == 0, 'one claim at a time (D30)'; shot(f's5-denunciar-{THEME}.png')
+    pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
     # the live suspicion: off by default, on with a tap, one bar per app player
     assert pg.locator('#players .meter').count() == 0
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
@@ -443,7 +440,7 @@ with sync_playwright() as p:
     pg.fill('#dlckey', 'unlockresenha'); pg.click('#dlcgo'); assert pg.evaluate('window.__APP.S.dlc') is True and pg.locator('#dlcon').count() == 1
     pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 7 * 2 * 3 and 'polvo' in txt('#gallery-brasil') and 'tucano' in txt('#gallery-brasil'), 'unlocked, the gallery shows Brazil too'; pg.click('#galleryback')
     pg.click('[data-act=region][data-v=brasil]'); br = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.brasil')
-    assert pg.evaluate('document.documentElement.dataset.region') == 'brasil' and 'gradient' in pg.evaluate("getComputedStyle(document.querySelector('#pack')).backgroundImage"), 'the cards wear the colours of the continent (D29)'
+    assert pg.evaluate('document.documentElement.dataset.region') == 'brasil', 'the continent is set on the page (D29)'
     assert all(x in br for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and pg.locator('#pack .packart svg').count() == 6 and overflow() == 0, 'the app seats take names of Brazil'
     # every continent shows its cast (liberal, member, leader) on both themes, and none of them overflows the screen
     for pack in ('fascismo', 'comunismo'):

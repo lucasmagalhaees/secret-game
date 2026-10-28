@@ -491,7 +491,6 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .drawer .tell.L{border-color:var(--lib)}
 .drawer .told{width:40px;text-align:center;color:var(--muted)}
 .persona{display:inline-block;padding:0 5px;border:1px solid currentColor;border-radius:3px;font-size:11px;opacity:.75;font-weight:400}
-#tellall{margin-top:10px}
 .heard{margin-top:12px;padding:10px;border:2px solid var(--line)}
 .heard ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
 .heard li.yes::before{content:"✓ ";color:var(--lib)}
@@ -516,10 +515,8 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 [data-region="asia"]{--reg:repeating-linear-gradient(90deg,#b8202b 0 14px,#e8b730 14px 18px)}
 [data-region="africa"]{--reg:repeating-linear-gradient(90deg,#e8b730 0 8px,#1f7a3a 8px 12px,#b8202b 12px 16px,#1f1b19 16px 20px)}
 [data-region="oceania"]{--reg:repeating-linear-gradient(90deg,#1b6f9c 0 8px,#e9d8a6 8px 11px,#c8553d 11px 14px)}
-[data-region]:not([data-region="mundo"]) .card{background-image:var(--reg);background-size:100% 6px;background-repeat:no-repeat;background-position:bottom}
 .dlc-region{background-image:linear-gradient(90deg,#1f9a4b 0 45%,#f2c230 45% 75%,#2b4fa8 75%);background-size:100% 6px;background-repeat:no-repeat;background-position:bottom}
 .dlc-region.on{background-color:var(--fg);color:var(--surface)}
-[data-region]:not([data-region="mundo"]) .slot.on{background-image:var(--reg),var(--reg);background-size:100% 5px,100% 5px;background-repeat:no-repeat;background-position:top,bottom}
 
 /* the Yes vote wears the continent (D29): a little flag-like picture behind the word, which keeps its own plate so it reads */
 [data-region="brasil"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231f9a4b%22/%3E%3Cpath%20d%3D%22M60%204%20L114%2022%20L60%2040%20L6%2022Z%22%20fill%3D%22%23f2c230%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2222%22%20r%3D%2213%22%20fill%3D%22%232b4fa8%22/%3E%3Cpath%20d%3D%22M47%2020%20C56%2017%2066%2018%2073%2023%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20fill%3D%22none%22/%3E%3C/svg%3E");background-size:100% 100%}
@@ -529,7 +526,7 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 [data-region="africa"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%23e8b730%22/%3E%3Crect%20x%3D%226%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f7a3a%22/%3E%3Crect%20x%3D%2214%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%23b8202b%22/%3E%3Crect%20x%3D%2222%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f1b19%22/%3E%3Crect%20x%3D%2292%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f1b19%22/%3E%3Crect%20x%3D%22100%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%23b8202b%22/%3E%3Crect%20x%3D%22108%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f7a3a%22/%3E%3Cpath%20d%3D%22M0%206%20H120%20M0%2038%20H120%22%20stroke%3D%22%231f1b19%22%20stroke-width%3D%223%22/%3E%3C/svg%3E");background-size:100% 100%}
 [data-region="oceania"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231b6f9c%22/%3E%3Cpath%20d%3D%22M0%2030%20C15%2022%2030%2038%2045%2030%20C60%2022%2075%2038%2090%2030%20C105%2022%20115%2034%20120%2030%20V44%20H0Z%22%20fill%3D%22%23e9d8a6%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2210%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2216%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2210%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%22108%22%20cy%3D%2216%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%226%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%226%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3C/svg%3E");background-size:100% 100%}
 [data-region]:not([data-region="mundo"]) .btn.vote.L{border-color:#1f1b19}
-[data-region]:not([data-region="mundo"]) .btn.vote.L .vw{color:#fff;text-shadow:0 2px 0 #1f1b19,0 0 6px #1f1b19,2px 0 0 #1f1b19,-2px 0 0 #1f1b19}
+[data-region]:not([data-region="mundo"]) .btn.vote.L .vw{color:#fff;-webkit-text-stroke:1.5px #000;paint-order:stroke fill;text-shadow:0 2px 0 #000,0 0 3px #000}
 [data-region]:not([data-region="mundo"]) .btn.vote.L.on{outline:3px solid var(--lib);outline-offset:2px}
 [data-region]:not([data-region="mundo"]) .btn.vote.F{background-color:var(--fas);color:#fff;border-color:#1f1b19}
 [data-region]:not([data-region="mundo"]) .btn.vote.F.on{outline:3px solid var(--fas);outline-offset:2px}
