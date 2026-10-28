@@ -347,6 +347,17 @@ Modelo de uma decisão:
   - O resumo do fim repetia a linha "Você votou Nein! em Trujillo + Alfonsín" quando o mesmo par era votado duas vezes. O voto que perdeu o jogo agora diz quem votou Ja!.
 - **Não sei:** se as personalidades ficam reconhecíveis jogando. Também não sei se a pessoa vai querer que as reações pesem nas contas.
 
+## D27. DLC Brasil, com senha
+
+- **Contexto (28/10/2026):** "preciso de uma DLC brasil com senha chumbada `unlockresenha`, mediante essa senha libera os commies: lula, jones manoel, boulos, dilma, manuela dávila, renan santos; nazis: bolsonaro, plinio salgado, figueiredo, geisel, castelo branco, ultra; liberais: amoedo, zema, aécio neves, enéias, serra, fhc".
+- **Decisão:** requisito 22 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - A senha fica escrita no código (`DLC_KEY`), como pedido. Quem olhar o código acha a senha; é piada entre amigos, não cadeado. Liberada uma vez, fica liberada no aparelho (`S.dlc`).
+  - "Brasil" entra como mais uma opção de nomes, ao lado dos continentes. Usa os bichos das Américas e não aparece na galeria.
+  - Como nos outros continentes (D24), os nomes vão misturados e o papel é sorteado. O app não diz em lugar nenhum quem é "nazi" ou "commie": a divisão que a pessoa mandou só decide em qual tema cada nome entra. No tema fascista entram os liberais e os da lista "nazis"; no tema comunista, os liberais e os da lista "commies". Assim o app não rotula político vivo, e o Bolsonaro pode muito bem sair liberal.
+  - "ultra" foi lido como Ustra. Os nomes ficaram curtos, como na mesa: Aécio, Enéas, Manuela, Amoêdo. Só aqui o Lula aparece com o nome; fora da DLC continua "Polvo".
+- **Não sei:** se "ultra" era mesmo o Ustra.
+
 ## Pendências
 
 | Pendência | Quem resolve |

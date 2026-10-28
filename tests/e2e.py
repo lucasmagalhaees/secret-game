@@ -451,6 +451,12 @@ with sync_playwright() as p:
     pg.click('[data-act=region][data-v=americas]'); ams = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.americas')
     assert pg.inner_html('#pack .packart') != world_art and pg.locator('#pack .packart svg').count() == 6, 'the drawings change with the continent'
     assert pg.evaluate('window.__APP.S.region') == 'americas' and all(x in ams for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and overflow() == 0, 'the app seats take names of the Americas'
+    # D27: the Brazil expansion shows up only with the password
+    assert pg.locator('[data-act=region][data-v=brasil]').count() == 0
+    pg.click('#dlc summary'); pg.fill('#dlckey', 'senha'); pg.click('#dlcgo'); assert pg.locator('[data-act=region][data-v=brasil]').count() == 0 and pg.evaluate('window.__APP.S.dlc') is None, 'a wrong password unlocks nothing'
+    pg.fill('#dlckey', 'unlockresenha'); pg.click('#dlcgo'); assert pg.evaluate('window.__APP.S.dlc') is True and pg.locator('#dlcon').count() == 1
+    pg.click('[data-act=region][data-v=brasil]'); br = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.brasil')
+    assert all(x in br for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and pg.locator('#pack .packart svg').count() == 6 and overflow() == 0, 'the app seats take names of Brazil'
     # every continent shows its cast (liberal, member, leader) on both themes, and none of them overflows the screen
     for pack in ('fascismo', 'comunismo'):
         pg.click(f'[data-act=pack][data-v={pack}]')

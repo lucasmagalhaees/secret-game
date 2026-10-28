@@ -521,3 +521,4 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .heard li.yes::before{content:"✓ ";color:var(--lib)}
 .heard li.no::before{content:"✗ ";color:var(--fas)}
 .heard li.meh::before{content:"? ";color:var(--muted)}
+.dlc{margin-top:10px}.dlc summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:40px;display:flex;align-items:center}

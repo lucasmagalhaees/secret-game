@@ -303,7 +303,7 @@ const HEADS: Record<string, (s: Side) => string> = {
 };
 /** Who stands for each side on each continent (D24): the liberal, the fascist, the communist. The world keeps the
  *  bird, the alligator and the white wolf. */
-const ANIMALS: Record<Exclude<Region, 'mundo'>, { L: string; F: string; C: string }> = {
+const ANIMALS: Record<Exclude<Region, 'mundo' | 'brasil'>, { L: string; F: string; C: string }> = {
   americas: { L: 'onca', F: 'urubu', C: 'coiote' },
   africa: { L: 'elefante', F: 'hiena', C: 'chacal' },
   asia: { L: 'tigre', F: 'komodo', C: 'raposa' },
@@ -405,10 +405,10 @@ const LEADERS: Record<string, () => string> = {
     <path d="M50 60 C48 72 50 84 54 90 C56 82 56 70 56 60Z M70 60 C72 72 70 84 66 90 C64 82 64 70 64 60Z" fill="#f4ecd8" ${o(1.6)}/>
     <ellipse cx="60" cy="44" rx="4" ry="3" fill="${K}"/>${pipe(72, 58)}${angry(36, 11, W)}`
 };
-const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
+const BOSSES: Record<Exclude<Region, 'mundo' | 'brasil'>, { H: string; S: string }> = {
   americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'rinoceronte' }, asia: { H: 'aranha', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }, oceania: { H: 'casuar', S: 'coala' }
 };
-const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
+const leader = (pack: Pack, region: Exclude<Region, 'mundo' | 'brasil'>): string => pack === 'comunismo'
   ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`
   : `${spot}${bossBody()}${LEADERS[BOSSES[region].H]()}${bossCap}${lectern}`;
 const LABEL: Record<string, string> = {
@@ -418,7 +418,8 @@ const LABEL: Record<string, string> = {
   rato: 'rato', morsa: 'morsa', casuar: 'casuar', coala: 'coala'
 };
 /** The animal behind each role, by name, for the gallery (D25). */
-export const animalOf = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+export const animalOf = (r: Role, pack: Pack = 'fascismo', reg: Region = 'mundo'): string => {
+  const region = reg === 'brasil' ? 'americas' : reg;                          // the expansion wears the Americas' animals (D27)
   if (region === 'mundo') return r === 'liberal' ? 'pássaro' : pack === 'comunismo' ? (r === 'hitler' ? 'urso' : 'lobo-branco') : r === 'hitler' ? 'naja' : 'jacaré';
   if (r === 'hitler') return LABEL[BOSSES[region][pack === 'comunismo' ? 'S' : 'H']];
   return LABEL[ANIMALS[region][r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F']];
@@ -429,7 +430,8 @@ const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox=
 
 /** The big picture on a role card. In the communist theme (D12) the hidden side is the wolf and its leader the bear;
  *  on a continent (D24), the liberal and the member of the hidden side are that continent's animals. */
-export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+export const portrait = (r: Role, pack: Pack = 'fascismo', reg: Region = 'mundo'): string => {
+  const region = reg === 'brasil' ? 'americas' : reg;
   if (r === 'hitler' && region !== 'mundo' && BOSSES[region]) return svg(leader(pack, region), 'art');
   if (r !== 'hitler' && region !== 'mundo' && ANIMALS[region]) {
     const a = ANIMALS[region], s: Side = r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F';
