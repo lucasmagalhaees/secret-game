@@ -8,7 +8,7 @@
 import { believe, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
 import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
-import type { Ask, Event, Game, Gov, Law, Level, Party, Role, Seen, Talk, Trace, View } from './types';
+import type { Ask, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
 const isAi = (g: Game, i: number): boolean => !!g.players[i]?.ai;
@@ -107,17 +107,43 @@ export function canDenounce(g: Game, by: number, about: number): boolean {
 export function denounce(g: Game, by: number, about: number, trust: boolean, rand: () => number): Game {
   if (!canDenounce(g, by, about)) return g;
   const said: Talk = { k: 'talk', by, about, say: trust ? 'trust' : 'acc' };
-  const line = `${g.players[by].name}: "${trust ? 'Confio em' : 'Desconfio de'} ${g.players[about].name}."`;
+  // a claim (D30): what the person says someone is, true or a bluff
+  const line = `${g.players[by].name}: "${g.players[about].name} é ${trust ? 'liberal' : words(g.pack).f}."`;
   const heard: Game = { ...g, hist: [...g.hist, said] }, ts: Trace[] = [], re: [number, number][] = [];
   for (let i = 0; i < g.players.length; i++) {
     if (!isAi(g, i) || !g.players[i].alive || i === about) continue;
     const r = ask(heard, i, 'react', [REACT.agree, REACT.unsure, REACT.disagree], rand);
     ts.push(r.t); re.push([i, r.a]);
   }
-  const verb = ['concorda', 'não sabe', 'discorda'];
-  const lines = [line, ...(re.length ? [`Reações: ${re.map(([i, a]) => `${g.players[i].name} ${verb[a]}`).join(', ')}.`] : []), ...(!trust && isAi(g, about) ? [`${g.players[about].name}: "Não sou eu!"`] : [])];
+  const at = g.hist.length, lines = [line, ...re.map(([i, a]) => `${g.players[i].name}: "${reply(g, i, a, at)}"`), ...(isAi(g, about) ? [`${g.players[about].name}: "${answer(g, about, !trust, at)}"`] : [])];
   return { ...traced(g, ts), log: [...g.log, ...lines], hist: [...g.hist, { ...said, ...(re.length ? { re } : {}) }] };
 }
+
+/** How each personality takes a claim (D30), in its own words: agreeing, unsure, disagreeing. Words only. */
+const REPLY: Record<Persona, [string[], string[], string[]]> = {
+  certinho: [['Faz sentido, eu também acho.', 'Concordo, as jogadas batem.'], ['Ainda não dá para dizer.', 'Prefiro esperar mais uma lei.'], ['Acho que não, viu.', 'Não foi isso que eu vi.']],
+  desconfiado: [['Eu sabia!', 'Tava na cara.'], ['Hmm, de você eu também desconfio.', 'Todo mundo aqui é suspeito.'], ['Por que tanta certeza?', 'Estranho você dizer isso.']],
+  cetico: [['Pode ser.', 'Tá, pode ser.'], ['Fala é fácil.', 'Mostra que eu acredito.'], ['Duvido.', 'Não me convenceu.']],
+  critico: [['A ata bate com isso.', 'Os governos dele confirmam.'], ['Sem prova na ata, não sei.', 'Cadê a lei que mostra isso?'], ['A ata diz outra coisa.', 'Os votos não batem com isso.']],
+  centrado: [['Concordo.', 'É o que parece.'], ['Pode ser, pode não ser.', 'Ainda tô no meio.'], ['Não concordo.', 'Acho que é o contrário.']],
+  blefador: [['Óbvio! Eu falei isso antes.', 'Finalmente alguém viu.'], ['Sei lá, tô de olho em todo mundo.', 'Eu confio mais em mim.'], ['Nada a ver!', 'Que viagem.']],
+  caotico: [['Bora!', 'Elimina logo!'], ['Cara ou coroa?', '¯\\_(ツ)_/¯'], ['Mentira!', 'Você é que é!']]
+};
+/** What the one claimed says back (D30): denying it when accused, in its own way; thanking when vouched for. */
+const DENY: Record<Persona, string[]> = {
+  certinho: ['Pode olhar meus governos, joguei limpo.', 'Eu passei liberal quando pude.'],
+  desconfiado: ['Engraçado você me acusar logo agora…', 'Quem acusa primeiro é que costuma ser.'],
+  cetico: ['Prova.', 'E de onde você tirou isso?'],
+  critico: ['Mostra na ata onde eu errei.', 'Minhas leis estão aí, confere.'],
+  centrado: ['Entendo a dúvida, mas não sou.', 'Tá enganado, mas tudo bem.'],
+  blefador: ['Eu? Sou o mais liberal dessa mesa!', 'Isso é desespero seu.'],
+  caotico: ['Talvez eu seja, talvez não.', 'Me elege e descobre.']
+};
+const THANKS = ['Valeu pela confiança.', 'Obrigado, finalmente alguém.', 'É isso aí.', 'Viu? Eu falei.'];
+const pick = (xs: string[], seat: number, at: number): string => xs[(seat * 7 + at) % xs.length];
+const persona = (g: Game, i: number): Persona => g.players[i].persona || 'centrado';
+export const reply = (g: Game, i: number, a: number, at: number): string => pick(REPLY[persona(g, i)][a] ?? ['…'], i, at);
+export const answer = (g: Game, i: number, accused: boolean, at: number): string => (accused ? pick(DENY[persona(g, i)], i, at) : pick(THANKS, i, at));
 
 /* ---------- the trainer, for the person (D13) ---------- */
 export interface Coach {

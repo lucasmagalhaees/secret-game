@@ -385,13 +385,13 @@ function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => str
   const notes = S.notes || {};
   const cell = (i: number, edit: boolean): string => {
     if (i === me) return edit ? '' : '<span class="tag you">Você</span>';
-    const known = sure.get(i), mark = notes[i];
-    if (known) return `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>`;
+    const known = sure.get(i), mark = notes[i] || (edit ? known?.[1] : undefined);
+    if (known && !edit) return `<span class="tag sure-tag ${known[1]}">${known[0]} ✓</span>`;
     if (!edit) return mark ? `<span class="tag mark ${mark}">${mark === 'L' ? W.libs : W.short}</span>` : '';
     const btn = (v: '' | Law, label: string): string => `<button class="${(mark || '') === v ? 'on' : ''} ${v}" data-act="note" data-i="${i}" data-v="${v}" aria-pressed="${(mark || '') === v}">${label}</button>`;
     return `<span class="segm notes-segm" role="group" aria-label="Anotação sobre ${esc(g.players[i].name)}">${btn('', '?')}${btn('L', W.libs)}${btn('F', W.short)}</span>`;
   };
-  return { me, cell, party: (i: number): Law | '' => sure.get(i)?.[1] || notes[i] || '', sure: (i: number): boolean => sure.has(i) };
+  return { me, cell, party: (i: number): Law | '' => notes[i] || sure.get(i)?.[1] || '', sure: (i: number): boolean => sure.has(i) };
 }
 /** What the last government (or investigation) told the table, kept in view under the table until the next one
  *  (D21): a claim no longer flashes by in a note. */
@@ -399,7 +399,22 @@ function vSaid(g: Game): string {
   if (g.phase === 'reveal') return '';
   const i = g.hist.map((e, j) => ((e.k === 'gov' || e.k === 'veto') && (e.pc !== undefined || e.cc !== undefined)) || (e.k === 'inv' && e.said !== undefined) ? j : -1).filter(j => j >= 0).pop();
   if (i === undefined) return '';
-  return `<p class="said" id="said"><small>${g.hist[i].k === 'inv' ? 'Última investigação' : 'Último governo'}</small>${moment(g, i, solo(g))}</p>`;
+  return `<p class="said" id="said"><small>${g.hist[i].k === 'inv' ? 'Última investigação' : 'Último governo'}</small>${g.hist[i].k === 'inv' ? moment(g, i, solo(g)) : ledger(g, i)}</p>`;
+}
+/** What a government told the table, as a balance (D30): the president drew this and threw that away, the chancellor got
+ *  this, threw that away and enacted the law. The throws are worked out from what each said; when the two stories do
+ *  not add up, it says so. */
+function ledger(g: Game, i: number): string {
+  const e = g.hist[i] as Gov, me = solo(g), who = (j: number): string => (j === me ? 'você' : `<b>${name(g, j)}</b>`);
+  const n3 = (n: number): string => (n === 0 ? '3 liberais' : n === 3 ? '3 {fs}' : n === 1 ? '1 {f} e 2 liberais' : '2 {fs} e 1 liberal');
+  const n2 = (n: number): string => (n === 0 ? '2 liberais' : n === 2 ? '2 {fs}' : '1 {f} e 1 liberal');
+  const one = (f: boolean): string => (f ? '1 {f}' : '1 liberal'), law = e.k === 'veto' ? undefined : e.law;
+  const pc = e.pc !== undefined && e.pc >= 0 ? e.pc : null, cc = e.cc !== undefined && e.cc >= 0 ? e.cc : null;
+  const pThrow = pc !== null && cc !== null ? pc - cc : null, cThrow = cc !== null && law ? cc - (law === 'F' ? 1 : 0) : null;
+  const pres = pc === null ? `Presidente ${who(e.pres)} não disse o que tirou` : `Presidente ${who(e.pres)}: tirou ${n3(pc)}${pThrow === 0 || pThrow === 1 ? `, descartou ${one(pThrow === 1)}` : ''}`;
+  const chanc = cc === null ? `chanceler ${who(e.chanc)} não disse o que recebeu` : `chanceler ${who(e.chanc)}: recebeu ${n2(cc)}${e.k === 'veto' ? ', pediu veto' : cThrow === 0 || cThrow === 1 ? `, descartou ${one(cThrow === 1)}` : ''}`;
+  const off = (pThrow !== null && pThrow !== 0 && pThrow !== 1) || (cThrow !== null && cThrow !== 0 && cThrow !== 1);
+  return `${pres}. ${chanc[0].toUpperCase()}${chanc.slice(1)}${law ? ` e aprovou ${law === 'L' ? 'liberal' : '{f}'}` : ''}.${off ? ' <b class="clash">A conta não fecha: alguém mentiu.</b>' : ''}`;
 }
 /** The whole table at a glance, at the top (D18): every seat in order, who is president and chancellor, who is out, and,
  *  playing alone, what the person knows or marked of each (the colour) and, with the live suspicion on, how much each
@@ -441,22 +456,24 @@ function vDrawer(g: Game): string {
   const kit = noteKit(g);
   if (!kit) return '';
   const open = !!S.notesOpen, me = kit.me;
-  // telling the table (D26): accuse whoever is marked on the hidden side or not marked, vouch for whoever is marked liberal
+  // a claim to the table (D30): what the notebook says of someone, true or a bluff; the app players weigh it like any talk
+  const claimed = (i: number): Law | '' => kit.party(i);
   const say = (i: number): string => {
     if (!Core.canDenounce(g, me, i)) return g.players[i].alive && g.players[me].alive ? '<span class="told" title="Já falou dele nesta rodada">✓</span>' : '';
-    const mark = kit.party(i), trust = !!mark && mark === Core.partyOf(g.players[me].role), what = `${trust ? 'Abonar' : 'Denunciar'} ${esc(g.players[i].name)}`;
-    return `<button class="tell${trust ? ' L' : ' F'}" data-act="denounce" data-i="${i}" data-v="${trust ? 'trust' : 'acc'}" title="${what}" aria-label="${what}">${trust ? '👍' : '📣'}</button>`;
+    const m = claimed(i);
+    if (!m) return '<span class="told" title="Marque primeiro">·</span>';
+    const what = `Dizer à mesa que ${esc(g.players[i].name)} é ${m === 'L' ? 'liberal' : W.f}`;
+    return `<button class="tell ${m}" data-act="denounce" data-i="${i}" data-v="${m === 'L' ? 'trust' : 'acc'}" title="${what}" aria-label="${what}">📣</button>`;
   };
   const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span><span class="note-acts">${kit.cell(i, true)}${say(i)}</span></li>`)).join('');
-  // "denounce the enemies": who the person knows (the team, by rule 3) or marked to be on the other side from them
-  const team = new Set(Core.knows(g, me).map(k => g.players.findIndex(p => p.name === k.name))), mine = Core.partyOf(g.players[me].role);
-  const foes = g.players.map((_, i) => i).filter(i => i !== me && g.players[i].alive && (team.size ? !team.has(i) : !!kit.party(i) && kit.party(i) !== mine));
-  const all = foes.filter(i => Core.canDenounce(g, me, i));
+  const marked = (m: Law): number[] => g.players.map((_, i) => i).filter(i => i !== me && g.players[i].alive && claimed(i) === m && Core.canDenounce(g, me, i));
+  const libs = marked('L'), hidden = marked('F');
+  const bulk = (xs: number[], m: Law, label: string): string => `<button class="btn ${m === 'L' ? 'ghost ' : ''}block tellall ${m}" data-act="denounceall" data-v="${xs.join(',')}" data-t="${m === 'L' ? 'trust' : 'acc'}" id="tell${m}"${xs.length ? '' : ' disabled'}>📣 ${label}${xs.length ? ` (${xs.length})` : ''}</button>`;
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
-  const verb = [['concorda', 'yes'], ['não sabe', 'meh'], ['discorda', 'no']];
-  const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${last.say === 'trust' ? 'Confio em' : 'Desconfio de'} ${esc(g.players[last.about].name)}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${verb[a][1]}"><b>${esc(g.players[i].name)}</b>${g.players[i].persona ? ` <small>${PERSONA_W[g.players[i].persona as Persona][0]}</small>` : ''} ${verb[a][0]}</li>`).join('')}${last.say === 'acc' && g.players[last.about].ai ? `<li class="no"><b>${esc(g.players[last.about].name)}</b> nega</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. 📣 denuncia quem é do outro lado e 👍 abona quem é do seu, para a mesa toda, uma vez por rodada para cada um, e as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
-    <button class="btn block" data-act="denounceall" data-v="${all.join(',')}" id="tellall"${all.length ? '' : ' disabled'}>📣 Denunciar inimigos${all.length ? ` (${all.length})` : ''}</button>${all.length ? '' : `<p class="hint">${foes.length ? 'Você já denunciou todos nesta rodada.' : `Marque quem é ${W.short} para denunciar todos de uma vez.`}</p>`}${heard}</aside>`;
+  const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
+  const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. 📣 diz à mesa o que você marcou de alguém, e vale blefar: marque o que quiser que a mesa acredite. Uma vez por rodada para cada um; as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
+    ${bulk(hidden, 'F', `Denunciar ${W.short.toLowerCase()}`)}${bulk(libs, 'L', 'Denunciar liberais')}${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
 const whyText = (g: Game, line: string): string => line.replace(/\{p(\d+)\}/g, (_, i: string) => (g.players[+i] ? `<b>${name(g, +i)}</b>` : '?'));

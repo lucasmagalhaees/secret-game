@@ -64,7 +64,8 @@ function botPlayed(before: Game, next: Game): void {
   gavelIf(before, next);
   if (next.players.some((p, i) => !p.alive && before.players[i].alive)) { flash(); sound('gavel'); buzz(220); }
   const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
-  play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line || undefined);
+  // the votes and what a government said are already on screen, at the top: no note at the foot for them
+  play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);
 }
 /** A person voted at a table with app players: once every person still in the game has, the votes are counted. */
 function myVote(i: number, yes: boolean): void {
@@ -205,8 +206,8 @@ export function initEvents(): void {
       // every enemy accused at once (D26): the seats the notebook listed on the button
       ui.undo = null; const me = g.players.findIndex(p => !p.ai);
       let next = g;
-      for (const k of (d.v || '').split(',').filter(Boolean)) next = Core.denounce(next, me, Number(k), false, rand);
-      play(next, next === g ? undefined : 'Você denunciou os inimigos à mesa.');
+      for (const k of (d.v || '').split(',').filter(Boolean)) next = Core.denounce(next, me, Number(k), d.t === 'trust', rand);
+      play(next, next === g ? undefined : 'Você contou à mesa.');
     }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
