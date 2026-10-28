@@ -545,3 +545,18 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .led-arrow{margin:0 2px;color:var(--muted)}
 .led-law{font:700 12px/1 var(--display);text-transform:uppercase;letter-spacing:.06em}
 .led-quiet{color:var(--muted);font-size:13px}
+/* the notebook, plainer (D30): one line per seat, the marks and the claim side by side */
+.drawer .names.noted li{padding:8px 0;gap:6px}
+.drawer .noted .who{font-weight:700}
+.drawer .tell{width:36px;min-height:36px;font-size:16px;border-radius:50%}
+.drawer .claim-pick .tell{border-radius:3px;min-height:36px}
+.drawer .notes-segm button{min-height:36px}
+.drawer .sides{display:flex;gap:6px;margin-left:auto}
+.drawer .side{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 6px;border:2px solid var(--line);min-width:72px}
+.drawer .side b{font:800 11px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.drawer .side.L.on{background:var(--lib);color:var(--on-party)}
+.drawer .side.F.on{background:var(--fas);color:var(--on-party)}
+.drawer .side>span{display:flex;gap:4px}
+.drawer .pen,.drawer .side .tell{width:30px;height:30px;min-height:0;padding:0;font-size:15px;border:2px solid currentColor;background:var(--surface);border-radius:4px;cursor:pointer}
+.drawer .pen.on{outline:2px solid var(--fg)}
+.drawer .side .told{width:30px}
