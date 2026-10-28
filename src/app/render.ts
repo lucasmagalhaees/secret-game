@@ -26,7 +26,9 @@ export function render(): void {
   document.documentElement.dataset.region = R;              // the cards wear the continent's colours (D29)
   part('boss').textContent = W.boss;
   part('score').innerHTML = g ? `<span class="chip L">${g.laws.L}/${Core.WIN.L}</span><span class="chip F">${g.laws.F}/${Core.WIN.F}</span>` : '';
+  const keep = document.getElementById('drawer')?.scrollTop ?? 0;   // repainting must not scroll the notebook back up
   view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
+  const dr = document.getElementById('drawer'); if (dr) dr.scrollTop = keep;
 }
 
 /** The words of the theme of what is on screen (D12): the game's, or before a game the one chosen at the table. */
