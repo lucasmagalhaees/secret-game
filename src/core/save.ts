@@ -1,6 +1,6 @@
 /* What was saved on the device, read back. A saved game that does not hold together is dropped, so a damaged state
    never breaks the page: the names and the theme still come back. */
-import { LEVELS, MAX_PLAYERS, NAME_MAX, REGIONS, WIN } from './game';
+import { LEVELS, MAX_PLAYERS, NAME_MAX, PERSONAS, REGIONS, WIN } from './game';
 import type { AppState, Event, Game, Law, Level, Phase, Player, Region, Role, Saved, Trace } from './types';
 
 const ROLES: Role[] = ['liberal', 'fascista', 'hitler'];
@@ -11,7 +11,7 @@ const isInt = (x: unknown, max: number): x is number => Number.isInteger(x) && (
 const isIdx = (x: unknown, n: number): x is number => isInt(x, n - 1);
 const isPlayer = (p: unknown): p is Player => {
   const o = p as Player;
-  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean' && (o.ai === undefined || o.ai === true) && (o.level === undefined || LEVELS.includes(o.level)) && (o.mood === undefined || (typeof o.mood === 'number' && o.mood >= -1 && o.mood <= 1));
+  return !!o && typeof o === 'object' && typeof o.name === 'string' && ['liberal', 'fascista', 'hitler'].includes(o.role) && typeof o.alive === 'boolean' && (o.ai === undefined || o.ai === true) && (o.level === undefined || LEVELS.includes(o.level)) && (o.mood === undefined || (typeof o.mood === 'number' && o.mood >= -1 && o.mood <= 1)) && (o.persona === undefined || PERSONAS.includes(o.persona));
 };
 
 /** A saved game, or null if it does not hold together. */

@@ -303,6 +303,13 @@ with sync_playwright() as p:
     pg.locator('#notes [data-act=note][data-v=L]').first.click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
+    # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
+    assert pg.locator('#notes .persona').count() == 6 and pg.locator('#notes [data-act=denounce]').count() == 6
+    pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').click()
+    name = G()['players'][int(first)]['name']
+    assert f'Lu: "Desconfio de {name}."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'accused: five react, the accused denies it, once a round'
+    pg.click('#tellall'); said = [e for e in G()['hist'] if e['k'] == 'talk' and e['by'] == 6]
+    assert len(said) == 3 and pg.locator('#tellall').count() == 0, 'telling all: what is marked or known, once each'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
     # the live suspicion: off by default, on with a tap, one bar per app player
     assert pg.locator('#players .meter').count() == 0
