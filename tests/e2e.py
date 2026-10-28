@@ -304,10 +304,10 @@ with sync_playwright() as p:
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
-    assert pg.locator('#notes .persona').count() == 6 and pg.locator('#notes [data-act=denounce]').count() == 3, 'a claim for each one marked: the one marked and the two known'
-    pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').click()
+    assert pg.locator('#notes .persona').count() == 6 and pg.locator('#notes [data-act=claimpick]').count() == 6, 'a claim for each one'
+    pg.locator(f'#notes [data-act=claimpick][data-i="{first}"]').click(); pg.locator(f'#notes [data-act=denounce][data-i="{first}"][data-v=acc]').click()
     name = G()['players'][int(first)]['name']
-    assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
+    assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=claimpick][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
     assert pg.locator('#tellF, #tellL').count() == 0, 'one claim at a time (D30)'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
     # the live suspicion: off by default, on with a tap, one bar per app player
@@ -353,7 +353,7 @@ with sync_playwright() as p:
         if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
             seen.add('seats'); assert pg.locator('#seats li').count() == 7 and 'você' in txt('#seats').lower() and pg.locator('#seats li.F').count() >= 2, ('the table at the top, with what the person knows', txt('#seats'))
             assert 'Como funciona esta fase' in txt('[data-act=help]'), 'the help button says what it is'
-        if pg.locator('#said').count(): seen.add('said'); assert any(w in txt('#said') for w in ('tirou', 'recebeu', 'disse', 'investigou')), txt('#said')
+        if pg.locator('#said').count(): seen.add('said'); assert any(w in txt('#said') for w in ('Presidente', 'investig')), txt('#said')
         if pg.locator('#coach').count():
             seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
             assert pg.evaluate("!!(document.querySelector('#phase').compareDocumentPosition(document.querySelector('#coach')) & Node.DOCUMENT_POSITION_FOLLOWING)"), 'what the person has to do comes before the trainer'
