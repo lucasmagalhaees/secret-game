@@ -328,6 +328,13 @@ Modelo de uma decisão:
   - Cada bicho veste a farda do papel, para o papel continuar reconhecível pela roupa: o liberal de azul, o fascista de marrom, o Hitler de casaco no púlpito, o comunista de túnica vermelha, o Stalin de túnica cáqui com cachimbo.
 - **Não sei:** se o casuar e o ornitorrinco são reconhecíveis para quem não conhece os bichos. O Hitler da Ásia começou escorpião e virou aranha, escolhida entre três prévias (vespa-mandarina, tubarão, aranha).
 
+## D25. Galeria com todos os desenhos
+
+- **Contexto (27/10/2026):** "quero uma opcao pra ver todas aas artes dentro do site".
+- **Decisão:** requisito 22 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:** a galeria abre pelo cartão "Tema do jogo", que é onde se escolhe o continente, e ocupa a tela inicial até tocar em "Voltar". Mostra, por continente e por tema, o liberal, o membro do lado escondido e o líder, cada um com o nome do bicho. O liberal aparece nos dois temas porque é o mesmo desenho. Não abre durante uma partida.
+- **Não sei:** se vale mostrar também os símbolos das leis (balança, caveira, estrela).
+
 ## Pendências
 
 | Pendência | Quem resolve |

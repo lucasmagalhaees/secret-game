@@ -1,7 +1,7 @@
 import { Core } from '../core';
 import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Region, Role, Trace } from '../core';
 import type { EndTab } from './state';
-import { portrait, seal } from './art';
+import { animalOf, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { S, ui } from './state';
 import { builtFrom, canUpdate } from './update';
@@ -25,7 +25,7 @@ export function render(): void {
   document.documentElement.dataset.pack = P;
   part('boss').textContent = W.boss;
   part('score').innerHTML = g ? `<span class="chip L">${g.laws.L}/${Core.WIN.L}</span><span class="chip F">${g.laws.F}/${Core.WIN.F}</span>` : '';
-  view.innerHTML = themed(g ? vGame(g) : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
+  view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
 }
 
 /** The words of the theme of what is on screen (D12): the game's, or before a game the one chosen at the table. */
@@ -96,7 +96,16 @@ function vPack(): string {
   return `<section class="card" id="pack"><span class="label">Tema do jogo</span><div class="packs" role="group" aria-label="Tema do jogo">${Core.PACKS.map(opt).join('')}</div>
     <p class="hint" id="packtext">${cur === 'comunismo' ? 'Os comunistas são o time escondido e o Stalin é o líder deles. Vota-se Da! ou Niet!. As regras são as mesmas; as IAs ganham nomes de liberais e comunistas.' : 'O jogo original: os fascistas são o time escondido e o Hitler é o líder deles.'}</p>
     <p class="hint">Nomes da IA</p><div class="segm regions" role="group" aria-label="Nomes da IA">${Core.REGIONS.map(r => `<button class="${(S.region || 'mundo') === r ? 'on' : ''}" data-act="region" data-v="${r}" aria-pressed="${(S.region || 'mundo') === r}">${Core.REGION_NAMES[r]}</button>`).join('')}</div>
-    <p class="hint" id="regiontext">Figuras conhecidas ${({ mundo: 'do mundo todo', americas: 'das Américas', europa: 'da Europa', asia: 'da Ásia', africa: 'da África', oceania: 'do mundo todo (da Oceania, só os bichos)' } as const)[S.region || 'mundo']}, dos dois lados misturados. O nome é só apelido de jogo: o papel é sorteado, e quem tem nome de liberal pode ser o {boss}.</p></section>`;
+    <p class="hint" id="regiontext">Figuras conhecidas ${({ mundo: 'do mundo todo', americas: 'das Américas', europa: 'da Europa', asia: 'da Ásia', africa: 'da África', oceania: 'do mundo todo (da Oceania, só os bichos)' } as const)[S.region || 'mundo']}, dos dois lados misturados. O nome é só apelido de jogo: o papel é sorteado, e quem tem nome de liberal pode ser o {boss}.</p><button class="more" data-act="gallery" id="gallerytoggle">Ver todos os desenhos ▸</button></section>`;
+}
+/** Every drawing of the game (D25): each continent, each theme, the liberal, the member of the hidden side and its
+ *  leader, with the animal's name. */
+function vGallery(): string {
+  const back = '<button class="btn ghost block" data-act="gallery" id="galleryback">Voltar</button>';
+  const cell = (r: Role, k: Pack, reg: Region, label: string): string => `<figure>${portrait(r, k, reg)}<figcaption><b>${label}</b>${animalOf(r, k, reg)}</figcaption></figure>`;
+  const block = (reg: Region): string => `<section class="card gallery" id="gallery-${reg}"><span class="label">${Core.REGION_NAMES[reg]}</span>
+    ${Core.PACKS.map(k => `<p class="hint">${Core.WORDS[k].theme}</p><div class="cast">${cell('liberal', k, reg, 'Liberal')}${cell('fascista', k, reg, Core.WORDS[k].F)}${cell('hitler', k, reg, Core.WORDS[k].boss)}</div>`).join('')}</section>`;
+  return `<section class="card" id="gallery"><span class="label">Todos os desenhos</span><p class="hint">Cada continente com os bichos dos dois temas. O de cima é o do jogo original.</p>${back}</section>${Core.REGIONS.map(block).join('')}<section class="card">${back}</section>`;
 }
 function vRules(): string {
   const head = `<section class="card" id="rules"><span class="label">Como joga</span><p>Liberais contra {fs}, e o {boss} escondido entre os {fs}. Ganha quem aprovar ${Core.WIN.L} leis liberais ou ${Core.WIN.F} {fs} primeiro.</p><button class="more" data-act="rules" id="rulestoggle" aria-expanded="${ui.rules}" aria-controls="ruleslist">${ui.rules ? 'Esconder as regras ▴' : 'Ver as regras ▾'}</button>`;
