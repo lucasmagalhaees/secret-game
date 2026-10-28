@@ -202,13 +202,6 @@ export function initEvents(): void {
     else if (a === 'notesopen') { const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, next.log[next.log.length - 1]); }
-    else if (a === 'denounceall') {
-      // every enemy accused at once (D26): the seats the notebook listed on the button
-      ui.undo = null; const me = g.players.findIndex(p => !p.ai);
-      let next = g;
-      for (const k of (d.v || '').split(',').filter(Boolean)) next = Core.denounce(next, me, Number(k), d.t === 'trust', rand);
-      play(next, next === g ? undefined : 'Você contou à mesa.');
-    }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));
