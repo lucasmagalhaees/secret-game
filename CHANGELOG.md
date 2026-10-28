@@ -2,6 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.22.0]
+
+### Adicionado
+- Galeria: "Ver todos os desenhos", no cartão do tema, mostra cada continente com os bichos dos dois temas.
+
 ## [0.21.0]
 
 ### Adicionado

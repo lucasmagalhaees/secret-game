@@ -411,6 +411,18 @@ const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
 const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
   ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`
   : `${spot}${bossBody()}${LEADERS[BOSSES[region].H]()}${bossCap}${lectern}`;
+const LABEL: Record<string, string> = {
+  onca: 'onça', urubu: 'urubu', coiote: 'coiote', elefante: 'elefante', hiena: 'hiena', chacal: 'chacal', tigre: 'tigre', komodo: 'dragão-de-komodo',
+  raposa: 'raposa', cegonha: 'cegonha', javali: 'javali', lince: 'lince', canguru: 'canguru', diabo: 'diabo-da-tasmânia', ornitorrinco: 'ornitorrinco',
+  piranha: 'piranha', oculos: 'urso-de-óculos', crocodilo: 'crocodilo-do-Nilo', rinoceronte: 'rinoceronte', aranha: 'aranha', panda: 'panda',
+  rato: 'rato', morsa: 'morsa', casuar: 'casuar', coala: 'coala'
+};
+/** The animal behind each role, by name, for the gallery (D25). */
+export const animalOf = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+  if (region === 'mundo') return r === 'liberal' ? 'pássaro' : pack === 'comunismo' ? (r === 'hitler' ? 'urso' : 'lobo-branco') : r === 'hitler' ? 'naja' : 'jacaré';
+  if (r === 'hitler') return LABEL[BOSSES[region][pack === 'comunismo' ? 'S' : 'H']];
+  return LABEL[ANIMALS[region][r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F']];
+};
 const member = (s: Side, animal: string): string => `${spot}${torso(s)}${HEADS[animal](s)}${cap(s)}`;
 
 const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox="0 0 120 120" aria-hidden="true" focusable="false">${body}</svg>`;

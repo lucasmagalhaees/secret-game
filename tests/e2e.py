@@ -47,6 +47,10 @@ with sync_playwright() as p:
     assert 'Faltam 5 para começar' in txt('[data-act=start]') and pg.locator('#fillmin').count() == 0
     assert pg.locator('#ruleslist').count() == 0 and pg.locator('#moreopts').count() == 0 and 'sorteado' in txt('#moresum'), 'the rules and the other choices start closed'
     pg.click('#rulestoggle'); assert pg.locator('#ruleslist li').count() >= 5; pg.click('#rulestoggle'); assert pg.locator('#ruleslist').count() == 0
+    # D25: every drawing, in a gallery: each continent, both themes, liberal, member and leader, with the animal's name
+    pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 6 * 2 * 3 and pg.locator('#table').count() == 0, 'the gallery has every drawing'
+    gal = txt('#view'); assert 'aranha' in gal and 'Stalin' in gal and 'coala' in gal and 'onça' in gal and overflow() == 0, gal[:300]
+    shot(f's0-galeria-{THEME}.png'); pg.click('#galleryback'); assert pg.locator('#table').count() == 1 and pg.locator('.cast').count() == 0
     pg.fill('#name', 'Xu'); pg.press('#name', 'Enter'); assert 'Faltam 4' in txt('[data-act=start]') and 'Completar com 4 da IA' in txt('#fillmin')
     pg.click('#fillmin'); assert pg.locator('#names li').count() == 5 and not pg.locator('[data-act=start]').is_disabled() and 'Começar com 5 jogadores' in txt('[data-act=start]')
     pg.click('#clear'); assert pg.locator('#names li').count() == 5 and 'Toque de novo' in txt('#clear'), 'clearing the table takes two taps'
