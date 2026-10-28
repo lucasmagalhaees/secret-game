@@ -515,7 +515,6 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 [data-region="asia"]{--reg:repeating-linear-gradient(90deg,#b8202b 0 14px,#e8b730 14px 18px)}
 [data-region="africa"]{--reg:repeating-linear-gradient(90deg,#e8b730 0 8px,#1f7a3a 8px 12px,#b8202b 12px 16px,#1f1b19 16px 20px)}
 [data-region="oceania"]{--reg:repeating-linear-gradient(90deg,#1b6f9c 0 8px,#e9d8a6 8px 11px,#c8553d 11px 14px)}
-[data-region]:not([data-region="mundo"]) .card{background-image:var(--reg);background-size:100% 6px;background-repeat:no-repeat;background-position:bottom}
 .dlc-region{background-image:linear-gradient(90deg,#1f9a4b 0 45%,#f2c230 45% 75%,#2b4fa8 75%);background-size:100% 6px;background-repeat:no-repeat;background-position:bottom}
 .dlc-region.on{background-color:var(--fg);color:var(--surface)}
 
