@@ -28,7 +28,11 @@ export type Level = 'facil' | 'medio' | 'dificil' | 'extremo';
  *  measurements use it to put one level against another; the app gives every seat the level of the game); `mood`, the
  *  temper of a player run by the app, from -1 (wary) to 1 (trusting), drawn at the start: two of them that know the same
  *  do not always vote the same. */
-export interface Player { name: string; role: Role; alive: boolean; ai?: true; level?: Level; mood?: number }
+export interface Player { name: string; role: Role; alive: boolean; ai?: true; level?: Level; mood?: number; persona?: Persona }
+/** The personality of a player run by the app (D26), drawn at the start and known to the whole table, as you know your
+ *  friends: the straight one, the wary, the sceptic, the critic (wants proof), the centred, the bluffer, the chaotic. It
+ *  says nothing about the role. */
+export type Persona = 'certinho' | 'desconfiado' | 'cetico' | 'critico' | 'centrado' | 'blefador' | 'caotico';
 
 /** Where the game is. The phases that show something secret are gated by the page: the phone goes to one person first. */
 export type Phase =
@@ -61,7 +65,8 @@ export type Event =
   | Talk;
 /** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
  *  ('trust'), or keeps quiet ('quiet', about -1). The players run by the app do not weigh it: it is for the people. */
-export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet' };
+/** `re`: how the players run by the app took it, when a person said it (D26): seat and answer (REACT). */
+export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; re?: [number, number][] };
 /** An elected government: the law it made (or a veto, with no law). `drew` are the 3 laws the president drew and `got`
  *  the 2 the chancellor got: secret at the time. `pc` and `cc` are what the president and the chancellor told the table
  *  afterwards, as the number of fascist laws (-1: they kept quiet). A 'vote' event exists only where the phone took
@@ -128,8 +133,10 @@ export interface Entry { id: string; name: string; value: number }
  *  - what to tell the table, as a number of fascist laws: 'pc' (president, 0 to 3), 'cc' (chancellor, 0 to 2),
  *    'peek' (0 to 3); or a party, 'inv' (0 liberal, 1 fascist);
  *  - what to say between rounds, 'talk' (D13): 2 × seat to suspect that seat, 2 × seat + 1 to trust it, QUIET to keep
- *    quiet. */
-export type Ask = 'nominate' | 'vote' | 'pdiscard' | 'cdiscard' | 'veto' | 'investigate' | 'special' | 'execute' | 'pc' | 'cc' | 'inv' | 'peek' | 'talk';
+ *    quiet;
+ *  - how it takes what was just said (the last talk in the history), 'react' (D26): REACT.agree, REACT.unsure or
+ *    REACT.disagree. */
+export type Ask = 'nominate' | 'vote' | 'pdiscard' | 'cdiscard' | 'veto' | 'investigate' | 'special' | 'execute' | 'pc' | 'cc' | 'inv' | 'peek' | 'talk' | 'react';
 
 /** The history as one seat may know it: the secret parts (laws drawn and passed, a party seen, the laws spied, the role
  *  of who was eliminated) only where that seat saw them. */
@@ -157,7 +164,7 @@ export interface Trace { seat: number; ask: Ask; a: number; at: number; hand?: L
  *  the others only for a fascist, or for Hitler at a small table); `hand` the laws in its hand, when the question is
  *  about them. */
 export interface View {
-  me: number; role: Role; level: Level; mood: number;
+  me: number; role: Role; level: Level; mood: number; persona: Persona;
   n: number; alive: boolean[]; known: (Role | null)[]; fascists: number;
   laws: { L: number; F: number }; tracker: number;
   pres: number; chanc: number | null; lastPres: number | null; lastChanc: number | null;

@@ -335,6 +335,18 @@ Modelo de uma decisão:
 - **Interpretações que precisaram ser feitas:** a galeria abre pelo cartão "Tema do jogo", que é onde se escolhe o continente, e ocupa a tela inicial até tocar em "Voltar". Mostra, por continente e por tema, o liberal, o membro do lado escondido e o líder, cada um com o nome do bicho. O liberal aparece nos dois temas porque é o mesmo desenho. Não abre durante uma partida.
 - **Não sei:** se vale mostrar também os símbolos das leis (balança, caveira, estrela).
 
+## D26. Denunciar à mesa, e IAs com personalidade
+
+- **Contexto (28/10/2026):** numa partida contra a IA, o liberal votou Nein! duas vezes no governo Trujillo + Alfonsín, mas dois liberais da IA votaram Ja! e elegeram o Hitler chanceler. Pedido: "quero poder raise awareness sobre possiveis nazi"; "na aba de anotacao bota um botao denunciar, que poderia ser unitario ou um compartilhar tudo q sei da mesa"; as falas de todos contam, "porem uma acusacao [baseada] pesa o dobro, entao a IA deve buscar na Ata do jogo como se fosse um humano lembrando do q ocorreu"; "preciso ver como cada um reage"; "criar perfis de IA, um mais critico, um mais desconfiado, um cetico… IA q blefa muito, blefa pouco, IA que eh centro, IA chaotic evil, IA lawful good"; "pra cada play vc sorteia os temperamentos".
+- **Decisão:** requisitos 18, 27 e 28 do `CLAUDE.md`. Isto muda a D13: a fala deixa de ser só para as pessoas.
+- **Interpretações que precisaram ser feitas:**
+  - Denunciar é a mesma fala das IAs ("Desconfio de X"). Quem está marcado liberal no caderno é abonado ("Confio em X"). "Contar tudo" fala de cada um que está marcado ou que a pessoa sabe de certeza, inclusive o próprio time, se ela for fascista: a escolha é dela. Cada pessoa fala uma vez por rodada de cada jogador, para não virar spam. A fala da pessoa não tira a vez de uma IA falar.
+  - Como a fala pesa: cada divisão de papéis é pesada pela chance de quem falou, no lado dele nessa divisão, dizer aquilo. O liberal aponta para o lado errado só por engano (`SLIP_TALK`); o fascista aponta para o lado errado `TALK_LIE` das vezes. O peso fica elevado a `TALK_W`, o que dá pouco. "Baseada" virou "a ata confirma" (`backed`): o acusado esteve num governo que aprovou lei fascista ou cuja história não fechou, ou o abonado esteve num que aprovou liberal com a história fechando. Aí o expoente dobra. A ata só conta até onde aquela IA lembra (a memória do nível).
+  - As reações (concorda, não sabe, discorda) são palavras, sem peso nas contas, para uma reação não puxar a outra em cascata. O liberal reage pelo que acha depois de ouvir. O fascista reage pelo time: concorda quando isso leva a mesa para o lado errado e defende o aliado, mas o blefador às vezes entrega um aliado para parecer limpo.
+  - Personalidades, de "lawful good" a "chaotic evil": certinho, desconfiado, cético, crítico, centrado, blefador e caótico. São sorteadas a cada partida, todas diferentes enquanto houver. Elas aparecem para a pessoa no caderno e no raciocínio, porque numa mesa de verdade se conhece o jeito dos amigos, e o jeito não diz nada do papel. O temperamento sorteado de antes continua, mas agora mexe pouco em volta do que a personalidade dá.
+  - O resumo do fim repetia a linha "Você votou Nein! em Trujillo + Alfonsín" quando o mesmo par era votado duas vezes. O voto que perdeu o jogo agora diz quem votou Ja!.
+- **Não sei:** se as personalidades ficam reconhecíveis jogando. Também não sei se a pessoa vai querer que as reações pesem nas contas.
+
 ## Pendências
 
 | Pendência | Quem resolve |

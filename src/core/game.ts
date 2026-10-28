@@ -1,7 +1,7 @@
 /* The rules of the game. Pure: a game comes in and a new one goes out; chance comes in as a function (`rand`), so the
    same seed always plays the same game. An action that is not allowed where the game is returns the same game,
    untouched: the page only offers what is allowed, and a stray tap changes nothing. */
-import type { Event, Game, Law, Level, Pack, Party, Player, Region, Role } from './types';
+import type { Event, Game, Law, Level, Pack, Party, Persona, Player, Region, Role } from './types';
 import { words } from './words';
 
 export const MIN_PLAYERS = 5, MAX_PLAYERS = 10, NAME_MAX = 20;
@@ -40,8 +40,8 @@ export const LEVELS: Level[] = ['facil', 'medio', 'dificil', 'extremo'];
  *  says nothing about the role: roles are dealt at random, so Churchill may well be the fascist. The leader of the
  *  hidden side (Hitler, Stalin) is not among them: it is a role. */
 export const BOT_NAMES: Record<Pack, string[]> = {
-  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'De Gaulle', 'Goebbels', 'Truman', 'Göring', 'Eisenhower', 'Himmler', 'Kennedy', 'Salazar'],
-  comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Ho Chi Minh']
+  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'De Gaulle', 'Goebbels', 'Truman', 'Göring', 'Eisenhower', 'Himmler', 'Kennedy', 'Salazar', 'Tiglate-Pileser', 'Gengis Khan'],
+  comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Ho Chi Minh', 'Pol Pot', 'Marulanda']
 };
 /** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
  *  first. */
@@ -56,15 +56,15 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
     americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
     europa: ['Churchill', 'Mussolini', 'De Gaulle', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Göring', 'Mitterrand', 'Pétain'],
-    asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek'],
+    asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek', 'Tiglate-Pileser', 'Gengis Khan', 'Tamerlão'],
     africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe']
   },
   comunismo: {
     mundo: BOT_NAMES.comunismo,
     oceania: BOT_NAMES.comunismo,
-    americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende'],
+    americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende', 'Marulanda', 'Abimael Guzmán', 'Ortega'],
     europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'De Gaulle', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
-    asia: ['Gandhi', 'Mao', 'Nehru', 'Ho Chi Minh', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai'],
+    asia: ['Gandhi', 'Mao', 'Nehru', 'Ho Chi Minh', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai', 'Tiglate-Pileser', 'Gengis Khan'],
     africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe']
   }
 };
@@ -130,8 +130,14 @@ export function newGame(names: string[], rand: () => number, opts: { ai?: boolea
   const deck = shuffle<Law>([...Array(DECK_F).fill('F'), ...Array(DECK_L).fill('L')], rand);
   const pres = Math.floor(rand() * players.length);
   players.forEach(p => { if (p.ai) p.mood = Math.round((rand() * 2 - 1) * 100) / 100; });   // drawn last: the deal stays as it was
+  // a personality for each, drawn anew every game (D26): as many different ones as there are seats for them
+  const kinds = shuffle<Persona>([...PERSONAS], rand);
+  players.filter(p => p.ai).forEach((p, j) => { p.persona = kinds[j % kinds.length]; });
   return { ok: true, game: { players, deck, discard: [], laws: { L: 0, F: 0 }, phase: 'reveal', pres, back: null, chanc: null, lastPres: null, lastChanc: null, tracker: 0, vetoed: false, seen: [], reveal: 0, hand: [], target: null, winner: null, why: '', log: [`Jogo começou com ${players.length} jogadores.`], hist: [], ...level, ...(opts.pack === 'comunismo' ? { pack: opts.pack } : {}), ...(opts.region && opts.region !== 'mundo' && REGIONS.includes(opts.region) ? { region: opts.region } : {}) } };
 }
+
+/** The personalities of the players run by the app (D26), in the order they are shown. */
+export const PERSONAS: Persona[] = ['certinho', 'desconfiado', 'cetico', 'critico', 'centrado', 'blefador', 'caotico'];
 
 /** What player i is told at the start: the fascists see each other and Hitler; Hitler sees the fascist only at a table
  *  of HITLER_KNOWS_UPTO or fewer; the liberals see no one. */

@@ -5,7 +5,7 @@
    what was offered is not played: the first allowed option is. So no player run by the app sees more than its seat or
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
-import { believe, decideWhy, drawOdds, QUIET } from './ai';
+import { believe, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
 import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
 import type { Ask, Event, Game, Gov, Law, Level, Party, Role, Seen, Talk, Trace, View } from './types';
@@ -73,7 +73,8 @@ const roundMark = (g: Game): number => lastIndex(g, ['vote', 'rej', 'gov', 'veto
  *  up to TALKS players run by the app, each once, in an order that turns with the rounds. */
 export function talker(g: Game): number | null {
   if (g.phase !== 'nominate' || !g.hist.some(e => e.k === 'gov' || e.k === 'rej' || e.k === 'chaos' || e.k === 'veto')) return null;
-  const mark = roundMark(g), said = g.hist.slice(mark + 1).filter((e): e is Talk => e.k === 'talk');
+  // what a person said (D26) does not take the turn of an app player
+  const mark = roundMark(g), said = g.hist.slice(mark + 1).filter((e): e is Talk => e.k === 'talk' && isAi(g, e.by));
   if (said.length >= TALKS) return null;
   const n = g.players.length, start = (g.hist.filter(e => e.k === 'vote' || e.k === 'rej').length * 3) % n;
   for (let j = 0; j < n; j++) {
@@ -90,6 +91,32 @@ export function talk(g: Game, by: number, a: number): Game {
   const quiet = a === QUIET, about = quiet ? -1 : a >> 1, kind: Talk['say'] = quiet ? 'quiet' : a % 2 ? 'trust' : 'acc';
   const line = quiet ? [] : [`${g.players[by].name}: "${kind === 'acc' ? 'Desconfio de' : 'Confio em'} ${g.players[about].name}."`];
   return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind }] };
+}
+
+/** What a person may tell the table now (D26), from the notebook: whether `by` may say this about `about`. A person
+ *  still in the game, about someone else still in it, once a round for each one. */
+export function canDenounce(g: Game, by: number, about: number): boolean {
+  const p = g.players[by], q = g.players[about];
+  if (!p || !q || p.ai || !p.alive || !q.alive || by === about || g.phase === 'over' || g.phase === 'reveal') return false;
+  return !g.hist.slice(roundMark(g) + 1).some(e => e.k === 'talk' && e.by === by && e.about === about);
+}
+/** A person tells the table whom they suspect or trust (D26): a line in the log and a talk in the history, which the
+ *  app players weigh like any other talk. Each app player still in the game, but the one talked about, says how it
+ *  takes it (agrees, is unsure, disagrees), by its side, what it believes and its personality; the one talked about,
+ *  if accused, denies it. The reactions go with the talk and in the log; they are words, nobody weighs them. */
+export function denounce(g: Game, by: number, about: number, trust: boolean, rand: () => number): Game {
+  if (!canDenounce(g, by, about)) return g;
+  const said: Talk = { k: 'talk', by, about, say: trust ? 'trust' : 'acc' };
+  const line = `${g.players[by].name}: "${trust ? 'Confio em' : 'Desconfio de'} ${g.players[about].name}."`;
+  const heard: Game = { ...g, hist: [...g.hist, said] }, ts: Trace[] = [], re: [number, number][] = [];
+  for (let i = 0; i < g.players.length; i++) {
+    if (!isAi(g, i) || !g.players[i].alive || i === about) continue;
+    const r = ask(heard, i, 'react', [REACT.agree, REACT.unsure, REACT.disagree], rand);
+    ts.push(r.t); re.push([i, r.a]);
+  }
+  const verb = ['concorda', 'não sabe', 'discorda'];
+  const lines = [line, ...(re.length ? [`Reações: ${re.map(([i, a]) => `${g.players[i].name} ${verb[a]}`).join(', ')}.`] : []), ...(!trust && isAi(g, about) ? [`${g.players[about].name}: "Não sou eu!"`] : [])];
+  return { ...traced(g, ts), log: [...g.log, ...lines], hist: [...g.hist, { ...said, ...(re.length ? { re } : {}) }] };
 }
 
 /* ---------- the trainer, for the person (D13) ---------- */
@@ -212,6 +239,7 @@ export function review(g: Game, me: number): Play[] {
       const who = `${bad.map(j => (g.players[j].role === 'hitler' ? `${P(j)} (o {boss})` : P(j))).join(' e ')} ${bad.length > 1 ? 'eram {fs}' : 'era {f}'}`;
       const law = next && next.k === 'gov' ? next.law : undefined;
       if (ja && dirty && elected && risk >= base + 0.03) add(i, false, lost ? 5 : law === 'F' ? 2 : 1.5, `Você votou {ja} em ${P(e.pres)} + ${P(e.chanc)}, e ${who}${lost ? ': o {boss} virou chanceler e os {fs} ganharam' : law === 'F' ? ', e saiu lei {f}' : ''}. Com o que você sabia, o risco desse governo era ${pc(risk)}, mais que o de um par qualquer (${pc(base)}).`);
+      else if (!ja && lost) add(i, true, 1, `Você votou {nein} no {boss}, ${P(e.chanc)}, para chanceler, mas a mesa elegeu: ${e.ja.map(P).join(', ')} votaram {ja}.`);
       else if (!ja && dirty) add(i, true, elected ? 0.5 : 1, `Você votou {nein} em ${P(e.pres)} + ${P(e.chanc)}${elected ? '' : ', e o governo caiu'}: ${who}.`);
       else if (!ja && !dirty && !elected && risk < base - 0.03) add(i, false, 0.5, `Você votou {nein} em ${P(e.pres)} + ${P(e.chanc)}, dois liberais, e o governo caiu. Pelas contas o risco era baixo (${pc(risk)}, contra ${pc(base)} de um par qualquer).`);
       return;
@@ -332,7 +360,7 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
   const known: (Role | null)[] = g.players.map((p, i) => (i === me || all ? p.role : null));
   const hand: Law[] = (q === 'pdiscard' || q === 'cdiscard' || q === 'veto') ? [...g.hand] : [];
   return {
-    me, role, level: (g.players[me].level || g.level || 'medio') as Level, mood: g.players[me].mood ?? 0, n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
+    me, role, level: (g.players[me].level || g.level || 'medio') as Level, mood: temper(g.players[me].mood ?? 0, g.players[me].persona), persona: g.players[me].persona || 'centrado', n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
     laws: { ...g.laws }, tracker: g.tracker, pres: g.pres, chanc: g.chanc, lastPres: g.lastPres, lastChanc: g.lastChanc,
     ask: q, options: [...options], hand, hist: g.hist.map(e => seenBy(e, me))
   };

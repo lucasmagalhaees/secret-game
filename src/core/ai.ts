@@ -10,7 +10,7 @@
    still in the deck. A fascist knows its team and plays for it, lying about its hand when the truth would give it away;
    Hitler, when he does not know his team, plays like a liberal so he can be elected later. */
 import { DECK_F, DECK_L, HITLER_KNOWS_UPTO, HITLER_ZONE, TRACKER_MAX } from './game';
-import type { Law, Level, Party, Role, Seen, View, Why } from './types';
+import type { Law, Level, Party, Persona, Role, Seen, View, Why } from './types';
 
 /** What each level does differently:
  *  - noise: how often it picks someone or votes without thinking (a random option);
@@ -36,6 +36,31 @@ export const AI: Record<Level, Knobs> = {
   dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1, test: 0.3 },
   extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.15, plan: true, image: 1, test: 0.3 }
 };
+/** What each personality (D26) changes, on top of the level:
+ *  - mood: where its temper sits (-1 wary, 1 trusting), the drawn temper moving it a little (temper);
+ *  - ear: how much an accusation or a vouch with nothing in the record behind it weighs (the power of 1 + TALK_W);
+ *  - proof: how much one the record backs up weighs (twice the ear for most: D26);
+ *  - bluff: how much more (or less) than its level it lies as a fascist;
+ *  - wild: how much more often than its level it does something without thinking;
+ *  - quiet: how often it keeps quiet between rounds. */
+export const PERSONA: Record<Persona, { mood: number; ear: number; proof: number; bluff: number; wild: number; quiet: number }> = {
+  certinho: { mood: 0, ear: 1, proof: 2, bluff: 0.6, wild: 0, quiet: 0.1 },
+  desconfiado: { mood: -0.7, ear: 1.2, proof: 2.4, bluff: 1, wild: 0, quiet: 0.15 },
+  cetico: { mood: 0, ear: 0.3, proof: 1, bluff: 1, wild: 0, quiet: 0.4 },
+  critico: { mood: -0.2, ear: 0.4, proof: 3, bluff: 1, wild: 0, quiet: 0.1 },
+  centrado: { mood: 0, ear: 1, proof: 2, bluff: 1, wild: 0, quiet: 0.15 },
+  blefador: { mood: 0.3, ear: 1, proof: 2, bluff: 1.3, wild: 0, quiet: 0.05 },
+  caotico: { mood: 0.5, ear: 1.3, proof: 1.3, bluff: 1.3, wild: 0.08, quiet: 0.1 }
+};
+/** The temper a player plays with (D26): its personality's, moved by the one drawn at the start. */
+export const temper = (drawn: number, persona: Persona = 'centrado'): number => Math.max(-1, Math.min(1, PERSONA[persona].mood + 0.4 * drawn));
+/** The knobs of this player: its level's, moved by its personality (D26). */
+function knob(v: View): Knobs {
+  const k = AI[v.level], p = PERSONA[v.persona || 'centrado'];
+  return { ...k, noise: Math.min(1, k.noise + p.wild), act: Math.min(1, k.act * p.bluff) };
+}
+/** The answers to 'react' (D26). */
+export const REACT = { agree: 0, unsure: 1, disagree: 2 } as const;
 /** The answer to 'talk' that means keeping quiet (D13). */
 export const QUIET = 1000;
 /** How far the temper of a player (View.mood, -1 to 1) moves the risk it accepts in a government. */
@@ -61,6 +86,24 @@ export const ALLY_PICK = 1.5;
 /** How often anyone, liberal or not, plays a law against its own side by mistake (a wrong tap): no single play is
  *  ever taken as proof (D22). */
 export const SLIP_GUESS = 0.03;
+/** What is said between rounds (D26): an accusation or a vouch moves the odds a little, since anyone may lie. A world
+ *  is weighed by how likely the speaker, on its side in that world, would say it (TALK_LIE, SLIP_TALK), against even
+ *  odds, to the power TALK_W: a little. An accusation the record backs up
+ *  (TALK_BACKED: the one accused was in a government that passed a fascist law, or whose story did not hold; the one
+ *  vouched for, in one that passed a liberal law with a story that held) weighs double: the square. Only what this
+ *  player still remembers of the record counts, as a person at the table would remember it. */
+export const TALK_W = 0.3;
+/** How the table reckons what is said (D26): a fascist points the wrong way (smears a liberal, vouches for a teammate)
+ *  this often, and the right way the rest, to look clean; a liberal points the wrong way only by mistake, this often. */
+export const TALK_LIE = 0.6, SLIP_TALK = 0.1;
+/** Whether what `by`'s talk says about `about` is backed by the record from `from` to `upto` (D26). */
+export function backed(hist: Seen[], from: number, upto: number, about: number, acc: boolean): boolean {
+  return hist.slice(from, upto).some(e => {
+    if (e.k !== 'gov' || (e.pres !== about && e.chanc !== about)) return false;
+    const clash = e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
+    return acc ? e.law === 'F' || clash : e.law === 'L' && !clash;
+  });
+}
 
 const fasc = (r: Role): boolean => r !== 'liberal';
 const nF = (laws: Law[]): number => laws.filter(l => l === 'F').length;
@@ -210,6 +253,12 @@ export function believe(v: View, outside = false): Beliefs {
         if (fresh && roles[e.target] === 'hitler') w *= 0.001;                 // the game went on
         // the levels that read the long game: a fascist who knows its team hardly ever eliminates a teammate
         if (fresh && k.plan && !mine(e.by) && knowsTeam(e.by) && fasc(roles[e.target])) w *= 0.15;
+      } else if (e.k === 'talk' && fresh && !mine(e.by) && e.about >= 0 && e.say !== 'quiet' && !gone.has(e.by)) {
+        // what someone said between rounds (D26): fits a liberal speaker if it points the right way, a fascist one if not
+        const acc = e.say === 'acc', right = fasc(roles[e.about]) === acc, liar = fasc(roles[e.by]);
+        const like = right ? (liar ? 1 - TALK_LIE : 1 - SLIP_TALK) : liar ? TALK_LIE : SLIP_TALK;
+        const ear = PERSONA[outside ? 'centrado' : v.persona || 'centrado'];
+        w *= (2 * like) ** (TALK_W * (backed(v.hist, remember, i, e.about, acc) ? ear.proof : ear.ear));
       } else if (e.k === 'special' && fresh && k.plan && !mine(e.by) && knowsTeam(e.by) && !fasc(roles[e.target])) {
         w *= 0.5;                                                              // and hands the presidency to a teammate when it can
       }
@@ -290,12 +339,13 @@ export function decideWhy(v: View, rand: () => number): { a: number; why: Why } 
   } finally { ex = null; }
 }
 function decideIn(v: View, rand: () => number): number {
-  const k = AI[v.level], o = v.options;
+  const k = knob(v), o = v.options;
   if (!o.length) return -1;
   if (v.ask === 'talk') return speak(v, rand);
+  if (v.ask === 'react') return react(v, rand);
   const talk = v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek';
   const hand = v.ask === 'pdiscard' || v.ask === 'cdiscard' || v.ask === 'veto';
-  if (!talk && rand() < (hand ? k.slip : k.noise)) { why(`Decidiu sem pensar: o nível erra ${pc(hand ? k.slip : k.noise)} das vezes ${hand ? 'na lei que descarta' : 'em quem escolhe e como vota'}.`); return o[Math.floor(rand() * o.length)]; }
+  if (!talk && rand() < (hand ? k.slip : k.noise)) { why(`Decidiu sem pensar: o nível${k.noise > AI[v.level].noise ? ' e o jeito dela' : ''} erra ${pc(hand ? k.slip : k.noise)} das vezes ${hand ? 'na lei que descarta' : 'em quem escolhe e como vota'}.`); return o[Math.floor(rand() * o.length)]; }
   const team = fasc(v.role), all = team && v.known.every(r => r !== null);
   const allies = all ? v.known.map((r, i) => (r && fasc(r) && i !== v.me ? i : -1)).filter(i => i >= 0) : [];
   const hitler = v.known.indexOf('hitler');
@@ -307,8 +357,9 @@ function decideIn(v: View, rand: () => number): number {
  *  suspects most, or, if nobody stands out, whom it trusts. A fascist piles on the liberal the table already doubts, or
  *  vouches for a teammate. The easy level talks less. */
 function speak(v: View, rand: () => number): number {
-  const k = AI[v.level], o = v.options, others = v.alive.map((a, i) => (a && i !== v.me ? i : -1)).filter(i => i >= 0);
-  if (!others.length || rand() < (v.level === 'facil' ? 0.5 : 0.15)) { why('Ficou calada desta vez.'); return QUIET; }
+  const k = knob(v), o = v.options, others = v.alive.map((a, i) => (a && i !== v.me ? i : -1)).filter(i => i >= 0);
+  if (!others.length || rand() < (v.level === 'facil' ? 0.5 : PERSONA[v.persona || 'centrado'].quiet)) { why('Ficou calada desta vez.'); return QUIET; }
+  if (PERSONA[v.persona || 'centrado'].wild && rand() < 0.3) { const t = others[Math.floor(rand() * others.length)], a = 2 * t + (rand() < 0.5 ? 1 : 0); why(`É caótica: falou de ${P(t)} sem conta nenhuma.`); return o.includes(a) ? a : QUIET; }
   const base = v.fascists / Math.max(1, v.n - 1), all = fasc(v.role) && v.known.every(r => r !== null);
   const pick = (i: number, trust: boolean): number => { const a = 2 * i + (trust ? 1 : 0); return o.includes(a) ? a : QUIET; };
   if (all) {
@@ -324,10 +375,34 @@ function speak(v: View, rand: () => number): number {
   if (!free.length) return QUIET;
   const worst = best(free, i => -b.pF[i], rand), clean = best(free, i => b.pF[i], rand);
   rows(b, free);
-  if (b.pF[worst] >= base + 0.2) { why(`Disse o que acha: ${P(worst)} é de quem mais desconfia (${pc(b.pF[worst])}; num lugar qualquer seria ${pc(base)}).`); return pick(worst, false); }
+  if (b.pF[worst] >= base + (v.persona === 'desconfiado' ? 0.12 : 0.2)) { why(`Disse o que acha: ${P(worst)} é de quem mais desconfia (${pc(b.pF[worst])}; num lugar qualquer seria ${pc(base)}).`); return pick(worst, false); }
   if (b.pF[clean] <= base * 0.5) { why(`Disse o que acha: ${P(clean)} é quem parece mais limpo (${pc(b.pF[clean])}; num lugar qualquer seria ${pc(base)}).`); return pick(clean, true); }
   why('Ninguém se destaca o bastante para acusar ou abonar: ficou calada.');
   return QUIET;
+}
+
+/** How a player takes what a person just told the table (D26), the last talk in its view. A liberal (and Hitler, who
+ *  plays like one) goes by what it believes now, with the talk weighed in: it agrees when the one talked about now
+ *  looks clearly on that side, disagrees when clearly on the other, and is unsure in between; the sceptic and the
+ *  critic need more to agree. A fascist who knows the team plays for it: piles on a liberal, defends a teammate (the
+ *  bluffer and the chaotic sometimes throw one under the bus to look clean). */
+function react(v: View, rand: () => number): number {
+  const t = v.hist[v.hist.length - 1];
+  if (!t || t.k !== 'talk' || t.about < 0) return REACT.unsure;
+  const acc = t.say === 'acc', base = v.fascists / Math.max(1, v.n - 1), p = PERSONA[v.persona || 'centrado'];
+  if (p.wild && rand() < 0.25) { why('É caótica: reagiu sem pensar.'); return [REACT.agree, REACT.unsure, REACT.disagree][Math.floor(rand() * 3)]; }
+  if (fasc(v.role) && v.known.every(r => r !== null)) {
+    const ally = fasc(v.known[t.about] as Role), helps = acc !== ally;          // agreeing points the table the wrong way
+    if (helps) { const yes = rand() < 0.4 + 0.4 * Math.min(1, p.bluff); why(yes ? `Sabe que ${P(t.about)} é ${ally ? 'aliado' : 'liberal'}: concordou, que leva a mesa para o lado errado.` : 'Concordaria, mas não quis chamar atenção.'); return yes ? REACT.agree : REACT.unsure; }
+    if (ally && p.bluff > 1 && rand() < 0.25) { why(`${P(t.about)} é aliado, mas concordou para parecer limpa (blefe).`); return REACT.agree; }
+    const no = rand() < 0.5; why(no ? `Sabe que ${P(t.about)} é ${ally ? 'aliado: defendeu' : 'liberal, e discordou de quem confiou: para lançar dúvida'}.` : 'Preferiu ficar em cima do muro.'); return no ? REACT.disagree : REACT.unsure;
+  }
+  if (v.known[t.about]) { const f = fasc(v.known[t.about] as Role); why(`Sabe o papel de ${P(t.about)}.`); return f === acc ? REACT.agree : REACT.disagree; }
+  const b = believe(v), f = b.pF[t.about], need = v.persona === 'cetico' || v.persona === 'critico' ? 0.2 : v.persona === 'desconfiado' && acc ? 0.06 : 0.12;
+  rows(b, [t.about]);
+  const lean = acc ? f - base : base - f, a = lean >= need ? REACT.agree : lean <= -need ? REACT.disagree : REACT.unsure;
+  why(`Com o que viu e ouviu, ${P(t.about)} tem ${pc(f)} de chance de ser {f} (num lugar qualquer, ${pc(base)}); precisa de ${pc(need)} de diferença para tomar partido: ${a === REACT.agree ? 'concordou' : a === REACT.disagree ? 'discordou' : 'não soube dizer'}.`);
+  return a;
 }
 
 /** A liberal: plays its side by what it believes. */
@@ -372,7 +447,7 @@ function liberal(v: View, rand: () => number): number {
 
 /** What a fascist says about its own hand, investigation or spying: the truth, unless it gives it away. */
 function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean): number {
-  const act = AI[v.level].act;
+  const act = knob(v).act;
   if (v.ask === 'pc') {
     const e = lastOwn(v, ['gov', 'veto'], e => e.pres === v.me);
     if (!e?.drew || !e.got) return -1;
@@ -406,7 +481,7 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
  *  fascist) and what will be said about it; it costs `image` times how much more the table would suspect this player,
  *  and Hitler. Returns the index of the best way. */
 function weigh(v: View, ways: { law?: Law; pc?: number; cc?: number }[], hitler: number): number {
-  const k = AI[v.level], now = believe(v, true), gov = { k: 'gov' as const, pres: v.pres, chanc: v.chanc as number };
+  const k = knob(v), now = believe(v, true), gov = { k: 'gov' as const, pres: v.pres, chanc: v.chanc as number };
   const watch = (b: Beliefs): number => b.pF[v.me] + (hitler >= 0 && hitler !== v.me ? b.pH[hitler] : 0) + (v.me === hitler ? b.pH[v.me] : 0);
   const base = watch(now);
   let top = 0, best = -Infinity;
@@ -425,7 +500,7 @@ const passes = (d: number): number[] => [...new Set([Math.min(2, d), Math.max(0,
 
 /** A fascist who knows its team (and Hitler at a small table): plays for it, and looks like a liberal when it can. */
 function fascist(v: View, rand: () => number, allies: number[], hitler: number): number {
-  const o = v.options, k = AI[v.level], isAlly = (i: number): boolean => allies.includes(i);
+  const o = v.options, k = knob(v), isAlly = (i: number): boolean => allies.includes(i);
   const early = v.laws.F < HITLER_ZONE, clean = (): boolean => rand() < k.trust && early;
   const groom = k.plan && early && hitler >= 0 && v.alive[hitler];
   if (v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek') return fascistTalk(v, rand, isAlly);

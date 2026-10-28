@@ -201,6 +201,16 @@ export function initEvents(): void {
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
     else if (a === 'notesopen') { const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else { next.notesOpen = true; ui.mind = false; } setS(next); saveS(); render(); }   // one panel at a time: on a phone they would cover each other
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
+    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, next.log[next.log.length - 1]); }
+    else if (a === 'denounceall') {
+      // everything marked, told at once (D26): the hidden side marked is accused, the liberal marked vouched for
+      ui.undo = null; const me = g.players.findIndex(p => !p.ai), marks = { ...(S.notes || {}) };
+      for (const k of Core.knows(g, me)) marks[g.players.findIndex(p => p.name === k.name)] = 'F';
+      for (const e of g.hist) if (e.k === 'inv' && e.by === me) marks[e.target] = e.party;
+      let next = g;
+      for (const [k, v] of Object.entries(marks)) next = Core.denounce(next, me, Number(k), v === 'L', rand);
+      play(next, next === g ? undefined : 'Você contou à mesa tudo o que marcou.');
+    }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));

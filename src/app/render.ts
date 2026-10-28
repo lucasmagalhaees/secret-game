@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Region, Role, Trace } from '../core';
+import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, Role, Trace } from '../core';
 import type { EndTab } from './state';
 import { animalOf, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
@@ -413,14 +413,35 @@ function vDock(g: Game): string {
   if (!btns.length) return GAP;
   return `${vDrawer(g)}${vMind(g)}<nav class="dock" aria-label="Painéis">${btns.join('')}</nav>${GAP}`;
 }
+/** The personalities of the app players (D26), as the table knows them: a name and a line. */
+export const PERSONA_W: Record<Persona, [string, string]> = {
+  certinho: ['Certinho', 'joga limpo; como do lado escondido, mente pouco'],
+  desconfiado: ['Desconfiado', 'acredita em pouca gente e acusa fácil'],
+  cetico: ['Cético', 'quase não liga para o que se fala'],
+  critico: ['Crítico', 'só leva a sério a acusação que a ata confirma'],
+  centrado: ['Centrado', 'no meio-termo em tudo'],
+  blefador: ['Blefador', 'do lado escondido, mente muito'],
+  caotico: ['Caótico', 'imprevisível: às vezes fala e vota sem conta']
+};
 /** The notebook as a side panel (D14): the bar at the bottom opens it over the game, and closes it again; on a wide
  *  screen it stays open beside the game. */
 function vDrawer(g: Game): string {
   const kit = noteKit(g);
   if (!kit) return '';
-  const open = !!S.notesOpen;
-  const rows = g.players.map((p, i) => (i === kit.me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}</span>${kit.cell(i, true)}</li>`)).join('');
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê. O que você sabe de certeza já vem marcado.</p><ul class="names noted" id="notes">${rows}</ul></aside>`;
+  const open = !!S.notesOpen, me = kit.me;
+  // telling the table (D26): accuse whoever is marked on the hidden side or not marked, vouch for whoever is marked liberal
+  const say = (i: number): string => {
+    if (!Core.canDenounce(g, me, i)) return g.players[i].alive && g.players[me].alive ? '<small class="told">dito ✓</small>' : '';
+    const trust = kit.party(i) === 'L';
+    return `<button class="btn ghost tell${trust ? ' L' : ' F'}" data-act="denounce" data-i="${i}" data-v="${trust ? 'trust' : 'acc'}">📣 ${trust ? 'Abonar' : 'Denunciar'}</button>`;
+  };
+  const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${kit.cell(i, true)}${say(i)}</li>`)).join('');
+  const all = g.players.map((_, i) => i).filter(i => i !== me && kit.party(i) && Core.canDenounce(g, me, i));
+  const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
+  const verb = [['concorda', 'yes'], ['não sabe', 'meh'], ['discorda', 'no']];
+  const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${last.say === 'trust' ? 'Confio em' : 'Desconfio de'} ${esc(g.players[last.about].name)}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${verb[a][1]}"><b>${esc(g.players[i].name)}</b>${g.players[i].persona ? ` <small>${PERSONA_W[g.players[i].persona as Persona][0]}</small>` : ''} ${verb[a][0]}</li>`).join('')}${last.say === 'acc' && g.players[last.about].ai ? `<li class="no"><b>${esc(g.players[last.about].name)}</b> nega</li>` : ''}</ul></div>` : '';
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. "Denunciar" e "Abonar" falam para a mesa toda, uma vez por rodada para cada um, e as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
+    ${all.length ? `<button class="btn block" data-act="denounceall" id="tellall">📣 Contar tudo o que marquei (${all.length})</button>` : ''}${heard}</aside>`;
 }
 /* ---------- the reasoning of the app players (D16), to find bugs ----------
    What each one believes of everyone now, how that changed and with what, and why it made each decision. It shows the
@@ -444,6 +465,7 @@ function traceLabel(g: Game, t: Trace): string {
     case 'cc': return `Disse que recebeu ${of2w(t.a)}`;
     case 'inv': return `Disse que o investigado é ${t.a === 1 ? '{f}' : 'liberal'}`;
     case 'peek': return `Disse que as próximas têm ${t.a} ${t.a === 1 ? '{f}' : '{fs}'}`;
+    case 'react': return `Reagiu à fala: ${['concordou', 'não soube dizer', 'discordou'][t.a] ?? '?'}`;
     case 'talk': return t.a === Core.QUIET ? 'Ficou calada na conversa' : `Disse à mesa: "${t.a % 2 ? 'Confio em' : 'Desconfio de'} ${name(g, t.a >> 1)}"`;
     default: return t.ask;
   }
@@ -465,7 +487,7 @@ function vMind(g: Game): string {
     return `<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span><p>Mostra o que cada IA pensa e por que fez cada jogada, para achar bug.</p><p class="hint"><b>Estraga a partida:</b> aparecem os papéis de todos, as mãos de leis e as mentiras. No fim do jogo abre sem aviso.</p><button class="btn block" data-act="debug" data-v="on" id="mindon">Mostrar mesmo assim</button></aside>`;
   }
   const seat = ui.mindSeat !== null && bots.includes(ui.mindSeat) ? ui.mindSeat : bots[0];
-  const p = g.players[seat], k = Core.AI[(p.level || g.level || 'medio') as Level], mood = p.mood ?? 0, me = solo(g);
+  const p = g.players[seat], k = Core.AI[(p.level || g.level || 'medio') as Level], mood = Core.temper(p.mood ?? 0, p.persona), me = solo(g);
   const pick = `<div class="pick mind-who">${bots.map(i => `<button class="btn ghost${i === seat ? ' on' : ''}" data-act="mindseat" data-i="${i}" aria-pressed="${i === seat}">${name(g, i)} <span class="role ${Core.partyOf(g.players[i].role)}">${role(g.players[i].role)}</span></button>`).join('')}</div>`;
   const tr = trailOf(g, seat), now = tr[tr.length - 1], others = g.players.map((_, i) => i).filter(i => i !== seat);
   const knows = Core.viewOf(g, seat, 'vote', [1, 0]).known;
@@ -476,7 +498,7 @@ function vMind(g: Game): string {
   const mine = (g.trace || []).filter(t => t.seat === seat).reverse();
   const table = (t: Trace): string => (t.why.rows && t.why.rows.length ? `<table class="mind-rows"><tr><th></th><th>{f}</th><th>{boss}</th>${t.why.rows.some(r => r.v !== undefined) ? '<th>conta</th>' : ''}</tr>${t.why.rows.map(r => `<tr${r.seat === t.a || (t.ask === 'talk' && r.seat === t.a >> 1) ? ' class="on"' : ''}><td>${name(g, r.seat)}</td><td>${pct(r.f)}</td><td>${pct(r.h)}</td>${r.v !== undefined ? `<td>${r.v.toFixed(2)}</td>` : ''}</tr>`).join('')}</table>` : '');
   const decisions = mine.length ? `<ol class="mind-log">${mine.map(t => `<li><b class="what">${traceLabel(g, t)}</b>${t.why.text.map(l => `<p>${whyText(g, l)}</p>`).join('')}${table(t)}</li>`).join('')}</ol>` : '<p class="hint">Nenhuma decisão ainda.</p>';
-  const head = `<p class="mind-head"><b>${name(g, seat)}</b> · <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span> · ${LEVEL[(p.level || g.level || 'medio') as Level][0]} · ${mood > 0.15 ? 'confiante' : mood < -0.15 ? 'desconfiada' : 'equilibrada'} (${mood >= 0 ? '+' : '−'}${Math.abs(mood).toFixed(2)})${p.alive ? '' : ' · eliminada'}</p>
+  const head = `<p class="mind-head"><b>${name(g, seat)}</b> · <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span> · ${LEVEL[(p.level || g.level || 'medio') as Level][0]}${p.persona ? ` · ${PERSONA_W[p.persona][0].toLowerCase()} (${PERSONA_W[p.persona][1]})` : ''} · ${mood > 0.15 ? 'confiante' : mood < -0.15 ? 'desconfiada' : 'equilibrada'} (${mood >= 0 ? '+' : '−'}${Math.abs(mood).toFixed(2)})${p.alive ? '' : ' · eliminada'}</p>
     <p class="hint">Lembra ${k.memory >= 99 ? 'de tudo' : `dos últimos ${k.memory} governos, investigações e eliminações`} · acha que quem é do lado escondido mente ${pct(k.lie)} das vezes · ${k.count ? 'conta' : 'não conta'} as leis que ainda podem sair · decide sem pensar ${pct(k.noise)} das vezes${p.role === 'liberal' ? '' : ` · mente ${pct(k.act)} das vezes`}.</p>`;
   return `<aside class="drawer mind open" id="mind" aria-label="Raciocínio das IAs"><span class="label">Raciocínio das IAs</span>${pick}${head}
     <span class="label">O que ${name(g, seat)} acha de cada um agora</span><p class="hint">Chance de ser do lado escondido (a barra) e de ser o {boss}. Toque num nome para ver por que.${knows.filter(Boolean).length > 1 ? ' Quem está marcado com "sabe" ela conhece pela regra, e as contas dela usam isso.' : ''}</p><ul class="names mind-bel">${bel}</ul>
