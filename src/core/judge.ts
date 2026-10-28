@@ -6,7 +6,7 @@
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
 import { believe, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
-import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
+import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
 import type { Ask, Event, Game, Gov, Law, Level, Party, Role, Seen, Talk, Trace, View } from './types';
 
@@ -317,6 +317,9 @@ export function review(g: Game, me: number): Play[] {
       else if (side(t) === 'F') add(i, true, 1, `Na eleição especial, você deu a presidência a um aliado, ${P(t)}.`);
     }
   });
+  // the notebook (D28): every seat marked right, that this seat did not know for sure, is a deduction well made
+  const notes = notesScore(g, me);
+  for (const i of notes.right) add(g.hist.length - 1, true, 1, `Nas anotações, você marcou ${P(i)} como ${side(i) === 'L' ? 'liberal' : g.players[i].role === 'hitler' ? '{f} (era o {boss})' : '{f}'}, e acertou.`);
   // the hidden leader elected chancellor at the end, nominated by this seat
   if (g.phase === 'over' && g.winner === 'F' && g.chanc !== null && g.pres === me && g.players[g.chanc].role === 'hitler' && g.why.includes('eleito chanceler')) {
     const at = g.hist.length - 1;
@@ -324,6 +327,19 @@ export function review(g: Game, me: number): Play[] {
     else add(at, true, 3, `Você indicou o {boss}, ${P(g.chanc)}, para chanceler com ${HITLER_ZONE} leis {fs} na mesa, e a mesa elegeu: vitória.`);
   }
   return out;
+}
+
+/** How the notebook of seat `me` did (D28), once the roles are open: the seats it marked right and wrong. What it knew
+ *  for sure (its team by rule 3, what its own investigations showed) does not count: that was no deduction. */
+export function notesScore(g: Game, me: number): { right: number[]; wrong: number[] } {
+  const sure = new Set<number>([...knows(g, me).map(k => g.players.findIndex(p => p.name === k.name)), ...g.hist.flatMap(e => (e.k === 'inv' && e.by === me ? [e.target] : []))]);
+  const right: number[] = [], wrong: number[] = [];
+  for (const [k, mark] of Object.entries(g.notes || {})) {
+    const i = Number(k);
+    if (i === me || sure.has(i) || !g.players[i]) continue;
+    (partyOf(g.players[i].role) === mark ? right : wrong).push(i);
+  }
+  return { right, wrong };
 }
 
 /* ---------- the votes, where the app plays some seats ---------- */
@@ -336,7 +352,7 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
   const ts: Trace[] = [];
   const ja = alive.filter(i => { if (!isAi(g, i)) return votes[i]; const r = ask(g, i, 'vote', [1, 0], rand); ts.push(r.t); return r.a === 1; });
   const nein = alive.filter(i => !ja.includes(i)), list = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ') || 'ninguém';
-  const n: Game = { ...traced(g, ts), log: [...g.log, `Votos. ${words(g.pack).ja}: ${list(ja)}. ${words(g.pack).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
+  const n: Game = { ...traced(g, ts), log: [...g.log, `Votos. ${words(g.pack, g.region).ja}: ${list(ja)}. ${words(g.pack, g.region).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
   return vote(n, ja.length > nein.length, rand);
 }
 

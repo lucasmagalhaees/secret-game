@@ -436,31 +436,6 @@ small.ai{font:800 10px/1 var(--display);letter-spacing:.1em;padding:3px 5px;bord
 .crux>b{font:800 16px/1 var(--display);color:var(--fas)}
 /* the minutes number their laws themselves ("1ª", "2ª"): no list numbers beside them */
 .timeline.ata-list{list-style:none;padding-left:0}
-/* the reasoning of the app players (D16): a panel on the left edge, never docked (it shows the roles) */
-.drawer.mind{right:auto;left:0;width:min(360px,90vw);border-left:0;border-right:3px solid var(--line);box-shadow:8px 0 0 rgba(0,0,0,.12);transform:translateX(-105%);z-index:46}
-.drawer.mind.open{transform:none}
-[data-look="deco"] .drawer.mind{border-right:1px solid var(--gold)}
-@media (min-width:1400px){.drawer.mind{transform:translateX(-105%);visibility:hidden;top:calc(62px + env(safe-area-inset-top));bottom:calc(var(--dock) + env(safe-area-inset-bottom));max-height:none;left:0;right:auto;border:0;border-right:3px solid var(--line);padding:14px 14px 20px}.drawer.mind.open{transform:none;visibility:visible}}
-.drawer.mind .label{display:block;margin-top:14px}
-.drawer.mind .label:first-child{margin-top:0}
-.mind-who{display:flex;flex-wrap:wrap;gap:6px}
-.mind-who .btn{padding:6px 8px;font-size:13px;min-height:0}
-.mind-head{margin:10px 0 4px}
-.mind-bel li{padding:0}
-.mind-bel li.on{outline:2px solid var(--fg);outline-offset:-2px}
-.mind-bel button{all:unset;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 6px;cursor:pointer}
-.mind-bel .boss{flex-basis:100%;text-align:right;opacity:.75}
-.mind-trail,.mind-log{list-style:none;padding:0;margin:6px 0;display:grid;gap:8px}
-.mind-trail li,.mind-log li{border-left:4px solid var(--line);padding:4px 8px;font-size:14px;line-height:1.35}
-.mind-trail li.up{border-left-color:var(--fas)}
-.mind-trail li.down{border-left-color:var(--lib)}
-.mind-trail li .d{display:block}
-.mind-log p{margin:4px 0 0}
-.mind-log .what{display:block}
-.mind-rows{border-collapse:collapse;margin-top:6px;font-size:13px;width:100%}
-.mind-rows th,.mind-rows td{padding:2px 4px;text-align:right;border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent)}
-.mind-rows th:first-child,.mind-rows td:first-child{text-align:left}
-.mind-rows tr.on td{font-weight:800}
 /* the bar at the bottom that opens the side panels (D17): it has its own room at the end of the page (.dock-gap), so it
    covers nothing; a panel opens above it, and a note pops up above it */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:47;display:flex;gap:8px;height:calc(var(--dock) + env(safe-area-inset-bottom));padding:8px max(16px,calc((100vw - 720px) / 2)) calc(8px + env(safe-area-inset-bottom));background:var(--bg);border-top:3px solid var(--line)}
@@ -510,10 +485,11 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .cast figcaption{font-size:12px;line-height:1.25;color:var(--muted)}
 .cast figcaption b{display:block;color:var(--fg);font:800 12px/1.3 var(--display);letter-spacing:.06em;text-transform:uppercase}
 /* telling the table from the notebook (D26) */
-.drawer .tell{min-height:40px;padding:0 10px;font-size:13px;margin-left:auto}
-.drawer .tell.F{color:var(--fas);border-color:var(--fas)}
-.drawer .tell.L{color:var(--lib);border-color:var(--lib)}
-.drawer .told{margin-left:auto;color:var(--muted)}
+.note-acts{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex:0 0 auto}
+.drawer .tell{width:40px;min-height:40px;padding:0;font-size:18px;line-height:1;background:transparent;border:2px solid var(--line);cursor:pointer}
+.drawer .tell.F{border-color:var(--fas)}
+.drawer .tell.L{border-color:var(--lib)}
+.drawer .told{width:40px;text-align:center;color:var(--muted)}
 .persona{display:inline-block;padding:0 5px;border:1px solid currentColor;border-radius:3px;font-size:11px;opacity:.75;font-weight:400}
 #tellall{margin-top:10px}
 .heard{margin-top:12px;padding:10px;border:2px solid var(--line)}
@@ -521,3 +497,38 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .heard li.yes::before{content:"✓ ";color:var(--lib)}
 .heard li.no::before{content:"✗ ";color:var(--fas)}
 .heard li.meh::before{content:"? ";color:var(--muted)}
+.dlc{margin-top:10px}.dlc summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:40px;display:flex;align-items:center}
+.drawer .notes-segm button{min-width:44px}
+/* the notebook scored at the end (D28) */
+.big-score{font-size:20px;margin:6px 0}.big-score b{font-size:32px}
+.heard-list{list-style:none;margin:6px 0;padding:0;display:grid;gap:4px}
+.heard-list li.yes::before{content:"✓ ";color:var(--lib)}
+.heard-list li.no::before{content:"✗ ";color:var(--fas)}
+.drawer .names.noted li{flex-wrap:nowrap;align-items:center}
+.drawer .noted .who{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.drawer .noted .persona{display:block;width:max-content;margin-top:3px}
+.drawer .notes-segm button{flex:0 0 auto;min-width:0;padding:0 7px;font-size:11px;letter-spacing:.04em}
+.drawer .noted .sure-tag{font-size:11px;padding:5px 6px}
+/* the continent's colours on the cards and the laws (D29): a band at the foot, like a flag's ribbon */
+[data-region="brasil"]{--reg:linear-gradient(90deg,#1f9a4b 0 45%,#f2c230 45% 75%,#2b4fa8 75%)}
+[data-region="americas"]{--reg:repeating-linear-gradient(135deg,#c8553d 0 6px,#2a9d8f 6px 12px,#f4a259 12px 18px)}
+[data-region="europa"]{--reg:repeating-linear-gradient(90deg,#1d3a6e 0 12px,#d9b23a 12px 15px)}
+[data-region="asia"]{--reg:repeating-linear-gradient(90deg,#b8202b 0 14px,#e8b730 14px 18px)}
+[data-region="africa"]{--reg:repeating-linear-gradient(90deg,#e8b730 0 8px,#1f7a3a 8px 12px,#b8202b 12px 16px,#1f1b19 16px 20px)}
+[data-region="oceania"]{--reg:repeating-linear-gradient(90deg,#1b6f9c 0 8px,#e9d8a6 8px 11px,#c8553d 11px 14px)}
+[data-region]:not([data-region="mundo"]) .card,[data-region]:not([data-region="mundo"]) .law{background-image:var(--reg);background-size:100% 6px;background-repeat:no-repeat;background-position:bottom}
+.dlc-region{background-image:linear-gradient(90deg,#1f9a4b 0 45%,#f2c230 45% 75%,#2b4fa8 75%);background-size:100% 6px;background-repeat:no-repeat;background-position:bottom}
+.dlc-region.on{background-color:var(--fg);color:var(--surface)}
+[data-region]:not([data-region="mundo"]) .law{background-image:var(--reg),var(--reg);background-size:100% 8px,100% 8px;background-repeat:no-repeat;background-position:top,bottom}
+[data-region]:not([data-region="mundo"]) .slot.on{background-image:var(--reg),var(--reg);background-size:100% 5px,100% 5px;background-repeat:no-repeat;background-position:top,bottom}
+
+/* the Yes vote wears the continent (D29): a little flag-like picture behind the word, which keeps its own plate so it reads */
+[data-region="brasil"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231f9a4b%22/%3E%3Cpath%20d%3D%22M60%204%20L114%2022%20L60%2040%20L6%2022Z%22%20fill%3D%22%23f2c230%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2222%22%20r%3D%2213%22%20fill%3D%22%232b4fa8%22/%3E%3Cpath%20d%3D%22M47%2020%20C56%2017%2066%2018%2073%2023%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20fill%3D%22none%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region="americas"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%23c8553d%22/%3E%3Cpath%20d%3D%22M0%2014%20L10%206%20L20%2014%20L30%206%20L40%2014%20L50%206%20L60%2014%20L70%206%20L80%2014%20L90%206%20L100%2014%20L110%206%20L120%2014%20V30%20L110%2038%20L100%2030%20L90%2038%20L80%2030%20L70%2038%20L60%2030%20L50%2038%20L40%2030%20L30%2038%20L20%2030%20L10%2038%20L0%2030Z%22%20fill%3D%22%232a9d8f%22/%3E%3Cpath%20d%3D%22M0%2022%20H120%22%20stroke%3D%22%23f4a259%22%20stroke-width%3D%225%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region="europa"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231d3a6e%22/%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2210%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2234%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2228%22%20cy%3D%2222%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%22106%22%20cy%3D%2210%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%22106%22%20cy%3D%2234%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2292%22%20cy%3D%2222%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%228%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%228%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%2236%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%2236%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region="asia"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%23b8202b%22/%3E%3Cpath%20d%3D%22M0%2034%20C10%2026%2020%2026%2030%2034%20C40%2026%2050%2026%2060%2034%20C70%2026%2080%2026%2090%2034%20C100%2026%20110%2026%20120%2034%20V44%20H0Z%20M0%2012%20C10%204%2020%204%2030%2012%20C40%204%2050%204%2060%2012%20C70%204%2080%204%2090%2012%20C100%204%20110%204%20120%2012%20V0%20H0Z%22%20fill%3D%22%23e8b730%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region="africa"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%23e8b730%22/%3E%3Crect%20x%3D%226%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f7a3a%22/%3E%3Crect%20x%3D%2214%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%23b8202b%22/%3E%3Crect%20x%3D%2222%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f1b19%22/%3E%3Crect%20x%3D%2292%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f1b19%22/%3E%3Crect%20x%3D%22100%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%23b8202b%22/%3E%3Crect%20x%3D%22108%22%20width%3D%226%22%20height%3D%2244%22%20fill%3D%22%231f7a3a%22/%3E%3Cpath%20d%3D%22M0%206%20H120%20M0%2038%20H120%22%20stroke%3D%22%231f1b19%22%20stroke-width%3D%223%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region="oceania"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231b6f9c%22/%3E%3Cpath%20d%3D%22M0%2030%20C15%2022%2030%2038%2045%2030%20C60%2022%2075%2038%2090%2030%20C105%2022%20115%2034%20120%2030%20V44%20H0Z%22%20fill%3D%22%23e9d8a6%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2210%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2216%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2210%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%22108%22%20cy%3D%2216%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%226%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%226%22%20r%3D%221.6%22%20fill%3D%22%23fff%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region]:not([data-region="mundo"]) .btn.vote.L .vw{background:var(--surface);color:var(--lib);padding:4px 12px;border:2px solid var(--lib)}
+[data-region]:not([data-region="mundo"]) .btn.vote.L.on .vw{background:var(--lib);color:var(--on-party)}
+[data-region]:not([data-region="mundo"]) .btn.vote.F{background-color:var(--fas);color:#fff}

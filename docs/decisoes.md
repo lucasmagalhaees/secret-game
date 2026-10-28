@@ -345,7 +345,38 @@ Modelo de uma decisão:
   - As reações (concorda, não sabe, discorda) são palavras, sem peso nas contas, para uma reação não puxar a outra em cascata. O liberal reage pelo que acha depois de ouvir. O fascista reage pelo time: concorda quando isso leva a mesa para o lado errado e defende o aliado, mas o blefador às vezes entrega um aliado para parecer limpo.
   - Personalidades, de "lawful good" a "chaotic evil": certinho, desconfiado, cético, crítico, centrado, blefador e caótico. São sorteadas a cada partida, todas diferentes enquanto houver. Elas aparecem para a pessoa no caderno e no raciocínio, porque numa mesa de verdade se conhece o jeito dos amigos, e o jeito não diz nada do papel. O temperamento sorteado de antes continua, mas agora mexe pouco em volta do que a personalidade dá.
   - O resumo do fim repetia a linha "Você votou Nein! em Trujillo + Alfonsín" quando o mesmo par era votado duas vezes. O voto que perdeu o jogo agora diz quem votou Ja!.
+- **Medido (28/10/2026, `node scripts/ai_bench.mjs 200`):** com as falas pesando e as personalidades sorteadas, e a mesa toda no mesmo nível, os liberais vencem 54% (fácil), 53% (médio), 52% (difícil) e 51% (extremo). As partidas são só de IA, então ninguém denuncia nelas.
 - **Não sei:** se as personalidades ficam reconhecíveis jogando. Também não sei se a pessoa vai querer que as reações pesem nas contas.
+
+## D27. DLC Brasil, com senha
+
+- **Contexto (28/10/2026):** "preciso de uma DLC brasil com senha chumbada `unlockresenha`, mediante essa senha libera os commies: lula, jones manoel, boulos, dilma, manuela dávila, renan santos; nazis: bolsonaro, plinio salgado, figueiredo, geisel, castelo branco, ultra; liberais: amoedo, zema, aécio neves, enéias, serra, fhc".
+- **Decisão:** requisito 22 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - A senha fica escrita no código (`DLC_KEY`), como pedido. Quem olhar o código acha a senha; é piada entre amigos, não cadeado. Liberada uma vez, fica liberada no aparelho (`S.dlc`).
+  - "Brasil" entra como mais uma opção de nomes, ao lado dos continentes. Tem bichos próprios, pedidos pela pessoa ("o tucano é liberal, a lula é stalin, a onça é comunista, o hitler é um boi, e o fascista um bezerro"), no mesmo traço e com a farda de cada papel. A onça deixou de ser liberal em qualquer lugar ("se tiver onça liberal em algum desenho preciso q vc troque por outro"): o liberal das Américas virou o condor, escolhido entre águia-careca, condor e bisão. O Stalin do Brasil começou lula e virou polvo, escolhido com prévia, que também conversa com o "Polvo" de fora da DLC. A galeria mostra o Brasil só depois da senha.
+  - Como nos outros continentes (D24), os nomes vão misturados e o papel é sorteado. O app não diz em lugar nenhum quem é "nazi" ou "commie": a divisão que a pessoa mandou só decide em qual tema cada nome entra. No tema fascista entram os liberais e os da lista "nazis"; no tema comunista, os liberais e os da lista "commies". Assim o app não rotula político vivo, e o Bolsonaro pode muito bem sair liberal.
+  - Os nomes ficaram curtos, como na mesa: Aécio, Enéas, Manuela, Amoêdo. Só aqui o Lula aparece com o nome; fora da DLC continua "Polvo".
+- **Confirmado (28/10/2026):** "ultra" é o Ustra ("é Ulstra mesmo"); ficou com a grafia certa, Ustra.
+
+## D28. Sem o painel de raciocínio; acerto das anotações no fim
+
+- **Contexto (28/10/2026):** "o racicinio das IAs pode remover, faltou um indicativo de quantos papeis eu deduzi certo baseando nas minhas anotacoes, ai pode contar como boas jogadas no fim do jogo". Antes, a pessoa tinha pedido: "queria dps ver qnts das minhas anotacoes deram match com os papeis reais". E sobre o caderno: "quebrou o layout, poderia ter só o emoji, e faltou o compartilhar tudo que sei ou denunciar todos (que vc resume em denunciar inimigos)".
+- **Decisão:** requisitos 27, 34 e 37 do `CLAUDE.md`. Isto desfaz o painel da D16.
+- **Interpretações que precisaram ser feitas:**
+  - Saiu só o painel da tela. O motivo de cada decisão continua gravado em `Game.trace` e vai no arquivo exportado, porque serve para calibrar a IA (D23). O `S.debug` antigo é descartado ao ler.
+  - O caderno vai com a partida no fim (`Game.notes`). O acerto conta só o que foi deduzido: o time que a pessoa já conhecia e o que as investigações dela mostraram ficam de fora. Cada acerto entra nas jogadas boas, com peso 1. O erro não conta como jogada ruim, porque marcar é anotar e não jogar.
+  - No caderno, os botões viraram só emoji (📣 denuncia, 👍 abona quem está marcado liberal). "Contar tudo" virou "Denunciar inimigos": acusa de uma vez todos do outro lado, que são os marcados do lado oposto ao da pessoa, ou, para quem conhece o time, todos fora dele.
+- **Não sei:** se vale contar erro no caderno como jogada ruim.
+
+## D29. Votos na língua do continente e cartas com as cores dele
+
+- **Contexto (28/10/2026):** "os idiomas de votacao tem refletir nas regioes dos lideres sabe, e se puder dar uma estilizada regional nas cartas ficaria massa".
+- **Decisão:** requisito 22 do `CLAUDE.md`.
+- **Interpretações que precisaram ser feitas:**
+  - O voto segue a língua dos líderes de cada continente. Mundo e Europa ficam com os votos do original, porque ali estão Hitler e Stalin (alemão e russo). As Américas votam em espanhol, a língua de Pinochet e de Fidel. O Brasil vota em português. A Ásia vota em japonês para os fascistas (Tojo) e em chinês para os comunistas (Mao). A África vota em suaíli e a Oceania em inglês.
+  - "Estilizada regional" virou uma faixa com as cores do continente: no pé de cada cartão, mais larga no pé dos botões de voto (era o que a pessoa queria: "eu queria isso nas cartas de votacao", "e se possivel nas leis") e no alto e no pé de cada lei, com as cores do continente: verde, amarelo e azul no Brasil; o padrão andino nas Américas; azul e dourado na Europa; vermelho e dourado na Ásia; o kente na África; azul do mar e areia na Oceania. No Mundo não há faixa.
+- **Não sei:** se a pessoa queria algo mais forte que a faixa, como trocar a fonte ou o fundo por continente.
 
 ## Pendências
 

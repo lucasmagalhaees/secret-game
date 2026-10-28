@@ -48,8 +48,10 @@ export const BOT_NAMES: Record<Pack, string[]> = {
 /** Where the names of the app players come from (D24): the whole world (BOT_NAMES), or one continent. In each list,
  *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. Lula
  *  goes by "Polvo", as the person asked. */
-export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa', 'oceania'];
-export const REGION_NAMES: Record<Region, string> = { mundo: 'Mundo', americas: 'Américas', europa: 'Europa', asia: 'Ásia', africa: 'África', oceania: 'Oceania' };
+export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa', 'oceania', 'brasil'];
+/** The password that unlocks the Brazil expansion (D27). Written in the page on purpose: a joke among friends, not a lock. */
+export const DLC_KEY = 'unlockresenha';
+export const REGION_NAMES: Record<Region, string> = { mundo: 'Mundo', americas: 'Américas', europa: 'Europa', asia: 'Ásia', africa: 'África', oceania: 'Oceania', brasil: 'Brasil' };
 export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
   fascismo: {
     mundo: BOT_NAMES.fascismo,
@@ -57,7 +59,8 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
     europa: ['Churchill', 'Mussolini', 'De Gaulle', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Göring', 'Mitterrand', 'Pétain'],
     asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek', 'Tiglate-Pileser', 'Gengis Khan', 'Tamerlão'],
-    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe']
+    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe'],
+    brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
   },
   comunismo: {
     mundo: BOT_NAMES.comunismo,
@@ -65,7 +68,8 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende', 'Marulanda', 'Abimael Guzmán', 'Ortega'],
     europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'De Gaulle', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
     asia: ['Gandhi', 'Mao', 'Nehru', 'Ho Chi Minh', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai', 'Tiglate-Pileser', 'Gengis Khan'],
-    africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe']
+    africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe'],
+    brasil: ['Amoêdo', 'Lula', 'Zema', 'Jones Manoel', 'Aécio', 'Boulos', 'Enéas', 'Dilma', 'Serra', 'Manuela', 'FHC', 'Renan Santos']
   }
 };
 export function botName(names: string[], rand?: () => number, pack: Pack = 'fascismo', region: Region = 'mundo'): string {
