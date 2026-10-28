@@ -297,17 +297,17 @@ with sync_playwright() as p:
     assert pg.locator('#ata').count() == 1 and 'Nenhuma lei ainda' in txt('#ata')
     # the notebook: a fascist at a table of 7 knows Hitler and the other fascist; the rest is marked by hand, and kept
     assert pg.locator('#players .sure-tag').count() == 2 and not pg.locator('#drawer').is_visible(), 'the notebook starts closed; what is known shows in the list of players'
-    pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 3 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
+    pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 2 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
     first = str(next(i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'))
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=L]').click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
-    assert pg.locator('#notes .persona').count() == 6 and pg.locator('#notes [data-act=claimpick]').count() == 6, 'a claim for each one'
-    pg.locator(f'#notes [data-act=claimpick][data-i="{first}"]').click(); pg.locator(f'#notes [data-act=denounce][data-i="{first}"][data-v=acc]').click()
+    assert pg.locator('#notes .persona').count() == 0 and pg.locator('#notes [data-act=denounce]').count() == 12, 'a claim for each side of each one'
+    pg.locator(f'#notes [data-act=denounce][data-i="{first}"][data-v=acc]').click()
     name = G()['players'][int(first)]['name']
-    assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=claimpick][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
+    assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
     assert pg.locator('#tellF, #tellL').count() == 0, 'one claim at a time (D30)'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
     # the live suspicion: off by default, on with a tap, one bar per app player

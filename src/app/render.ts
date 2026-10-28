@@ -255,7 +255,7 @@ function vPlayers(g: Game): string {
   return `<section class="card" id="players"><span class="label">Jogadores</span>${liveBtn}${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
-    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
+    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
   }).join('')}</ul></section>`;
 }
 /** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
@@ -464,18 +464,18 @@ function vDrawer(g: Game): string {
   const open = !!S.notesOpen, me = kit.me;
   // a claim to the table (D30): what the notebook says of someone, true or a bluff; the app players weigh it like any talk
   const claimed = (i: number): Law | '' => kit.party(i);
-  const say = (i: number): string => {
-    if (!Core.canDenounce(g, me, i)) return g.players[i].alive && g.players[me].alive ? '<span class="told" title="Já falou dele nesta rodada">✓</span>' : '';
-    // the claim is chosen apart from the note (D30): what you say is not what you think, so a bluff never counts as a deduction
-    if (ui.claimFor !== i) return `<button class="tell" data-act="claimpick" data-i="${i}" title="Dizer à mesa o que ${esc(g.players[i].name)} é" aria-label="Dizer à mesa o que ${esc(g.players[i].name)} é">📣</button>`;
-    const m = claimed(i), opt = (p: Law): string => `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer que é ${p === 'L' ? 'liberal' : W.f}">${p === 'L' ? W.libs : W.short}</button>`;
-    return `<span class="claim-pick">${opt('L')}${opt('F')}</span>`;
+  // one column per side (D30): 🎯 marks what you think (only you see it), 📣 tells the table, true or a bluff
+  const side = (i: number, p: Law): string => {
+    const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
+    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}">🎯</button>`;
+    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
+    return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
-  const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span><span class="note-acts">${kit.cell(i, true)}${say(i)}</span></li>`)).join('');
+  const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${claimed(i)}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${kit.sure(i) ? ' <small>(sabe)</small>' : ''}</span><span class="sides">${side(i, 'L')}${side(i, 'F')}</span></li>`)).join('');
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas, que contam no fim como o que você deduziu. 📣 diz à mesa o que alguém é, e vale blefar: o que você diz não mexe nas marcas. Uma vez por rodada para cada um; as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Marque o que você acha (só você vê). 📣 diz à mesa o que quiser, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
     ${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
