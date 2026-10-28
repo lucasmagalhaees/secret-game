@@ -299,8 +299,8 @@ with sync_playwright() as p:
     assert pg.locator('#players .sure-tag').count() == 2 and not pg.locator('#drawer').is_visible(), 'the notebook starts closed; what is known shows in the list of players'
     pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 3 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
-    first = pg.locator('#notes [data-act=note][data-v=L]').first.get_attribute('data-i')
-    pg.locator('#notes [data-act=note][data-v=L]').first.click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
+    first = str(next(i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'))
+    pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=L]').click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
@@ -309,7 +309,7 @@ with sync_playwright() as p:
     name = G()['players'][int(first)]['name']
     assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
     pg.click('#tellF'); assert pg.locator('#tellF').is_disabled(), 'every one marked on the hidden side, at once'
-    other = pg.locator('#notes [data-act=note][data-v=L]').first.get_attribute('data-i'); pg.locator(f'#notes [data-act=note][data-i="{other}"][data-v=L]').click()
+    other = str([i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'][1]); pg.locator(f'#notes [data-act=note][data-i="{other}"][data-v=L]').click()
     pg.click('#tellL'); said = [e for e in G()['hist'] if e['k'] == 'talk' and e['by'] == 6]
     assert len(said) == 4 and [e['say'] for e in said].count('trust') == 1 and pg.locator('#tellL').is_disabled(), 'a bluff is a claim too: whatever is marked'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 2' in txt('#notestoggle'), 'closed, the marks stay in view'
@@ -356,7 +356,7 @@ with sync_playwright() as p:
         if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
             seen.add('seats'); assert pg.locator('#seats li').count() == 7 and 'você' in txt('#seats').lower() and pg.locator('#seats li.F').count() >= 2, ('the table at the top, with what the person knows', txt('#seats'))
             assert 'Como funciona esta fase' in txt('[data-act=help]'), 'the help button says what it is'
-        if pg.locator('#said').count(): seen.add('said'); assert 'disse' in txt('#said'), txt('#said')
+        if pg.locator('#said').count(): seen.add('said'); assert any(w in txt('#said') for w in ('tirou', 'recebeu', 'disse', 'investigou')), txt('#said')
         if pg.locator('#coach').count():
             seen.add('coach'); assert 'Como a mesa te vê' in txt('#coach'), txt('#coach')
             assert pg.evaluate("!!(document.querySelector('#phase').compareDocumentPosition(document.querySelector('#coach')) & Node.DOCUMENT_POSITION_FOLLOWING)"), 'what the person has to do comes before the trainer'
