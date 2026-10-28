@@ -406,15 +406,16 @@ function vSaid(g: Game): string {
  *  not add up, it says so. */
 function ledger(g: Game, i: number): string {
   const e = g.hist[i] as Gov, me = solo(g), who = (j: number): string => (j === me ? 'você' : `<b>${name(g, j)}</b>`);
-  const n3 = (n: number): string => (n === 0 ? '3 liberais' : n === 3 ? '3 {fs}' : n === 1 ? '1 {f} e 2 liberais' : '2 {fs} e 1 liberal');
-  const n2 = (n: number): string => (n === 0 ? '2 liberais' : n === 2 ? '2 {fs}' : '1 {f} e 1 liberal');
-  const one = (f: boolean): string => (f ? '1 {f}' : '1 liberal'), law = e.k === 'veto' ? undefined : e.law;
+  const chip = (p: Law, n: number): string => (n ? `<span class="chip-n ${p}${n < 0 ? ' neg' : ''}">${p === 'L' ? 'Lib' : W.short} ${n < 0 ? '−' : ''}${Math.abs(n)}</span>` : '');
+  const hand = (f: number, of: number): string => `${chip('L', of - f)}${chip('F', f)}`;
+  const law = e.k === 'veto' ? undefined : e.law;
   const pc = e.pc !== undefined && e.pc >= 0 ? e.pc : null, cc = e.cc !== undefined && e.cc >= 0 ? e.cc : null;
   const pThrow = pc !== null && cc !== null ? pc - cc : null, cThrow = cc !== null && law ? cc - (law === 'F' ? 1 : 0) : null;
-  const pres = pc === null ? `Presidente ${who(e.pres)} não disse o que tirou` : `Presidente ${who(e.pres)}: tirou ${n3(pc)}${pThrow === 0 || pThrow === 1 ? `, descartou ${one(pThrow === 1)}` : ''}`;
-  const chanc = cc === null ? `chanceler ${who(e.chanc)} não disse o que recebeu` : `chanceler ${who(e.chanc)}: recebeu ${n2(cc)}${e.k === 'veto' ? ', pediu veto' : cThrow === 0 || cThrow === 1 ? `, descartou ${one(cThrow === 1)}` : ''}`;
+  const thrown = (t: number | null): string => (t === 1 ? chip('F', -1) : t === 0 ? chip('L', -1) : '');
   const off = (pThrow !== null && pThrow !== 0 && pThrow !== 1) || (cThrow !== null && cThrow !== 0 && cThrow !== 1);
-  return `${pres}. ${chanc[0].toUpperCase()}${chanc.slice(1)}${law ? ` e aprovou ${law === 'L' ? 'liberal' : '{f}'}` : ''}.${off ? ' <b class="clash">A conta não fecha: alguém mentiu.</b>' : ''}`;
+  const pres = `<span class="led-row">Presidente ${who(e.pres)} ${pc === null ? '<i>não disse</i>' : `${hand(pc, 3)}${thrown(pThrow)}`}</span>`;
+  const chanc = `<span class="led-row">Chanceler ${who(e.chanc)} ${cc === null ? '<i>não disse</i>' : `${hand(cc, 2)}${e.k === 'veto' ? ' <i>pediu veto</i>' : thrown(cThrow)}`}${law ? ` → aprovou <span class="chip-n ${law}">${law === 'L' ? 'Lib' : W.short}</span>` : ''}</span>`;
+  return `${pres}${chanc}${off ? '<b class="clash">A conta não fecha: alguém mentiu.</b>' : ''}`;
 }
 /** The whole table at a glance, at the top (D18): every seat in order, who is president and chancellor, who is out, and,
  *  playing alone, what the person knows or marked of each (the colour) and, with the live suspicion on, how much each
@@ -460,16 +461,16 @@ function vDrawer(g: Game): string {
   const claimed = (i: number): Law | '' => kit.party(i);
   const say = (i: number): string => {
     if (!Core.canDenounce(g, me, i)) return g.players[i].alive && g.players[me].alive ? '<span class="told" title="Já falou dele nesta rodada">✓</span>' : '';
-    const m = claimed(i);
-    if (!m) return '<span class="told" title="Marque primeiro">·</span>';
-    const what = `Dizer à mesa que ${esc(g.players[i].name)} é ${m === 'L' ? 'liberal' : W.f}`;
-    return `<button class="tell ${m}" data-act="denounce" data-i="${i}" data-v="${m === 'L' ? 'trust' : 'acc'}" title="${what}" aria-label="${what}">📣</button>`;
+    // the claim is chosen apart from the note (D30): what you say is not what you think, so a bluff never counts as a deduction
+    if (ui.claimFor !== i) return `<button class="tell" data-act="claimpick" data-i="${i}" title="Dizer à mesa o que ${esc(g.players[i].name)} é" aria-label="Dizer à mesa o que ${esc(g.players[i].name)} é">📣</button>`;
+    const m = claimed(i), opt = (p: Law): string => `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer que é ${p === 'L' ? 'liberal' : W.f}">${p === 'L' ? W.libs : W.short}</button>`;
+    return `<span class="claim-pick">${opt('L')}${opt('F')}</span>`;
   };
   const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span><span class="note-acts">${kit.cell(i, true)}${say(i)}</span></li>`)).join('');
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. 📣 diz à mesa o que você marcou de alguém, e vale blefar: marque o que quiser que a mesa acredite. Uma vez por rodada para cada um; as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas, que contam no fim como o que você deduziu. 📣 diz à mesa o que alguém é, e vale blefar: o que você diz não mexe nas marcas. Uma vez por rodada para cada um; as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
     ${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
