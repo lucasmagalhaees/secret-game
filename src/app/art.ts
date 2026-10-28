@@ -235,6 +235,12 @@ const beaked = (s: Side, head: string, beak: string, extra: { ruff?: string; mar
 const spots = (pts: number[][], c: string, ring = false): string => pts.map(([x, y, r]) => (ring ? `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${c}" stroke-width="1.8"/>` : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`)).join('');
 const HEADS: Record<string, (s: Side) => string> = {
   onca: s => cat(s, '#e9a23b', '#b9741f', { marks: spots([[48, 34, 3], [58, 30, 2.6], [70, 30, 2.6], [80, 34, 3], [44, 48, 2.6], [83, 47, 2.6], [52, 66, 2.2], [75, 65, 2.2]], '#5a3410', true) }),
+  elefante: s => `<path d="M44 34 C24 22 8 38 12 56 C16 70 34 72 44 60Z M82 34 C102 22 118 38 114 56 C110 70 92 72 82 60Z" fill="#8a9096" ${o()}/><path d="M40 38 C28 32 18 42 20 54 C22 62 32 64 40 58Z M86 38 C98 32 108 42 106 54 C104 62 94 64 86 58Z" fill="#cfa2a2"/>
+    <path d="M40 44 C40 28 50 22 63 22 C76 22 86 28 86 44 C86 56 80 62 72 64 L54 64 C46 62 40 56 40 44Z" fill="#9aa0a6" ${o()}/>
+    <path d="M56 54 C54 72 56 88 62 96 C66 100 72 98 70 92 C66 86 66 72 70 54Z" fill="#9aa0a6" ${o()}/>
+    <path d="M58 70 h10 M58 78 h10 M60 86 h8" fill="none" stroke="#6f757b" stroke-width="1.6"/>
+    <path d="M52 60 C46 68 48 76 54 78 L56 70Z M74 60 C80 68 78 76 72 78 L70 70Z" fill="${W}" ${o(1.4)}/>
+    ${look(s, '#f6e36b', 42, 11, '#9aa0a6')}`,
   leao: s => cat(s, '#e2b05a', '#b8843a', { ears: ' ', behind: `<polygon points="63,10 71,20 83,15 85,27 98,29 93,40 103,48 93,56 98,67 85,69 83,81 71,76 63,86 55,76 43,81 41,69 28,67 33,56 23,48 33,40 28,29 41,27 43,15 55,20" fill="#9a5424" ${o()}/><circle cx="63" cy="48" r="30" fill="#b86a2c"/>` }),
   tigre: s => cat(s, '#ec8a2e', '#b7601a', { marks: `<path d="M40 50 C44 60 52 66 63 66 C74 66 82 60 86 50 C82 58 74 62 63 62 C52 62 44 58 40 50Z" fill="${W}" opacity=".9"/><path d="M63 22 L60 30 L63 34 L66 30Z M52 24 L54 33 M74 24 L72 33 M36 40 L48 44 L38 46 M36 50 L48 51 L37 55 M90 40 L78 44 L88 46 M90 50 L78 51 L89 55" fill="${K}" stroke="${K}" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>` }),
   lince: s => cat(s, '#c9a477', '#9b7a52', { ears: `<path d="M30 38 L24 10 L48 26Z M96 38 L102 10 L78 26Z" fill="#c9a477" ${o()}/><path d="M28 18 L27 24 L36 26Z M98 18 L99 24 L90 26Z" fill="#9b7a52"/><path d="M24 10 L20 -2 M102 10 L106 -2" stroke="${K}" stroke-width="3.4" stroke-linecap="round"/>`, marks: `<path d="M36 50 L26 62 L40 58 L34 68 L48 62 M90 50 L100 62 L86 58 L92 68 L78 62" fill="#ede0c8" ${o(1.6)}/>${spots([[48, 34, 1.6], [56, 30, 1.4], [72, 30, 1.4], [79, 34, 1.6]], '#6b4a2c')}` }),
@@ -281,7 +287,7 @@ const HEADS: Record<string, (s: Side) => string> = {
  *  bird, the alligator and the white wolf. */
 const ANIMALS: Record<Exclude<Region, 'mundo'>, { L: string; F: string; C: string }> = {
   americas: { L: 'onca', F: 'urubu', C: 'coiote' },
-  africa: { L: 'leao', F: 'hiena', C: 'chacal' },
+  africa: { L: 'elefante', F: 'hiena', C: 'chacal' },
   asia: { L: 'tigre', F: 'komodo', C: 'raposa' },
   europa: { L: 'cegonha', F: 'javali', C: 'lince' }
 };
@@ -343,6 +349,14 @@ const LEADERS: Record<string, () => string> = {
     <path d="M40 40 C40 32 50 30 54 36 C58 44 52 50 46 50 C42 50 40 46 40 40Z M80 40 C80 32 70 30 66 36 C62 44 68 50 74 50 C78 50 80 46 80 40Z" fill="#1f1b19"/>
     <ellipse cx="60" cy="54" rx="13" ry="10" fill="#fffaf0" ${o(1.6)}/><ellipse cx="60" cy="48" rx="5.4" ry="3.8" fill="${K}"/>
     ${stache(57)}<path d="M54 63 C58 65 62 65 66 63" fill="none" ${o(2)}/>${pipe(66, 62)}${angry(40, 12, W)}`,
+  rinoceronte: () => `<path d="M38 30 L34 14 L48 24Z M82 30 L86 14 L72 24Z" fill="#8d8a86" ${o()}/>
+    <path d="M32 44 C32 28 44 20 60 20 C76 20 88 28 88 44 C88 64 78 78 60 78 C42 78 32 64 32 44Z" fill="#8d8a86" ${o()}/>
+    <path d="M36 50 C40 46 44 46 46 50 M84 50 C80 46 76 46 74 50 M40 60 C44 58 46 60 48 64 M80 60 C76 58 74 60 72 64" fill="none" stroke="#5f5c58" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="60" cy="64" rx="17" ry="12" fill="#a8a49e" ${o(1.8)}/>
+    <path d="M50 56 C52 42 58 30 62 24 C64 36 68 48 70 56Z" fill="#e6dccb" ${o(1.8)}/>
+    <path d="M56 42 C56 38 58 34 60 32" fill="none" stroke="#c8bba4" stroke-width="2"/>
+    <ellipse cx="54" cy="64" rx="2.2" ry="3" fill="${K}"/><ellipse cx="66" cy="64" rx="2.2" ry="3" fill="${K}"/>
+    ${stache(70)}${pipe(66, 72)}${angry(42, 13, W)}`,
   oculos: () => `<circle cx="36" cy="24" r="10" fill="#2a2420" ${o()}/><circle cx="84" cy="24" r="10" fill="#2a2420" ${o()}/>
     <path d="M30 46 C28 26 42 16 60 16 C78 16 92 26 90 46 C88 62 76 72 60 72 C44 72 32 62 30 46Z" fill="#2a2420" ${o()}/>
     <path d="M42 34 C46 28 56 30 56 38 C56 46 48 50 44 46 Z M78 34 C74 28 64 30 64 38 C64 46 72 50 76 46 Z" fill="#e8d6a8" ${o(1.2)}/>
@@ -364,7 +378,7 @@ const LEADERS: Record<string, () => string> = {
     <ellipse cx="60" cy="44" rx="4" ry="3" fill="${K}"/>${pipe(72, 58)}${angry(36, 11, W)}`
 };
 const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
-  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'bufalo' }, asia: { H: 'escorpiao', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }
+  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'rinoceronte' }, asia: { H: 'escorpiao', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }
 };
 const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
   ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`
