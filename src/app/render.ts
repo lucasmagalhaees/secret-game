@@ -405,17 +405,22 @@ function vSaid(g: Game): string {
  *  this, threw that away and enacted the law. The throws are worked out from what each said; when the two stories do
  *  not add up, it says so. */
 function ledger(g: Game, i: number): string {
-  const e = g.hist[i] as Gov, me = solo(g), who = (j: number): string => (j === me ? 'você' : `<b>${name(g, j)}</b>`);
-  const chip = (p: Law, n: number): string => (n ? `<span class="chip-n ${p}${n < 0 ? ' neg' : ''}">${p === 'L' ? 'Lib' : W.short} ${n < 0 ? '−' : ''}${Math.abs(n)}</span>` : '');
-  const hand = (f: number, of: number): string => `${chip('L', of - f)}${chip('F', f)}`;
+  const e = g.hist[i] as Gov, me = solo(g), who = (j: number): string => (j === me ? 'você' : esc(g.players[j].name));
+  // the laws as little cards (D30): what each said they held, the one thrown away faded and crossed out, the law enacted
+  const card = (p: Law, out = false): string => `<i class="lc ${p}${out ? ' out' : ''}" title="${p === 'L' ? 'liberal' : W.f}${out ? ', descartada' : ''}"></i>`;
+  const cards = (f: number, of: number, outF: number | null): string => {
+    const xs: string[] = [];
+    for (let k = 0; k < of - f; k++) xs.push(card('L', outF === 0 && k === 0));
+    for (let k = 0; k < f; k++) xs.push(card('F', outF === 1 && k === 0));
+    return xs.join('');
+  };
   const law = e.k === 'veto' ? undefined : e.law;
   const pc = e.pc !== undefined && e.pc >= 0 ? e.pc : null, cc = e.cc !== undefined && e.cc >= 0 ? e.cc : null;
   const pThrow = pc !== null && cc !== null ? pc - cc : null, cThrow = cc !== null && law ? cc - (law === 'F' ? 1 : 0) : null;
-  const thrown = (t: number | null): string => (t === 1 ? chip('F', -1) : t === 0 ? chip('L', -1) : '');
-  const off = (pThrow !== null && pThrow !== 0 && pThrow !== 1) || (cThrow !== null && cThrow !== 0 && cThrow !== 1);
-  const pres = `<span class="led-row">Presidente ${who(e.pres)} ${pc === null ? '<i>não disse</i>' : `${hand(pc, 3)}${thrown(pThrow)}`}</span>`;
-  const chanc = `<span class="led-row">Chanceler ${who(e.chanc)} ${cc === null ? '<i>não disse</i>' : `${hand(cc, 2)}${e.k === 'veto' ? ' <i>pediu veto</i>' : thrown(cThrow)}`}${law ? ` → aprovou <span class="chip-n ${law}">${law === 'L' ? 'Lib' : W.short}</span>` : ''}</span>`;
-  return `${pres}${chanc}${off ? '<b class="clash">A conta não fecha: alguém mentiu.</b>' : ''}`;
+  const ok = (t: number | null): number | null => (t === 0 || t === 1 ? t : null);
+  const off = (pThrow !== null && ok(pThrow) === null) || (cThrow !== null && ok(cThrow) === null);
+  const row = (role: string, j: number, body: string): string => `<span class="led-row"><span class="led-who"><small>${role}</small><b>${who(j)}</b></span><span class="led-cards">${body}</span></span>`;
+  return `${row('Presidente', e.pres, pc === null ? '<i class="led-quiet">não disse</i>' : cards(pc, 3, ok(pThrow)))}${row('Chanceler', e.chanc, `${cc === null ? '<i class="led-quiet">não disse</i>' : cards(cc, 2, e.k === 'veto' ? null : ok(cThrow))}${e.k === 'veto' ? '<i class="led-quiet">pediu veto</i>' : law ? `<span class="led-arrow">→</span>${card(law)}<small class="led-law">${law === 'L' ? 'liberal' : W.f}</small>` : ''}`)}${off ? '<b class="clash">A conta não fecha: alguém mentiu.</b>' : ''}`;
 }
 /** The whole table at a glance, at the top (D18): every seat in order, who is president and chancellor, who is out, and,
  *  playing alone, what the person knows or marked of each (the colour) and, with the live suspicion on, how much each
