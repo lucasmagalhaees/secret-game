@@ -234,6 +234,27 @@ const beaked = (s: Side, head: string, beak: string, extra: { ruff?: string; mar
   ${s === 'L' ? `<path d="M58 35 L74 34" fill="none" stroke="${K}" stroke-width="4" stroke-linecap="round"/><path d="M60 36.5 C63 35 70 35 72.5 37" fill="${head}"/>` : `<path d="M58 31 L74 36" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>`}`;
 const spots = (pts: number[][], c: string, ring = false): string => pts.map(([x, y, r]) => (ring ? `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${c}" stroke-width="1.8"/>` : `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`)).join('');
 const HEADS: Record<string, (s: Side) => string> = {
+  condor: s => `<path d="M30 72 C34 60 42 56 50 60 C54 54 70 54 74 60 C82 56 90 60 94 72Z" fill="${W}" ${o(1.8)}/>
+    <path d="M44 42 C44 28 52 22 62 22 C72 22 80 28 80 40 C80 52 76 60 68 62 L54 62 C48 58 44 52 44 42Z" fill="#c98a7a" ${o()}/>
+    <path d="M56 24 C58 18 64 16 68 20 C68 24 64 26 60 26Z" fill="#a8645a" ${o(1.4)}/>
+    <path d="M76 36 C90 34 100 40 100 48 C100 54 94 56 90 52 L78 52 C74 48 74 40 76 36Z" fill="#e8dcc4" ${o()}/><path d="M94 50 C98 52 96 58 92 58" fill="#3a3330" ${o(1.4)}/>
+    <ellipse cx="66" cy="38" rx="5.4" ry="5" fill="${W}" ${o(1.5)}/><circle cx="67" cy="38.6" r="2.6" fill="#7d1d1a"/><circle cx="68" cy="37.4" r="0.9" fill="${W}"/>
+    <path d="M58 31 C63 29 70 29 74 33" fill="none" stroke="${K}" stroke-width="3.6" stroke-linecap="round"/>`,
+  tucano: s => `<circle cx="56" cy="44" r="21" fill="#1f1b19" ${o()}/>
+    <path d="M40 50 C42 62 54 66 64 60 C60 54 56 50 56 44 C50 48 44 50 40 50Z" fill="#fff6d8" ${o(1.6)}/>
+    <path d="M70 34 C88 26 108 28 118 40 C112 46 96 48 74 50 C70 46 68 40 70 34Z" fill="#f28c1c" ${o()}/>
+    <path d="M74 50 C92 50 108 48 118 42 C116 52 98 60 76 58 C72 56 72 52 74 50Z" fill="#f6c33b" ${o()}/>
+    <path d="M110 34 C116 36 119 40 118 42 C116 44 112 46 108 46 C110 42 111 38 110 34Z" fill="#1f1b19" ${o(1.4)}/>
+    <path d="M76 36 C86 34 96 34 104 36" fill="none" stroke="#d8641a" stroke-width="2"/>
+    <circle cx="62" cy="40" r="7.4" fill="#3aa0d8" ${o(1.6)}/><circle cx="62" cy="40" r="4.4" fill="${W}" ${o(1.2)}/><circle cx="63" cy="40.6" r="2.4" fill="${K}"/><circle cx="64" cy="39.4" r="0.9" fill="${W}"/>
+    ${s === 'L' ? `<path d="M54 31 L70 31" fill="none" stroke="${K}" stroke-width="3.4" stroke-linecap="round"/>` : `<path d="M54 30 L70 35" fill="none" stroke="${K}" stroke-width="3.4" stroke-linecap="round"/>`}`,
+  bezerro: s => `<path d="M38 36 C24 30 16 36 18 44 C26 46 34 44 40 42Z M88 36 C102 30 110 36 108 44 C100 46 92 44 86 42Z" fill="#c98a5a" ${o()}/><path d="M36 38 C28 36 23 39 24 42 C30 43 35 42 38 41Z M90 38 C98 36 103 39 102 42 C96 43 91 42 88 41Z" fill="${PINK}"/>
+    <path d="M48 24 C46 18 48 14 52 14 C54 18 54 22 54 24Z M78 24 C80 18 78 14 74 14 C72 18 72 22 72 24Z" fill="#e8dcc4" ${o(1.6)}/>
+    <path d="M38 44 C38 28 48 22 63 22 C78 22 88 28 88 44 C88 54 84 60 80 64 L46 64 C42 60 38 54 38 44Z" fill="#c98a5a" ${o()}/>
+    <path d="M54 22 C58 30 68 30 72 22 C68 26 58 26 54 22Z M42 46 C46 40 52 42 52 48 C50 54 44 54 42 46Z" fill="${W}" ${o(1.2)}/>
+    <ellipse cx="63" cy="64" rx="16" ry="11" fill="#f2b2a8" ${o(1.8)}/><ellipse cx="57" cy="64" rx="2.4" ry="3.2" fill="${K}"/><ellipse cx="69" cy="64" rx="2.4" ry="3.2" fill="${K}"/>
+    <path d="M58 71 C61 73 65 73 68 71" fill="none" ${o(1.8)}/>
+    ${look(s, '#f6e36b', 42, 11)}`,
   onca: s => cat(s, '#e9a23b', '#b9741f', { marks: spots([[48, 34, 3], [58, 30, 2.6], [70, 30, 2.6], [80, 34, 3], [44, 48, 2.6], [83, 47, 2.6], [52, 66, 2.2], [75, 65, 2.2]], '#5a3410', true) }),
   elefante: s => `<path d="M44 34 C24 22 8 38 12 56 C16 70 34 72 44 60Z M82 34 C102 22 118 38 114 56 C110 70 92 72 82 60Z" fill="#8a9096" ${o()}/><path d="M40 38 C28 32 18 42 20 54 C22 62 32 64 40 58Z M86 38 C98 32 108 42 106 54 C104 62 94 64 86 58Z" fill="#cfa2a2"/>
     <path d="M40 44 C40 28 50 22 63 22 C76 22 86 28 86 44 C86 56 80 62 72 64 L54 64 C46 62 40 56 40 44Z" fill="#9aa0a6" ${o()}/>
@@ -303,12 +324,13 @@ const HEADS: Record<string, (s: Side) => string> = {
 };
 /** Who stands for each side on each continent (D24): the liberal, the fascist, the communist. The world keeps the
  *  bird, the alligator and the white wolf. */
-const ANIMALS: Record<Exclude<Region, 'mundo' | 'brasil'>, { L: string; F: string; C: string }> = {
-  americas: { L: 'onca', F: 'urubu', C: 'coiote' },
+const ANIMALS: Record<Exclude<Region, 'mundo'>, { L: string; F: string; C: string }> = {
+  americas: { L: 'condor', F: 'urubu', C: 'coiote' },
   africa: { L: 'elefante', F: 'hiena', C: 'chacal' },
   asia: { L: 'tigre', F: 'komodo', C: 'raposa' },
   europa: { L: 'cegonha', F: 'javali', C: 'lince' },
-  oceania: { L: 'canguru', F: 'diabo', C: 'ornitorrinco' }
+  oceania: { L: 'canguru', F: 'diabo', C: 'ornitorrinco' },
+  brasil: { L: 'tucano', F: 'bezerro', C: 'onca' }              // the expansion (D27): the jaguar changes sides
 };
 /* The leader of the hidden side on each continent (D24): a long grey coat with a plain red armband over a lectern for
    the fascists' leader, yelling; a khaki tunic with gold shoulder boards and a pipe for the communists' leader. */
@@ -329,6 +351,20 @@ const pipe = (x: number, y: number): string => `<path d="M${x} ${y} L${x + 18} $
 const stache = (y: number, c = '#2a1d14'): string => `<path d="M40 ${y} C46 ${y - 8} 54 ${y - 6} 60 ${y - 4} C66 ${y - 6} 74 ${y - 8} 80 ${y} C74 ${y + 2} 66 ${y} 60 ${y + 2} C54 ${y} 46 ${y + 2} 40 ${y}Z" fill="${c}" ${o(1.6)}/>`;
 const angry = (y = 40, gap = 10, iris = '#f6e36b'): string => look('F', iris, y, gap);
 const LEADERS: Record<string, () => string> = {
+  polvo: () => `<path d="M34 46 C30 22 44 8 60 8 C76 8 90 22 86 46 C84 58 76 66 60 66 C44 66 36 58 34 46Z" fill="#c8506a" ${o()}/>
+    ${spots([[44, 26, 2.2], [52, 18, 1.8], [70, 18, 1.8], [78, 28, 2.2], [40, 40, 1.6], [82, 42, 1.6]], '#9a3450')}
+    <path d="M40 62 C28 70 20 84 30 92 C36 96 40 88 34 84 M48 64 C42 80 44 96 52 100 C58 102 58 94 52 92 M60 66 C60 84 58 98 64 104 C70 106 72 98 66 96 M72 64 C78 80 76 96 68 100 C62 102 62 94 68 92 M80 62 C92 70 100 84 90 92 C84 96 80 88 86 84" fill="none" stroke="${K}" stroke-width="8" stroke-linecap="round"/>
+    <path d="M40 62 C28 70 20 84 30 92 C36 96 40 88 34 84 M48 64 C42 80 44 96 52 100 C58 102 58 94 52 92 M60 66 C60 84 58 98 64 104 C70 106 72 98 66 96 M72 64 C78 80 76 96 68 100 C62 102 62 94 68 92 M80 62 C92 70 100 84 90 92 C84 96 80 88 86 84" fill="none" stroke="#d8607a" stroke-width="5" stroke-linecap="round"/>
+    ${spots([[28, 80, 1.3], [32, 88, 1.3], [46, 84, 1.3], [48, 94, 1.3], [60, 86, 1.3], [62, 96, 1.3], [74, 84, 1.3], [72, 94, 1.3], [90, 80, 1.3], [88, 88, 1.3]], '#f4c6d0')}
+    ${stache(56)}<path d="M54 61 C58 63 62 63 66 61" fill="none" ${o(2)}/>${pipe(66, 60)}${angry(42, 12, W)}`,
+  boi: () => `<path d="M38 32 C22 32 10 22 8 6 C16 16 26 20 40 22Z M82 32 C98 32 110 22 112 6 C104 16 94 20 80 22Z" fill="#efe4cc" ${o()}/>
+    <path d="M40 34 C26 30 16 36 18 44 C26 46 34 44 42 42Z M80 34 C94 30 104 36 102 44 C94 46 86 44 78 42Z" fill="#4a2e1c" ${o()}/>
+    <path d="M36 42 C36 28 46 22 60 22 C74 22 84 28 84 42 C84 54 80 62 76 66 L44 66 C40 62 36 54 36 42Z" fill="#4a2e1c" ${o()}/>
+    <path d="M54 22 L60 34 L66 22Z" fill="${W}" ${o(1.2)}/>
+    <ellipse cx="60" cy="66" rx="18" ry="12" fill="#9a6a54" ${o(1.8)}/><ellipse cx="53" cy="64" rx="2.6" ry="3.6" fill="${K}"/><ellipse cx="67" cy="64" rx="2.6" ry="3.6" fill="${K}"/>
+    <path d="M54 70 C54 80 66 80 66 70" fill="none" stroke="${GOLD}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M50 72 C54 78 66 78 70 72 C66 74 54 74 50 72Z" fill="#5a1414" ${o(1.2)}/>
+    ${angry(42, 12, '#e8442e')}${shout}`,
   piranha: () => `<path d="M32 46 L20 36 L22 50Z M88 46 L100 36 L98 50Z" fill="#7d8790" ${o()}/>
     <path d="M34 44 C34 28 46 20 60 20 C76 20 86 30 86 46 C86 62 76 72 60 72 C46 72 34 62 34 44Z" fill="#8f9aa3" ${o()}/>
     <path d="M36 50 C40 70 80 70 84 50 C78 58 66 56 60 56 C54 56 42 58 36 50Z" fill="#d65a3a" ${o(1.8)}/>
@@ -405,21 +441,20 @@ const LEADERS: Record<string, () => string> = {
     <path d="M50 60 C48 72 50 84 54 90 C56 82 56 70 56 60Z M70 60 C72 72 70 84 66 90 C64 82 64 70 64 60Z" fill="#f4ecd8" ${o(1.6)}/>
     <ellipse cx="60" cy="44" rx="4" ry="3" fill="${K}"/>${pipe(72, 58)}${angry(36, 11, W)}`
 };
-const BOSSES: Record<Exclude<Region, 'mundo' | 'brasil'>, { H: string; S: string }> = {
-  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'rinoceronte' }, asia: { H: 'aranha', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }, oceania: { H: 'casuar', S: 'coala' }
+const BOSSES: Record<Exclude<Region, 'mundo'>, { H: string; S: string }> = {
+  americas: { H: 'piranha', S: 'oculos' }, africa: { H: 'crocodilo', S: 'rinoceronte' }, asia: { H: 'aranha', S: 'panda' }, europa: { H: 'rato', S: 'morsa' }, oceania: { H: 'casuar', S: 'coala' }, brasil: { H: 'boi', S: 'polvo' }
 };
-const leader = (pack: Pack, region: Exclude<Region, 'mundo' | 'brasil'>): string => pack === 'comunismo'
+const leader = (pack: Pack, region: Exclude<Region, 'mundo'>): string => pack === 'comunismo'
   ? `${spot}${chiefBody()}${LEADERS[BOSSES[region].S]()}${chiefCap}`
   : `${spot}${bossBody()}${LEADERS[BOSSES[region].H]()}${bossCap}${lectern}`;
 const LABEL: Record<string, string> = {
   onca: 'onça', urubu: 'urubu', coiote: 'coiote', elefante: 'elefante', hiena: 'hiena', chacal: 'chacal', tigre: 'tigre', komodo: 'dragão-de-komodo',
   raposa: 'raposa', cegonha: 'cegonha', javali: 'javali', lince: 'lince', canguru: 'canguru', diabo: 'diabo-da-tasmânia', ornitorrinco: 'ornitorrinco',
   piranha: 'piranha', oculos: 'urso-de-óculos', crocodilo: 'crocodilo-do-Nilo', rinoceronte: 'rinoceronte', aranha: 'aranha', panda: 'panda',
-  rato: 'rato', morsa: 'morsa', casuar: 'casuar', coala: 'coala'
+  rato: 'rato', morsa: 'morsa', casuar: 'casuar', coala: 'coala', tucano: 'tucano', bezerro: 'bezerro', boi: 'boi', polvo: 'polvo', condor: 'condor'
 };
 /** The animal behind each role, by name, for the gallery (D25). */
-export const animalOf = (r: Role, pack: Pack = 'fascismo', reg: Region = 'mundo'): string => {
-  const region = reg === 'brasil' ? 'americas' : reg;                          // the expansion wears the Americas' animals (D27)
+export const animalOf = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
   if (region === 'mundo') return r === 'liberal' ? 'pássaro' : pack === 'comunismo' ? (r === 'hitler' ? 'urso' : 'lobo-branco') : r === 'hitler' ? 'naja' : 'jacaré';
   if (r === 'hitler') return LABEL[BOSSES[region][pack === 'comunismo' ? 'S' : 'H']];
   return LABEL[ANIMALS[region][r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F']];
@@ -430,8 +465,7 @@ const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox=
 
 /** The big picture on a role card. In the communist theme (D12) the hidden side is the wolf and its leader the bear;
  *  on a continent (D24), the liberal and the member of the hidden side are that continent's animals. */
-export const portrait = (r: Role, pack: Pack = 'fascismo', reg: Region = 'mundo'): string => {
-  const region = reg === 'brasil' ? 'americas' : reg;
+export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
   if (r === 'hitler' && region !== 'mundo' && BOSSES[region]) return svg(leader(pack, region), 'art');
   if (r !== 'hitler' && region !== 'mundo' && ANIMALS[region]) {
     const a = ANIMALS[region], s: Side = r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F';

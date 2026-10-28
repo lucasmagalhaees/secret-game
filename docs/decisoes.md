@@ -345,6 +345,7 @@ Modelo de uma decisão:
   - As reações (concorda, não sabe, discorda) são palavras, sem peso nas contas, para uma reação não puxar a outra em cascata. O liberal reage pelo que acha depois de ouvir. O fascista reage pelo time: concorda quando isso leva a mesa para o lado errado e defende o aliado, mas o blefador às vezes entrega um aliado para parecer limpo.
   - Personalidades, de "lawful good" a "chaotic evil": certinho, desconfiado, cético, crítico, centrado, blefador e caótico. São sorteadas a cada partida, todas diferentes enquanto houver. Elas aparecem para a pessoa no caderno e no raciocínio, porque numa mesa de verdade se conhece o jeito dos amigos, e o jeito não diz nada do papel. O temperamento sorteado de antes continua, mas agora mexe pouco em volta do que a personalidade dá.
   - O resumo do fim repetia a linha "Você votou Nein! em Trujillo + Alfonsín" quando o mesmo par era votado duas vezes. O voto que perdeu o jogo agora diz quem votou Ja!.
+- **Medido (28/10/2026, `node scripts/ai_bench.mjs 200`):** com as falas pesando e as personalidades sorteadas, e a mesa toda no mesmo nível, os liberais vencem 54% (fácil), 53% (médio), 52% (difícil) e 51% (extremo). As partidas são só de IA, então ninguém denuncia nelas.
 - **Não sei:** se as personalidades ficam reconhecíveis jogando. Também não sei se a pessoa vai querer que as reações pesem nas contas.
 
 ## D27. DLC Brasil, com senha
@@ -353,7 +354,7 @@ Modelo de uma decisão:
 - **Decisão:** requisito 22 do `CLAUDE.md`.
 - **Interpretações que precisaram ser feitas:**
   - A senha fica escrita no código (`DLC_KEY`), como pedido. Quem olhar o código acha a senha; é piada entre amigos, não cadeado. Liberada uma vez, fica liberada no aparelho (`S.dlc`).
-  - "Brasil" entra como mais uma opção de nomes, ao lado dos continentes. Usa os bichos das Américas e não aparece na galeria.
+  - "Brasil" entra como mais uma opção de nomes, ao lado dos continentes. Tem bichos próprios, pedidos pela pessoa ("o tucano é liberal, a lula é stalin, a onça é comunista, o hitler é um boi, e o fascista um bezerro"), no mesmo traço e com a farda de cada papel. A onça deixou de ser liberal em qualquer lugar ("se tiver onça liberal em algum desenho preciso q vc troque por outro"): o liberal das Américas virou o condor, escolhido entre águia-careca, condor e bisão. O Stalin do Brasil começou lula e virou polvo, escolhido com prévia, que também conversa com o "Polvo" de fora da DLC. A galeria mostra o Brasil só depois da senha.
   - Como nos outros continentes (D24), os nomes vão misturados e o papel é sorteado. O app não diz em lugar nenhum quem é "nazi" ou "commie": a divisão que a pessoa mandou só decide em qual tema cada nome entra. No tema fascista entram os liberais e os da lista "nazis"; no tema comunista, os liberais e os da lista "commies". Assim o app não rotula político vivo, e o Bolsonaro pode muito bem sair liberal.
   - Os nomes ficaram curtos, como na mesa: Aécio, Enéas, Manuela, Amoêdo. Só aqui o Lula aparece com o nome; fora da DLC continua "Polvo".
 - **Confirmado (28/10/2026):** "ultra" é o Ustra ("é Ulstra mesmo"); ficou com a grafia certa, Ustra.
