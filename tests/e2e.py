@@ -297,7 +297,7 @@ with sync_playwright() as p:
     assert pg.locator('#ata').count() == 1 and 'Nenhuma lei ainda' in txt('#ata')
     # the notebook: a fascist at a table of 7 knows Hitler and the other fascist; the rest is marked by hand, and kept
     assert pg.locator('#players .sure-tag').count() == 2 and not pg.locator('#drawer').is_visible(), 'the notebook starts closed; what is known shows in the list of players'
-    pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 3 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
+    pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 2 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
     first = str(next(i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'))
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=L]').click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}

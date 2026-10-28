@@ -464,10 +464,10 @@ function vDrawer(g: Game): string {
   const open = !!S.notesOpen, me = kit.me;
   // a claim to the table (D30): what the notebook says of someone, true or a bluff; the app players weigh it like any talk
   const claimed = (i: number): Law | '' => kit.party(i);
-  // one column per side (D30): ✏️ marks what you think (only you see it), 📣 tells the table, true or a bluff
+  // one column per side (D30): 🎯 marks what you think (only you see it), 📣 tells the table, true or a bluff
   const side = (i: number, p: Law): string => {
     const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
-    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}">✏️</button>`;
+    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}">🎯</button>`;
     const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
     return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
