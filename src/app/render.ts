@@ -444,7 +444,7 @@ function vDrawer(g: Game): string {
   // telling the table (D26): accuse whoever is marked on the hidden side or not marked, vouch for whoever is marked liberal
   const say = (i: number): string => {
     if (!Core.canDenounce(g, me, i)) return g.players[i].alive && g.players[me].alive ? '<span class="told" title="Já falou dele nesta rodada">✓</span>' : '';
-    const trust = kit.party(i) === 'L', what = `${trust ? 'Abonar' : 'Denunciar'} ${esc(g.players[i].name)}`;
+    const mark = kit.party(i), trust = !!mark && mark === Core.partyOf(g.players[me].role), what = `${trust ? 'Abonar' : 'Denunciar'} ${esc(g.players[i].name)}`;
     return `<button class="tell${trust ? ' L' : ' F'}" data-act="denounce" data-i="${i}" data-v="${trust ? 'trust' : 'acc'}" title="${what}" aria-label="${what}">${trust ? '👍' : '📣'}</button>`;
   };
   const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${(S.notes || {})[i] || ''}${p.alive ? '' : ' dead'}"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span><span class="note-acts">${kit.cell(i, true)}${say(i)}</span></li>`)).join('');
@@ -455,7 +455,7 @@ function vDrawer(g: Game): string {
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const verb = [['concorda', 'yes'], ['não sabe', 'meh'], ['discorda', 'no']];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${last.say === 'trust' ? 'Confio em' : 'Desconfio de'} ${esc(g.players[last.about].name)}"</small><ul>${(last.re || []).map(([i, a]) => `<li class="${verb[a][1]}"><b>${esc(g.players[i].name)}</b>${g.players[i].persona ? ` <small>${PERSONA_W[g.players[i].persona as Persona][0]}</small>` : ''} ${verb[a][0]}</li>`).join('')}${last.say === 'acc' && g.players[last.about].ai ? `<li class="no"><b>${esc(g.players[last.about].name)}</b> nega</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. 📣 denuncia e 👍 abona (quem está marcado ${W.libs}) para a mesa toda, uma vez por rodada para cada um, e as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">Só você vê as marcas. 📣 denuncia quem é do outro lado e 👍 abona quem é do seu, para a mesa toda, uma vez por rodada para cada um, e as IAs levam em conta (mais quando a ata confirma).</p><ul class="names noted" id="notes">${rows}</ul>
     <button class="btn block" data-act="denounceall" data-v="${all.join(',')}" id="tellall"${all.length ? '' : ' disabled'}>📣 Denunciar inimigos${all.length ? ` (${all.length})` : ''}</button>${all.length ? '' : `<p class="hint">${foes.length ? 'Você já denunciou todos nesta rodada.' : `Marque quem é ${W.short} para denunciar todos de uma vez.`}</p>`}${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
