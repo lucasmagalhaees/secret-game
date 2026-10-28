@@ -355,8 +355,8 @@ Modelo de uma decisão:
   - A senha fica escrita no código (`DLC_KEY`), como pedido. Quem olhar o código acha a senha; é piada entre amigos, não cadeado. Liberada uma vez, fica liberada no aparelho (`S.dlc`).
   - "Brasil" entra como mais uma opção de nomes, ao lado dos continentes. Usa os bichos das Américas e não aparece na galeria.
   - Como nos outros continentes (D24), os nomes vão misturados e o papel é sorteado. O app não diz em lugar nenhum quem é "nazi" ou "commie": a divisão que a pessoa mandou só decide em qual tema cada nome entra. No tema fascista entram os liberais e os da lista "nazis"; no tema comunista, os liberais e os da lista "commies". Assim o app não rotula político vivo, e o Bolsonaro pode muito bem sair liberal.
-  - "ultra" foi lido como Ustra. Os nomes ficaram curtos, como na mesa: Aécio, Enéas, Manuela, Amoêdo. Só aqui o Lula aparece com o nome; fora da DLC continua "Polvo".
-- **Não sei:** se "ultra" era mesmo o Ustra.
+  - Os nomes ficaram curtos, como na mesa: Aécio, Enéas, Manuela, Amoêdo. Só aqui o Lula aparece com o nome; fora da DLC continua "Polvo".
+- **Confirmado (28/10/2026):** "ultra" é o Ustra ("é Ulstra mesmo"); ficou com a grafia certa, Ustra.
 
 ## Pendências
 
