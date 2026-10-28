@@ -371,7 +371,9 @@ function speak(v: View, rand: () => number): number {
     why('É do lado escondido e preferiu não chamar atenção.');
     return QUIET;
   }
-  const b = believe(v), free = others.filter(i => v.known[i] === null);
+  // the hidden leader who found a teammate with his own investigation does not accuse him
+  const mates = v.role === 'hitler' ? new Set(v.hist.flatMap(e => (e.k === 'inv' && e.by === v.me && e.party === 'F' ? [e.target] : []))) : new Set<number>();
+  const b = believe(v), free = others.filter(i => v.known[i] === null && !mates.has(i));
   if (!free.length) return QUIET;
   const worst = best(free, i => -b.pF[i], rand), clean = best(free, i => b.pF[i], rand);
   rows(b, free);
@@ -397,6 +399,7 @@ function react(v: View, rand: () => number): number {
     if (ally && p.bluff > 1 && rand() < 0.25) { why(`${P(t.about)} é aliado, mas concordou para parecer limpa (blefe).`); return REACT.agree; }
     const no = rand() < 0.5; why(no ? `Sabe que ${P(t.about)} é ${ally ? 'aliado: defendeu' : 'liberal, e discordou de quem confiou: para lançar dúvida'}.` : 'Preferiu ficar em cima do muro.'); return no ? REACT.disagree : REACT.unsure;
   }
+  if (v.role === 'hitler' && v.hist.some(e => e.k === 'inv' && e.by === v.me && e.target === t.about && e.party === 'F')) { why(`Investigou ${P(t.about)} e sabe que é aliado: ${acc ? 'defendeu' : 'concordou'}.`); return acc ? REACT.disagree : REACT.agree; }
   if (v.known[t.about]) { const f = fasc(v.known[t.about] as Role); why(`Sabe o papel de ${P(t.about)}.`); return f === acc ? REACT.agree : REACT.disagree; }
   const b = believe(v), f = b.pF[t.about], need = v.persona === 'cetico' || v.persona === 'critico' ? 0.2 : v.persona === 'desconfiado' && acc ? 0.06 : 0.12;
   rows(b, [t.about]);
@@ -469,7 +472,7 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
   if (v.ask === 'inv') {
     const e = lastOwn(v, ['inv'], e => e.by === v.me);
     if (!e?.party) return 0;
-    if (e.party === 'F' || isAlly(e.target)) { const cover = rand() < act; why(cover ? `Viu que ${P(e.target)} é do lado escondido e mentiu: disse liberal, para cobrir o aliado.` : `Viu que ${P(e.target)} é do lado escondido e não mentiu desta vez.`); return cover ? 0 : 1; }   // covers a teammate
+    if (e.party === 'F' || isAlly(e.target)) { const cover = rand() < Math.max(act, 0.8); why(cover ? `Viu que ${P(e.target)} é do lado escondido e mentiu: disse liberal, para cobrir o aliado.` : `Viu que ${P(e.target)} é do lado escondido e não mentiu desta vez.`); return cover ? 0 : 1; }   // covers a teammate
     const frame = rand() < act / 2; why(frame ? `Viu que ${P(e.target)} é liberal e mentiu: disse {f}, para incriminar.` : `Viu que ${P(e.target)} é liberal e disse a verdade.`); return frame ? 1 : 0;   // frames a liberal, now and then
   }
   const e = lastOwn(v, ['peek'], e => e.by === v.me);
