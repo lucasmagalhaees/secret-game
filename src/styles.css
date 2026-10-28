@@ -531,12 +531,17 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 [data-region]:not([data-region="mundo"]) .btn.vote.F{background-color:var(--fas);color:#fff;border-color:#1f1b19}
 [data-region]:not([data-region="mundo"]) .btn.vote.F.on{outline:3px solid var(--fas);outline-offset:2px}
 /* the balance of a government (D30) and the claim choice */
-.said .led-row{display:block;margin-top:4px}
-.chip-n{display:inline-block;margin-left:4px;padding:1px 6px;font:800 12px/1.4 var(--display);border:2px solid var(--line)}
-.chip-n.L{background:var(--lib);color:var(--on-party)}
-.chip-n.F{background:var(--fas);color:var(--on-party)}
-.chip-n.neg{background:transparent;color:var(--fg)}
-.chip-n.neg.L{border-color:var(--lib)}.chip-n.neg.F{border-color:var(--fas)}
 .claim-pick{display:inline-flex;gap:4px}
 .drawer .claim-pick .tell{width:auto;padding:0 6px;font:800 11px/1 var(--display);text-transform:uppercase}
 .drawer .tell.bluff{border-style:dashed}
+
+.said .led-row{display:flex;align-items:center;gap:10px;margin-top:6px}
+.led-who{display:flex;flex-direction:column;min-width:96px;line-height:1.15}
+.led-who small{font:700 10px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.led-cards{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.lc{display:inline-block;width:18px;height:26px;border:2px solid var(--line);border-radius:2px;position:relative}
+.lc.L{background:var(--lib)}.lc.F{background:var(--fas)}
+.lc.out{opacity:.35}.lc.out::after{content:"✕";position:absolute;inset:0;display:grid;place-items:center;font:800 14px/1 var(--display);color:var(--fg)}
+.led-arrow{margin:0 2px;color:var(--muted)}
+.led-law{font:700 12px/1 var(--display);text-transform:uppercase;letter-spacing:.06em}
+.led-quiet{color:var(--muted);font-size:13px}
