@@ -375,7 +375,7 @@ Modelo de uma decisão:
 - **Decisão:** requisito 22 do `CLAUDE.md`.
 - **Interpretações que precisaram ser feitas:**
   - O voto segue a língua dos líderes de cada continente. Mundo e Europa ficam com os votos do original, porque ali estão Hitler e Stalin (alemão e russo). As Américas votam em espanhol, a língua de Pinochet e de Fidel. O Brasil vota em português. A Ásia vota em japonês para os fascistas (Tojo) e em chinês para os comunistas (Mao). A África vota em suaíli e a Oceania em inglês.
-  - "Estilizada regional" virou uma faixa no pé de cada cartão e de cada lei, com as cores do continente: verde, amarelo e azul no Brasil; o padrão andino nas Américas; azul e dourado na Europa; vermelho e dourado na Ásia; o kente na África; azul do mar e areia na Oceania. No Mundo não há faixa.
+  - "Estilizada regional" virou uma faixa com as cores do continente: no pé de cada cartão, mais larga no pé dos botões de voto (era o que a pessoa queria: "eu queria isso nas cartas de votacao", "e se possivel nas leis") e no alto e no pé de cada lei, com as cores do continente: verde, amarelo e azul no Brasil; o padrão andino nas Américas; azul e dourado na Europa; vermelho e dourado na Ásia; o kente na África; azul do mar e areia na Oceania. No Mundo não há faixa.
 - **Não sei:** se a pessoa queria algo mais forte que a faixa, como trocar a fonte ou o fundo por continente.
 
 ## Pendências
