@@ -431,10 +431,38 @@ function liberal(v: View, rand: () => number): number {
   if (v.ask === 'inv') { const e = lastOwn(v, ['inv'], e => e.by === v.me); why('É liberal: disse o que viu.'); return e?.party === 'F' ? 1 : 0; }
   if (v.ask === 'peek') { const e = lastOwn(v, ['peek'], e => e.by === v.me); why('É liberal: disse o que viu.'); return e?.saw ? nF(e.saw) : -1; }
   const b = believe(v);
-  if (v.ask === 'vote') { if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; } return liberalJa(v, b) ? 1 : 0; }
+  if (v.ask === 'vote') {
+    // On higher levels, self-interest must not override an immediate Hitler-election loss.
+    // The leader check uses only the player's posterior, never the real hidden role.
+    if (v.laws.F >= HITLER_ZONE && (v.level === 'dificil' || v.level === 'extremo')
+        && b.pH[v.chanc as number] > AI[v.level].wary) {
+      why(`Rejeitou o governo: a chance de ${P(v.chanc as number)} ser o {boss} (${pc(b.pH[v.chanc as number])}) é alta demais, mesmo participando do governo.`);
+      rows(b, [v.pres, v.chanc as number].filter(i => i !== v.me));
+      return 0;
+    }
+    if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; }
+    return liberalJa(v, b) ? 1 : 0;
+  }
   if (v.ask === 'nominate') {
-    const zone = v.laws.F >= HITLER_ZONE, score = (i: number): number => b.pF[i] + (zone ? 2 * b.pH[i] : 0);
-    rows(b, o, score); why(`Indicou quem parece mais limpo: menor chance de ser do lado escondido${zone ? ', contando em dobro a chance de ser o {boss} (já há 3 leis {fs})' : ''}.`);
+    const zone = v.laws.F >= HITLER_ZONE;
+    // Stronger bots evaluate the whole proposed government rather than the chancellor in isolation.
+    // An uncertain chancellor is useful early on (a government reveals evidence), but this is never
+    // worth taking a large risk of electing the hidden leader after the third fascist law.
+    const strategic = v.level === 'dificil' || v.level === 'extremo';
+    const score = (i: number): number => {
+      if (!strategic) return b.pF[i] + (zone ? 2 * b.pH[i] : 0);
+      const govRisk = risk(b, [v.me, i]);
+      const leaderLoss = zone ? 3 * b.pH[i] : 0;
+      const uncertainty = 4 * b.pF[i] * (1 - b.pF[i]); // 0..1, maximal at 50%
+      const learning = zone ? 0 : 0.08 * uncertainty;
+      // With two rejected governments, favor a safer cabinet rather than gambling on chaos.
+      const chaos = v.tracker === TRACKER_MAX - 1 ? 0.25 * govRisk : 0;
+      return govRisk + leaderLoss + chaos - learning;
+    };
+    rows(b, o, score);
+    why(strategic
+      ? `Comparou governos completos: risco de ter alguém do lado escondido, ${zone ? 'risco imediato de eleger o {boss}' : 'informação que uma nova rodada pode revelar'}${v.tracker === TRACKER_MAX - 1 ? ' e perigo de chegar ao caos' : ''}. Escolheu o menor risco estratégico.`
+      : `Indicou quem parece mais limpo: menor chance de ser do lado escondido${zone ? ', contando em dobro a chance de ser o {boss} (já há 3 leis {fs})' : ''}.`);
     return best(o, score, rand);
   }
   if (v.ask === 'investigate') {
@@ -443,9 +471,25 @@ function liberal(v: View, rand: () => number): number {
     why('Investigou de quem tinha mais dúvida: a chance mais perto de 50%, onde ver o partido ensina mais (investigar quem já parece limpo ou culpado quase não muda o que ela sabe). No empate, pende para o mais suspeito.');
     return best(o, score, rand);
   }
-  if (v.ask === 'special') { rows(b, o); why('Escolheu para presidente quem parece mais limpo.'); return best(o, i => b.pF[i], rand); }
-  rows(b, o, i => b.pH[i] + 0.3 * b.pF[i]); why('Eliminou quem tem mais chance de ser o {boss} (e, depois, de ser do lado escondido).');
-  return best(o, i => -(b.pH[i] + 0.3 * b.pF[i]), rand);                   // execute
+  if (v.ask === 'special') {
+    const strategic = v.level === 'dificil' || v.level === 'extremo';
+    // A special president will nominate the next chancellor. Avoid giving that power
+    // to a likely fascist, especially when the leader-election victory is unlocked.
+    const score = (i: number): number => b.pF[i] + (strategic && v.laws.F >= HITLER_ZONE ? 0.5 * b.pH[i] : 0);
+    rows(b, o, score);
+    why(strategic ? 'Escolheu presidente especial com menor risco de favorecer o lado escondido na próxima indicação.' : 'Escolheu para presidente quem parece mais limpo.');
+    return best(o, score, rand);
+  }
+  // Executing the leader wins immediately. With five fascist laws, removing any
+  // ordinary fascist is less valuable than targeting the leader; earlier, removing
+  // a probable fascist also protects subsequent governments.
+  const leaderWeight = v.level === 'dificil' || v.level === 'extremo'
+    ? (v.laws.F >= 5 ? 4 : v.laws.F >= HITLER_ZONE ? 2 : 1)
+    : 1;
+  const executionScore = (i: number): number => leaderWeight * b.pH[i] + 0.3 * b.pF[i];
+  rows(b, o, executionScore);
+  why(`Eliminou quem oferece maior chance de derrotar o {boss}, ponderando o risco de ser do lado escondido${leaderWeight > 1 ? ' e a urgência do fim da partida' : ''}.`);
+  return best(o, i => -executionScore(i), rand);                                // execute
 }
 
 /** What a fascist says about its own hand, investigation or spying: the truth, unless it gives it away. */
