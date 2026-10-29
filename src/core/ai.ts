@@ -433,8 +433,25 @@ function liberal(v: View, rand: () => number): number {
   const b = believe(v);
   if (v.ask === 'vote') { if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; } return liberalJa(v, b) ? 1 : 0; }
   if (v.ask === 'nominate') {
-    const zone = v.laws.F >= HITLER_ZONE, score = (i: number): number => b.pF[i] + (zone ? 2 * b.pH[i] : 0);
-    rows(b, o, score); why(`Indicou quem parece mais limpo: menor chance de ser do lado escondido${zone ? ', contando em dobro a chance de ser o {boss} (já há 3 leis {fs})' : ''}.`);
+    const zone = v.laws.F >= HITLER_ZONE;
+    // Stronger bots evaluate the whole proposed government rather than the chancellor in isolation.
+    // An uncertain chancellor is useful early on (a government reveals evidence), but this is never
+    // worth taking a large risk of electing the hidden leader after the third fascist law.
+    const strategic = v.level === 'dificil' || v.level === 'extremo';
+    const score = (i: number): number => {
+      if (!strategic) return b.pF[i] + (zone ? 2 * b.pH[i] : 0);
+      const govRisk = risk(b, [v.me, i]);
+      const leaderLoss = zone ? 3 * b.pH[i] : 0;
+      const uncertainty = 4 * b.pF[i] * (1 - b.pF[i]); // 0..1, maximal at 50%
+      const learning = zone ? 0 : 0.08 * uncertainty;
+      // With two rejected governments, favor a safer cabinet rather than gambling on chaos.
+      const chaos = v.tracker === TRACKER_MAX - 1 ? 0.25 * govRisk : 0;
+      return govRisk + leaderLoss + chaos - learning;
+    };
+    rows(b, o, score);
+    why(strategic
+      ? `Comparou governos completos: risco de ter alguém do lado escondido, ${zone ? 'risco imediato de eleger o {boss}' : 'informação que uma nova rodada pode revelar'}${v.tracker === TRACKER_MAX - 1 ? ' e perigo de chegar ao caos' : ''}. Escolheu o menor risco estratégico.`
+      : `Indicou quem parece mais limpo: menor chance de ser do lado escondido${zone ? ', contando em dobro a chance de ser o {boss} (já há 3 leis {fs})' : ''}.`);
     return best(o, score, rand);
   }
   if (v.ask === 'investigate') {
