@@ -176,6 +176,18 @@ export default function cases(Core) {
     [smartNomination.why.text.some(x => x.includes('governos completos')),
       smartNomination.why.rows.length, smartNomination.why.rows.every(x => Number.isFinite(x.v))],
     [true, 6, true]);
+  const specialWhy = Core.decideWhy(view({ me: 3, level: 'extremo', pres: 3, ask: 'special',
+    options: [0, 1, 2, 4, 5, 6], laws: { L: 1, F: 3 } }), hi);
+  eq('strategic special election explains and scores each candidate',
+    [specialWhy.why.text.some(x => x.includes('presidente especial')),
+      specialWhy.why.rows.length, specialWhy.why.rows.every(x => Number.isFinite(x.v))],
+    [true, 6, true]);
+  const executeWhy = Core.decideWhy(view({ me: 3, level: 'extremo', pres: 3, ask: 'execute',
+    options: [0, 1, 2, 4, 5, 6], laws: { L: 0, F: 5 } }), hi);
+  eq('endgame execution favors finding the leader and explains the urgency',
+    [executeWhy.why.text.some(x => x.includes('urgência')),
+      executeWhy.why.rows.length, executeWhy.why.rows.every(x => Number.isFinite(x.v))],
+    [true, 6, true]);
   eq('a liberal tells the truth about its hand and its investigation', [Core.decide(view({ me: 3, ask: 'pc', options: [0, 1, 2, 3], hist: [secrets[0]] }), hi), Core.decide(view({ ask: 'cc', options: [0, 1, 2], hist: [secrets[0]] }), hi), Core.decide(view({ me: 3, ask: 'inv', options: [0, 1], hist: [secrets[1]] }), hi)], [2, 2, 1]);
   eq('a fascist president who passed two fascist laws out of a hand with a liberal says it drew 3 fascist', Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'pc', options: [0, 1, 2, 3], hist: [{ k: 'gov', pres: 1, chanc: 4, law: 'F', drew: deck('FLF'), got: deck('FF') }] }), () => 0), 3);
   // believing: a liberal president passed a liberal and a fascist law; the chancellor made the fascist one and said both were fascist
