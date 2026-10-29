@@ -47,6 +47,7 @@ try:
         page.click('#speech-peek')
         assert page.locator('#diary').is_visible() and not page.locator('#drawer').is_visible()
         assert page.locator('#diary article').count() >= 4
+        assert page.locator('#diary .reputation-note').count() == 1 and page.locator('#speech-peek .reputation-cue').count() == 1
         assert 'Truman é fascista.' in page.inner_text('#diary')
         assert 'PRIVATE_REASON' not in page.inner_text('#diary'), 'a private notebook reason is never a public transcript'
         shots = ROOT / 'tests/shots'; shots.mkdir(exist_ok=True)

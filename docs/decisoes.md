@@ -427,3 +427,7 @@ O fim deixa de numerar “Momento 35” e usa títulos sobre os acontecimentos, 
 As falas completas deixam de virar avisos passageiros. O rodapé mostra um resumo persistente de quem falou sobre quem, com acesso ao Diário. Esse painel público guarda as linhas exatas já registradas em Game.log, incluindo acusações, defesas, respostas e declarações de compras; não regenera falas e não mostra motivos privados do caderno ou resultados secretos. Anotações e Diário são painéis separados, acessíveis no rodapé; abrir um fecha o outro. O Diário abre no final da conversa e preserva a posição durante novas falas, para permitir ler mensagens anteriores.
 
 O teste móvel em tests/iphone.py verifica os dois tipos de botão, área de toque, foco do editor, registro da denúncia, resumo persistente, transcrição pública sem notas privadas e títulos finais. A suíte completa também o executa com Chromium; o mesmo teste aceita WebKit para conferir o motor do Safari.
+
+## D36 — Avisos de reputação (2026-10-29)
+
+A sugestão de crédito social virou reputação na mesa, sem pontuação única. Um aviso curto mostra “Credibilidade caiu” para repetição ou inversão sem fatos novos; “Sua fala ganhou apoio”, “Sua fala encontrou resistência” ou “A mesa está dividida” resumem as reações públicas. O rodapé mantém o aviso junto da última conversa, e o Diário explica a causa. Os avisos não revelam papéis, não inventam uma opinião unânime e não mudam as penalidades moderadas já existentes na IA. A reputação se refere apenas às ações dos jogadores nesta partida.

@@ -632,3 +632,9 @@ body:has(.speech-peek){--dock:116px}
 @media (min-width:1400px){.diary:not(.open){visibility:hidden;transform:translateX(105%)}}
 
 .dock:not(:has(.notes)) .dock-btn{grid-column:1/-1}
+
+.reputation-cue{display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:11px}
+.reputation-cue.up{color:var(--lib)}.reputation-cue.down{color:var(--neg)}
+.reputation-note{padding:12px;margin:12px 0;border-left:3px solid var(--muted);background:var(--surface)}
+.reputation-note.up{border-color:var(--lib)}.reputation-note.down{border-color:var(--neg)}
+.reputation-note p{margin:6px 0 0;line-height:1.5;font-size:14px}

@@ -448,6 +448,10 @@ export default function cases(Core) {
   eq('a bluff does not change a claim already recorded for the same hand', [Core.decide(bluffView, () => 0), Core.decide(bluffView, hi)], [3, 3]);
   const clearEnding = Core.highlights({ ...done, players: done.players.map((p, i) => ({ ...p, role: i === 0 ? 'hitler' : p.role })), hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'F' }, { k: 'gov', pres: 3, chanc: 4, law: 'F' }, { k: 'gov', pres: 3, chanc: 4, law: 'F' }, { k: 'exec', by: 3, target: 0, role: 'hitler' }] });
   eq('highlights use story titles and name the government that changed the stakes', [clearEnding[0].title, clearEnding.some(p => p.kind === 'law' && p.text.includes('{p3}') && p.text.includes('{p4}')), clearEnding.every(p => !/Momento \d/.test(p.title))], ['O tiro que encerrou o jogo', true, true]);
+  const repRepeat = Core.reputationNotice(repeatedDenounce, repeatedDenounce.hist.length - 1);
+  eq('reputation notices explain public consequences without exposing roles', [repRepeat.title, repRepeat.tone, /papel|hitler|fascista|liberal/i.test(repRepeat.detail)], ['Credibilidade caiu', 'down', false]);
+  const repSupport = { ...chat, hist: [{ k: 'talk', by: 0, about: 1, say: 'acc', re: [[2, 0], [3, 0], [4, 1]] }] };
+  eq('reputation support is based on visible reactions and stable under hidden-role changes', [Core.reputationNotice(repSupport, 0).title, Core.reputationNotice(repSupport, 0), Core.reputationNotice({ ...repSupport, players: repSupport.players.map(p => ({ ...p, role: 'liberal' })) }, 0)], ['Sua fala ganhou apoio', Core.reputationNotice(repSupport, 0), Core.reputationNotice(repSupport, 0)]);
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));

@@ -153,6 +153,18 @@ export function accusationFeedback(g: Game, at: number): string {
   return agree > disagree ? 'Sua fala convenceu mais gente do que recebeu oposição.' : disagree > agree ? 'Sua fala recebeu mais oposição do que apoio.' : 'A mesa ainda não se convenceu: as reações ficaram divididas.';
 }
 
+/** A short, public reputation notice. No universal score and no access to actual hidden roles. */
+export function reputationNotice(g: Game, at: number): { title: string; detail: string; tone: 'up' | 'down' | 'neutral' } | null {
+  const e = g.hist[at];
+  if (!e || e.k !== 'talk' || e.say === 'quiet' || !e.re?.length) return null;
+  const detail = accusationFeedback(g, at);
+  if (detail.startsWith('A insistência')) return { title: 'Credibilidade caiu', detail, tone: 'down' };
+  const yes = e.re.filter(([, a]) => a === REACT.agree).length, no = e.re.filter(([, a]) => a === REACT.disagree).length;
+  return yes > no ? { title: 'Sua fala ganhou apoio', detail, tone: 'up' }
+    : no > yes ? { title: 'Sua fala encontrou resistência', detail, tone: 'down' }
+    : { title: 'A mesa está dividida', detail, tone: 'neutral' };
+}
+
 /** End-only turning points, supported by recorded events rather than invented counterfactuals. */
 export function highlights(g: Game): { at: number; kind: string; weight: number; title: string; text: string }[] {
   if (g.phase !== 'over') return [];

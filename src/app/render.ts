@@ -466,8 +466,14 @@ function speechRows(g: Game): { by: number; about: number | null; text: string }
   return rows;
 }
 
+function socialNotice(g: Game): ReturnType<typeof Core.reputationNotice> {
+  for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'talk' && e.say !== 'quiet' && e.re?.length) return Core.reputationNotice(g, i); }
+  return null;
+}
+
 function vDiary(g: Game, rows: ReturnType<typeof speechRows>): string {
-  return `<aside id="diary" class="drawer diary${ui.diary ? ' open' : ''}" aria-label="Diário da conversa"><div class="diary-head"><span class="label">Diário da conversa</span><button data-act="diary" aria-label="Fechar Diário" class="diary-close">✕</button></div><p class="hint">Falas e respostas públicas, na ordem em que aconteceram.</p>${rows.length ? `<div class="diary-lines">${rows.map(e => `<article><header><b>${name(g, e.by)}</b>${e.about !== null ? `<small>sobre ${name(g, e.about)}</small>` : '<small>falou à mesa</small>'}</header><p>“${esc(e.text)}”</p></article>`).join('')}</div>` : '<p class="hint">A conversa ainda não começou. As falas e respostas ficarão guardadas aqui.</p>'}</aside>`;
+  const notice = socialNotice(g);
+  return `<aside id="diary" class="drawer diary${ui.diary ? ' open' : ''}" aria-label="Diário da conversa"><div class="diary-head"><span class="label">Diário da conversa</span><button data-act="diary" aria-label="Fechar Diário" class="diary-close">✕</button></div><p class="hint">Falas e respostas públicas, na ordem em que aconteceram.</p>${notice ? `<section class="reputation-note ${notice.tone}"><b>${esc(notice.title)}</b><p>${esc(notice.detail)}</p></section>` : ''}${rows.length ? `<div class="diary-lines">${rows.map(e => `<article><header><b>${name(g, e.by)}</b>${e.about !== null ? `<small>sobre ${name(g, e.about)}</small>` : '<small>falou à mesa</small>'}</header><p>“${esc(e.text)}”</p></article>`).join('')}</div>` : '<p class="hint">A conversa ainda não começou. As falas e respostas ficarão guardadas aqui.</p>'}</aside>`;
 }
 
 function vDock(g: Game): string {
@@ -477,7 +483,8 @@ function vDock(g: Game): string {
   const short = last ? topic?.k === 'talk' && !last.text.includes('disse que') && !last.text.includes('disse o que')
     ? `${g.players[topic.by].name} ${topic.say === 'acc' ? 'acusou' : 'defendeu'} ${g.players[topic.about].name}`
     : `${g.players[last.by].name}${last.about !== null ? ` sobre ${g.players[last.about].name}` : ' falou à mesa'}` : '';
-  const peek = last ? `<button class="speech-peek" id="speech-peek" data-act="diary" aria-label="Abrir Diário: ${esc(short)}"><span>${esc(short)}</span><small>Ler conversa ›</small></button>` : '';
+  const notice = socialNotice(g);
+  const peek = last ? `<button class="speech-peek" id="speech-peek" data-act="diary" aria-label="Abrir Diário: ${esc(short)}"><span>${esc(short)}</span><small>${notice ? `<span class="reputation-cue ${notice.tone}">${esc(notice.title)}</span>` : ''}Diário ›</small></button>` : '';
   const btns = [
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
     `<button class="dock-btn${ui.diary ? ' open' : ''}" id="diarytoggle" data-act="diary" aria-expanded="${ui.diary}" aria-controls="diary">Diário${rows.length ? ` · ${rows.length}` : ''}</button>`

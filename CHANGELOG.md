@@ -10,6 +10,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 - IA difícil e extrema priorizam leis decisivas sobre blefes, reputação e erros aleatórios, e usam o veto disponível para bloquear uma lei que daria vitória ao adversário.
 
 ### Adicionado
+- Avisos simples de reputação no rodapé e no Diário, baseados em coerência e reações públicas, sem pontuação única.
 - Diário público com o texto completo das falas e respostas; rodapé com resumo persistente de quem falou sobre quem.
 - Caderno com motivos privados, fatos e palpites; memória social da IA, campanhas por votos e resumo dos momentos decisivos.
 - Mais falas por personalidade, respostas a contradições e votos e feedback público das acusações.
