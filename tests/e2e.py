@@ -375,6 +375,10 @@ with sync_playwright() as p:
             cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
         for sel in ORDER:
             if pg.locator(sel).count():
+                if sel == '[data-act=myvote]':
+                    seen.add('vote')
+                    assert pg.locator('#phase [data-act=myvote]').count() == 2
+                    assert min(vote_contrast()) >= 4.5, 'the human vote is readable at the point of interaction'
                 try: pg.locator(sel).first.click(timeout=2000)
                 except Exception: pass
                 break
@@ -389,7 +393,8 @@ with sync_playwright() as p:
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
     assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
     assert {'vote', 'decree', 'coach', 'seats', 'said'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
-    assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
+    spoken = [e for e in g['hist'] if e['k'] == 'talk' and e['say'] != 'quiet' and g['players'][e['by']].get('ai')]
+    assert spoken and any(g['players'][e['by']]['name'] + ': \"' in log for e in spoken), 'NPC statements are recorded with a speaker; wording varies with context'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
     crux = pg.evaluate('window.__APP.Core.crux(window.__APP.S.game, 6, "end")')
     assert (pg.locator('#crux-end').count() == 1) == (crux is not None), 'a fascist sees the moment that raised the suspicion the most'
@@ -480,6 +485,10 @@ with sync_playwright() as p:
         if g['laws']['L'] + g['laws']['F'] >= 1 or g['phase'] == 'over': break
         for sel in ORDER:
             if pg.locator(sel).count():
+                if sel == '[data-act=myvote]':
+                    seen.add('vote')
+                    assert pg.locator('#phase [data-act=myvote]').count() == 2
+                    assert min(vote_contrast()) >= 4.5, 'the human vote is readable at the point of interaction'
                 try: pg.locator(sel).first.click(timeout=2000)
                 except Exception: pass
                 break
