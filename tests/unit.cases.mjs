@@ -446,6 +446,8 @@ export default function cases(Core) {
   eq('final highlights explain contradiction and decisive elimination', [turning.some(x => x.kind === 'contradiction'), turning.some(x => x.kind === 'victory'), Core.highlights(el)], [true, true, []]);
   const bluffView = view({ role: 'fascista', me: 1, known: knowAll, ask: 'pc', options: [0, 1, 2, 3], hist: [{ k: 'gov', pres: 1, chanc: 4, law: 'F', drew: deck('FLF'), got: deck('FF'), pc: 3 }] });
   eq('a bluff does not change a claim already recorded for the same hand', [Core.decide(bluffView, () => 0), Core.decide(bluffView, hi)], [3, 3]);
+  const clearEnding = Core.highlights({ ...done, players: done.players.map((p, i) => ({ ...p, role: i === 0 ? 'hitler' : p.role })), hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'F' }, { k: 'gov', pres: 3, chanc: 4, law: 'F' }, { k: 'gov', pres: 3, chanc: 4, law: 'F' }, { k: 'exec', by: 3, target: 0, role: 'hitler' }] });
+  eq('highlights use story titles and name the government that changed the stakes', [clearEnding[0].title, clearEnding.some(p => p.kind === 'law' && p.text.includes('{p3}') && p.text.includes('{p4}')), clearEnding.every(p => !/Momento \d/.test(p.title))], ['O tiro que encerrou o jogo', true, true]);
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));

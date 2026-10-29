@@ -154,21 +154,27 @@ export function accusationFeedback(g: Game, at: number): string {
 }
 
 /** End-only turning points, supported by recorded events rather than invented counterfactuals. */
-export function highlights(g: Game): { at: number; kind: string; weight: number; text: string }[] {
+export function highlights(g: Game): { at: number; kind: string; weight: number; title: string; text: string }[] {
   if (g.phase !== 'over') return [];
-  const out: { at: number; kind: string; weight: number; text: string }[] = [];
+  const out: { at: number; kind: string; weight: number; title: string; text: string }[] = [];
   const laws = { L: 0, F: 0 };
+  const count = (n: number): string => n === 0 ? 'nenhuma lei {f}' : n === 1 ? 'uma lei {f}' : `${n} leis {fs}`;
   g.hist.forEach((e, at) => {
-    if (e.k === 'gov' || e.k === 'veto') {
-      if (e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && (e.cc > e.pc || e.cc < e.pc - 1)) out.push({ at, kind: 'contradiction', weight: 3, text: `{p${e.pres}} e {p${e.chanc}} deram versões incompatíveis da mesma mão. Isso era um motivo público para desconfiar do governo, sem provar qual dos dois mentiu.` });
+    if ((e.k === 'gov' || e.k === 'veto') && e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && (e.cc > e.pc || e.cc < e.pc - 1)) {
+      out.push({ at, kind: 'contradiction', weight: 3, title: 'Duas versões para a mesma mão', text: `{p${e.pres}} disse que comprou ${count(e.pc)}, mas {p${e.chanc}} afirmou ter recebido ${count(e.cc)}. As duas versões não cabem na mesma compra.` });
     }
     if ((e.k === 'gov' || e.k === 'chaos') && e.law) {
       laws[e.law]++;
-      const won = laws[e.law] === WIN[e.law];
-      if (won || e.k === 'chaos' || e.law === 'F' && laws.F === HITLER_ZONE) out.push({ at, kind: won ? 'victory' : e.k === 'chaos' ? 'chaos' : 'law', weight: won ? 6 : 2, text: won ? 'Esta lei completou o tabuleiro vencedor e encerrou a partida.' : e.k === 'chaos' ? 'As rejeições levaram ao caos: entrou uma lei sem escolha do governo e sem poder presidencial.' : 'A terceira lei do lado escondido mudou o risco da mesa: eleger o líder como chanceler passou a encerrar a partida.' });
+      const won = laws[e.law] === WIN[e.law], side = e.law === 'L' ? 'os liberais' : 'os {fs}';
+      if (won) out.push({ at, kind: 'victory', weight: 6, title: e.k === 'chaos' ? 'O caos decidiu' : 'A lei que fechou o placar', text: e.k === 'chaos' ? `A mesa chegou ao limite de rejeições e perdeu a escolha da lei. O topo do baralho deu a vitória para ${side}.` : `{p${e.pres}} e {p${e.chanc}} aprovaram a última lei que faltava. Com o placar em ${laws.L} a ${laws.F}, ${side} venceram.` });
+      else if (e.k === 'chaos') out.push({ at, kind: 'chaos', weight: 2, title: 'O baralho tomou a decisão', text: `As rejeições deixaram a lei nas mãos do baralho. Saiu uma lei ${e.law === 'L' ? 'liberal' : '{f}'}, e o placar foi para ${laws.L} a ${laws.F}.` });
+      else if (e.law === 'F' && laws.F === HITLER_ZONE) out.push({ at, kind: 'law', weight: 2, title: 'A votação ficou perigosa', text: `{p${e.pres}} e {p${e.chanc}} aprovaram a ${HITLER_ZONE}ª lei {f}. Dali em diante, eleger o {boss} chanceler já bastava para dar a vitória aos {fs}.` });
     }
-    if (e.k === 'exec') out.push({ at, kind: g.players[e.target].role === 'hitler' ? 'victory' : 'power', weight: g.players[e.target].role === 'hitler' ? 6 : 1, text: g.players[e.target].role === 'hitler' ? `{p${e.by}} eliminou o líder escondido, {p${e.target}}, e decidiu a partida.` : `{p${e.by}} eliminou {p${e.target}}: a mesa perdeu um voto e mudou a ordem das próximas presidências.` });
-    if (e.k === 'vote' && at === g.hist.length - 1 && g.winner === 'F' && g.players[e.chanc].role === 'hitler' && laws.F >= HITLER_ZONE && e.ja.length > g.players.filter(p => p.alive).length / 2) out.push({ at, kind: 'victory', weight: 6, text: `A maioria elegeu {p${e.chanc}} chanceler na zona de vitória do líder escondido. A partida terminou antes de comprar leis.` });
+    if (e.k === 'exec') {
+      const leader = g.players[e.target].role === 'hitler', liberal = g.players[e.target].role === 'liberal';
+      out.push({ at, kind: leader ? 'victory' : 'power', weight: leader ? 6 : 1, title: leader ? 'O tiro que encerrou o jogo' : 'A saída de {p' + e.target + '}', text: leader ? `{p${e.by}} acertou o alvo: {p${e.target}} era o {boss}. A eliminação deu a vitória aos liberais.` : `{p${e.by}} eliminou {p${e.target}}. ${liberal ? 'Os liberais perderam' : 'O lado escondido perdeu'} um voto para as próximas decisões.` });
+    }
+    if (e.k === 'vote' && at === g.hist.length - 1 && g.winner === 'F' && g.players[e.chanc].role === 'hitler' && laws.F >= HITLER_ZONE && e.ja.length > g.players.filter(p => p.alive).length / 2) out.push({ at, kind: 'victory', weight: 6, title: 'A confiança no jogador errado', text: `{p${e.chanc}} recebeu ${e.ja.length} votos e virou chanceler. Era o {boss}: a eleição encerrou o jogo antes mesmo de comprar leis.` });
   });
   return out.sort((a, b) => b.weight - a.weight || a.at - b.at).slice(0, 3);
 }

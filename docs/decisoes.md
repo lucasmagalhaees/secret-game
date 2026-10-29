@@ -417,3 +417,13 @@ O feedback das acusações resume somente as reações públicas e avisa sobre i
 ## D34 — Poderes e acabamento no celular (2026-10-29)
 
 A investigação usa lupa percorrendo o nome, sem mostrar o resultado. Eliminar usa arma estilizada com recuo, clarão e fumaça, sem sangue e sem revelar o papel; som respeita a opção de áudio e movimento reduzido elimina animações. O caderno agrupa ações por jogador, abre motivos sob demanda e preserva editores abertos durante atualizações. Os controles de anotação têm alvo de toque ampliado. O card Sim do Brasil usa somente fundo verde e losango amarelo: sem círculo azul nem faixa branca. A faixa regional das outras cartas permanece conforme o desenho existente.
+
+## D35 — Botões no iPhone, Diário e resumo natural (2026-10-29)
+
+A pessoa confirmou que a denúncia estava funcionando no iPhone: o defeito era visual. Substituímos os emojis dos botões por SVGs de traço único, com caixas fixas de 44 px, alinhamento central e rótulos acessíveis. Cliques em ações fecham o foco do editor antes do repaint, preservando o texto já salvo. A regra de uma fala por alvo na rodada não mudou.
+
+O fim deixa de numerar “Momento 35” e usa títulos sobre os acontecimentos, nomes dos participantes e consequências específicas: o tiro que encerrou o jogo, o governo que tornou a votação perigosa, o voto perdido por um dos lados. A nota genérica sobre resultados alternativos saiu. Os papéis continuam aparecendo apenas no fim, conforme as regras existentes.
+
+As falas completas deixam de virar avisos passageiros. O rodapé mostra um resumo persistente de quem falou sobre quem, com acesso ao Diário. Esse painel público guarda as linhas exatas já registradas em Game.log, incluindo acusações, defesas, respostas e declarações de compras; não regenera falas e não mostra motivos privados do caderno ou resultados secretos. Anotações e Diário são painéis separados, acessíveis no rodapé; abrir um fecha o outro. O Diário abre no final da conversa e preserva a posição durante novas falas, para permitir ler mensagens anteriores.
+
+O teste móvel em tests/iphone.py verifica os dois tipos de botão, área de toque, foco do editor, registro da denúncia, resumo persistente, transcrição pública sem notas privadas e títulos finais. A suíte completa também o executa com Chromium; o mesmo teste aceita WebKit para conferir o motor do Safari.
