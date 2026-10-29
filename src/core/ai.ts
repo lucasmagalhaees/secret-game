@@ -489,7 +489,7 @@ function liberal(v: View, rand: () => number): number {
   const executionScore = (i: number): number => leaderWeight * b.pH[i] + 0.3 * b.pF[i];
   rows(b, o, executionScore);
   why(`Eliminou quem oferece maior chance de derrotar o {boss}, ponderando o risco de ser do lado escondido${leaderWeight > 1 ? ' e a urgência do fim da partida' : ''}.`);
-  return best(o, i => -executionScore(i));                                // execute
+  return best(o, i => -executionScore(i), rand);                                // execute
 }
 
 /** What a fascist says about its own hand, investigation or spying: the truth, unless it gives it away. */
