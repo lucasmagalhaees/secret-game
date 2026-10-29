@@ -19,7 +19,7 @@ export function buzz(pattern: number | number[]): void {
   try { navigator.vibrate?.(pattern); } catch (e) { /* not allowed here: no vibration */ }
 }
 
-export type Sound = 'stamp' | 'paper' | 'gavel' | 'win' | 'lose';
+export type Sound = 'stamp' | 'paper' | 'gavel' | 'shot' | 'win' | 'lose';
 let ctx: AudioContext | null = null;
 function audio(): AudioContext | null {
   if (S.quiet) return null;
@@ -51,6 +51,7 @@ export function sound(name: Sound): void {
   if (name === 'stamp') { tone(a, 90, t, 0.18, 'sine', 0.5); hiss(a, t, 0.08, 0.5, 900); }
   else if (name === 'paper') hiss(a, t, 0.22, 0.35, 3200);
   else if (name === 'gavel') { tone(a, 140, t, 0.12, 'triangle', 0.5); tone(a, 140, t + 0.18, 0.16, 'triangle', 0.55); hiss(a, t, 0.05, 0.4, 600); }
+  else if (name === 'shot') { hiss(a, t, 0.09, 0.2, 1700); tone(a, 85, t, 0.12, 'triangle', 0.2); }
   else if (name === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(a, f, t + i * 0.12, 0.3, 'square', 0.08));
   else [392, 330, 262].forEach((f, i) => tone(a, f, t + i * 0.16, 0.35, 'sawtooth', 0.07));
 }

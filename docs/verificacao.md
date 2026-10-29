@@ -47,3 +47,64 @@ O que foi verificado, como e quando; e o que não foi. Um item só entra em "Ver
 | Som, vibração e o esconder ao virar o celular num aparelho de verdade | Os testes rodam no Chromium, sem alto-falante nem sensor; o iPhone não vibra por página e pede permissão para o sensor | Jogar uma rodada num Android e num iPhone |
 | A IA contra gente de verdade: se o nível parece certo, se as falas soam naturais | Só foi medida contra ela mesma | Jogar algumas partidas sozinho em cada nível |
 | A mesa de 10 jogadores na tela | O e2e joga com 7; com 10 só as regras foram testadas | Montar uma mesa de 10 e jogar |
+
+
+## IA: leis decisivas — 2026-10-29
+
+- Verificado: 198/198 casos de `tests/unit.cases.mjs` executados diretamente no Node v24 com remoção nativa de tipos. Cópias temporárias dos módulos de `src/core/` tiveram apenas os imports relativos ajustados para `.ts`. Inclui 30 casos novos nos dois níveis, nos três papéis, para descarte vencedor, veto defensivo, resposta ao veto e opções válidas.
+- Verificado: `python3 tests/docs_check.py`: 216/216 documentation claims hold (antes desta anotação; repetir após editar docs).
+- Não verificado: build Vite, typecheck, navegador, cobertura e benchmark de vitórias. `bash scripts/verify.sh` terminou com código 3: `verify: Playwright ou o Chromium dele não estão instalados (pip install -r tests/requirements.txt && playwright install chromium)`. `npm ci --offline` falhou com ENOTCACHED para Vite; clone Git falhou por indisponibilidade do proxy. Fontes obtidas pelo conector GitHub.
+
+## IA: revisão ampliada — 2026-10-29
+
+Verificado com `PYTHONPATH=/tmp/secret-game-python PLAYWRIGHT_BROWSERS_PATH=/tmp/secret-game-browsers bash scripts/verify.sh`, após instalar as dependências e recuperar os metadados Git da main:
+
+```text
+ok types
+ok build
+ok docs 216/216 documentation claims hold
+ok core 234/234 checks passed without a browser
+ok unit 234/234 checks passed
+ok contract 0/0 (nenhuma resposta real gravada; não há mudança de fonte)
+ok prod 16/16 production-check cases behave
+ok e2e-dark
+ok e2e-light
+ok pwa 18/18 offline and update checks passed
+ok coverage 96.8% das funções, 97.4% do código
+verify: tudo passou
+```
+
+O registro anterior de dependências ausentes foi superado: a instalação e o clone funcionaram com a permissão de rede sandboxed. A primeira execução completa encontrou somente a identificação `dev` da cópia sem Git; a execução acima, com metadados Git reais e sem alterar o teste, passou. Log integral no workspace: `/workspace/ai-verify.log`.
+
+Benchmark: `node scripts/ai_compare.mjs /tmp/ai-before/index.ts 60`, baseline `58bf7c6dd29975f83ca946d717989d11bc8f8367`. 480 partidas concluídas, zero travamentos; resultados e limites da amostra em D31. Não verificado: uso em aparelho físico, superioridade estatística geral, CI remoto e deploy. Criação de branch remota pelo conector foi negada com HTTP 403; alterações e commit permanecem locais.
+
+## Acusações e animações — 2026-10-29
+
+Verificado: `PYTHONPATH=/tmp/secret-game-python PLAYWRIGHT_BROWSERS_PATH=/tmp/secret-game-browsers bash scripts/verify.sh` terminou com código 0, após D32:
+
+```text
+ok types
+ok build
+ok docs 216/216 documentation claims hold
+ok core 238/238 checks passed without a browser
+ok unit 238/238 checks passed
+ok contract 0/0 (sem alteração de fonte)
+ok prod 16/16 production-check cases behave
+ok e2e-dark
+ok e2e-light
+ok pwa 18/18 offline and update checks passed
+ok coverage 97.1% das funções, 97.6% do código
+verify: tudo passou
+```
+
+Log completo: `/workspace/ai-followup-verify.log`. Os casos novos mostram aumento da suspeita sobre o acusador insistente, limite do efeito, ausência da penalidade com evidência na ata e respostas explícitas. O teste anterior de repetição foi atualizado porque D32 acrescenta justamente a consequência pedida: antes todas as probabilidades ficavam idênticas; agora muda a credibilidade do acusador, sem tratar a repetição como prova contra o alvo.
+
+E2E cobre os avisos para os dois poderes, nomes escapados, resultado da investigação fora do DOM até abrir o portão e animações ativas em ambos os temas. Capturas revisadas a 393 px: `tests/shots/power-investigate-dark.png` e `tests/shots/power-execute-dark.png`; o fluxo principal também roda com movimento reduzido. Não houve teste em aparelho físico.
+
+Benchmark final: `node scripts/ai_compare.mjs /tmp/secret-game-checkout/src/core/index.ts 60`, baseline main `58bf7c6dd29975f83ca946d717989d11bc8f8367`. 480 partidas, zero travamentos. Vitórias atuais L/F por nível, em 60 partidas por lado: fácil 37/25; médio 37/27; difícil 32/31; extremo 37/30. Amostra descritiva, sem demonstrar melhora universal. Dados completos em `/workspace/ai-comparison-final.jsonl`.
+
+As novas tentativas de criar a branch remota continuaram negadas com HTTP 403. Nenhuma alteração foi publicada ou implantada.
+
+## Rodada social e UI — em validação, 2026-10-29
+
+Base: main `3bf90ec` (PR #36), preservada. TypeScript e 258 casos do núcleo passaram antes da inclusão das campanhas; a validação está sendo repetida após essa inclusão. A primeira execução completa desta rodada parou nos dois e2e por um erro do teste novo: `saved` era um dicionário naquele ponto, e a checagem o chamou como função. A checagem foi corrigida para ler o armazenamento diretamente. O mínimo de cobertura foi mantido. O commit desta etapa registra trabalho em andamento; não é declaração de aprovação da suíte completa.

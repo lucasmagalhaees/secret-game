@@ -1,8 +1,8 @@
 import { Core } from '../core';
-import type { Ask, Game, Law, Level, Pack, Region, Role, Theme } from '../core';
+import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, sound } from './fx';
-import { beat, blurField, confetti, decree, flash, render, stamp, toast } from './render';
+import { beat, blurField, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -16,13 +16,17 @@ const rand = (): number => Math.random();
  *  gets its confetti and its fanfare here, whatever ended it. */
 function play(ended: Game, msg?: string, undo: Game | null = null): void {
   // the notebook goes with the game when it ends (D28): scored at the end, and kept in the export
-  const next = ended.phase === 'over' && S.game?.phase !== 'over' && S.notes && !ended.notes ? { ...ended, notes: S.notes } : ended;
+  const next = ended.phase === 'over' && S.game?.phase !== 'over' ? { ...ended, ...(S.notes ? { notes: S.notes } : {}), ...(S.noteDetails ? { noteDetails: S.noteDetails } : {}) } : ended;
   const before = S.game, changed = next !== before;
   // an app player only spoke (a claim, a talk): the phase is the same, so what the person opened, picked or voted stays (D21)
   const spoke = !!before && changed && next.phase === before.phase && beat(next) === beat(before) && next.pres === before.pres && next.chanc === before.chanc;
   setS({ ...S, game: next }); saveS();
   if (changed && !spoke) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
+  if (before && changed) {
+    const power = next.hist.slice(before.hist.length).find(e => e.k === 'inv' || e.k === 'exec');
+    if (power && (power.k === 'inv' || power.k === 'exec')) powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
+  }
   if (msg && changed) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
     keep(next);                                                              // kept on the device for export (D23)
@@ -62,7 +66,7 @@ function botPlayed(before: Game, next: Game): void {
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
-  if (next.players.some((p, i) => !p.alive && before.players[i].alive)) { flash(); sound('gavel'); buzz(220); }
+  if (next.players.some((p, i) => !p.alive && before.players[i].alive)) { flash(); sound('shot'); buzz(220); }
   const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
   // the votes and what a government said are already on screen, at the top: no note at the foot for them
   play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);
@@ -124,7 +128,7 @@ function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
   const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
-  if (S.notes) { const next = { ...S }; delete next.notes; setS(next); }     // a new game starts a clean notebook
+  if (S.notes || S.noteDetails) { const next = { ...S }; delete next.notes; delete next.noteDetails; setS(next); }     // a new game starts a clean notebook
   ui.msg = ''; ui.help = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
 }
 function lawMsg(before: Game, after: Game): string {
@@ -152,6 +156,13 @@ function discard(then: () => void): void {
 function hide(why: string): void {
   if (!ui.open) return;
   ui.open = ''; ui.pick = null; render(); toast(why);
+}
+/** Notebook text stays on this device and is never sent to the table or a bot. */
+function saveNote(seat: number, patch: Partial<NoteDetail>): void {
+  const g = S.game, me = g?.players.findIndex(p => !p.ai);
+  if (!g || !g.players[seat] || seat === me || g.phase === 'over') return;
+  const detail: NoteDetail = { reason: '', kind: 'guess', ...S.noteDetails?.[seat], ...patch };
+  setS({ ...S, noteDetails: { ...S.noteDetails, [seat]: detail } }); saveS();
 }
 type Orientation = { requestPermission?: () => Promise<string> };
 let askedOrientation = false;
@@ -201,7 +212,8 @@ export function initEvents(): void {
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
     else if (a === 'notesopen') { const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
-    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, next.log[next.log.length - 1]); }
+    else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
+    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));
@@ -225,7 +237,7 @@ export function initEvents(): void {
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) {
       const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick);
-      flash(); sound('gavel'); buzz(220);
+      flash(); sound('shot'); buzz(220);
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }
     else if (a === 'again') start();
@@ -235,6 +247,7 @@ export function initEvents(): void {
   document.addEventListener('input', e => {
     const t = e.target as HTMLInputElement;
     if (t.id === 'name') ui.name = t.value;
+    if (t.matches('[data-note-reason]')) saveNote(Number(t.dataset.noteReason), { reason: t.value.slice(0, 280) });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target as HTMLElement).id === 'name') addName(); });
   // a secret never stays on screen when the app goes to the background or the phone is put face down

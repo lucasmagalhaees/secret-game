@@ -174,6 +174,7 @@ with sync_playwright() as p:
     # 2nd fascist law: Ana sees Caio's party
     stack('FFLFFL'); govern(1, 'F'); assert G()['phase'] == 'investigate'
     pg.click('#phase [data-act=investigate][data-i="2"]')
+    assert pg.locator('#power-effect.investigate').is_visible() and 'Caio' in txt('#power-effect') and 'fascista' not in txt('#power-effect').lower(), 'public investigation effect keeps the party secret'
     assert pg.locator('#party').count() == 0; pg.click('[data-act=open]'); assert pg.locator('#party svg.art').count() == 1 and 'FASCISTA' in txt('#party').upper() and 'Caio' in txt('#party')
     pg.click('[data-act=endpower]'); assert G()['phase'] == 'nominate' and G()['pres'] == 1
     # 3rd, at a table of 7: Bia calls a special election and makes Edu president; then the order goes on after Bia
@@ -185,7 +186,8 @@ with sync_playwright() as p:
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'execute'
     assert pg.locator('[data-act=execute]').is_disabled()
     pg.click('#phase [data-act=pickp][data-i="5"]'); assert 'Eliminar <b>Gil</b>' in txt('[data-act=execute]')
-    pg.click('[data-act=execute]'); assert G()['players'][5]['alive'] is False and '<b>Gil</b> foi eliminado' in txt('#toast') and pg.locator('#players li.dead').count() == 1
+    pg.click('[data-act=execute]'); assert pg.locator('#power-effect.execute').is_visible() and '<b>Gil</b>' in txt('#power-effect') and pg.locator('#power-effect b b').count() == 0
+    assert G()['players'][5]['alive'] is False and '<b>Gil</b> foi eliminado' in txt('#toast') and pg.locator('#players li.dead').count() == 1
     # 5th: Duda eliminates Bia
     stack('FFLFFL'); govern(6, 'F'); assert G()['phase'] == 'execute' and G()['laws']['F'] == 5
     pg.click('#phase [data-act=pickp][data-i="1"]'); pg.click('[data-act=execute]'); assert G()['pres'] == 4
@@ -300,6 +302,17 @@ with sync_playwright() as p:
     pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 2 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
     first = str(next(i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'))
+    pg.locator(f'#note-detail-{first} summary').click()
+    reason = 'Votou contra <img src=x onerror=alert(1)>'
+    pg.fill(f'#note-reason-{first}', reason)
+    pg.locator(f'[data-act=notekind][data-i="{first}"][data-v=fact]').click()
+    assert pg.locator(f'#note-detail-{first}').get_attribute('open') is not None, 'changing the note type keeps its editor open'
+    assert json.loads(pg.evaluate(f'localStorage.getItem("{KEY}")'))['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}
+    assert pg.locator(f'#note-reason-{first}').input_value() == reason and pg.locator('#notes img').count() == 0, 'private text is escaped after rendering'
+    assert 'onerror' not in str(pg.evaluate('window.__APP.Core.viewOf(window.__APP.S.game, 0, "vote", [1, 0])'))
+    assert overflow() == 0
+    shot(f'notebook-rich-{THEME}.png')
+    pg.locator(f'#note-detail-{first} summary').click()
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=L]').click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
@@ -308,6 +321,7 @@ with sync_playwright() as p:
     pg.locator(f'#notes [data-act=denounce][data-i="{first}"][data-v=acc]').click()
     name = G()['players'][int(first)]['name']
     assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=denounce][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
+    assert pg.locator('#heard .claim-impact').is_visible() and len(txt('#heard .claim-impact')) > 10
     assert pg.locator('#tellF, #tellL').count() == 0, 'one claim at a time (D30)'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
     # the live suspicion: off by default, on with a tap, one bar per app player
@@ -361,6 +375,10 @@ with sync_playwright() as p:
             cov.reload(pg); wait(); pg.evaluate('window.__APP.ui.think = 0'); reloaded = True; continue   # the game comes back and the app goes on by itself
         for sel in ORDER:
             if pg.locator(sel).count():
+                if sel == '[data-act=myvote]':
+                    seen.add('vote')
+                    assert pg.locator('#phase [data-act=myvote]').count() == 2
+                    assert min(vote_contrast()) >= 4.5, 'the human vote is readable at the point of interaction'
                 try: pg.locator(sel).first.click(timeout=2000)
                 except Exception: pass
                 break
@@ -375,7 +393,8 @@ with sync_playwright() as p:
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
     assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
     assert {'vote', 'decree', 'coach', 'seats', 'said'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
-    assert ': "Desconfio de' in log or ': "Confio em' in log, 'the app players talk between rounds'
+    spoken = [e for e in g['hist'] if e['k'] == 'talk' and e['say'] != 'quiet' and g['players'][e['by']].get('ai')]
+    assert spoken and any(g['players'][e['by']]['name'] + ': \"' in log for e in spoken), 'NPC statements are recorded with a speaker; wording varies with context'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
     crux = pg.evaluate('window.__APP.Core.crux(window.__APP.S.game, 6, "end")')
     assert (pg.locator('#crux-end').count() == 1) == (crux is not None), 'a fascist sees the moment that raised the suspicion the most'
@@ -386,6 +405,8 @@ with sync_playwright() as p:
     if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
+    assert G()['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}, 'private reasons stay in the finished game'
+    assert pg.locator('#highlights').count() == 1 and pg.locator('#highlights li').count() <= 3
     # the reasons are still recorded with the game, for the export (D23), though no panel shows them (D28)
     assert pg.evaluate('window.__APP.S.game.trace.length') > 0 and pg.locator('#mindtoggle').count() == 0
 
@@ -464,6 +485,10 @@ with sync_playwright() as p:
         if g['laws']['L'] + g['laws']['F'] >= 1 or g['phase'] == 'over': break
         for sel in ORDER:
             if pg.locator(sel).count():
+                if sel == '[data-act=myvote]':
+                    seen.add('vote')
+                    assert pg.locator('#phase [data-act=myvote]').count() == 2
+                    assert min(vote_contrast()) >= 4.5, 'the human vote is readable at the point of interaction'
                 try: pg.locator(sel).first.click(timeout=2000)
                 except Exception: pass
                 break
@@ -498,6 +523,22 @@ with sync_playwright() as p:
     mp.click('[data-act=pdiscard]')                                                   # a tap while it falls changes nothing
     mp.wait_for_function("window.__APP.S.game.phase === 'chancellor'", timeout=3000)
     assert mp.evaluate('window.__APP.S.game.discard.length') == 1, 'one discard, not two'
+    # Public power effects animate without holding up play or revealing a party or role.
+    mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'investigate'; g.target = null; g.pres = 0; g.seen = []; localStorage.setItem('secrethitler.v1', JSON.stringify(window.__APP.S)); }""")
+    cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "investigate"')
+    mp.click('#phase [data-act=investigate][data-i="2"]')
+    assert mp.locator('#power-effect.investigate.go').is_visible() and mp.locator('#party').count() == 0
+    assert mp.evaluate("getComputedStyle(document.querySelector('#power-effect .power-mark')).animationName") == 'searchName'
+    assert 'fascista' not in mp.text_content('#power-effect').lower() and 'liberal' not in mp.text_content('#power-effect').lower()
+    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .power-card')).opacity) > .9")
+    mp.screenshot(path=str(SHOTS / f'power-investigate-{THEME}.png'))
+    mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'execute'; g.target = null; localStorage.setItem('secrethitler.v1', JSON.stringify(window.__APP.S)); }""")
+    cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "execute"')
+    mp.click('#phase [data-act=pickp][data-i="2"]'); mp.click('[data-act=execute]')
+    assert mp.locator('#power-effect.execute.go').is_visible()
+    assert mp.evaluate("getComputedStyle(document.querySelector('#power-effect .power-mark')).animationName") == 'gunRecoil'
+    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .power-card')).opacity) > .9")
+    mp.screenshot(path=str(SHOTS / f'power-execute-{THEME}.png'))
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()

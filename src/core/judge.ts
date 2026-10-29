@@ -5,8 +5,8 @@
    what was offered is not played: the first allowed option is. So no player run by the app sees more than its seat or
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
-import { believe, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
-import { answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
+import { backed, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
+import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
 import type { Ask, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
 
@@ -72,9 +72,10 @@ const roundMark = (g: Game): number => lastIndex(g, ['vote', 'rej', 'gov', 'veto
 /** Who speaks next, if anyone: once something happened, at the start of a round (before the president nominates),
  *  up to TALKS players run by the app, each once, in an order that turns with the rounds. */
 export function talker(g: Game): number | null {
-  if (g.phase !== 'nominate' || !g.hist.some(e => e.k === 'gov' || e.k === 'rej' || e.k === 'chaos' || e.k === 'veto')) return null;
+  const campaigning = g.phase === 'vote';
+  if ((!campaigning && g.phase !== 'nominate') || (!campaigning && !g.hist.some(e => e.k === 'gov' || e.k === 'rej' || e.k === 'chaos' || e.k === 'veto'))) return null;
   // what a person said (D26) does not take the turn of an app player
-  const mark = roundMark(g), said = g.hist.slice(mark + 1).filter((e): e is Talk => e.k === 'talk' && isAi(g, e.by));
+  const mark = roundMark(g), said = g.hist.slice(mark + 1).filter((e): e is Talk => e.k === 'talk' && isAi(g, e.by) && (campaigning ? e.stage === 'campaign' : e.stage !== 'campaign'));
   if (said.length >= TALKS) return null;
   const n = g.players.length, start = (g.hist.filter(e => e.k === 'vote' || e.k === 'rej').length * 3) % n;
   for (let j = 0; j < n; j++) {
@@ -89,8 +90,30 @@ const talkOptions = (g: Game, me: number): number[] => [...g.players.flatMap((p,
 export function talk(g: Game, by: number, a: number): Game {
   if (talker(g) !== by || !talkOptions(g, by).includes(a)) return g;
   const quiet = a === QUIET, about = quiet ? -1 : a >> 1, kind: Talk['say'] = quiet ? 'quiet' : a % 2 ? 'trust' : 'acc';
-  const line = quiet ? [] : [`${g.players[by].name}: "${kind === 'acc' ? 'Desconfio de' : 'Confio em'} ${g.players[about].name}."`];
-  return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind }] };
+  const line = quiet ? [] : [`${g.players[by].name}: "${npcStatement(g, by, about, kind === 'trust')}"`];
+  return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}) }] };
+}
+
+/** NPC statements use a public target and recorded context, never a private party or hand. */
+function npcStatement(g: Game, by: number, about: number, trust: boolean): string {
+  const n = g.players[about].name, prior = g.hist.filter(e => e.k === 'talk' && e.by === by && e.say !== 'quiet');
+  if (g.phase === 'vote') return speech(trust ? [`Eu daria uma chance a ${n} nesse governo. Quem vem comigo?`, `Antes de rejeitar, considerem ${n}. Esse governo pode ajudar a mesa.`, `Estou defendendo ${n} nesta votação. Vamos comparar com as alternativas.`] : [`Não aprovem só por pressa. Ainda desconfio de ${n} nesse governo.`, `Quero que ${n} explique melhor antes de ganhar nosso voto.`, `Quem está pensando em aprovar, revisa o risco de colocar ${n} nesse governo.`], g, by, g.hist.length, 'talk');
+  const vote = [...g.hist].reverse().find(e => e.k === 'vote');
+  if (vote?.k === 'vote' && !trust && vote.ja.includes(about) && ![vote.pres, vote.chanc].includes(about)) return speech([`${n} apoiou aquele governo. Quero ouvir o motivo desse voto.`, `Guardei o voto de ${n} a favor. Isso ainda precisa de explicação.`, `Não é prova de papel, mas o voto de ${n} me chamou atenção.`], g, by, g.hist.length, 'talk');
+  if (!prior.length) return `${trust ? 'Confio em' : 'Desconfio de'} ${n}.`;
+  const tone: Record<Persona, [string, string]> = {
+    certinho: [`Quero entender melhor as escolhas de ${n}.`, `Por enquanto, a leitura de ${n} me parece razoável.`],
+    desconfiado: [`Estou de olho em ${n}. Essa história ainda não me convenceu.`, `De todos aqui, ${n} me deixa menos desconfiado por enquanto.`],
+    cetico: [`Não compro a versão de ${n} tão fácil.`, `Ainda não vi motivo suficiente para ir contra ${n}.`],
+    critico: [`Vamos cobrar de ${n} uma explicação para as escolhas.`, `Quero comparar as próximas jogadas com o que ${n} está dizendo.`],
+    centrado: [`Minha maior dúvida agora é sobre ${n}.`, `Hoje eu daria um voto de confiança a ${n}.`],
+    blefador: [`Estou falando: prestem atenção em ${n}!`, `Eu ficaria do lado de ${n} nessa discussão.`],
+    caotico: [`Meu radar apitou em ${n} de novo!`, `Minha aposta da rodada é confiar em ${n}.`]
+  };
+  const options = [tone[persona(g, by)][trust ? 1 : 0], trust ? `${n} ainda me parece uma escolha melhor. Vou conferir as próximas decisões.` : `Quero ouvir ${n} antes de deixar essa suspeita de lado.`, trust ? `Não vou acusar ${n} sem algo mais concreto.` : `Não consigo tirar ${n} da minha lista de suspeitos.`];
+  const relevant = [...g.hist].reverse().find(e => e.k === 'gov' && (e.pres === about || e.chanc === about));
+  if (relevant?.k === 'gov' && relevant.law === (trust ? 'L' : 'F')) options.push(trust ? `${n} participou de um governo que aprovou liberal. Isso conta a favor, mas não prova o papel.` : `${n} estava naquele governo que aprovou lei do lado escondido. Quero uma explicação, não uma condenação automática.`);
+  return speech(options, g, by, g.hist.length, 'talk');
 }
 
 /** What a person may tell the table now (D26), from the notebook: whether `by` may say this about `about`. A person
@@ -115,8 +138,39 @@ export function denounce(g: Game, by: number, about: number, trust: boolean, ran
     const r = ask(heard, i, 'react', [REACT.agree, REACT.unsure, REACT.disagree], rand);
     ts.push(r.t); re.push([i, r.a]);
   }
-  const at = g.hist.length, lines = [line, ...re.map(([i, a]) => `${g.players[i].name}: "${reply(g, i, a, at)}"`), ...(isAi(g, about) ? [`${g.players[about].name}: "${answer(g, about, !trust, at)}"`] : [])];
+  const at = g.hist.length, lines = [line, ...re.map(([i, a]) => `${g.players[i].name}: "${reply(heard, i, a, at)}"`), ...(isAi(g, about) ? [`${g.players[about].name}: "${answer(g, about, !trust, at)}"`] : [])];
   return { ...traced(g, ts), log: [...g.log, ...lines], hist: [...g.hist, { ...said, ...(re.length ? { re } : {}) }] };
+}
+
+/** Explain only visible reactions: this feedback never uses actual roles or secret investigations. */
+export function accusationFeedback(g: Game, at: number): string {
+  const e = g.hist[at];
+  if (!e || e.k !== 'talk' || e.say === 'quiet') return '';
+  const v = viewOf({ ...g, hist: g.hist.slice(0, at + 1) }, e.by, 'react', [0, 1, 2]);
+  const prior = socialMemory({ ...v, hist: v.hist.slice(0, -1) }, e.by), now = socialMemory(v, e.by);
+  if (now.reversals > prior.reversals || e.say === 'acc' && claimRepeats(v.hist, at) > 1 && !backed(v.hist, 0, at, e.about, true)) return 'A insistência sem fatos novos prejudicou sua credibilidade.';
+  const agree = (e.re || []).filter(([, a]) => a === REACT.agree).length, disagree = (e.re || []).filter(([, a]) => a === REACT.disagree).length;
+  return agree > disagree ? 'Sua fala convenceu mais gente do que recebeu oposição.' : disagree > agree ? 'Sua fala recebeu mais oposição do que apoio.' : 'A mesa ainda não se convenceu: as reações ficaram divididas.';
+}
+
+/** End-only turning points, supported by recorded events rather than invented counterfactuals. */
+export function highlights(g: Game): { at: number; kind: string; weight: number; text: string }[] {
+  if (g.phase !== 'over') return [];
+  const out: { at: number; kind: string; weight: number; text: string }[] = [];
+  const laws = { L: 0, F: 0 };
+  g.hist.forEach((e, at) => {
+    if (e.k === 'gov' || e.k === 'veto') {
+      if (e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && (e.cc > e.pc || e.cc < e.pc - 1)) out.push({ at, kind: 'contradiction', weight: 3, text: `{p${e.pres}} e {p${e.chanc}} deram versões incompatíveis da mesma mão. Isso era um motivo público para desconfiar do governo, sem provar qual dos dois mentiu.` });
+    }
+    if ((e.k === 'gov' || e.k === 'chaos') && e.law) {
+      laws[e.law]++;
+      const won = laws[e.law] === WIN[e.law];
+      if (won || e.k === 'chaos' || e.law === 'F' && laws.F === HITLER_ZONE) out.push({ at, kind: won ? 'victory' : e.k === 'chaos' ? 'chaos' : 'law', weight: won ? 6 : 2, text: won ? 'Esta lei completou o tabuleiro vencedor e encerrou a partida.' : e.k === 'chaos' ? 'As rejeições levaram ao caos: entrou uma lei sem escolha do governo e sem poder presidencial.' : 'A terceira lei do lado escondido mudou o risco da mesa: eleger o líder como chanceler passou a encerrar a partida.' });
+    }
+    if (e.k === 'exec') out.push({ at, kind: g.players[e.target].role === 'hitler' ? 'victory' : 'power', weight: g.players[e.target].role === 'hitler' ? 6 : 1, text: g.players[e.target].role === 'hitler' ? `{p${e.by}} eliminou o líder escondido, {p${e.target}}, e decidiu a partida.` : `{p${e.by}} eliminou {p${e.target}}: a mesa perdeu um voto e mudou a ordem das próximas presidências.` });
+    if (e.k === 'vote' && at === g.hist.length - 1 && g.winner === 'F' && g.players[e.chanc].role === 'hitler' && laws.F >= HITLER_ZONE && e.ja.length > g.players.filter(p => p.alive).length / 2) out.push({ at, kind: 'victory', weight: 6, text: `A maioria elegeu {p${e.chanc}} chanceler na zona de vitória do líder escondido. A partida terminou antes de comprar leis.` });
+  });
+  return out.sort((a, b) => b.weight - a.weight || a.at - b.at).slice(0, 3);
 }
 
 /** How each personality takes a claim (D30), in its own words: agreeing, unsure, disagreeing. Words only. */
@@ -124,10 +178,153 @@ const REPLY: Record<Persona, [string[], string[], string[]]> = {
   certinho: [['Faz sentido, eu também acho.', 'Concordo, as jogadas batem.'], ['Ainda não dá para dizer.', 'Prefiro esperar mais uma lei.'], ['Acho que não, viu.', 'Não foi isso que eu vi.']],
   desconfiado: [['Eu sabia!', 'Tava na cara.'], ['Hmm, de você eu também desconfio.', 'Todo mundo aqui é suspeito.'], ['Por que tanta certeza?', 'Estranho você dizer isso.']],
   cetico: [['Pode ser.', 'Tá, pode ser.'], ['Fala é fácil.', 'Mostra que eu acredito.'], ['Duvido.', 'Não me convenceu.']],
-  critico: [['A ata bate com isso.', 'Os governos dele confirmam.'], ['Sem prova na ata, não sei.', 'Cadê a lei que mostra isso?'], ['A ata diz outra coisa.', 'Os votos não batem com isso.']],
+  critico: [['Dá para conferir essa hipótese na ata.', 'Quero comparar isso com os governos dele.'], ['Sem prova na ata, não sei.', 'Cadê a lei que mostra isso?'], ['Não cheguei a essa conclusão pela ata.', 'Quero conferir os votos antes de aceitar isso.']],
   centrado: [['Concordo.', 'É o que parece.'], ['Pode ser, pode não ser.', 'Ainda tô no meio.'], ['Não concordo.', 'Acho que é o contrário.']],
   blefador: [['Óbvio! Eu falei isso antes.', 'Finalmente alguém viu.'], ['Sei lá, tô de olho em todo mundo.', 'Eu confio mais em mim.'], ['Nada a ver!', 'Que viagem.']],
   caotico: [['Bora!', 'Elimina logo!'], ['Cara ou coroa?', '¯\\_(ツ)_/¯'], ['Mentira!', 'Você é que é!']]
+};
+// Extra lines are selected by public speaking history, without drawing randomness or changing a decision.
+const MORE_REPLY: Record<Persona, [string[], string[], string[]]> = {
+  "certinho": [
+    [
+      "Estou com você nessa.",
+      "Essa leitura combina com o que vi.",
+      "Faz sentido olhar para esse jogador.",
+      "Também fiquei com essa impressão."
+    ],
+    [
+      "Vou esperar a próxima jogada.",
+      "Não quero acusar sem entender.",
+      "Ainda falta uma peça nessa história.",
+      "Prefiro conferir antes de tomar partido."
+    ],
+    [
+      "Essa acusação me parece apressada.",
+      "Eu não cheguei à mesma conclusão.",
+      "Não vi motivo suficiente para isso.",
+      "Precisa de mais do que essa fala."
+    ]
+  ],
+  "desconfiado": [
+    [
+      "Também estou de olho.",
+      "Essa história nunca me convenceu.",
+      "Você percebeu isso também?",
+      "Tem coisa aí que merece atenção."
+    ],
+    [
+      "Quero ouvir a resposta primeiro.",
+      "Não sei se confio na acusação ou na defesa.",
+      "Vou guardar essa fala.",
+      "Deixa eu ver quem aparece defendendo."
+    ],
+    [
+      "Você está tentando desviar de quê?",
+      "Essa certeza toda me incomoda.",
+      "Explica melhor antes de apontar o dedo.",
+      "Por que esse alvo agora?"
+    ]
+  ],
+  "cetico": [
+    [
+      "É uma hipótese razoável.",
+      "Dessa vez eu consigo acompanhar.",
+      "Isso merece ser levado a sério.",
+      "Concordo com a dúvida, sem cravar o papel."
+    ],
+    [
+      "Uma fala não resolve isso.",
+      "Vou olhar as próximas decisões.",
+      "Por enquanto é só uma hipótese.",
+      "Quero algo além de impressão."
+    ],
+    [
+      "A conclusão foi longe demais.",
+      "Ainda não compro essa história.",
+      "Tem outra explicação possível.",
+      "Você pulou umas etapas aí."
+    ]
+  ],
+  "critico": [
+    [
+      "Essa leitura merece uma conferida na ata.",
+      "O argumento tem fundamento.",
+      "Dá para acompanhar esse raciocínio.",
+      "Vale comparar isso com os próximos governos."
+    ],
+    [
+      "Qual jogada sustenta essa conclusão?",
+      "Quero separar o fato do palpite.",
+      "Diz exatamente o que você observou.",
+      "Vamos conferir a sequência antes."
+    ],
+    [
+      "A explicação não fecha para mim.",
+      "Isso ainda não sustenta a acusação.",
+      "Uma suspeita não resolve quem mentiu.",
+      "Mostra o passo que levou a essa conclusão."
+    ]
+  ],
+  "centrado": [
+    [
+      "Também acho que vale investigar.",
+      "Estou mais para concordar.",
+      "Entendi seu ponto.",
+      "Essa leitura parece razoável."
+    ],
+    [
+      "Ainda quero ouvir os dois lados.",
+      "Não tenho certeza suficiente.",
+      "Vou esperar mais um governo.",
+      "Pode haver mais de uma explicação."
+    ],
+    [
+      "Não cheguei lá ainda.",
+      "Para mim falta uma peça.",
+      "Estou vendo de outro jeito.",
+      "Eu teria mais cuidado com essa certeza."
+    ]
+  ],
+  "blefador": [
+    [
+      "Finalmente alguém prestando atenção!",
+      "Eu sabia que você ia perceber.",
+      "Agora estamos falando a mesma língua.",
+      "Pois é, não sou só eu pensando isso."
+    ],
+    [
+      "Quero ver a resposta antes de apostar.",
+      "Essa mesa está escondendo jogo.",
+      "Vou deixar essa no ar por enquanto.",
+      "Não vou entregar minha leitura tão fácil."
+    ],
+    [
+      "Você quer que a gente acredite nisso?",
+      "Essa história está conveniente demais.",
+      "Vai precisar caprichar mais no argumento.",
+      "Eu não cairia nessa tão rápido."
+    ]
+  ],
+  "caotico": [
+    [
+      "Agora a mesa acordou!",
+      "Ih, também senti esse cheiro.",
+      "Essa eu quero ver desenrolar.",
+      "Pronto, começou o interrogatório!"
+    ],
+    [
+      "Minha teoria muda a cada governo.",
+      "Tenho três suspeitos e duas certezas erradas.",
+      "Vou esperar alguém se enrolar.",
+      "Essa mesa está um quebra-cabeça."
+    ],
+    [
+      "Opa, essa conclusão veio voando!",
+      "Calma com esse dedo apontado!",
+      "Você soltou essa e saiu correndo?",
+      "Quero a versão com explicação agora."
+    ]
+  ]
 };
 /** What the one claimed says back (D30): denying it when accused, in its own way; thanking when vouched for. */
 const DENY: Record<Persona, string[]> = {
@@ -139,11 +336,72 @@ const DENY: Record<Persona, string[]> = {
   blefador: ['Eu? Sou o mais liberal dessa mesa!', 'Isso é desespero seu.'],
   caotico: ['Talvez eu seja, talvez não.', 'Me elege e descobre.']
 };
-const THANKS = ['Valeu pela confiança.', 'Obrigado, finalmente alguém.', 'É isso aí.', 'Viu? Eu falei.'];
-const pick = (xs: string[], seat: number, at: number): string => xs[(seat * 7 + at) % xs.length];
+const MORE_DENY: Record<Persona, string[]> = {
+  "certinho": [
+    "Não fiz o que você está insinuando.",
+    "Me pergunta sobre a jogada, eu explico.",
+    "Olha a sequência antes de decidir.",
+    "Não quero ser condenado por impressão."
+  ],
+  "desconfiado": [
+    "Você está desviando a conversa para mim?",
+    "Quem ganha com essa acusação agora?",
+    "Não vou aceitar esse rótulo de graça.",
+    "Quero entender por que virou para mim."
+  ],
+  "cetico": [
+    "Acusar é fácil. Sustenta isso.",
+    "Qual parte foi prova e qual foi chute?",
+    "Essa conclusão ainda precisa de argumento.",
+    "Eu quero ouvir um motivo concreto."
+  ],
+  "critico": [
+    "Vamos comparar as duas versões.",
+    "Uma lei sozinha não conta a história toda.",
+    "Diz qual jogada minha você quer discutir.",
+    "Você está falando da ata ou do seu palpite?"
+  ],
+  "centrado": [
+    "Pode perguntar, eu respondo.",
+    "Eu entendo a suspeita, mas discordo.",
+    "Não precisa decidir meu papel agora.",
+    "Vamos olhar o que aconteceu de fato."
+  ],
+  "blefador": [
+    "Me acusar assim está fácil demais!",
+    "Essa tentativa de me queimar foi fraca.",
+    "Você está apostando alto nessa história.",
+    "Não vai me tirar da mesa só no grito."
+  ],
+  "caotico": [
+    "Olha a perseguição!",
+    "Fui promovido a suspeito oficial?",
+    "Calma que eu também estou tentando entender.",
+    "Quero meu direito a uma teoria absurda também."
+  ]
+};
+const THANKS = ['Valeu pela confiança.', 'Obrigado, finalmente alguém.', 'É isso aí.', 'Viu? Eu falei.', 'Bom saber que alguém acompanhou meu raciocínio.', 'Vamos ver o que o próximo governo mostra.', 'Quero manter essa confiança nas próximas jogadas.', 'Pode me cobrar coerência depois.'];
+function speech(xs: string[], g: Game, seat: number, at: number, mode: 'reply' | 'answer' | 'talk'): string {
+  const prior = g.hist.slice(0, at).filter(e => e.k === 'talk' && (mode === 'talk' ? e.by === seat : mode === 'answer' ? e.about === seat : e.re?.some(([i]) => i === seat))).length;
+  return xs[(seat * 7 + prior) % xs.length];
+}
 const persona = (g: Game, i: number): Persona => g.players[i].persona || 'centrado';
-export const reply = (g: Game, i: number, a: number, at: number): string => pick(REPLY[persona(g, i)][a] ?? ['…'], i, at);
-export const answer = (g: Game, i: number, accused: boolean, at: number): string => (accused ? pick(DENY[persona(g, i)], i, at) : pick(THANKS, i, at));
+export const reply = (g: Game, i: number, a: number, at: number): string => {
+  const t = g.hist[at];
+  if (t?.k === 'talk' && t.about >= 0 && t.say !== 'quiet') {
+    const v = viewOf({ ...g, hist: g.hist.slice(0, at + 1) }, i, 'react', [0, 1, 2]);
+    if (socialMemory(v, t.by).reversals > socialMemory({ ...v, hist: v.hist.slice(0, -1) }, t.by).reversals) return speech(['Antes você dizia o contrário. Qual fato fez você mudar de ideia?', 'Você estava defendendo essa pessoa. O que mudou?', 'Quero entender essa troca de lado antes de concordar.', 'Você mudou de versão sem um fato novo. Explica isso.'], g, i, at, 'reply');
+  }
+  if (t?.k === 'talk' && t.say === 'acc' && claimRepeats(g.hist, at) > 1 && !backed(g.hist, 0, at, t.about, true)) {
+    return speech(['Você já acusou essa pessoa. Qual é o fato novo?', 'Repetir não é prova. Essa insistência me faz desconfiar de você.', 'Essa acusação eu já ouvi. O que você descobriu desde então?', 'Você voltou no mesmo alvo, mas ainda falta um fato novo.', 'A insistência não está me convencendo. Quero uma jogada concreta.', 'Sem fato novo, repetir só enfraquece seu argumento.'], g, i, at, 'reply');
+  }
+  if (t?.k === 'talk' && t.about >= 0 && a === REACT.agree) {
+    const event = [...g.hist.slice(0, at)].reverse().find(e => (e.k === 'gov' || e.k === 'veto') && (e.pres === t.about || e.chanc === t.about));
+    if (event && (event.k === 'gov' || event.k === 'veto') && event.pc !== undefined && event.cc !== undefined && event.pc >= 0 && event.cc >= 0 && (event.cc > event.pc || event.cc < event.pc - 1) && t.say === 'acc') return speech(['As duas versões daquele governo não cabem na mesma mão. Vamos cobrar explicação.', 'Também quero saber qual das duas histórias daquele governo é verdadeira.', 'Essa contradição da ata merece uma resposta.'], g, i, at, 'reply');
+  }
+  return speech([...(REPLY[persona(g, i)][a] || ['Ainda não sei.']), ...(MORE_REPLY[persona(g, i)][a] || [])], g, i, at, 'reply');
+};
+export const answer = (g: Game, i: number, accused: boolean, at: number): string => speech(accused ? [...DENY[persona(g, i)], ...MORE_DENY[persona(g, i)]] : THANKS, g, i, at, 'answer');
 
 /* ---------- the trainer, for the person (D13) ---------- */
 export interface Coach {
@@ -404,7 +662,7 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
   return {
     me, role, level: (g.players[me].level || g.level || 'medio') as Level, mood: temper(g.players[me].mood ?? 0, g.players[me].persona), persona: g.players[me].persona || 'centrado', n: g.players.length, alive: g.players.map(p => p.alive), known, fascists: FASCISTS[g.players.length],
     laws: { ...g.laws }, tracker: g.tracker, pres: g.pres, chanc: g.chanc, lastPres: g.lastPres, lastChanc: g.lastChanc,
-    ask: q, options: [...options], hand, hist: g.hist.map(e => seenBy(e, me))
+    phase: g.phase, ask: q, options: [...options], hand, hist: g.hist.map(e => seenBy(e, me))
   };
 }
 /** Asks one seat one question, through its view; an answer outside the options is taken as the first option. Comes
