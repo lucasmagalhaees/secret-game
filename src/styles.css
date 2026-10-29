@@ -580,15 +580,11 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 [data-look="deco"] .power-card{border:1px solid var(--gold);box-shadow:0 0 0 3px var(--surface),0 0 0 4px var(--gold)}
 
 /* A private notebook with progressive disclosure keeps the mobile table readable. */
-#notes>li{display:block;padding:12px 0;border-bottom:1px solid var(--line)}
-.note-player{display:grid;gap:8px}
-.note-player .who{min-width:0;overflow-wrap:anywhere}
 .note-detail{margin-top:8px;font-size:14px}
 .note-detail summary{min-height:36px;cursor:pointer;padding:8px 0;color:var(--fg)}
 .note-detail label{display:block;margin:8px 0;font-weight:700}
 .note-detail textarea{box-sizing:border-box;width:100%;resize:vertical;min-height:72px;padding:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
 .note-detail .segm{margin-top:8px}
-.note-detail .segm button,.sides .pen,.sides .tell{min-width:44px;min-height:44px}
 .note-facts{border-left:3px solid var(--muted);padding:8px 10px;margin-top:8px}
 .note-facts ul{margin:6px 0;padding-left:18px}
 .note-facts li{display:list-item;font-size:13px;border:0}
@@ -604,11 +600,8 @@ button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px so
 @keyframes muzzleFlash{0%{opacity:0}30%,70%{opacity:1}100%{opacity:0}}
 @keyframes gunSmoke{0%{opacity:0;transform:translateY(0)}20%{opacity:.6}100%{opacity:0;transform:translateY(-14px)}}
 
-.drawer .note-player .sides{display:grid;grid-template-columns:1fr 1fr;width:100%;margin:0}
 
 /* Override earlier compact button rules; iOS must get a real touch box, not emoji-sized content. */
-.drawer .side .pen,.drawer .side .tell{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;color:var(--fg);min-width:44px;min-height:44px;padding:0;line-height:1;appearance:none;-webkit-appearance:none;touch-action:manipulation}
-.drawer .side .pen svg,.drawer .side .tell svg{display:block;flex:none;width:22px;height:22px;pointer-events:none}
 .turning-points{padding:0}
 .turning-points article{padding:14px 0;border-bottom:1px solid var(--line)}
 .turning-points article:last-child{border-bottom:0;padding-bottom:0}
@@ -638,3 +631,16 @@ body:has(.speech-peek){--dock:116px}
 .reputation-note{padding:12px;margin:12px 0;border-left:3px solid var(--muted);background:var(--surface)}
 .reputation-note.up{border-color:var(--lib)}.reputation-note.down{border-color:var(--neg)}
 .reputation-note p{margin:6px 0 0;line-height:1.5;font-size:14px}
+
+/* the notebook as it was (D30): one line per seat, name on the left, Libs and Nazis on the right, each with 🗒️ and 📣;
+   36px buttons keep both sides beside the name at 393px (iPhone), the reasons fold underneath */
+#notes>li{display:block;padding:8px 0}
+.note-row{display:flex;align-items:center;gap:8px}
+.note-row .who{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;font-weight:700}
+.note-row .sides{display:flex;gap:6px;flex:0 0 auto}
+.drawer .side{min-width:0;padding:4px 5px}
+.drawer .side .pen,.drawer .side .tell{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;font-size:18px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.note-detail{margin-top:4px;font-size:13px}.note-detail summary{min-height:32px;padding:4px 0;color:var(--muted)}
+/* reactions to a claim rise from the foot of the screen (D31) */
+.react-fx{position:fixed;bottom:calc(var(--dock,60px) + 10px);z-index:60;font-size:30px;pointer-events:none;animation:react-up 1.8s ease-out forwards}
+@keyframes react-up{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1;transform:translateY(-20px) scale(1)}100%{transform:translateY(-55vh) scale(1.1);opacity:0}}

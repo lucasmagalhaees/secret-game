@@ -55,3 +55,16 @@ export function sound(name: Sound): void {
   else if (name === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(a, f, t + i * 0.12, 0.3, 'square', 0.08));
   else [392, 330, 262].forEach((f, i) => tone(a, f, t + i * 0.16, 0.35, 'sawtooth', 0.07));
 }
+
+/** The table's reactions to a claim, rising from the foot of the screen (D31): 👍 who agrees, 👎 who does not, 🤷 who
+ *  is unsure. Nothing rises when the device asks for less motion. */
+export function reactions(answers: number[]): void {
+  if (calm()) return;
+  answers.forEach((a, k) => {
+    const el = document.createElement('span');
+    el.className = 'react-fx'; el.textContent = ['👍', '🤷', '👎'][a] ?? '🤷';
+    el.style.left = `${10 + ((k * 37) % 80)}%`; el.style.animationDelay = `${k * 160}ms`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2200 + k * 160);
+  });
+}

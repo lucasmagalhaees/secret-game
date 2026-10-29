@@ -510,27 +510,18 @@ function vDrawer(g: Game): string {
   // a claim to the table (D30): what the notebook says of someone, true or a bluff; the app players weigh it like any talk
   const claimed = (i: number): Law | '' => kit.party(i);
   // one column per side (D30): 🗒️ marks what you think (only you see it), 📣 tells the table, true or a bluff
-  const noteIcon = (megaphone: boolean): string => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${megaphone ? '<path d="M3 9h5l11-5v16L8 15H3zM8 15l2 6H6l-2-6M22 9v6"/>' : '<path d="M5 3h14v18H5zM9 7h6M9 11h6M9 15h4"/>'}</svg>`;
   const side = (i: number, p: Law): string => {
     const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
-    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">${noteIcon(false)}</button>`;
-    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">${noteIcon(true)}</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
+    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">🗒️</button>`;
+    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
     return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
-  const detail = (i: number): string => {
-    const note = S.noteDetails?.[i], kind = note?.kind || 'guess';
-    const facts = g.hist.flatMap((e, at) => {
-      if ((e.k === 'gov' || e.k === 'veto') && (e.pres === i || e.chanc === i)) return [`${at + 1}: ${e.k === 'veto' ? 'Participou de um veto' : `Governou e saiu lei ${e.law === 'L' ? 'liberal' : W.f}`}.`];
-      if (e.k === 'inv' && e.target === i) return [`${at + 1}: Foi investigado. O resultado é secreto.`];
-      return [];
-    }).slice(-2);
-    return `<details class="note-detail" id="note-detail-${i}"><summary>Motivo e fatos${note?.reason ? ' · anotado' : ''}</summary><label for="note-reason-${i}">Seu motivo sobre ${name(g, i)}</label><textarea id="note-reason-${i}" data-note-reason="${i}" maxlength="280" rows="2" placeholder="O que você observou?">${esc(note?.reason || '')}</textarea><div class="segm" role="group" aria-label="Tipo do motivo sobre ${name(g, i)}"><button data-act="notekind" data-i="${i}" data-v="guess" aria-pressed="${kind === 'guess'}" class="${kind === 'guess' ? 'on' : ''}">Palpite</button><button data-act="notekind" data-i="${i}" data-v="fact" aria-pressed="${kind === 'fact'}" class="${kind === 'fact' ? 'on' : ''}">Fato observado</button></div><p class="hint">Essa classificação é sua; não confirma um papel.</p>${facts.length ? `<div class="note-facts"><b>Na ata pública</b><ul>${facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>` : '<p class="hint">Ainda não há governo ou investigação deste jogador na ata.</p>'}</details>`;
-  };
-  const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${claimed(i)}${p.alive ? '' : ' dead'}"><div class="note-player"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${kit.sure(i) ? ' <small>(sabe)</small>' : ''}</span><span class="sides">${side(i, 'L')}${side(i, 'F')}</span></div>${detail(i)}</li>`)).join('');
+
+  const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${claimed(i)}${p.alive ? '' : ' dead'}"><div class="note-row"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${kit.sure(i) ? ' <small>(sabe)</small>' : ''}</span><span class="sides">${side(i, 'L')}${side(i, 'F')}</span></div></li>`)).join('');
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><p class="claim-impact" role="status">${esc(Core.accusationFeedback(g, at))}</p><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ marca sua suspeita em segredo. Abra “Motivo e fatos” para escrever. 📣 fala para a mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ anota o que você acha (só você vê). 📣 diz à mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
     ${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */

@@ -1,7 +1,7 @@
 import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
-import { buzz, later, sound } from './fx';
+import { buzz, later, reactions, sound } from './fx';
 import { beat, blurField, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
@@ -216,7 +216,7 @@ export function initEvents(): void {
     else if (a === 'notesopen') { ui.diary = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
-    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); }
+    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); const t = next.hist[next.hist.length - 1]; if (t && t.k === 'talk' && t.re) reactions(t.re.map(r => r[1])); }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));

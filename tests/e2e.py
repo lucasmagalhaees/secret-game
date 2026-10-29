@@ -302,17 +302,9 @@ with sync_playwright() as p:
     pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 2 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
     first = str(next(i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'))
-    pg.locator(f'#note-detail-{first} summary').click()
-    reason = 'Votou contra <img src=x onerror=alert(1)>'
-    pg.fill(f'#note-reason-{first}', reason)
-    pg.locator(f'[data-act=notekind][data-i="{first}"][data-v=fact]').click()
-    assert pg.locator(f'#note-detail-{first}').get_attribute('open') is not None, 'changing the note type keeps its editor open'
-    assert json.loads(pg.evaluate(f'localStorage.getItem("{KEY}")'))['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}
-    assert pg.locator(f'#note-reason-{first}').input_value() == reason and pg.locator('#notes img').count() == 0, 'private text is escaped after rendering'
     assert 'onerror' not in str(pg.evaluate('window.__APP.Core.viewOf(window.__APP.S.game, 0, "vote", [1, 0])'))
     assert overflow() == 0
     shot(f'notebook-rich-{THEME}.png')
-    pg.locator(f'#note-detail-{first} summary').click()
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=L]').click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
@@ -405,7 +397,6 @@ with sync_playwright() as p:
     if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
-    assert G()['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}, 'private reasons stay in the finished game'
     assert pg.locator('#highlights').count() == 1 and 1 <= pg.locator('#highlights article').count() <= 3
     # the reasons are still recorded with the game, for the export (D23), though no panel shows them (D28)
     assert pg.evaluate('window.__APP.S.game.trace.length') > 0 and pg.locator('#mindtoggle').count() == 0
