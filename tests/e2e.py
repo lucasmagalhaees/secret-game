@@ -406,7 +406,7 @@ with sync_playwright() as p:
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
     assert G()['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}, 'private reasons stay in the finished game'
-    assert pg.locator('#highlights').count() == 1 and pg.locator('#highlights li').count() <= 3
+    assert pg.locator('#highlights').count() == 1 and 1 <= pg.locator('#highlights article').count() <= 3
     # the reasons are still recorded with the game, for the export (D23), though no panel shows them (D28)
     assert pg.evaluate('window.__APP.S.game.trace.length') > 0 and pg.locator('#mindtoggle').count() == 0
 

@@ -108,3 +108,53 @@ As novas tentativas de criar a branch remota continuaram negadas com HTTP 403. N
 ## Rodada social e UI — em validação, 2026-10-29
 
 Base: main `3bf90ec` (PR #36), preservada. TypeScript e 258 casos do núcleo passaram antes da inclusão das campanhas; a validação está sendo repetida após essa inclusão. A primeira execução completa desta rodada parou nos dois e2e por um erro do teste novo: `saved` era um dicionário naquele ponto, e a checagem o chamou como função. A checagem foi corrigida para ler o armazenamento diretamente. O mínimo de cobertura foi mantido. O commit desta etapa registra trabalho em andamento; não é declaração de aprovação da suíte completa.
+
+## iPhone, resumo e Diário — 2026-10-29
+
+Base: main `69e0397` (PR #37). Pedido confirmado: o botão de denúncia funcionava no iPhone; o defeito era visual. As mudanças usam SVGs e caixas fixas de 44 px. O Diário mostra o texto exato das falas públicas de Game.log; um teste confirma que o motivo privado não aparece na transcrição. O rodapé mantém apenas um resumo persistente com interlocutores. O resumo final usa títulos ligados aos acontecimentos, sem “Momento N”.
+
+Comando: `PYTHONPATH=/tmp/secret-game-python PLAYWRIGHT_BROWSERS_PATH=/tmp/secret-game-browsers bash scripts/verify.sh`. Saída resumida da execução completa:
+
+```text
+ok types
+ok build
+ok docs 216/216 documentation claims hold
+ok core 259/259 checks passed without a browser
+ok unit 259/259 checks passed
+ok contract 0/0 (sem mudança de fonte externa)
+ok prod 16/16 production-check cases behave
+ok e2e-dark
+ok e2e-light
+ok iphone (Chromium): touch targets, focused editor, accusation, persistent summary, exact public diary, contextual ending
+ok pwa 18/18 offline and update checks passed
+ok coverage 97.3% das funções, 97.8% do código
+verify: tudo passou
+```
+
+Log: `/workspace/iphone-verify-final.log`. Depois de explicitar a cor dos ícones no tema selecionado, o build e o teste móvel foram repetidos. `tests/iphone.py chromium` passou. A suíte completa executa esse caso antes de medir cobertura, sem reduzir os mínimos.
+
+Não verificado: aparelho físico e WebKit/Safari. O WebKit foi baixado, mas o ambiente não tem todas as bibliotecas nativas para iniciá-lo; bibliotecas extraídas em /tmp ainda não resolveram o lançamento. Esse impedimento é do ambiente e não foi tratado como teste aprovado. O teste aceita `python3 tests/iphone.py webkit` num ambiente preparado.
+
+## Avisos de reputação — verificação final, 2026-10-29
+
+A versão com os avisos de reputação passou em `PYTHONPATH=/tmp/secret-game-python PLAYWRIGHT_BROWSERS_PATH=/tmp/secret-game-browsers bash scripts/verify.sh`:
+
+```text
+ok types
+ok build
+ok docs 216/216 documentation claims hold
+ok core 261/261 checks passed without a browser
+ok unit 261/261 checks passed
+ok contract 0/0 (sem mudança de fonte externa)
+ok prod 16/16 production-check cases behave
+ok e2e-dark
+ok e2e-light
+ok iphone (Chromium)
+ok pwa 18/18 offline and update checks passed
+ok coverage 96.9% das funções, 97.6% do código
+verify: tudo passou
+```
+
+Log integral: `/workspace/reputation-verify.log`. O teste móvel também confere a presença do aviso compacto no rodapé e da explicação no Diário. Os casos novos do núcleo provam que os avisos dependem apenas de coerência e reações públicas e não mudam ao trocar papéis secretos.
+
+Capturas móveis revisadas: `tests/shots/iphone-notes-chromium.png` e `tests/shots/iphone-diary-chromium.png`. Botões alinhados e transcrição escapada; o texto de teste com marcação HTML aparece como texto. WebKit e aparelho físico continuam não verificados: o lançamento do WebKit ainda encontra bibliotecas nativas ausentes. O PR #38 reúne as alterações e mantém explícita essa limitação.

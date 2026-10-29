@@ -28,10 +28,12 @@ export function render(): void {
   part('boss').textContent = W.boss;
   part('score').innerHTML = g ? `<span class="chip L">${g.laws.L}/${Core.WIN.L}</span><span class="chip F">${g.laws.F}/${Core.WIN.F}</span>` : '';
   const expanded = [...view.querySelectorAll<HTMLDetailsElement>('.note-detail[open]')].map(d => d.id);
+  const diaryScroll = document.getElementById('diary')?.scrollTop ?? 0;
   const keep = document.getElementById('drawer')?.scrollTop ?? 0;   // repainting must not scroll the notebook back up
   view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
   for (const id of expanded) { const detail = document.getElementById(id); if (detail instanceof HTMLDetailsElement) detail.open = true; }
   const dr = document.getElementById('drawer'); if (dr) dr.scrollTop = keep;
+  const diary = document.getElementById('diary'); if (diary) diary.scrollTop = diaryScroll;
 }
 
 /** The words of the theme of what is on screen (D12): the game's, or before a game the one chosen at the table. */
@@ -355,7 +357,7 @@ function vReview(g: Game): string {
 /** Three recorded turning points, available to every table at the end. */
 function vHighlights(g: Game): string {
   const points = Core.highlights(g);
-  return points.length ? `<section class="card" id="highlights"><span class="label">O que decidiu a partida</span><ol class="turning-points">${points.map(p => `<li><b>Momento ${p.at + 1}</b><p>${whyText(g, p.text)}</p></li>`).join('')}</ol><p class="hint">Os fatos registrados explicam esses momentos; não dizem o que teria acontecido com outra escolha.</p></section>` : '';
+  return points.length ? `<section class="card" id="highlights"><span class="label">O que decidiu a partida</span><div class="turning-points">${points.map(p => `<article><h3>${whyText(g, p.title)}</h3><p>${whyText(g, p.text)}</p></article>`).join('')}</div></section>` : '';
 }
 /** At the end (D28): how many of the roles the person deduced right in the notebook, seat by seat. */
 function vNotesScore(g: Game): string {
@@ -448,13 +450,46 @@ function vSeats(g: Game): string {
 const GAP = '<div class="dock-gap" aria-hidden="true"></div>';
 /** The bar at the bottom with what opens beside the game (D17): the notebook. It
  *  has its own room at the end of the page, so it never covers what the game shows. */
+/** These are the actual public lines recorded by the game, not regenerated dialogue. */
+function speechRows(g: Game): { by: number; about: number | null; text: string }[] {
+  const rows: { by: number; about: number | null; text: string }[] = [];
+  let context: number | null = null;
+  for (const line of g.log) {
+    const by = g.players.findIndex(p => line.startsWith(p.name + ': "') || line.startsWith(p.name + ' (') || line.startsWith(p.name + ' disse que') || line.startsWith(p.name + ' não disse o que'));
+    if (by < 0) { context = null; continue; }
+    const prefix = g.players[by].name;
+    const text = line.startsWith(prefix + ': "') ? line.slice(prefix.length + 3, -1) : line.slice(prefix.length).trim();
+    const named = g.players.findIndex((p, i) => i !== by && text.includes(p.name));
+    if (named >= 0) context = named;
+    rows.push({ by, about: named >= 0 ? named : context, text });
+  }
+  return rows;
+}
+
+function socialNotice(g: Game): ReturnType<typeof Core.reputationNotice> {
+  for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'talk' && e.say !== 'quiet' && e.re?.length) return Core.reputationNotice(g, i); }
+  return null;
+}
+
+function vDiary(g: Game, rows: ReturnType<typeof speechRows>): string {
+  const notice = socialNotice(g);
+  return `<aside id="diary" class="drawer diary${ui.diary ? ' open' : ''}" aria-label="Diário da conversa"><div class="diary-head"><span class="label">Diário da conversa</span><button data-act="diary" aria-label="Fechar Diário" class="diary-close">✕</button></div><p class="hint">Falas e respostas públicas, na ordem em que aconteceram.</p>${notice ? `<section class="reputation-note ${notice.tone}"><b>${esc(notice.title)}</b><p>${esc(notice.detail)}</p></section>` : ''}${rows.length ? `<div class="diary-lines">${rows.map(e => `<article><header><b>${name(g, e.by)}</b>${e.about !== null ? `<small>sobre ${name(g, e.about)}</small>` : '<small>falou à mesa</small>'}</header><p>“${esc(e.text)}”</p></article>`).join('')}</div>` : '<p class="hint">A conversa ainda não começou. As falas e respostas ficarão guardadas aqui.</p>'}</aside>`;
+}
+
 function vDock(g: Game): string {
   const kit = noteKit(g), n = Object.keys(S.notes || {}).length, notes = !!S.notesOpen;
+  const rows = speechRows(g), last = rows[rows.length - 1];
+  const topic = [...g.hist].reverse().find(e => e.k === 'talk' && e.say !== 'quiet' && e.about >= 0);
+  const short = last ? topic?.k === 'talk' && !last.text.includes('disse que') && !last.text.includes('disse o que')
+    ? `${g.players[topic.by].name} ${topic.say === 'acc' ? 'acusou' : 'defendeu'} ${g.players[topic.about].name}`
+    : `${g.players[last.by].name}${last.about !== null ? ` sobre ${g.players[last.about].name}` : ' falou à mesa'}` : '';
+  const notice = socialNotice(g);
+  const peek = last ? `<button class="speech-peek" id="speech-peek" data-act="diary" aria-label="Abrir Diário: ${esc(short)}"><span>${esc(short)}</span><small>${notice ? `<span class="reputation-cue ${notice.tone}">${esc(notice.title)}</span>` : ''}Diário ›</small></button>` : '';
   const btns = [
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
-  ].filter(Boolean);
-  if (!btns.length) return GAP;
-  return `${vDrawer(g)}<nav class="dock" aria-label="Painéis">${btns.join('')}</nav>${GAP}`;
+    `<button class="dock-btn${ui.diary ? ' open' : ''}" id="diarytoggle" data-act="diary" aria-expanded="${ui.diary}" aria-controls="diary">Diário${rows.length ? ` · ${rows.length}` : ''}</button>`
+  ];
+  return `${vDrawer(g)}${vDiary(g, rows)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
 }
 /** The personalities of the app players (D26), as the table knows them: a name and a line. */
 export const PERSONA_W: Record<Persona, [string, string]> = {
@@ -475,10 +510,11 @@ function vDrawer(g: Game): string {
   // a claim to the table (D30): what the notebook says of someone, true or a bluff; the app players weigh it like any talk
   const claimed = (i: number): Law | '' => kit.party(i);
   // one column per side (D30): 🗒️ marks what you think (only you see it), 📣 tells the table, true or a bluff
+  const noteIcon = (megaphone: boolean): string => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${megaphone ? '<path d="M3 9h5l11-5v16L8 15H3zM8 15l2 6H6l-2-6M22 9v6"/>' : '<path d="M5 3h14v18H5zM9 7h6M9 11h6M9 15h4"/>'}</svg>`;
   const side = (i: number, p: Law): string => {
     const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
-    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}">🗒️</button>`;
-    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
+    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">${noteIcon(false)}</button>`;
+    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">${noteIcon(true)}</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
     return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
   const detail = (i: number): string => {

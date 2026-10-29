@@ -605,3 +605,36 @@ button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px so
 @keyframes gunSmoke{0%{opacity:0;transform:translateY(0)}20%{opacity:.6}100%{opacity:0;transform:translateY(-14px)}}
 
 .drawer .note-player .sides{display:grid;grid-template-columns:1fr 1fr;width:100%;margin:0}
+
+/* Override earlier compact button rules; iOS must get a real touch box, not emoji-sized content. */
+.drawer .side .pen,.drawer .side .tell{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;color:var(--fg);min-width:44px;min-height:44px;padding:0;line-height:1;appearance:none;-webkit-appearance:none;touch-action:manipulation}
+.drawer .side .pen svg,.drawer .side .tell svg{display:block;flex:none;width:22px;height:22px;pointer-events:none}
+.turning-points{padding:0}
+.turning-points article{padding:14px 0;border-bottom:1px solid var(--line)}
+.turning-points article:last-child{border-bottom:0;padding-bottom:0}
+.turning-points h3{font:800 19px/1.25 var(--display);margin:0 0 8px;text-transform:none;letter-spacing:0}
+.turning-points p{margin:0;line-height:1.5}
+
+/* A persistent short cue replaces fast dialogue toasts; the transcript has its own public panel. */
+body:has(.dock){--dock:68px}
+body:has(.speech-peek){--dock:116px}
+.dock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(44px,1fr);gap:6px}
+.speech-peek{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:32px;text-align:left;padding:0 4px;font:700 13px/1.2 var(--font)}
+.speech-peek span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.speech-peek small{flex:none;color:var(--muted);font-size:11px}
+.diary{width:min(420px,94vw);z-index:45}
+.diary-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.diary-close{width:44px;height:44px;border:1px solid var(--line);flex:none}
+.diary-lines article{padding:14px 0;border-top:1px solid var(--line)}
+.diary-lines header{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.diary-lines small{color:var(--muted);overflow-wrap:anywhere}
+.diary-lines p{font-size:16px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 0}
+@media (min-width:1400px){.diary:not(.open){visibility:hidden;transform:translateX(105%)}}
+
+.dock:not(:has(.notes)) .dock-btn{grid-column:1/-1}
+
+.reputation-cue{display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:11px}
+.reputation-cue.up{color:var(--lib)}.reputation-cue.down{color:var(--neg)}
+.reputation-note{padding:12px;margin:12px 0;border-left:3px solid var(--muted);background:var(--surface)}
+.reputation-note.up{border-color:var(--lib)}.reputation-note.down{border-color:var(--neg)}
+.reputation-note p{margin:6px 0 0;line-height:1.5;font-size:14px}

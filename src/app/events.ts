@@ -27,7 +27,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
     const power = next.hist.slice(before.hist.length).find(e => e.k === 'inv' || e.k === 'exec');
     if (power && (power.k === 'inv' || power.k === 'exec')) powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
   }
-  if (msg && changed) toast(msg);
+  if (msg && changed && !spoke) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
     keep(next);                                                              // kept on the device for export (D23)
     confetti(next.winner); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
@@ -129,7 +129,7 @@ function start(): void {
   const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   if (S.notes || S.noteDetails) { const next = { ...S }; delete next.notes; delete next.noteDetails; setS(next); }     // a new game starts a clean notebook
-  ui.msg = ''; ui.help = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
+  ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
 }
 function lawMsg(before: Game, after: Game): string {
   const w = Core.words(after.pack, after.region);
@@ -177,6 +177,8 @@ function askOrientation(): void {
 export function initEvents(): void {
   document.addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
+    // Safari may leave a textarea focused when tapping a button. Commit its text and allow the repaint.
+    blurField();
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
     if (a !== 'clear') ui.confirmClear = false;
     if (a !== 'wipe') ui.confirmWipe = false;                              // the second tap has to come right after the first
@@ -210,7 +212,8 @@ export function initEvents(): void {
     else if (a === 'allplays') { ui.allPlays = !ui.allPlays; render(); }
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
-    else if (a === 'notesopen') { const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
+    else if (a === 'diary') { ui.diary = !ui.diary; if (ui.diary) { delete S.notesOpen; saveS(); } render(); const diary = $('#diary'); if (ui.diary && diary) diary.scrollTop = diary.scrollHeight; }
+    else if (a === 'notesopen') { ui.diary = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); }
