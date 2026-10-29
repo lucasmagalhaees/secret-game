@@ -471,9 +471,25 @@ function liberal(v: View, rand: () => number): number {
     why('Investigou de quem tinha mais dúvida: a chance mais perto de 50%, onde ver o partido ensina mais (investigar quem já parece limpo ou culpado quase não muda o que ela sabe). No empate, pende para o mais suspeito.');
     return best(o, score, rand);
   }
-  if (v.ask === 'special') { rows(b, o); why('Escolheu para presidente quem parece mais limpo.'); return best(o, i => b.pF[i], rand); }
-  rows(b, o, i => b.pH[i] + 0.3 * b.pF[i]); why('Eliminou quem tem mais chance de ser o {boss} (e, depois, de ser do lado escondido).');
-  return best(o, i => -(b.pH[i] + 0.3 * b.pF[i]), rand);                   // execute
+  if (v.ask === 'special') {
+    const strategic = v.level === 'dificil' || v.level === 'extremo';
+    // A special president will nominate the next chancellor. Avoid giving that power
+    // to a likely fascist, especially when the leader-election victory is unlocked.
+    const score = (i: number): number => b.pF[i] + (strategic && v.laws.F >= HITLER_ZONE ? 0.5 * b.pH[i] : 0);
+    rows(b, o, score);
+    why(strategic ? 'Escolheu presidente especial com menor risco de favorecer o lado escondido na próxima indicação.' : 'Escolheu para presidente quem parece mais limpo.');
+    return best(o, score, rand);
+  }
+  // Executing the leader wins immediately. With five fascist laws, removing any
+  // ordinary fascist is less valuable than targeting the leader; earlier, removing
+  // a probable fascist also protects subsequent governments.
+  const leaderWeight = v.level === 'dificil' || v.level === 'extremo'
+    ? (v.laws.F >= 5 ? 4 : v.laws.F >= HITLER_ZONE ? 2 : 1)
+    : 1;
+  const executionScore = (i: number): number => leaderWeight * b.pH[i] + 0.3 * b.pF[i];
+  rows(b, o, executionScore);
+  why(`Eliminou quem oferece maior chance de derrotar o {boss}, ponderando o risco de ser do lado escondido${leaderWeight > 1 ? ' e a urgência do fim da partida' : ''}.`);
+  return best(o, i => -executionScore(i));                                // execute
 }
 
 /** What a fascist says about its own hand, investigation or spying: the truth, unless it gives it away. */
