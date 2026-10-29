@@ -431,7 +431,18 @@ function liberal(v: View, rand: () => number): number {
   if (v.ask === 'inv') { const e = lastOwn(v, ['inv'], e => e.by === v.me); why('É liberal: disse o que viu.'); return e?.party === 'F' ? 1 : 0; }
   if (v.ask === 'peek') { const e = lastOwn(v, ['peek'], e => e.by === v.me); why('É liberal: disse o que viu.'); return e?.saw ? nF(e.saw) : -1; }
   const b = believe(v);
-  if (v.ask === 'vote') { if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; } return liberalJa(v, b) ? 1 : 0; }
+  if (v.ask === 'vote') {
+    // On higher levels, self-interest must not override an immediate Hitler-election loss.
+    // The leader check uses only the player's posterior, never the real hidden role.
+    if (v.laws.F >= HITLER_ZONE && (v.level === 'dificil' || v.level === 'extremo')
+        && b.pH[v.chanc as number] > AI[v.level].wary) {
+      why(`Rejeitou o governo: a chance de ${P(v.chanc as number)} ser o {boss} (${pc(b.pH[v.chanc as number])}) é alta demais, mesmo participando do governo.`);
+      rows(b, [v.pres, v.chanc as number].filter(i => i !== v.me));
+      return 0;
+    }
+    if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; }
+    return liberalJa(v, b) ? 1 : 0;
+  }
   if (v.ask === 'nominate') {
     const zone = v.laws.F >= HITLER_ZONE;
     // Stronger bots evaluate the whole proposed government rather than the chancellor in isolation.
