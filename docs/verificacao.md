@@ -108,3 +108,32 @@ As novas tentativas de criar a branch remota continuaram negadas com HTTP 403. N
 ## Rodada social e UI — em validação, 2026-10-29
 
 Base: main `3bf90ec` (PR #36), preservada. TypeScript e 258 casos do núcleo passaram antes da inclusão das campanhas; a validação está sendo repetida após essa inclusão. A primeira execução completa desta rodada parou nos dois e2e por um erro do teste novo: `saved` era um dicionário naquele ponto, e a checagem o chamou como função. A checagem foi corrigida para ler o armazenamento diretamente. O mínimo de cobertura foi mantido. O commit desta etapa registra trabalho em andamento; não é declaração de aprovação da suíte completa.
+
+## Rodada social e UI — verificação completa, 2026-10-29
+
+A validação posterior da revisão com campanhas e falas variadas passou por completo com:
+
+`PYTHONPATH=/tmp/secret-game-python PLAYWRIGHT_BROWSERS_PATH=/tmp/secret-game-browsers bash scripts/verify.sh`
+
+```text
+ok types
+ok build
+ok docs 216/216 documentation claims hold
+ok core 258/258 checks passed without a browser
+ok unit 258/258 checks passed
+ok contract 0/0 (não há alteração de fonte externa)
+ok prod 16/16 production-check cases behave
+ok e2e-dark
+ok e2e-light
+ok pwa 18/18 offline and update checks passed
+ok coverage 97.1% das funções, 97.7% do código
+verify: tudo passou
+```
+
+Log integral: `/workspace/next-verify-ci-fix.log`. A medição anterior também passou, com 97.3% das funções e 97.7% do código. O CI do primeiro rascunho mostrou duas falhas reais de testes e2e: (1) exigia literalmente as frases antigas “Confio em”/“Desconfio de”, embora o registro tivesse as falas novas; (2) o marcador de votação podia ser perdido entre a observação da fase e o clique, com bots a tempo zero. O teste continua exigindo fala de NPC identificada no histórico e no log e votação humana legível, agora também conferida no ponto da interação. Não se reduziu nenhum mínimo de cobertura; o job coverage falhava por incluir os e2e, enquanto a medição em si estava acima dos mínimos. Essa correção foi enviada ao PR #37 em `9dfff54`.
+
+Conferido em capturas a 393 px: caderno com motivos e texto escapado; painel de investigação sem partido, e arma na eliminação. Os e2e incluem os temas claro/escuro, preferência de movimento reduzido, nome de alvo escapado e preservação dos motivos ao encerrar a partida. Não foi usado aparelho físico.
+
+Comparação com a main `3bf90ec`: `node scripts/ai_compare.mjs /tmp/secret-game-main-baseline/src/core/index.ts 60`. Todas as 480 partidas terminaram. Vitórias da nova versão por lado L/F, em 60 partidas por lado: fácil 33/33; médio 38/29; difícil 36/23; extremo 37/27. São referências de amostra, sem demonstrar superioridade geral nem prometer equilíbrio com uma pessoa influenciando a mesa. Dados completos no workspace em `/workspace/next-ai-comparison.jsonl`.
+
+Publicação: mudanças enviadas ao PR #37; sem merge ou deploy feito nesta tarefa. O antigo erro 403 não bloqueou esta rodada: a criação da branch e o envio de commits pelo conector foram confirmados. A situação do CI remoto é acompanhada no PR.
