@@ -384,3 +384,36 @@ Modelo de uma decisão:
 |---|---|
 | Proteger a `main` exigindo PR e os checks do CI | Dono do repositório |
 | Preencher o `CLAUDE.md`: o que é o app, o escopo e os requisitos | Dono do repositório |
+
+
+## D30 — Prioridade para leis decisivas na IA (2026-10-29)
+
+Pedido: melhorias na IA do jogo. Escopo interpretado: corrigir decisões de fim de partida nos níveis difícil e extremo, que já planejam jogadas. Quando a própria mão permite garantir a lei vencedora ou impedir a lei vencedora adversária, essa decisão vem antes de reputação, blefe e erro aleatório. O chanceler usa o veto disponível para bloquear uma mão que daria vitória ao adversário; o presidente aceita esse veto e recusa vetar duas leis que venceriam para seu lado. A regra usa somente a View, inclusive para o líder sem aliados conhecidos. O veto pode levar ao caos: bloqueia a lei da mão, sem garantir a sobrevivência ao topo do baralho. Fácil e médio mantêm seu comportamento. Não foi medida melhora da taxa de vitórias.
+
+## D31 — Dedução estável e estratégia da IA (2026-10-29)
+
+Pedido: ampliar as melhorias da IA antes de trabalhar em outros pontos. Mantemos os quatro níveis e as personalidades, sem rede nem modelo de linguagem no jogo. A dedução usa logaritmos para evitar perder evidências por arredondamento em históricos longos; regras públicas e investigações privadas delimitam os mundos possíveis antes das hipóteses comportamentais. A IA não esquece que um chanceler que chegou à sessão legislativa na zona do líder não pode ser o líder. Uma fala repetida da mesma pessoa sobre o mesmo alvo e lado conta uma vez na janela de memória, para não virar prova por repetição.
+
+Nos níveis que planejam, vitórias certas por eleição têm prioridade sobre erros aleatórios; fascistas não eliminam o líder conhecido se existe outro alvo. O presidente liberal reavalia o risco do chanceler mesmo quando participa do governo. O líder usa os aliados que descobriu investigando para indicar, votar, convocar e eliminar. Uma espiada privada ainda válida orienta o voto quando o caos decidiria a partida; espiadas consumidas ou declarações de terceiros não dão acesso ao topo. O presidente preserva até uma única lei vencedora para dar ao chanceler a chance de aprová-la. Simulações de reputação do chanceler deixam a compra presidencial desconhecida, em vez de inventar duas leis fascistas. Um cache dura apenas uma decisão e reaproveita crenças da mesma View sem guardar conhecimento entre jogadores.
+
+A ferramenta `scripts/ai_compare.mjs` confronta a IA anterior e a atual no mesmo nível, alternando lados nas mesmas sementes e mesas de 5 a 10. Em 60 partidas por lado e nível, 480 no total, nenhuma travou. Vitórias da versão nova: fácil 36/60 como liberal e 25/60 como fascista; médio 37/60 e 27/60; difícil 31/60 e 30/60; extremo 35/60 e 32/60. Os intervalos de 95% por lado incluem 50%: esta amostra valida a execução e dá uma referência, sem demonstrar superioridade universal. Baseline: `58bf7c6dd29975f83ca946d717989d11bc8f8367`, antes de D30. As medições ficaram em `/workspace/ai-comparison.jsonl` no ambiente de trabalho.
+
+## D32 — Insistência nas acusações e poderes visíveis (2026-10-29)
+
+Pedido: acusar várias vezes a mesma pessoa não tinha consequência percebida; investigar e eliminar precisavam de animações. Repetição sem um novo governo, veto ou investigação envolvendo o alvo não é evidência independente de culpa. Uma acusação sem apoio na ata, repetida até três vezes além da primeira, pesa contra a credibilidade de quem acusa: multiplica cada hipótese por 1,3 se o acusador for do lado escondido nela, ou 0,85 se liberal, ajustado pela personalidade de quem ouve. O efeito é limitado, não uma prova. As reações cobram explicitamente um fato novo; uma acusação apoiada pela ata não recebe essa penalidade. Eventos relevantes novos reiniciam a contagem. Votos e rejeições sozinhos não limpam a insistência. Os botões mantêm o limite existente de uma fala por alvo por rodada.
+
+Investigação e eliminação recebem um aviso público animado por 1600 ms, na faixa abaixo do cabeçalho, para pessoas e IAs. A investigação usa lupa e nome, sem partido ou retrato secreto. A eliminação usa martelo e risco no nome, sem revelar o papel de quem sai; o fim de jogo continua seguindo as regras. Os avisos não bloqueiam botões nem atrasam as regras e respeitam a preferência de movimento reduzido. A animação antiga de lupa no cartão secreto e o escurecimento da eliminação continuam; o novo aviso torna o poder perceptível antes do resultado secreto e também quando a IA atua.
+
+## D33 — Caderno, memória social e campanhas (2026-10-29)
+
+Pedido autorizado: tornar o caderno útil, a IA social e coerente, os governos atentos à maioria, e o resultado compreensível. Motivos privados por jogador têm até 280 caracteres e são classificados pela pessoa como fato observado ou palpite; essa classificação não confirma papéis. A ata pública aparece separada. Notas não entram na View de bots e acompanham apenas o arquivo da partida encerrada.
+
+A memória social registra acusações, defesas, inversões sem evidência nova e versões públicas incompatíveis. Isso ajusta a credibilidade de quem fala, com efeitos moderados. A IA que planeja evita trocar de versão sem fatos novos e leva em conta o compromisso público de sua própria espiada. Estima a maioria por crenças públicas e opiniões declaradas, sem conhecer votos futuros; avalia também a presidência que virá após rejeitar e restaura a ordem da eleição especial.
+
+Antes de votar há até duas falas de campanha de NPCs vivos, uma por NPC. Elas defendem governos ou pressionam rivais e podem mudar a leitura dos outros bots. Uma pessoa pode votar sem esperar a conversa. Os votos anteriores também viram assunto das falas, sem serem tratados isoladamente como prova de culpa. O resumo final destaca até três momentos registrados e suas consequências, sem inventar um resultado alternativo.
+
+O feedback das acusações resume somente as reações públicas e avisa sobre insistência ou contradição. A linguagem ganhou variantes por personalidade e situação, com seleção determinística pelo histórico: não consome sorte nem altera decisões, e uma fala antiga continua igual depois. Dois testes de turnos foram atualizados porque a campanha passa a anteceder a espera do voto humano; o limite e o retorno à votação são testados.
+
+## D34 — Poderes e acabamento no celular (2026-10-29)
+
+A investigação usa lupa percorrendo o nome, sem mostrar o resultado. Eliminar usa arma estilizada com recuo, clarão e fumaça, sem sangue e sem revelar o papel; som respeita a opção de áudio e movimento reduzido elimina animações. O caderno agrupa ações por jogador, abre motivos sob demanda e preserva editores abertos durante atualizações. Os controles de anotação têm alvo de toque ampliado. O card Sim do Brasil usa somente fundo verde e losango amarelo: sem círculo azul nem faixa branca. A faixa regional das outras cartas permanece conforme o desenho existente.

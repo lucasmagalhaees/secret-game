@@ -2,6 +2,24 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Não publicado]
+
+### Corrigido
+- IA difícil e extrema priorizam leis decisivas sobre blefes, reputação e erros aleatórios, e usam o veto disponível para bloquear uma lei que daria vitória ao adversário.
+
+### Adicionado
+- Caderno com motivos privados, fatos e palpites; memória social da IA, campanhas por votos e resumo dos momentos decisivos.
+- Mais falas por personalidade, respostas a contradições e votos e feedback público das acusações.
+- Avisos animados de investigação e eliminação para pessoas e IAs, com nomes e sem revelar segredos.
+
+### Melhorado
+- Arma animada na eliminação, lupa sobre o nome na investigação e card Sim brasileiro somente verde e amarelo.
+- Acusações insistentes sem novos fatos afetam a credibilidade do acusador e recebem respostas específicas da mesa.
+- Dedução numérica em partidas longas, retenção de fatos conhecidos e resistência a acusações repetidas.
+- Votos na zona do líder, proteção do líder conhecido e uso de aliados descobertos por investigação.
+- Decisões sobre caos com uma espiada privada válida, preservação de leis vencedoras e simulações de blefe sem inventar a mão presidencial.
+- Reaproveitamento de cálculos dentro de cada decisão e ferramenta para comparar versões da IA por lado, nível e semente.
+
 ## [0.23.0]
 
 ### Adicionado

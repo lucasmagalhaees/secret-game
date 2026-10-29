@@ -67,13 +67,15 @@ export type Event =
 /** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
  *  ('trust'), or keeps quiet ('quiet', about -1). The players run by the app do not weigh it: it is for the people. */
 /** `re`: how the players run by the app took it, when a person said it (D26): seat and answer (REACT). */
-export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; re?: [number, number][] };
+export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; stage?: 'campaign'; re?: [number, number][] };
 /** An elected government: the law it made (or a veto, with no law). `drew` are the 3 laws the president drew and `got`
  *  the 2 the chancellor got: secret at the time. `pc` and `cc` are what the president and the chancellor told the table
  *  afterwards, as the number of fascist laws (-1: they kept quiet). A 'vote' event exists only where the phone took
  *  every vote, at a table with players run by the app. */
 export type Gov = { k: 'gov' | 'veto'; pres: number; chanc: number; law?: Law; drew?: Law[]; got?: Law[]; pc?: number; cc?: number };
 
+/** Private notebook context, never passed to a bot's View. */
+export interface NoteDetail { reason: string; kind: 'fact' | 'guess' }
 export interface Game {
   players: Player[];
   /** The draw pile, top first, and the discarded laws. */
@@ -111,6 +113,7 @@ export interface Game {
   trace?: Trace[];
   /** The notebook of the one person at the table (D12), as it was when the game ended (D28): seat → the party marked. */
   notes?: Record<string, Law>;
+  noteDetails?: Record<string, NoteDetail>;
   /** In 'investigated': who was investigated. */
   target: number | null;
   winner: Winner | null; why: string;
@@ -121,7 +124,7 @@ export interface Game {
 }
 
 /** Everything saved on the device (`secrethitler.v1`): the names of the last table (and which of them the app plays, `ai`), the level of the app's players, the role chosen for training (`train`), whether the minutes show who approved each law (`assist`), the person's notes on the game in course (`notes`, seat → party) and whether their side panel is open (`notesOpen`), whether the live suspicion shows (`live`), whether the trainer gives tips (`coach`), how fast the app's players act (`speed`), the game in course, the theme, the style and whether sound and vibration are off. */
-export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; notesOpen?: true; live?: true; coach?: true; speed?: Speed; flip?: true; region?: Region; dlc?: true }
+export interface AppState { v: 1; names: string[]; game: Game | null; theme?: Theme; look?: Look; quiet?: true; ai?: boolean[]; level?: Level; train?: Role; assist?: true; pack?: Pack; notes?: Record<string, Party>; noteDetails?: Record<string, NoteDetail>; notesOpen?: true; live?: true; coach?: true; speed?: Speed; flip?: true; region?: Region; dlc?: true }
 
 /** A finished game kept on the device for export (D23): when it ended (ms since 1970) and the whole game. */
 export interface Saved { at: number; game: Game }
@@ -171,6 +174,7 @@ export interface View {
   n: number; alive: boolean[]; known: (Role | null)[]; fascists: number;
   laws: { L: number; F: number }; tracker: number;
   pres: number; chanc: number | null; lastPres: number | null; lastChanc: number | null;
+  phase?: Phase;
   ask: Ask; options: number[]; hand: Law[];
   hist: Seen[];
 }

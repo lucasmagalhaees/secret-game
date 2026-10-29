@@ -157,6 +157,22 @@ export default function cases(Core) {
   // deciding: rand near 1 means no careless moment and no trick
   const hi = () => 0.99;
   const view = (over) => ({ me: 4, role: 'liberal', level: 'medio', mood: 0, n: 7, alive: Array(7).fill(true), known: [null, null, null, null, 'liberal', null, null], fascists: 3, laws: { L: 0, F: 0 }, tracker: 0, pres: 3, chanc: 4, lastPres: null, lastChanc: null, ask: 'vote', options: [1, 0], hand: [], hist: [], ...over });
+  // Decisive hands must take precedence over reputation, tests and random slips at planning levels.
+  for (const level of ['dificil', 'extremo']) {
+    for (const role of ['liberal', 'fascista', 'hitler']) {
+      const side = role === 'liberal' ? 'L' : 'F', other = side === 'L' ? 'F' : 'L';
+      const win = { L: 4, F: 5 };
+      const decisive = view({ role, level, laws: win, ask: 'cdiscard', hand: deck('FL'), options: [0, 1, 2] });
+      eq(`decisive hand: ${level} ${role} enacts its winning law even on a slip`, ['FL'[Core.decide(decisive, () => 0)], 'FL'[Core.decide(decisive, hi)]], [other, other]);
+      const forced = view({ role, level, laws: win, ask: 'pdiscard', hand: [side, other, side], options: [0, 1, 2] });
+      eq(`decisive hand: ${level} ${role} forces its winning law`, Core.decide(forced, () => 0), 1);
+      eq(`decisive hand: ${level} ${role} preserves even a single winning card`, Core.decide({ ...forced, hand: [other, side, other] }, () => 0), 0);
+      const stop = view({ role, level, laws: win, ask: 'cdiscard', hand: [other, other], options: [0, 1, 2] });
+      eq(`decisive hand: ${level} ${role} vetoes an opponent's winning hand`, Core.decide(stop, () => 0), 2);
+      eq(`decisive hand: ${level} ${role} accepts veto only to stop defeat`, [Core.decide({ ...stop, ask: 'veto', options: [1, 0] }, () => 0), Core.decide({ ...stop, ask: 'veto', hand: [side, side], options: [1, 0] }, () => 0)], [1, 0]);
+      eq(`decisive hand: ${level} ${role} respects unavailable veto`, [0, 1].includes(Core.decide({ ...stop, options: [0, 1] }, hi)), true);
+    }
+  }
   eq('a liberal president throws a fascist law away; a liberal chancellor makes the liberal one', [Core.decide(view({ me: 3, known: [null, null, null, 'liberal', null, null, null], ask: 'pdiscard', options: [0, 1, 2], hand: deck('LFF') }), hi), Core.decide(view({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi)], [1, 0]);
   const knowAll = ['hitler', 'fascista', 'fascista', 'liberal', 'liberal', 'liberal', 'liberal'];
   eq('a fascist chancellor makes the fascist law, and asks to veto two liberal ones', [Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi), Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1, 2], hand: deck('LL'), laws: { L: 0, F: 5 } }), hi)], [1, 2]);
@@ -198,6 +214,43 @@ export default function cases(Core) {
   const zoned = Core.believe(view({ level: 'extremo', laws: { L: 0, F: 4 }, hist: [{ k: 'chaos', law: 'F' }, { k: 'chaos', law: 'F' }, { k: 'chaos', law: 'F' }, { k: 'gov', pres: 2, chanc: 6, law: 'F' }] }));
   eq('believing: someone elected chancellor with 3 fascist laws already on the table is not Hitler', [zoned.pH[6] < 0.01, zoned.pH[2] > 0.1], [true, true]);
   eq('the odds of a hand: 0 to 3 fascist laws, adding up to 1', [Core.drawOdds(11, 6).length, Math.round(Core.drawOdds(11, 6).reduce((a, x) => a + x, 0) * 1e6), Math.round(Core.drawOdds(11, 6)[3] * 1000), Core.drawOdds(1, 1)], [4, 1e6, 243, [0.25, 0.25, 0.25, 0.25]]);
+  // Stable inference, public rule deductions and resistance to repeated claims.
+  const longEvidence = view({ level: 'extremo', hist: [{ k: 'inv', by: 4, target: 2, party: 'F' }, ...Array.from({ length: 900 }, () => ({ k: 'vote', pres: 0, chanc: 1, ja: [0, 1, 2, 3, 4, 5, 6] }))] });
+  const lb = Core.believe(longEvidence);
+  eq('long games: probabilities stay finite and private investigations survive underflow', [lb.pF.every(Number.isFinite), Math.abs(lb.pF[2] - 1) < 1e-9, Math.abs(lb.pF.reduce((a, x) => a + x, 0) - 3) < 1e-9], [true, true, true]);
+  const speech = { k: 'talk', by: 0, about: 2, say: 'acc' };
+  const once = Core.believe(view({ hist: [speech] })), spam = Core.believe(view({ hist: Array(40).fill(speech) }));
+  eq('talk: repeated unsupported accusations damage the speaker credibility instead of manufacturing proof', [spam.pF[0] > once.pF[0], spam.pF[2] < once.pF[2]], [true, true]);
+  const capped = Core.believe(view({ hist: Array(4).fill(speech) }));
+  eq('talk: repetition has a bounded consequence', capped.pF.every((p, i) => Math.abs(p - spam.pF[i]) < 1e-9), true);
+  const evidence = { k: 'gov', pres: 2, chanc: 3, law: 'F', pc: 3, cc: 2 };
+  const supportedOnce = Core.believe(view({ hist: [evidence, speech] })), supportedRepeat = Core.believe(view({ hist: [evidence, ...Array(4).fill(speech)] }));
+  eq('talk: a supported accusation is not punished for repetition', supportedOnce.pF.every((p, i) => Math.abs(p - supportedRepeat.pF[i]) < 1e-9), true);
+  for (const level of Core.LEVELS) {
+    const knownSafe = Core.believe(view({ level, hist: [...Array(3).fill({ k: 'chaos', law: 'F' }), { k: 'gov', pres: 2, chanc: 6, law: 'L' }, ...Array(12).fill({ k: 'gov', pres: 0, chanc: 1, law: 'F' })] }));
+    eq(`rules are not forgotten: ${level} keeps a proven non-leader safe`, knownSafe.pH[6], 0);
+  }
+  for (const level of ['dificil', 'extremo']) {
+    const dangerous = view({ level, me: 4, pres: 4, chanc: 0, laws: { L: 1, F: 3 }, hist: [{ k: 'inv', by: 4, target: 0, party: 'F' }] });
+    eq(`voting: ${level} liberal president rechecks its dangerous chancellor`, Core.decide(dangerous, hi), 0);
+    const team = view({ level, me: 1, role: 'fascista', known: knowAll, laws: { L: 1, F: 3 }, chanc: 0 });
+    eq(`terminal election: ${level} never misses known leader on a noise draw`, [Core.decide(team, () => 0), Core.decide({ ...team, ask: 'nominate', options: [0, 3] }, () => 0)], [1, 0]);
+    eq(`execution: ${level} protects leader when only allies remain`, Core.decide({ ...team, ask: 'execute', options: [0, 2] }, () => 0), 2);
+    const hiddenAlly = view({ level, me: 0, role: 'hitler', known: ['hitler', null, null, null, null, null, null], hist: [{ k: 'inv', by: 0, target: 3, party: 'F' }], ask: 'nominate', options: [2, 3, 5] });
+    eq(`hidden leader: ${level} recruits an investigated ally`, [Core.decide(hiddenAlly, hi), Core.decide({ ...hiddenAlly, ask: 'special' }, hi)], [3, 3]);
+    eq(`hidden leader: ${level} supports an investigated ally's government`, Core.decide({ ...hiddenAlly, ask: 'vote', options: [0, 1], pres: 3, chanc: 5 }, hi), 1);
+    eq(`hidden leader: ${level} does not shoot an investigated ally`, Core.decide({ ...hiddenAlly, ask: 'execute', options: [3, 5] }, hi), 5);
+    const peekWin = view({ level, tracker: 2, pres: 3, chanc: 5, laws: { L: 4, F: 3 }, hist: [{ k: 'peek', by: 4, saw: deck('LFF') }] });
+    eq(`chaos: ${level} uses a private known winning top law`, Core.decide(peekWin, () => 0), 0);
+    const peekLose = { ...peekWin, laws: { L: 3, F: 5 }, hist: [{ k: 'inv', by: 4, target: 5, party: 'L' }, { k: 'peek', by: 4, saw: deck('FLL') }] };
+    eq(`chaos: ${level} elects a safe government to avoid a known losing top law`, Core.decide(peekLose, () => 0), 1);
+    for (const consumed of [{ k: 'chaos', law: 'F' }, { k: 'gov', pres: 3, chanc: 5, law: 'L' }, { k: 'veto', pres: 3, chanc: 5 }]) {
+      const stale = Core.decideWhy({ ...peekWin, hist: [...peekWin.hist, consumed] }, hi);
+      eq(`chaos: ${level} forgets stale peek after ${consumed.k}`, stale.why.text.some(t => t.includes('Viu a lei do topo')), false);
+    }
+    const publicPeek = Core.decideWhy({ ...peekWin, hist: [{ k: 'peek', by: 2, said: 2 }] }, hi);
+    eq(`chaos: ${level} never treats another player's claim as a private top card`, publicPeek.why.text.some(t => t.includes('Viu a lei do topo')), false);
+  }
   eq('a seat may have a level of its own (the measurements use it); a bad one is damage', [Core.viewOf({ ...sg, players: sg.players.map((p, i) => (i === 4 ? { ...p, level: 'facil' } : p)) }, 4, 'vote', [1, 0]).level, Core.viewOf(sg, 4, 'vote', [1, 0]).level, Core.readGame({ ...el, players: el.players.map(p => ({ ...p, level: 'x' })) })], ['facil', 'medio', null]);
   eq('the levels: fascists who think about how the table sees them only from the hard level up', Core.LEVELS.map(l => Core.AI[l].image > 0 && Core.AI[l].plan), [false, false, true, true]);
   eq('the levels: careless to careful, believing to doubting, and only the extreme counts the laws', [Core.LEVELS.map(l => Core.AI[l].noise > Core.AI.extremo.noise), Core.LEVELS.map(l => Core.AI[l].count), Core.AI.facil.lie < Core.AI.medio.lie && Core.AI.medio.lie < Core.AI.dificil.lie && Core.AI.dificil.lie < Core.AI.extremo.lie], [[true, true, true, false], [false, false, false, true], true]);
@@ -220,7 +273,8 @@ export default function cases(Core) {
   // whose turn
   eq('whose turn: players run by the app see their roles by themselves; a person sees theirs', [Core.botTurn(ai7({ phase: 'reveal', reveal: 0 })), Core.botTurn(ai7({ phase: 'reveal', reveal: 2 })).ask, Core.botStep(ai7({ phase: 'reveal', reveal: 2 }), rand).reveal], [null, 'reveal', 3]);
   eq('whose turn: the president tells first, then the chancellor, before the game goes on', [Core.botTurn(ai7({ phase: 'nominate', pres: 2, hist: [{ k: 'gov', pres: 5, chanc: 6, law: 'L', drew: deck('LLF'), got: deck('LL') }] })).seat, Core.botTurn(ai7({ phase: 'nominate', pres: 2, hist: [{ k: 'gov', pres: 5, chanc: 6, law: 'L', drew: deck('LLF'), got: deck('LL'), pc: 0 }] })).seat], [5, 6]);
-  eq('whose turn: the vote waits for the person; with no person left, the app votes alone', [Core.botTurn(ai7({ phase: 'vote', chanc: 4 })), Core.botTurn(ai7({ phase: 'vote', chanc: 4, players: ai7().players.map((p, i) => (i ? p : { ...p, alive: false })) })).ask], [null, 'votes']);
+  const settleCampaign = g => { for (let i = 0; i < Core.TALKS; i++) { if (Core.botTurn(g)?.ask === 'talk') g = Core.botStep(g, hi); } return g; };
+  eq('whose turn: after public campaigning the vote waits for people or runs alone', [Core.botTurn(settleCampaign(ai7({ phase: 'vote', chanc: 4 }))), Core.botTurn(settleCampaign(ai7({ phase: 'vote', chanc: 4, players: ai7().players.map((p, i) => (i ? p : { ...p, alive: false })) }))).ask], [null, 'votes']);
   eq('whose turn: a question with no possible answer is never asked', Core.botTurn(ai7({ phase: 'nominate', pres: 1, lastChanc: 2, players: ai7().players.map((p, i) => (i === 1 || i === 2 ? p : { ...p, alive: false })) })), null);
   eq('whose turn: nobody at a table of people only, nobody after the end', [Core.botTurn(base), Core.botTurn(ai7({ phase: 'over' })), Core.botStep(base, rand)], [null, null, null]);
   // whole games with only players run by the app: every step is a move the rules accept, and every game ends
@@ -291,7 +345,7 @@ export default function cases(Core) {
   /* the app players talk between rounds; the trainer; what they thought (D13) */
   const chat = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'rej', pres: 3, chanc: 4 }] });
   const first = Core.talker(chat);
-  eq('talk: once something happened, at the start of a round, an app player speaks; nobody before anything happened, nor out of the nomination', [first !== null && chat.players[first].ai === true, Core.talker(ai7({ phase: 'nominate', hist: [] })), Core.talker({ ...chat, phase: 'vote', chanc: 4 }), Core.botTurn(chat).ask], [true, null, null, 'talk']);
+  eq('talk: once something happened, at the start of a round, an app player speaks; after an event or during a public voting campaign', [first !== null && chat.players[first].ai === true, Core.talker(ai7({ phase: 'nominate', hist: [] })), Core.talker({ ...chat, phase: 'vote', chanc: 4 }) !== null, Core.botTurn(chat).ask], [true, null, true, 'talk']);
   const t1 = Core.talk(chat, first, 2 * 5), t2 = Core.talk(t1, Core.talker(t1), Core.QUIET);
   eq('talk: what is said goes in the log and the history; quiet leaves no line; at most TALKS a round, each once', [t1.log.at(-1), t1.hist.at(-1), t2.hist.at(-1).say, t2.log.length === t1.log.length, Core.talker(t2), Core.TALKS], [`${chat.players[first].name}: "Desconfio de Fê."`, { k: 'talk', by: first, about: 5, say: 'acc' }, 'quiet', true, null, 2]);
   eq('talk: only the one whose turn it is, about someone else in the game', [Core.talk(chat, first === 1 ? 2 : 1, 10) === chat, Core.talk(chat, first, 2 * first) === chat, Core.talk(chat, first, 2 * 5 + 1).log.at(-1).includes('Confio em Fê')], [true, true, true]);
@@ -311,6 +365,11 @@ export default function cases(Core) {
   const d1t = d1.hist.at(-1);
   eq('claim (D30): a person says what someone is; it goes in the log and the history, each app player still in the game answers in its own words, and the one claimed answers back', [d1.log.at(-7), d1.log.slice(-6, -1).every(l => /^\S+: ".+"$/.test(l)), d1.log.at(-1).startsWith('Bia: "'), d1.log.at(-1).includes('Não sou eu'), d1t.k, d1t.by, d1t.about, d1t.say, d1t.re.map(r => r[0]), d1t.re.every(r => [0, 1, 2].includes(r[1]))], ['Ana: "Bia é fascista."', true, true, false, 'talk', 0, 1, 'acc', [2, 3, 4, 5, 6], true]);
   eq('denounce: once a round for each one, only a person still in the game, about someone else in it; a new round opens it again', [Core.denounce(d1, 0, 1, true, Core.seeded(1)) === d1, Core.canDenounce(d1, 0, 2), Core.canDenounce(chat, 1, 2), Core.canDenounce(chat, 0, 0), Core.canDenounce({ ...chat, players: chat.players.map((p, i) => (i === 2 ? { ...p, alive: false } : p)) }, 0, 2), Core.canDenounce({ ...d1, hist: [...d1.hist, { k: 'rej', pres: 1, chanc: 2 }] }, 0, 1), Core.canDenounce({ ...chat, phase: 'over' }, 0, 1)], [true, true, false, false, false, true, false]);
+  const repeatedClaim = { ...d1, hist: [...d1.hist, { k: 'rej', pres: 1, chanc: 2 }] };
+  const repeatedDenounce = Core.denounce(repeatedClaim, 0, 1, false, hi);
+  eq('denounce: the table explicitly notices unsupported repetition', repeatedDenounce.log.some(l => l.includes('já acusou') || l.includes('fato novo')), true);
+  const reaction = Core.decideWhy(view({ persona: 'critico', ask: 'react', options: [0, 1, 2], hist: [speech, speech, speech] }), hi);
+  eq('react: insistence without evidence is challenged and explained', [reaction.a, reaction.why.text.some(t => t.includes('sem fato novo'))], [Core.REACT.disagree, true]);
   eq('claim: saying someone is liberal; what a person says does not take the turn of an app player to talk', [Core.denounce(chat, 0, 3, true, Core.seeded(2)).log.includes('Ana: "Duda é liberal."'), Core.talker(d1) !== null], [true, true]);
   const heard = (persona, about, hist) => Core.believe({ ...Core.viewOf(ai7({ hist }), 6, 'vote', [1, 0]), persona }).pF[about];
   const r0 = [{ k: 'rej', pres: 3, chanc: 4 }], acc5 = [...r0, { k: 'talk', by: 4, about: 5, say: 'acc' }];
@@ -352,6 +411,41 @@ export default function cases(Core) {
   const hf = Core.historyFile(hs, 'abc', 9);
   eq('history: the exported file says the app, the format, the version and when', [hf.app, hf.format, hf.version, hf.exported, hf.games.length], ['secret-hitler', 1, 'abc', 9, 1]);
 
+  const ownPeekBluff = view({ level: 'extremo', role: 'fascista', me: 1, known: knowAll, ask: 'pc', options: [0, 1, 2, 3], hist: [{ k: 'peek', by: 1, said: 2, saw: deck('FFL') }, { k: 'gov', pres: 1, chanc: 4, law: 'F', drew: deck('FFL'), got: deck('FF') }] });
+  eq('planned bluff honors its own recent peek declaration', [Core.decide(ownPeekBluff, () => 0), Core.decide(ownPeekBluff, hi)], [2, 2]);
+  const privateNotebookGame = { ...done, noteDetails: { 2: { reason: 'PRIVATE_REASON', kind: 'fact' } } };
+  eq('notebook reasons never enter a bot view', JSON.stringify(Core.viewOf(privateNotebookGame, 1, 'vote', [0, 1])).includes('PRIVATE_REASON'), false);
+  eq('government plan restores special-election order and skips eliminated seats', Core.governmentPlan(view({ pres: 5, alive: [true, true, true, false, true, true, true], hist: [{ k: 'special', by: 2, target: 5 }] }), 5, 4).next, 4);
+  const speechGame = ai7({ hist: [] });
+  const speechHist = [];
+  const variants = [];
+  for (let j = 0; j < 12; j++) {
+    speechHist.push({ k: 'gov', pres: 2, chanc: 3, law: 'F' });
+    speechHist.push({ k: 'talk', by: 0, about: 2, say: 'acc', re: [[1, 0]] });
+    variants.push(Core.reply({ ...speechGame, hist: [...speechHist] }, 1, 0, speechHist.length - 1));
+  }
+  eq('NPC reactions have varied lines without consecutive repetition', [new Set(variants).size >= 6, variants.every((v, i) => i === 0 || v !== variants[i - 1])], [true, true]);
+  const quotedAt = 3, quoted = Core.reply({ ...speechGame, hist: speechHist }, 1, 0, quotedAt);
+  eq('old NPC lines remain stable as history grows and hidden roles change', [Core.reply({ ...speechGame, hist: [...speechHist, { k: 'rej', pres: 2, chanc: 3 }] }, 1, 0, quotedAt), Core.reply({ ...speechGame, players: speechGame.players.map(p => ({ ...p, role: 'liberal' })), hist: speechHist }, 1, 0, quotedAt)], [quoted, quoted]);
+  // Rich notebook metadata stays private, bounded, and compatible with old party-only notes.
+  const nd = { 2: { reason: 'Aprovou uma lei e mudou a versão.', kind: 'fact' }, 3: { reason: 'Palpite', kind: 'guess' } };
+  eq('notebook details survive state and finished-game loading', [Core.readState({ noteDetails: nd }).noteDetails, Core.readGame({ ...done, noteDetails: nd }).noteDetails], [nd, nd]);
+  eq('notebook details sanitize malformed data and cap reasons', [Core.readState({ noteDetails: { 1: { reason: 'x'.repeat(400), kind: 'guess' }, 2: { reason: 7, kind: 'fact' }, bad: { reason: 'x', kind: 'guess' } } }).noteDetails[1].reason.length, Object.keys(Core.readState({ noteDetails: { 2: { reason: 7, kind: 'fact' } } }).noteDetails || {}).length], [280, 0]);
+  const socialHist = [{ k: 'talk', by: 0, about: 2, say: 'trust' }, { k: 'talk', by: 0, about: 2, say: 'acc' }];
+  const sm = Core.socialMemory(view({ hist: socialHist }), 0);
+  eq('social memory records accusations, defenses and unsupported reversals', [sm.accusations, sm.defenses, sm.reversals], [1, 1, 1]);
+  eq('a new relevant public fact justifies changing an opinion', Core.socialMemory(view({ hist: [socialHist[0], { k: 'gov', pres: 2, chanc: 3, law: 'F' }, socialHist[1]] }), 0).reversals, 0);
+  const reversed = Core.decideWhy(view({ ask: 'react', options: [0, 1, 2], hist: socialHist }), hi);
+  eq('the table challenges reversing a defense without evidence', [reversed.a, reversed.why.text.some(t => t.includes('defendeu'))], [Core.REACT.disagree, true]);
+  const plan = Core.governmentPlan(view({ level: 'extremo' }), 3, 5);
+  eq('government plan estimates a majority from public information', [Number.isFinite(plan.approval), plan.approval >= 0 && plan.approval <= 1, plan.voters, plan.majority, plan.next], [true, true, 7, 4, 4]);
+  eq('government support changes when living voters oppose a cabinet', Core.governmentPlan(view({ hist: [0, 1, 2, 6].map(by => ({ k: 'talk', by, about: 5, say: 'acc' })) }), 3, 5).approval < plan.approval, true);
+  const impact = Core.accusationFeedback(d1, d1.hist.length - 1);
+  eq('accusation feedback describes reactions without exposing hidden roles', [typeof impact, !/hitler|fascista|liberal|%/i.test(impact), impact.length > 0], ['string', true, true]);
+  const turning = Core.highlights({ ...done, hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'F', pc: 0, cc: 2 }, { k: 'exec', by: 3, target: 0, role: 'hitler' }] });
+  eq('final highlights explain contradiction and decisive elimination', [turning.some(x => x.kind === 'contradiction'), turning.some(x => x.kind === 'victory'), Core.highlights(el)], [true, true, []]);
+  const bluffView = view({ role: 'fascista', me: 1, known: knowAll, ask: 'pc', options: [0, 1, 2, 3], hist: [{ k: 'gov', pres: 1, chanc: 4, law: 'F', drew: deck('FLF'), got: deck('FF'), pc: 3 }] });
+  eq('a bluff does not change a claim already recorded for the same hand', [Core.decide(bluffView, () => 0), Core.decide(bluffView, hi)], [3, 3]);
   /* what is saved */
   eq('read state: a saved state comes back as it was', Core.readState(JSON.parse(JSON.stringify({ v: 1, names: NAMES, game: el, theme: 'dark' }))), { v: 1, names: NAMES, game: el, theme: 'dark' });
   eq('read state: what is not a state reads as an empty one', [null, 'x', 7, { names: 'no' }].map(x => Core.readState(x)), Array(4).fill({ v: 1, names: [], game: null }));

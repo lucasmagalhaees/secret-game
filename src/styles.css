@@ -519,7 +519,7 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .dlc-region.on{background-color:var(--fg);color:var(--surface)}
 
 /* the Yes vote wears the continent (D29): a little flag-like picture behind the word, which keeps its own plate so it reads */
-[data-region="brasil"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231f9a4b%22/%3E%3Cpath%20d%3D%22M60%204%20L114%2022%20L60%2040%20L6%2022Z%22%20fill%3D%22%23f2c230%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2222%22%20r%3D%2213%22%20fill%3D%22%232b4fa8%22/%3E%3Cpath%20d%3D%22M47%2020%20C56%2017%2066%2018%2073%2023%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222%22%20fill%3D%22none%22/%3E%3C/svg%3E");background-size:100% 100%}
+[data-region="brasil"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231f9a4b%22/%3E%3Cpath%20d%3D%22M60%204%20L114%2022%20L60%2040%20L6%2022Z%22%20fill%3D%22%23f2c230%22/%3E%3C/svg%3E");background-size:100% 100%}
 [data-region="americas"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%23c8553d%22/%3E%3Cpath%20d%3D%22M0%2014%20L10%206%20L20%2014%20L30%206%20L40%2014%20L50%206%20L60%2014%20L70%206%20L80%2014%20L90%206%20L100%2014%20L110%206%20L120%2014%20V30%20L110%2038%20L100%2030%20L90%2038%20L80%2030%20L70%2038%20L60%2030%20L50%2038%20L40%2030%20L30%2038%20L20%2030%20L10%2038%20L0%2030Z%22%20fill%3D%22%232a9d8f%22/%3E%3Cpath%20d%3D%22M0%2022%20H120%22%20stroke%3D%22%23f4a259%22%20stroke-width%3D%225%22/%3E%3C/svg%3E");background-size:100% 100%}
 [data-region="europa"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%231d3a6e%22/%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2210%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2214%22%20cy%3D%2234%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2228%22%20cy%3D%2222%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%22106%22%20cy%3D%2210%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%22106%22%20cy%3D%2234%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2292%22%20cy%3D%2222%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%228%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%228%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%2236%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3Ccircle%20cx%3D%2280%22%20cy%3D%2236%22%20r%3D%222.4%22%20fill%3D%22%23e8b730%22/%3E%3C/svg%3E");background-size:100% 100%}
 [data-region="asia"] .btn.vote.L{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20120%2044%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22120%22%20height%3D%2244%22%20fill%3D%22%23b8202b%22/%3E%3Cpath%20d%3D%22M0%2034%20C10%2026%2020%2026%2030%2034%20C40%2026%2050%2026%2060%2034%20C70%2026%2080%2026%2090%2034%20C100%2026%20110%2026%20120%2034%20V44%20H0Z%20M0%2012%20C10%204%2020%204%2030%2012%20C40%204%2050%204%2060%2012%20C70%204%2080%204%2090%2012%20C100%204%20110%204%20120%2012%20V0%20H0Z%22%20fill%3D%22%23e8b730%22/%3E%3C/svg%3E");background-size:100% 100%}
@@ -560,3 +560,48 @@ body:has(.dock-gap) .toast{bottom:calc(6px + env(safe-area-inset-bottom));z-inde
 .drawer .pen,.drawer .side .tell{width:30px;height:30px;min-height:0;padding:0;font-size:15px;border:2px solid currentColor;background:var(--surface);border-radius:4px;cursor:pointer}
 .drawer .pen.on{outline:2px solid var(--fg)}
 .drawer .side .told{width:30px}
+
+/* Public executive powers use neutral symbols; the investigation's result stays behind its gate. */
+.power-effect{position:fixed;left:0;right:0;top:calc(66px + env(safe-area-inset-top));z-index:61;padding:0 16px;pointer-events:none;display:flex;justify-content:center}
+.power-effect[hidden]{display:none}
+.power-card{display:flex;align-items:center;gap:12px;width:100%;max-width:420px;padding:8px 12px;background:var(--surface);color:var(--fg);border:3px solid var(--line);box-shadow:5px 5px 0 var(--line)}
+.power-mark{width:40px;height:40px;flex:none;transform-origin:center}
+.power-card small{display:block;font:700 12px/1.2 var(--display);text-transform:uppercase;letter-spacing:.08em}
+.power-card b{display:block;font:900 19px/1.2 var(--display);overflow-wrap:anywhere}
+.power-effect.go .power-card{animation:powerNotice 1.6s ease both}
+.power-effect.investigate.go .power-mark{animation:searchPower 1.4s ease-in-out both}
+.power-effect.execute{color:var(--fas)}
+.power-effect.execute .power-mark,.power-effect.execute small{color:var(--fas)}
+.power-effect.execute.go .power-mark{overflow:visible;animation:gunRecoil .8s ease-out both}
+.power-effect.execute.go b{background:linear-gradient(var(--fas),var(--fas)) left 55%/0 3px no-repeat;animation:strike .55s .25s ease-out forwards}
+@keyframes powerNotice{0%{opacity:0;transform:translateY(-20px)}15%,85%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-8px)}}
+@keyframes searchPower{0%,100%{transform:translateX(-5px) rotate(-12deg)}45%{transform:translateX(8px) rotate(10deg)}75%{transform:translateX(0) rotate(-5deg)}}
+@keyframes hammerPower{0%{transform:rotate(-50deg) scale(1.15)}50%{transform:rotate(14deg) scale(1)}70%{transform:rotate(-8deg)}100%{transform:rotate(0)}}
+[data-look="deco"] .power-card{border:1px solid var(--gold);box-shadow:0 0 0 3px var(--surface),0 0 0 4px var(--gold)}
+
+/* A private notebook with progressive disclosure keeps the mobile table readable. */
+#notes>li{display:block;padding:12px 0;border-bottom:1px solid var(--line)}
+.note-player{display:grid;gap:8px}
+.note-player .who{min-width:0;overflow-wrap:anywhere}
+.note-detail{margin-top:8px;font-size:14px}
+.note-detail summary{min-height:36px;cursor:pointer;padding:8px 0;color:var(--fg)}
+.note-detail label{display:block;margin:8px 0;font-weight:700}
+.note-detail textarea{box-sizing:border-box;width:100%;resize:vertical;min-height:72px;padding:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+.note-detail .segm{margin-top:8px}
+.note-detail .segm button,.sides .pen,.sides .tell{min-width:44px;min-height:44px}
+.note-facts{border-left:3px solid var(--muted);padding:8px 10px;margin-top:8px}
+.note-facts ul{margin:6px 0;padding-left:18px}
+.note-facts li{display:list-item;font-size:13px;border:0}
+.claim-impact{padding:10px;border-left:3px solid var(--accent);font-weight:700;line-height:1.4}
+.turning-points{padding-left:24px}.turning-points li{margin:14px 0}.turning-points p{margin:4px 0}
+button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.power-effect.investigate.go .power-mark{position:relative;z-index:1;animation:searchName 1.4s ease-in-out both}
+.power-effect.execute .muzzle,.power-effect.execute .smoke{opacity:0}
+.power-effect.execute.go .muzzle{animation:muzzleFlash .18s .2s ease-out both}
+.power-effect.execute.go .smoke{animation:gunSmoke .8s .3s ease-out both}
+@keyframes searchName{0%,100%{transform:translateX(0) rotate(-12deg)}45%{transform:translateX(74px) rotate(10deg)}75%{transform:translateX(25px) rotate(-5deg)}}
+@keyframes gunRecoil{0%,22%,100%{transform:translateX(0) rotate(0)}30%{transform:translateX(-7px) rotate(-12deg)}60%{transform:translateX(0) rotate(-2deg)}}
+@keyframes muzzleFlash{0%{opacity:0}30%,70%{opacity:1}100%{opacity:0}}
+@keyframes gunSmoke{0%{opacity:0;transform:translateY(0)}20%{opacity:.6}100%{opacity:0;transform:translateY(-14px)}}
+
+.drawer .note-player .sides{display:grid;grid-template-columns:1fr 1fr;width:100%;margin:0}
