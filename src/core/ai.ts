@@ -61,6 +61,8 @@ function knob(v: View): Knobs {
 }
 /** The answers to 'react' (D26). */
 export const REACT = { agree: 0, unsure: 1, disagree: 2 } as const;
+/** How much an answer to a claim weighs, against a talk of its own (D33): a little. */
+export const REACT_W = 0.3;
 /** The answer to 'talk' that means keeping quiet (D13). */
 export const QUIET = 1000;
 /** How far the temper of a player (View.mood, -1 to 1) moves the risk it accepts in a government. */
@@ -79,7 +81,11 @@ export const TEST_GUESS = 0.15;
 export const BOSS_CLEAN = 0.6;
 /** What the extreme level reads in the votes (D22): a fascist who knows the government has a teammate in it votes Ja
  *  this often; anyone else votes Ja about this often, whatever their side. */
-export const ALLY_JA = 0.8, ANY_JA = 0.6;
+export const ALLY_JA = 0.8, ANY_JA = 0.7;   // D33: people vote Ja about 74% of the time in the exported games
+/** Above this chance, as the table sees it, of being the hidden leader, a fascist waits to nominate him (D33). */
+export const HITLER_BURNT = 0.35;
+/** How often the hard level misses a decisive law (D33); the extreme never does. */
+export const DECISIVE_SLIP = 0.1;
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
 export const ALLY_PICK = 1.5;
@@ -145,7 +151,7 @@ export function governmentPlan(v: View, pres: number, chanc: number): { approval
     if (i === pres || i === chanc) return 0.9;
     const opinion = [...v.hist].reverse().find(e => e.k === 'talk' && e.by === i && (e.about === pres || e.about === chanc) && e.say !== 'quiet');
     const stance = opinion?.k === 'talk' ? opinion.say === 'acc' ? -0.18 : 0.12 : 0;
-    return Math.max(0.05, Math.min(0.95, 0.65 + 0.5 * (1 - (1 - base) ** 2 - r) + stance - (v.laws.F >= HITLER_ZONE ? 0.8 * b.pH[chanc] : 0)));
+    return Math.max(0.05, Math.min(0.95, 0.72 + 0.5 * (1 - (1 - base) ** 2 - r) + stance - (v.laws.F >= HITLER_ZONE ? 0.8 * b.pH[chanc] : 0)));
   });
   let counts = [1];
   for (const p of chances) {
@@ -350,6 +356,15 @@ export function believe(v: View, outside = false): Beliefs {
         const ear = PERSONA[outside ? 'centrado' : v.persona || 'centrado'];
         const reliability = 1 / (1 + 0.35 * social[e.by].contradictions + 0.5 * social[e.by].reversals);
         weight((2 * like) ** (TALK_W * reliability * (support[i] ? ear.proof : ear.ear)));
+        // how the table took it (D33): agreeing repeats the claim, disagreeing says the opposite, each a fraction of a
+        // talk, weighed by the credibility of who answered; the one claimed and this player's own answer do not count
+        for (const [r, a] of e.re || []) {
+          if (a === REACT.unsure || mine(r) || r === e.about) continue;
+          const says = (a === REACT.agree) === acc, rRight = fasc(roles[e.about]) === says, rLiar = fasc(roles[r]);
+          const rLike = rRight ? (rLiar ? 1 - TALK_LIE : 1 - SLIP_TALK) : rLiar ? TALK_LIE : SLIP_TALK;
+          const rRel = 1 / (1 + 0.35 * social[r].contradictions + 0.5 * social[r].reversals);
+          weight((2 * rLike) ** (TALK_W * REACT_W * rRel * ear.ear));
+        }
       } else if (e.k === 'special' && fresh && k.plan && !mine(e.by) && knowsTeam(e.by) && !fasc(roles[e.target])) {
         weight(0.5);                                                              // and hands the presidency to a teammate when it can
       }
@@ -466,7 +481,9 @@ function decideIn(v: View, rand: () => number): number {
   }
   if (k.plan && fasc(v.role)) {
     const leader = v.known.indexOf('hitler');
-    if (leader >= 0 && v.laws.F >= HITLER_ZONE && (v.ask === 'nominate' && o.includes(leader) || v.ask === 'vote' && v.chanc === leader && o.includes(1))) {
+    // patience (D33): nominate the leader at once only while the table does not suspect him; a burnt leader waits
+    const burnt = leader >= 0 && v.ask === 'nominate' && believe(v, true).pH[leader] > HITLER_BURNT;
+    if (leader >= 0 && v.laws.F >= HITLER_ZONE && (v.ask === 'nominate' && o.includes(leader) && !burnt || v.ask === 'vote' && v.chanc === leader && o.includes(1))) {
       why('Eleger o {boss} agora vence a partida: priorizou a vitória.');
       return v.ask === 'vote' ? 1 : leader;
     }
@@ -477,7 +494,8 @@ function decideIn(v: View, rand: () => number): number {
     }
   }
   // Planning levels never trade a decisive law for reputation or a random slip. Only use this seat's hand.
-  if (k.plan && (v.ask === 'pdiscard' || v.ask === 'cdiscard' || v.ask === 'veto')) {
+  // only the extreme level is sure every time; the hard one slips now and then (D33)
+  if (k.plan && (k.count || rand() >= DECISIVE_SLIP) && (v.ask === 'pdiscard' || v.ask === 'cdiscard' || v.ask === 'veto')) {
     const side: Party = fasc(v.role) ? 'F' : 'L', other: Party = side === 'F' ? 'L' : 'F';
     const own = v.hand.filter(l => l === side).length;
     let decisive = -1;
