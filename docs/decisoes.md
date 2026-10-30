@@ -426,6 +426,11 @@ Modelo de uma decisão:
 - **Contexto (30/10/2026):** "Quero um reputometro para cada integrante da mesa"; "Só a 1" (estrelas na faixa do topo).
 - **Decisão:** com a opção ligada em Mais opções (`S.rep`, desligada de início), cada nome vivo da faixa da mesa ganha de 1 a 3 estrelas (`reputation`), contadas só com o que a mesa viu: história que não fechou, acusação firme que a ata não sustentou, mudar de opinião sem fato novo.
 
+## D44. Votação na mesinha
+
+- **Contexto (30/10/2026):** "uma animação melhor para a votação, mostrando uma mesinha e os votos de cada um abrindo"; mockup aprovado.
+- **Decisão:** numa mesa com IA, depois da votação a tela mostra uma mesa verde com os lugares em ordem, cada voto virando por vez a partir do presidente, o placar somando no meio e o carimbo "ELEITO!" ou "REJEITADO!" (a mesa fica vermelha se o Hitler acabou de ser eleito chanceler na zona de perigo). O ritmo segue a velocidade da IA. A tela fecha sozinha e não segura toque. Com "reduzir movimento", só aparece o carimbo de sempre.
+
 ## Pendências
 
 | Pendência | Quem resolve |
