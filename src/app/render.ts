@@ -44,30 +44,25 @@ export function render(): void {
 /* ---------- D46: more motion, all of it about what the whole table already knows ----------
    Each effect only plays for what changed since the last paint of the same game; a page that is reloaded (or a game
    that is opened) shows how things are, without replaying anything. Overlays never take a tap (pointer-events:none)
-   and nothing waits for them. With less motion asked, only what is still (the tension border, the bubbles) shows. */
+   and nothing waits for them. With less motion asked, only what is still (the tension border) shows. */
 const still = (): boolean => matchMedia('(prefers-reduced-motion: reduce)').matches;
-let fxGame: Game | null = null, fxHist = 0, fxLog = 0, landed: Law | null = null;
-/** What each app player just said (D46): seat -> the excerpt and when it goes away. */
-const bubbles = new Map<number, { text: string; until: number; born: number }>();
+let fxGame: Game | null = null, fxHist = 0, landed: Law | null = null;
 function afterPaint(g: Game | null): void {
   const root = document.documentElement;
   // rising tension: from the danger zone on, the border of the screen glows red, more with each fascist law
   if (g && g.phase !== 'over' && g.laws.F >= Core.HITLER_ZONE) root.dataset.tension = String(Math.min(g.laws.F, 5)); else delete root.dataset.tension;
   ambient(!!g && g.phase !== 'over' && g.phase !== 'reveal', g?.phase === 'vote');
-  const same = !!g && !!fxGame && fxGame.players.length === g.players.length && fxGame.players.every((p, i) => p.name === g.players[i].name) && g.hist.length >= fxHist && g.log.length >= fxLog && fxGame.pack === g.pack;
-  if (!same) { bubbles.clear(); document.querySelectorAll('#seats .bubble').forEach(b => b.remove()); }
+  const same = !!g && !!fxGame && fxGame.players.length === g.players.length && fxGame.players.every((p, i) => p.name === g.players[i].name) && g.hist.length >= fxHist && fxGame.pack === g.pack;
   if (g && same) {
     for (const e of g.hist.slice(fxHist)) {
       if (e.k === 'chaos') chaosFx(e.law);
       else if (e.k === 'veto') tearFx();
       else if (e.k === 'special') ribbonFx(g, e.target);
     }
-    for (const line of g.log.slice(fxLog)) speak(g, line);
     if (landed) flyLaw(landed);
   }
-  fitBubbles();
   landed = null;
-  fxGame = g; fxHist = g ? g.hist.length : 0; fxLog = g ? g.log.length : 0;
+  fxGame = g; fxHist = g ? g.hist.length : 0;
 }
 /** A layer over the screen for one effect; it never takes a tap and removes itself. */
 function layer(cls: string, html: string, ms: number): HTMLElement {
@@ -113,29 +108,6 @@ function ribbonFx(g: Game, to: number): void {
 function sashOf(g: Game): number {
   for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'special') return e.target === g.pres ? e.target : -1; if (e.k === 'gov' || e.k === 'veto' || e.k === 'rej' || e.k === 'chaos') return -1; }
   return -1;
-}
-/** A line of the log said by an app player: a bubble over its name in the seats strip for a moment. */
-function speak(g: Game, line: string): void {
-  const by = g.players.findIndex(p => p.ai && (line.startsWith(p.name + ': "') || line.startsWith(p.name + ' disse que')));
-  if (by < 0) return;
-  const raw = line.slice(g.players[by].name.length).replace(/^:\s*/, '').replace(/^ disse que /, '').replace(/^"|"$/g, '');
-  const text = raw.length > 42 ? `${raw.slice(0, 40)}…` : raw, now = Date.now();
-  bubbles.set(by, { text, until: now + 2500, born: now });
-  const seat = document.querySelector(`#seats [data-seat="${by}"]`);
-  if (seat) { seat.querySelector('.bubble')?.remove(); seat.insertAdjacentHTML('beforeend', bubbleHtml(by, now)); fitBubbles(); }
-  setTimeout(() => { const b = bubbles.get(by); if (b && b.until <= Date.now()) { bubbles.delete(by); document.querySelector(`#seats [data-seat="${by}"] .bubble`)?.remove(); } }, 2550);
-}
-/** A bubble that would stick out of the screen is anchored to the other side of its seat. */
-function fitBubbles(): void {
-  for (const b of document.querySelectorAll<HTMLElement>('#seats .bubble')) {
-    const r = b.getBoundingClientRect(), seat = b.parentElement as HTMLElement;
-    if (r.right > document.documentElement.clientWidth - 4) seat.classList.add('rt'); else if (r.left < 4) seat.classList.remove('rt');
-  }
-}
-function bubbleHtml(i: number, now: number): string {
-  const b = bubbles.get(i);
-  if (!b || b.until <= now) return '';
-  return `<span class="bubble${now - b.born < 250 ? ' pop' : ''}" role="status">${esc(b.text)}</span>`;
 }
 /** The hidden leader was elected chancellor in the danger zone and the game is over: red screen and the leader yelling.
  *  The game is over: every role is open by then. */
@@ -597,11 +569,11 @@ function ledger(g: Game, i: number): string {
 function vSeats(g: Game): string {
   if (g.phase === 'reveal') return '';
   const kit = noteKit(g), me = solo(g), live = S.live && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
-  const sash = sashOf(g), now = Date.now();
+  const sash = sashOf(g);
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
     const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}${S.rep && p.alive ? (r => `<i class="rep r${r}" title="Reputação na mesa" aria-label="Reputação ${r} de 3">${'★'.repeat(r)}${'☆'.repeat(3 - r)}</i>`)(Core.reputation(g, i)) : ''}`;
-    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === sash ? ' sash' : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}${bubbleHtml(i, now)}</li>`;
+    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === sash ? ' sash' : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}</li>`;
   }).join('')}</ul>`;
 }
 /** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */
