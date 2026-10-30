@@ -212,6 +212,7 @@ export function initEvents(): void {
     else if (a === 'dlc') { if (valOf('#dlckey').trim().toLowerCase() === Core.DLC_KEY) { S.dlc = true; saveS(); render(); toast('DLC Brasil liberada: escolha "Brasil" nos nomes da IA.'); } else toast('Senha errada.'); }   // D27
     else if (a === 'region') setPack(S.pack, (Core.REGIONS as string[]).includes(d.v || '') ? d.v as Region : 'mundo');   // the app seats take names of that continent (D24)
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
+    else if (a === 'rep') { const next = { ...S }; if (d.v === 'on') next.rep = true; else delete next.rep; setS(next); saveS(); render(); }
     else if (a === 'gauge') { const next = { ...S }; if (d.v === 'on') next.gauge = true; else delete next.gauge; setS(next); saveS(); render(); }
     else if (a === 'coach') { const next = { ...S }; if (d.v === 'on') next.coach = true; else delete next.coach; setS(next); saveS(); render(); }
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }

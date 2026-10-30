@@ -325,6 +325,8 @@ with sync_playwright() as p:
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
     pg.locator('#seats [data-act=seatnote]').first.click(); assert pg.locator('#drawer').is_visible(), 'a seat opens the notebook (D34)'; pg.click('#notestoggle')
     assert pg.locator('#phase.mine').count() + pg.locator('#thinking').count() >= 1, 'your turn glows, or an app player is deciding (D34)'
+    # D43: reputation stars beside each name
+    pg.evaluate('window.__APP.S.rep = true'); pg.click('#livetoggle'); pg.click('#livetoggle'); assert pg.locator('#seats .rep').count() >= 5; pg.evaluate('delete window.__APP.S.rep')
     # D32: the suspicion gauge, switched on in the settings
     pg.evaluate('window.__APP.S.gauge = true'); pg.click('#livetoggle'); pg.click('#livetoggle')
     assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the gauge shows how much the table suspects the person'

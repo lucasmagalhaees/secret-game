@@ -741,3 +741,6 @@ body.shake{animation:shake .35s .7s}
 .contra .defend button small{font:400 12px/1.2 var(--font);color:#5b544b}
 .contra .defend b.ok{color:#8fd4a8;font-size:18px}.contra .defend b.no{color:#ff7a59;font-size:18px}
 .contra .defend p{margin:0}
+/* reputation at the table (D43): stars beside each name */
+.seat .rep{font-style:normal;letter-spacing:-1px;font-size:11px;color:#e8b730;background:none;border:0;padding:0}
+.seat .rep.r1{color:var(--fas)}

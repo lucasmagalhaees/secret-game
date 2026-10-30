@@ -416,6 +416,16 @@ Modelo de uma decisão:
 - **Contexto (30/10/2026):** "Do ui/ux faz a 5 e 6" (compartilhar o resultado, conquistas) e o caderno com nomes desalinhados.
 - **Decisão:** no fim, "Sua partida" mostra as conquistas desta partida (`ACHIEVEMENTS`, `achievements`: primeira vitória, líder invisível, caçador, caderno perfeito, CONTRADIÇÃO!, mesa dura, sem rastro) e quantas de todas a pessoa já tem nas partidas guardadas, e um botão "Compartilhar resultado" desenha uma imagem (quem venceu, o papel, o caderno, as conquistas) e manda pelo compartilhar do celular, ou baixa. No caderno, todo nome fica na própria linha, acima das duas colunas, para nomes curtos e longos ficarem iguais.
 
+## D42. Eliminação numa tela só; defesa na tela da acusação
+
+- **Contexto (30/10/2026):** "A animação de eliminação tá estranha, bugada"; "A defesa da acusação precisa melhorar e poderia ser na mesma tela de acusação".
+- **Decisão:** a eliminação tinha duas animações ao mesmo tempo (o cartão "Eliminado da mesa" e a tela escura); ficou só a tela escura, sólida e acima de tudo. Quando uma IA acusa a pessoa, abre a tela da acusação ("ACUSAÇÃO!", ou "CONTRADIÇÃO!" se a prova segura) com as respostas ali mesmo, só as que a ata poderia sustentar, cada uma dizendo quando cola; o resultado aparece na mesma tela.
+
+## D43. Reputômetro
+
+- **Contexto (30/10/2026):** "Quero um reputometro para cada integrante da mesa"; "Só a 1" (estrelas na faixa do topo).
+- **Decisão:** com a opção ligada em Mais opções (`S.rep`, desligada de início), cada nome vivo da faixa da mesa ganha de 1 a 3 estrelas (`reputation`), contadas só com o que a mesa viu: história que não fechou, acusação firme que a ata não sustentou, mudar de opinião sem fato novo.
+
 ## Pendências
 
 | Pendência | Quem resolve |
