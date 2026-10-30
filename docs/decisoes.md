@@ -431,6 +431,12 @@ Modelo de uma decisão:
 - **Contexto (30/10/2026):** "uma animação melhor para a votação, mostrando uma mesinha e os votos de cada um abrindo"; mockup aprovado.
 - **Decisão:** numa mesa com IA, depois da votação a tela mostra uma mesa verde com os lugares em ordem, cada voto virando por vez a partir do presidente, o placar somando no meio e o carimbo "ELEITO!" ou "REJEITADO!" (a mesa fica vermelha se o Hitler acabou de ser eleito chanceler na zona de perigo). O ritmo segue a velocidade da IA. A tela fecha sozinha e não segura toque. Com "reduzir movimento", só aparece o carimbo de sempre.
 
+## D45. Animações: a votação não entrega antes, o tiro trinca a tela, acusações no fim
+
+- **Contexto (30/10/2026):** "O som entrega antes do que a animação"; "a eliminação ... deveria ter uma arma atirando, como se fosse a tela trincando"; "falta as minhas acusações repercutirem ali nas minhas jogadas boas".
+- **Decisão:** com a mesinha, o carimbo, o som, o anúncio da lei e o fim de jogo só vêm depois da última carta virar; nesse tempo os toques esperam. A mesa entra e sai com transição, e só fica vermelha (Hitler eleito na zona de perigo) no fim. Na eliminação, um clarão de tiro, a tela trinca a partir do impacto e depois vêm o nome, o carimbo e a carta; treme a página, não a tela inteira. No fim, as acusações da pessoa e as defesas dela entram nas jogadas boas e ruins, julgadas por quem o acusado era e pelo que a ata sustentava.
+- **Já era assim, conferido no código:** as IAs votam sem ver o voto de ninguém (`castVotes` pergunta a cada uma antes de registrar qualquer voto). Uma acusação mexe nas contas das IAs e, por isso, nas votações seguintes (pesa o dobro com prova que segura), enquanto aquela IA lembrar dela.
+
 ## Pendências
 
 | Pendência | Quem resolve |

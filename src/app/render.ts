@@ -721,10 +721,11 @@ export function stamp(text: string, party: Party): void {
  *  vibrate). Without a name, only the dark. */
 export function flash(who = '', wasBoss = false): void {
   const f = part('flash');
-  f.innerHTML = who ? `<div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span><span class="exec-card ${wasBoss ? 'boss' : ''}">${wasBoss ? `Era o ${W.boss}!` : `Não era o ${W.boss}`}</span></div>` : '';
+  // a shot (D45): the muzzle flashes, the screen cracks from where it hit, then the name and the stamp
+  f.innerHTML = who ? `<div class="muzzle"></div><svg class="crack" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M230 300 L305 299 L378 277 L454 290 L528 275 M230 300 L326 320 L417 358 L517 362 L613 385 M230 300 L314 384 L394 472 L450 580 L494 695 M230 300 L238 390 L285 473 L261 571 L320 652 M230 300 L225 372 L202 443 L221 518 L190 588 M230 300 L171 367 L128 446 L77 519 L16 585 M230 300 L146 339 L57 368 L-26 410 L-105 459 M230 300 L120 297 L10 277 L-100 269 L-205 222 M230 300 L162 250 L78 231 L9 180 L-50 117 M230 300 L155 239 L100 157 L40 81 L-37 19 M230 300 L224 215 L215 130 L206 45 L188 -39 M230 300 L270 180 L320 64 L313 -70 L415 -171 M230 300 L322 209 L390 96 L477 0 L586 -76 M230 300 L304 241 L377 180 L448 117 L558 109 M270 304 L264 321 L252 334 L235 340 L217 338 L202 329 L192 314 L190 296 L196 279 L208 266 L225 260 L243 262 L258 271 L268 286 L270 304 M325 309 L311 350 L282 380 L242 394 L200 390 L164 368 L141 332 L135 291 L149 250 L178 220 L218 206 L260 210 L296 232 L319 268 L325 309"/><circle cx="230" cy="300" r="9"/></svg><div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span><span class="exec-card ${wasBoss ? 'boss' : ''}">${wasBoss ? `Era o ${W.boss}!` : `Não era o ${W.boss}`}</span></div>` : '';
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
-  if (who) { document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake'); }
-  setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 3200 : 900);
+  if (who) { const v = part('view'); v.classList.remove('shake'); void v.offsetWidth; v.classList.add('shake'); }   // the page under it shakes, not the body: a moved body would carry the fixed screens with it
+  setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 3700 : 900);
 }
 /** A law has just been enacted: who made it, over the screen for a moment (D11). The text comes from the code and the
  *  names go through esc(). */
@@ -812,24 +813,26 @@ export function defenseResult(ok: boolean, kind: string): void {
 /** The votes at a little table (D44): every seat in its place around a green table, each vote turning over in turn,
  *  the count adding up in the middle, then ELEITO! or REJEITADO! (the table goes red when the hidden leader was just
  *  elected chancellor in the danger zone). It closes by itself and never takes a tap. With less motion asked, only the stamp shows. */
-export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boolean, step: number): void {
+export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boolean, step: number): number {
   const alive = g.players.map((p, i) => (p.alive ? i : -1)).filter(i => i >= 0), n = g.players.length, me = solo(g);
   const order = [...alive.slice(alive.indexOf(e.pres)), ...alive.slice(0, alive.indexOf(e.pres))];
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, gap = step;
-  if (calm) return;   // with less motion asked, the stamp says it already
+  if (calm) return 0;   // with less motion asked, the stamp says it already
   const danger = elected && g.players[e.chanc]?.role === 'hitler' && g.laws.F >= Core.HITLER_ZONE;
   const R = 112, seats = alive.map(i => {
     const a = -Math.PI / 2 + (2 * Math.PI * i) / n, ja = e.ja.includes(i), k = order.indexOf(i);
-    return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div><b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
+    return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${450 + k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div><b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
   }).join('');
   const el = document.createElement('div');
-  el.className = `ballot${danger ? ' danger' : ''}`; el.id = 'ballot';
-  el.innerHTML = themed(`<p class="b-q"><b>${name(g, e.pres)}</b> presidente + <b>${name(g, e.chanc)}</b> chanceler</p><div class="b-table"><div class="b-felt"></div>${seats}<div class="b-center"><b class="b-score"><span class="g">0</span> × <span class="r">0</span></b><b class="b-stamp ${elected ? 'L' : 'F'}" style="animation-delay:${alive.length * gap}ms">${elected ? 'Eleito!' : 'Rejeitado!'}</b></div></div>`, W as unknown as Record<string, string>);
+  el.className = `ballot${danger ? ' danger' : ''}`; el.id = 'ballot'; el.style.setProperty('--danger-at', `${450 + alive.length * gap + 200}ms`);
+  el.innerHTML = themed(`<p class="b-q"><b>${name(g, e.pres)}</b> presidente + <b>${name(g, e.chanc)}</b> chanceler</p><div class="b-table"><div class="b-felt"></div>${seats}<div class="b-center"><b class="b-score"><span class="g">0</span> × <span class="r">0</span></b><b class="b-stamp ${elected ? 'L' : 'F'}" style="animation-delay:${450 + alive.length * gap + 200}ms">${elected ? 'Eleito!' : 'Rejeitado!'}</b></div></div>`, W as unknown as Record<string, string>);
   document.getElementById('ballot')?.remove();
   document.body.appendChild(el);
   const g1 = el.querySelector<HTMLElement>('.b-score .g'), r1 = el.querySelector<HTMLElement>('.b-score .r');
   let y = 0, no = 0;
-  order.forEach((i, k) => setTimeout(() => { if (e.ja.includes(i)) y++; else no++; if (g1) g1.textContent = String(y); if (r1) r1.textContent = String(no); }, k * gap + 250));
-  const close = (): void => { el.remove(); };
-  setTimeout(close, alive.length * gap + 2200);
+  order.forEach((i, k) => setTimeout(() => { if (e.ja.includes(i)) y++; else no++; if (g1) g1.textContent = String(y); if (r1) r1.textContent = String(no); }, 450 + k * gap + 250));
+  // the table comes in, the cards turn, the stamp lands and stays a moment, then the table leaves (D45)
+  const shown = 450 + alive.length * gap + 1100;
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 450); }, shown);
+  return shown;
 }
