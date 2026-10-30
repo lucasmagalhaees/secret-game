@@ -176,7 +176,10 @@ function askOrientation(): void {
 
 export function initEvents(): void {
   document.addEventListener('click', e => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
+    // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
+    const tgt = e.target as HTMLElement;
+    if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote]')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
+    const b = tgt.closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     // Safari may leave a textarea focused when tapping a button. Commit its text and allow the repaint.
     blurField();
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
@@ -209,7 +212,7 @@ export function initEvents(): void {
     else if (a === 'update') applyUpdate();
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
-    else if (a === 'help') { ui.help = !ui.help; render(); }
+    else if (a === 'help') { ui.help = !ui.help; render(); tick(); }
     else if (a === 'allplays') { ui.allPlays = !ui.allPlays; render(); }
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
