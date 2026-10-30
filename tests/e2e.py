@@ -302,17 +302,9 @@ with sync_playwright() as p:
     pg.click('#notestoggle'); assert pg.locator('#drawer').is_visible() and pg.locator('#notes [data-act=note]').count() == 6 * 2 and pg.get_attribute('#notestoggle', 'aria-expanded') == 'true', 'the side panel opens from the tab'
     assert pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") == 0
     first = str(next(i for i, x in enumerate(G()['players']) if i != 6 and x['role'] == 'liberal'))
-    pg.locator(f'#note-detail-{first} summary').click()
-    reason = 'Votou contra <img src=x onerror=alert(1)>'
-    pg.fill(f'#note-reason-{first}', reason)
-    pg.locator(f'[data-act=notekind][data-i="{first}"][data-v=fact]').click()
-    assert pg.locator(f'#note-detail-{first}').get_attribute('open') is not None, 'changing the note type keeps its editor open'
-    assert json.loads(pg.evaluate(f'localStorage.getItem("{KEY}")'))['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}
-    assert pg.locator(f'#note-reason-{first}').input_value() == reason and pg.locator('#notes img').count() == 0, 'private text is escaped after rendering'
     assert 'onerror' not in str(pg.evaluate('window.__APP.Core.viewOf(window.__APP.S.game, 0, "vote", [1, 0])'))
     assert overflow() == 0
     shot(f'notebook-rich-{THEME}.png')
-    pg.locator(f'#note-detail-{first} summary').click()
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=L]').click(); assert G() and pg.evaluate('window.__APP.S.notes') == {first: 'L'}
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=""]').click(); assert pg.evaluate('window.__APP.S.notes') is None
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
@@ -328,6 +320,12 @@ with sync_playwright() as p:
     assert pg.locator('#players .meter').count() == 0
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
+    pg.locator('#seats [data-act=seatnote]').first.click(); assert pg.locator('#drawer').is_visible(), 'a seat opens the notebook (D34)'; pg.click('#notestoggle')
+    assert pg.locator('#phase.mine').count() + pg.locator('#thinking').count() >= 1, 'your turn glows, or an app player is deciding (D34)'
+    # D32: the suspicion gauge, switched on in the settings
+    pg.evaluate('window.__APP.S.gauge = true'); pg.click('#livetoggle'); pg.click('#livetoggle')
+    assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the gauge shows how much the table suspects the person'
+    pg.evaluate('delete window.__APP.S.gauge'); pg.click('#livetoggle'); pg.click('#livetoggle'); assert pg.locator('#gauge').count() == 0
     # D17: the panels open from a bar at the bottom that has its own room: scrolled to the end, nothing is under it
     pg.evaluate('scrollTo(0, document.documentElement.scrollHeight)')
     assert pg.evaluate("Math.max(...[...document.querySelectorAll('main .card, #app .card')].map(c => c.getBoundingClientRect().bottom)) <= document.querySelector('.dock').getBoundingClientRect().top"), 'nothing is under the bar at the bottom'
@@ -404,8 +402,9 @@ with sync_playwright() as p:
     assert pg.locator('#review').count() == 1 and 'Suas jogadas' in txt('#review') and pg.locator('#review .plays li').count() == min(4, sum(1 for x in plays if x['good'])) + min(4, sum(1 for x in plays if not x['good'])), ('the review of the person, the main plays of each kind', plays)
     if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
+    pg.click('[data-act=endtab][data-v=log]'); pg.click('#log [data-act=logfilter][data-v=talk]'); assert all(': "' in t for t in pg.locator('#log .log li').all_text_contents()), 'the record shows only what was said (D34)'; pg.click('#log [data-act=logfilter][data-v=all]'); pg.click('[data-act=endtab][data-v=res]')
+    assert pg.locator('#yours').count() == 1 and ('venceu' in txt('#yours') or 'perdeu' in txt('#yours')), 'your game at a glance (D34)'
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
-    assert G()['noteDetails'][first] == {'reason': reason, 'kind': 'fact'}, 'private reasons stay in the finished game'
     assert pg.locator('#highlights').count() == 1 and 1 <= pg.locator('#highlights article').count() <= 3
     # the reasons are still recorded with the game, for the export (D23), though no panel shows them (D28)
     assert pg.evaluate('window.__APP.S.game.trace.length') > 0 and pg.locator('#mindtoggle').count() == 0

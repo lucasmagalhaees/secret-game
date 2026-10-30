@@ -1,7 +1,7 @@
 import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
-import { buzz, later, sound } from './fx';
+import { buzz, later, reactions, sound } from './fx';
 import { beat, blurField, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
@@ -191,10 +191,11 @@ export function initEvents(): void {
     else if (a === 'dlc') { if (valOf('#dlckey').trim().toLowerCase() === Core.DLC_KEY) { S.dlc = true; saveS(); render(); toast('DLC Brasil liberada: escolha "Brasil" nos nomes da IA.'); } else toast('Senha errada.'); }   // D27
     else if (a === 'region') setPack(S.pack, (Core.REGIONS as string[]).includes(d.v || '') ? d.v as Region : 'mundo');   // the app seats take names of that continent (D24)
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
+    else if (a === 'gauge') { const next = { ...S }; if (d.v === 'on') next.gauge = true; else delete next.gauge; setS(next); saveS(); render(); }
     else if (a === 'coach') { const next = { ...S }; if (d.v === 'on') next.coach = true; else delete next.coach; setS(next); saveS(); render(); }
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
-    else if (a === 'start') start();
+    else if (a === 'start' || a === 'quickstart') start();
     else if (a === 'gallery') { ui.gallery = !ui.gallery; render(); scrollTo(0, 0); }   // every drawing (D25)
     else if (a === 'exportgames') void exportGames();
     else if (a === 'wipe') { if (ui.confirmWipe) { ui.confirmWipe = false; wipe(); } else ui.confirmWipe = true; render(); }
@@ -213,10 +214,12 @@ export function initEvents(): void {
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
     else if (a === 'diary') { ui.diary = !ui.diary; if (ui.diary) { delete S.notesOpen; saveS(); } render(); const diary = $('#diary'); if (ui.diary && diary) diary.scrollTop = diary.scrollHeight; }
+    else if (a === 'logfilter') { ui.logFilter = d.v === 'talk' || d.v === 'gov' ? d.v : 'all'; render(); }
+    else if (a === 'seatnote') { ui.diary = false; const next = { ...S, notesOpen: true as const }; setS(next); saveS(); render(); document.getElementById(`note-row-${i}`)?.scrollIntoView({ block: 'center' }); }
     else if (a === 'notesopen') { ui.diary = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
-    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); }
+    else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); const t = next.hist[next.hist.length - 1]; if (t && t.k === 'talk' && t.re) reactions(t.re.map(r => r[1])); }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
     else if (a === 'hiderole') play(Core.revealNext(g));

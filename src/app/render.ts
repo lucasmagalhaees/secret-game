@@ -30,9 +30,12 @@ export function render(): void {
   const expanded = [...view.querySelectorAll<HTMLDetailsElement>('.note-detail[open]')].map(d => d.id);
   const diaryScroll = document.getElementById('diary')?.scrollTop ?? 0;
   const keep = document.getElementById('drawer')?.scrollTop ?? 0;   // repainting must not scroll the notebook back up
-  view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
+  view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vQuick() + vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
   for (const id of expanded) { const detail = document.getElementById(id); if (detail instanceof HTMLDetailsElement) detail.open = true; }
   const dr = document.getElementById('drawer'); if (dr) dr.scrollTop = keep;
+  // the needle swings from where it was to the new reading (D32)
+  const needle = view.querySelector<SVGGElement>('#gauge .needle');
+  if (needle) { const to = Number(needle.dataset.to); requestAnimationFrame(() => { needle.style.transform = `rotate(${to}deg)`; }); gaugeAt = to; }
   const diary = document.getElementById('diary'); if (diary) diary.scrollTop = diaryScroll;
 }
 
@@ -57,6 +60,20 @@ const law = (l: Law, k?: number): string => {
 };
 
 /* ---------- before the game: the table ---------- */
+/** Play again at once (D34): with a table that is ready, one big button with the last setup, before anything else. */
+function vQuick(): string {
+  const n = S.names.length, people = S.names.filter((_, i) => !S.ai?.[i]).length;
+  if (n < Core.MIN_PLAYERS || !people || S.game) return '';
+  const lv = LEVEL[(S.level || 'medio') as Level][0], where = Core.REGION_NAMES[S.region || 'mundo'];
+  return `<section class="card quick" id="quick"><button class="btn block big" data-act="quickstart" id="quickstart">▶ Jogar agora</button><p class="hint">${n} lugares${S.ai?.some(Boolean) ? ` · IA ${lv.toLowerCase()}` : ''} · ${Core.WORDS[S.pack || 'fascismo'].theme} · ${where}</p></section>`;
+}
+/** Your game at a glance, at the top of the result (D34): won or lost, with what role, and how the notebook did. */
+function vYours(g: Game): string {
+  const me = solo(g);
+  if (me < 0 || !g.winner) return '';
+  const p = g.players[me], won = Core.partyOf(p.role) === g.winner, sc = g.notes ? Core.notesScore(g, me) : null, n = sc ? sc.right.length + sc.wrong.length : 0;
+  return `<section class="card yours ${won ? 'won' : 'lost'}" id="yours"><p class="big">${won ? '🏆 Você venceu' : '💀 Você perdeu'}</p><p>Você era <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>${n ? ` · caderno: <b>${sc?.right.length}</b> de ${n} certas` : ''}</p></section>`;
+}
 function vTable(): string {
   const names = S.names, n = names.length;
   let h = `<section class="card" id="table"><span class="label">Mesa (${Core.MIN_PLAYERS} a ${Core.MAX_PLAYERS} jogadores)</span>`;
@@ -79,6 +96,7 @@ function vMore(): string {
     <p class="hint" id="traintext">${S.train ? `Você vai ser ${role(S.train).toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
     <p class="hint">Velocidade da IA</p><div class="segm" role="group" aria-label="Velocidade da IA">${(['lenta', 'normal', 'rapida'] as const).map(v => `<button class="${(S.speed || 'normal') === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${(S.speed || 'normal') === v}">${{ lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' }[v]}</button>`).join('')}</div>
     <p class="hint">Dicas do treinador</p><div class="segm" role="group" aria-label="Dicas do treinador"><button class="${S.coach ? '' : 'on'}" data-act="coach" data-v="off" aria-pressed="${!S.coach}">Desligadas</button><button class="${S.coach ? 'on' : ''}" data-act="coach" data-v="on" aria-pressed="${!!S.coach}">Ligadas</button></div>
+    <p class="hint">Desconfiômetro</p><div class="segm" role="group" aria-label="Desconfiômetro"><button class="${S.gauge ? '' : 'on'}" data-act="gauge" data-v="off" aria-pressed="${!S.gauge}">Desligado</button><button class="${S.gauge ? 'on' : ''}" data-act="gauge" data-v="on" aria-pressed="${!!S.gauge}" id="gaugeon">Ligado</button></div>
     <p class="hint">${S.coach ? 'Depois de cada governo, o treinador faz as contas com o que só você sabe: a chance da mão que o presidente disse, se as falas fecham, e quem parece mais {f}.' : 'Ligadas, o treinador explica o que dá para tirar de cada governo.'}</p>
     <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
     <p class="hint">${S.assist ? 'A ata mostra cada lei, quem governou e quem votou {ja} no governo que a aprovou, e soma por jogador. Só o que a mesa toda viu.' : 'Ligada, a partida ganha uma ata com quem aprovou cada lei.'}</p>
@@ -105,7 +123,7 @@ function vPack(): string {
     <p class="hint" id="packtext">${cur === 'comunismo' ? 'Os comunistas são o time escondido e o Stalin é o líder deles. Vota-se Da! ou Niet!. As regras são as mesmas; as IAs ganham nomes de liberais e comunistas.' : 'O jogo original: os fascistas são o time escondido e o Hitler é o líder deles.'}</p>
     <p class="hint">Nomes da IA</p><div class="segm regions" role="group" aria-label="Nomes da IA">${Core.REGIONS.filter(r => r !== 'brasil').map(r => `<button class="${(S.region || 'mundo') === r ? 'on' : ''}" data-act="region" data-v="${r}" aria-pressed="${(S.region || 'mundo') === r}">${Core.REGION_NAMES[r]}</button>`).join('')}</div>
     ${S.dlc ? `<button class="btn ghost block dlc-region${S.region === 'brasil' ? ' on' : ''}" data-act="region" data-v="brasil" aria-pressed="${S.region === 'brasil'}">Brasil · DLC</button>` : ''}
-    <p class="hint" id="regiontext">Figuras conhecidas ${({ mundo: 'do mundo todo', americas: 'das Américas', europa: 'da Europa', asia: 'da Ásia', africa: 'da África', oceania: 'do mundo todo (da Oceania, só os bichos)', brasil: 'do Brasil (DLC)' } as const)[S.region || 'mundo']}, dos dois lados misturados. O nome é só apelido de jogo: o papel é sorteado, e quem tem nome de liberal pode ser o {boss}.</p><button class="more" data-act="gallery" id="gallerytoggle">Ver todos os desenhos ▸</button>
+    <p class="hint" id="regiontext">Votos: <b>${Core.words(S.pack, S.region).ja}</b> / <b>${Core.words(S.pack, S.region).nein}</b>. Figuras conhecidas ${({ mundo: 'do mundo todo', americas: 'das Américas', europa: 'da Europa', asia: 'da Ásia', africa: 'da África', oceania: 'do mundo todo (da Oceania, só os bichos)', brasil: 'do Brasil (DLC)' } as const)[S.region || 'mundo']}, dos dois lados misturados. O nome é só apelido de jogo: o papel é sorteado, e quem tem nome de liberal pode ser o {boss}.</p><button class="more" data-act="gallery" id="gallerytoggle">Ver todos os desenhos ▸</button>
     ${S.dlc ? '<p class="hint" id="dlcon">DLC Brasil liberada.</p>' : `<details class="dlc" id="dlc"><summary>Tem uma senha?</summary><div class="row"><div class="field"><input id="dlckey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="senha" aria-label="Senha da DLC"></div><button class="btn" data-act="dlc" id="dlcgo">Liberar</button></div></details>`}</section>`;
 }
 /** Every drawing of the game (D25): each continent, each theme, the liberal, the member of the hidden side and its
@@ -143,15 +161,17 @@ function vGame(g: Game): string {
   const acting = bot && !side.includes(bot.ask) ? bot : under && under.ask !== 'votes' && g.players[under.seat]?.ai ? under : null;
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
   // what the person has to do comes first; what helps them decide (their claim, the trainer) right after it
-  const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`);
+  // your turn stands out (D34): the phase a person must act on glows; an app player's stays calm
+  const mine = !acting && g.phase !== 'over' && !!under && !g.players[under.seat]?.ai && Core.hasAi(g);
+  const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}${mine ? ' mine' : ''}`);
   if (g.phase === 'over') {
     // the end, in tabs (D18): the result first; the whole game and the record one tap away
     const tabs: [EndTab, string][] = [['res', 'Resultado'], ['jogo', 'Resumo'], ['log', 'Registro']];
     const bar = `<div class="segm endtabs" role="tablist" aria-label="Fim de jogo">${tabs.map(([k, l]) => `<button role="tab" id="tab-${k}" class="${ui.endTab === k ? 'on' : ''}" data-act="endtab" data-v="${k}" aria-selected="${ui.endTab === k}">${l}</button>`).join('')}</div>`;
-    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
+    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vYours(g) + vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
     return card + bar + body + vDock(g);
   }
-  return vUndo() + vStatus(g) + vSeats(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
+  return vUndo() + vStatus(g) + vSeats(g) + vGauge(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -267,6 +287,16 @@ function vPlayers(g: Game): string {
 }
 /** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
 let liveCache: { key: string; rows: { seat: number; f: number }[] } | null = null;
+/** The suspicion gauge (D32): like an oil gauge, a needle from 0 to 100 with how much the app players suspect the person
+ *  now, on average (the same reckoning as the live bars). Only alone at the table, and only when switched on. */
+let gaugeAt = -90;
+function vGauge(g: Game): string {
+  const me = solo(g);
+  if (!S.gauge || me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';
+  const rows = liveSuspicion(g, me), v = rows.length ? rows.reduce((a, r) => a + r.f, 0) / rows.length : 0, deg = -90 + 180 * v;
+  const word = v < 0.35 ? 'tranquilo' : v < 0.6 ? 'de olho' : 'na mira';
+  return `<div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Desconfiômetro"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 43 15" stroke="#3aa05a" stroke-width="10" fill="none"/><path d="M43 15 A50 50 0 0 1 77 15" stroke="#e8b730" stroke-width="10" fill="none"/><path d="M77 15 A50 50 0 0 1 110 62" stroke="#d63c2b" stroke-width="10" fill="none"/><g class="needle" data-to="${deg.toFixed(1)}" style="transform:rotate(${gaugeAt.toFixed(1)}deg)"><path d="M60 62 L58 20 L60 14 L62 20Z" fill="currentColor"/></g><circle cx="60" cy="62" r="5" fill="currentColor"/></svg><span><small>Desconfiômetro</small><b>${pct(v)}</b> ${word}</span></div>`;
+}
 function liveSuspicion(g: Game, me: number): { seat: number; f: number }[] {
   const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => `${p.name}${p.alive ? 1 : 0}`).join()}`;
   if (!liveCache || liveCache.key !== key) liveCache = { key, rows: Core.suspicion(g, me) };
@@ -443,7 +473,7 @@ function vSeats(g: Game): string {
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
     const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}`;
-    return `<li class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}">${esc(p.name)}${tags}</li>`;
+    return `<li class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}</li>`;
   }).join('')}</ul>`;
 }
 /** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */
@@ -510,27 +540,18 @@ function vDrawer(g: Game): string {
   // a claim to the table (D30): what the notebook says of someone, true or a bluff; the app players weigh it like any talk
   const claimed = (i: number): Law | '' => kit.party(i);
   // one column per side (D30): 🗒️ marks what you think (only you see it), 📣 tells the table, true or a bluff
-  const noteIcon = (megaphone: boolean): string => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${megaphone ? '<path d="M3 9h5l11-5v16L8 15H3zM8 15l2 6H6l-2-6M22 9v6"/>' : '<path d="M5 3h14v18H5zM9 7h6M9 11h6M9 15h4"/>'}</svg>`;
   const side = (i: number, p: Law): string => {
     const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
-    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">${noteIcon(false)}</button>`;
-    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">${noteIcon(true)}</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
+    const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">🗒️</button>`;
+    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
     return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
-  const detail = (i: number): string => {
-    const note = S.noteDetails?.[i], kind = note?.kind || 'guess';
-    const facts = g.hist.flatMap((e, at) => {
-      if ((e.k === 'gov' || e.k === 'veto') && (e.pres === i || e.chanc === i)) return [`${at + 1}: ${e.k === 'veto' ? 'Participou de um veto' : `Governou e saiu lei ${e.law === 'L' ? 'liberal' : W.f}`}.`];
-      if (e.k === 'inv' && e.target === i) return [`${at + 1}: Foi investigado. O resultado é secreto.`];
-      return [];
-    }).slice(-2);
-    return `<details class="note-detail" id="note-detail-${i}"><summary>Motivo e fatos${note?.reason ? ' · anotado' : ''}</summary><label for="note-reason-${i}">Seu motivo sobre ${name(g, i)}</label><textarea id="note-reason-${i}" data-note-reason="${i}" maxlength="280" rows="2" placeholder="O que você observou?">${esc(note?.reason || '')}</textarea><div class="segm" role="group" aria-label="Tipo do motivo sobre ${name(g, i)}"><button data-act="notekind" data-i="${i}" data-v="guess" aria-pressed="${kind === 'guess'}" class="${kind === 'guess' ? 'on' : ''}">Palpite</button><button data-act="notekind" data-i="${i}" data-v="fact" aria-pressed="${kind === 'fact'}" class="${kind === 'fact' ? 'on' : ''}">Fato observado</button></div><p class="hint">Essa classificação é sua; não confirma um papel.</p>${facts.length ? `<div class="note-facts"><b>Na ata pública</b><ul>${facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>` : '<p class="hint">Ainda não há governo ou investigação deste jogador na ata.</p>'}</details>`;
-  };
-  const rows = g.players.map((p, i) => (i === me ? '' : `<li class="${claimed(i)}${p.alive ? '' : ' dead'}"><div class="note-player"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${kit.sure(i) ? ' <small>(sabe)</small>' : ''}</span><span class="sides">${side(i, 'L')}${side(i, 'F')}</span></div>${detail(i)}</li>`)).join('');
+
+  const rows = g.players.map((p, i) => (i === me ? '' : `<li id="note-row-${i}" class="${claimed(i)}${p.alive ? '' : ' dead'}"><div class="note-row"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${kit.sure(i) ? ' <small>(sabe)</small>' : ''}</span><span class="sides">${side(i, 'L')}${side(i, 'F')}</span></div></li>`)).join('');
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><p class="claim-impact" role="status">${esc(Core.accusationFeedback(g, at))}</p><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ marca sua suspeita em segredo. Abra “Motivo e fatos” para escrever. 📣 fala para a mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ anota o que você acha (só você vê). 📣 diz à mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
     ${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
@@ -556,8 +577,11 @@ function vAta(g: Game): string {
     ${who.length ? `<p class="hint">Aprovou (governou ou votou {ja}), por jogador:</p><ul class="tally">${who.map(x => `<li><span>${name(g, x.i)}</span><span><i class="mini F">F</i> ${x.t.F} <i class="mini L">L</i> ${x.t.L}</span></li>`).join('')}</ul>` : ''}
     <button class="btn ghost block" data-act="assist" data-v="off">Esconder a ata</button></section>`;
 }
+/** The record can be narrowed (D34): only what was said, only governments and votes, or everything. */
+const logKeep = (l: string): boolean => ui.logFilter === 'talk' ? /: "/.test(l) : ui.logFilter === 'gov' ? !/: "/.test(l) : true;
+const logTabs = (): string => `<div class="segm log-tabs" role="group" aria-label="Filtrar o registro">${([['all', 'Tudo'], ['talk', 'Falas'], ['gov', 'Jogadas']] as const).map(([k, t]) => `<button class="${(ui.logFilter || 'all') === k ? 'on' : ''}" data-act="logfilter" data-v="${k}" aria-pressed="${(ui.logFilter || 'all') === k}">${t}</button>`).join('')}</div>`;
 function vLog(g: Game): string {
-  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}<ol class="log">${[...g.log].reverse().map(l => `<li>${esc(l)}</li>`).join('')}</ol></details>`;
+  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}${logTabs()}<ol class="log">${[...g.log].reverse().filter(logKeep).map(l => `<li>${esc(l)}</li>`).join('')}</ol></details>`;
 }
 
 /** How far the game has gone, counting what changes a phase and not what is said beside it (a claim, a talk): the

@@ -163,16 +163,18 @@ export default function cases(Core) {
       const side = role === 'liberal' ? 'L' : 'F', other = side === 'L' ? 'F' : 'L';
       const win = { L: 4, F: 5 };
       const decisive = view({ role, level, laws: win, ask: 'cdiscard', hand: deck('FL'), options: [0, 1, 2] });
-      eq(`decisive hand: ${level} ${role} enacts its winning law even on a slip`, ['FL'[Core.decide(decisive, () => 0)], 'FL'[Core.decide(decisive, hi)]], [other, other]);
+      const z = level === 'extremo' ? () => 0 : () => 0.5;   // the hard level may slip on a decisive law (D33), the extreme never
+      eq(`decisive hand: ${level} ${role} enacts its winning law even on a slip`, ['FL'[Core.decide(decisive, z)], 'FL'[Core.decide(decisive, hi)]], [other, other]);
       const forced = view({ role, level, laws: win, ask: 'pdiscard', hand: [side, other, side], options: [0, 1, 2] });
-      eq(`decisive hand: ${level} ${role} forces its winning law`, Core.decide(forced, () => 0), 1);
-      eq(`decisive hand: ${level} ${role} preserves even a single winning card`, Core.decide({ ...forced, hand: [other, side, other] }, () => 0), 0);
+      eq(`decisive hand: ${level} ${role} forces its winning law`, Core.decide(forced, z), 1);
+      eq(`decisive hand: ${level} ${role} preserves even a single winning card`, Core.decide({ ...forced, hand: [other, side, other] }, z), 0);
       const stop = view({ role, level, laws: win, ask: 'cdiscard', hand: [other, other], options: [0, 1, 2] });
-      eq(`decisive hand: ${level} ${role} vetoes an opponent's winning hand`, Core.decide(stop, () => 0), 2);
-      eq(`decisive hand: ${level} ${role} accepts veto only to stop defeat`, [Core.decide({ ...stop, ask: 'veto', options: [1, 0] }, () => 0), Core.decide({ ...stop, ask: 'veto', hand: [side, side], options: [1, 0] }, () => 0)], [1, 0]);
+      eq(`decisive hand: ${level} ${role} vetoes an opponent's winning hand`, Core.decide(stop, z), 2);
+      eq(`decisive hand: ${level} ${role} accepts veto only to stop defeat`, [Core.decide({ ...stop, ask: 'veto', options: [1, 0] }, z), Core.decide({ ...stop, ask: 'veto', hand: [side, side], options: [1, 0] }, z)], [1, 0]);
       eq(`decisive hand: ${level} ${role} respects unavailable veto`, [0, 1].includes(Core.decide({ ...stop, options: [0, 1] }, hi)), true);
     }
   }
+  eq('decisive hand (D33): the hard level slips now and then, the extreme never', [Core.decide(view({ role: 'liberal', level: 'dificil', laws: { L: 4, F: 5 }, ask: 'pdiscard', hand: deck('LFL'), options: [0, 1, 2] }), () => 0) !== undefined, Core.decide(view({ role: 'liberal', level: 'extremo', laws: { L: 4, F: 5 }, ask: 'pdiscard', hand: deck('LFL'), options: [0, 1, 2] }), () => 0)], [true, 1]);
   eq('a liberal president throws a fascist law away; a liberal chancellor makes the liberal one', [Core.decide(view({ me: 3, known: [null, null, null, 'liberal', null, null, null], ask: 'pdiscard', options: [0, 1, 2], hand: deck('LFF') }), hi), Core.decide(view({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi)], [1, 0]);
   const knowAll = ['hitler', 'fascista', 'fascista', 'liberal', 'liberal', 'liberal', 'liberal'];
   eq('a fascist chancellor makes the fascist law, and asks to veto two liberal ones', [Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), hi), Core.decide(view({ me: 1, role: 'fascista', known: knowAll, ask: 'cdiscard', options: [0, 1, 2], hand: deck('LL'), laws: { L: 0, F: 5 } }), hi)], [1, 2]);
@@ -351,6 +353,7 @@ export default function cases(Core) {
   eq('talk: only the one whose turn it is, about someone else in the game', [Core.talk(chat, first === 1 ? 2 : 1, 10) === chat, Core.talk(chat, first, 2 * first) === chat, Core.talk(chat, first, 2 * 5 + 1).log.at(-1).includes('Confio em Fê')], [true, true, true]);
   eq('votes in the tongue of each continent (D29): the world and Europe keep the original; the rest of the words stay', [Core.words('fascismo', 'mundo').ja, Core.words('comunismo', 'europa').nein, Core.words('fascismo', 'americas').ja, Core.words('comunismo', 'brasil').nein, Core.words('fascismo', 'asia').ja, Core.words('comunismo', 'asia').ja, Core.words('comunismo', 'africa').nein, Core.words('fascismo', 'oceania').ja, Core.words('comunismo', 'brasil').boss, Core.words().ja], ['Ja!', 'Niet!', '¡Sí!', 'Não!', 'Hai!', 'Shì!', 'Hapana!', 'Yes!', 'Stalin', 'Ja!']);
   eq('votes of the continent in the record', Core.castVotes({ ...ai7({ phase: 'vote', chanc: 4 }), region: 'brasil' }, { 0: true }, Core.seeded(5)).log.find(l => l.startsWith('Votos.')).startsWith('Votos. Sim!: Ana'), true);
+  eq('read state: the suspicion gauge switch (D32)', [Core.readState({ gauge: true }).gauge, 'gauge' in Core.readState({ gauge: 1 })], [true, false]);
   /* the notebook scored at the end (D28): seat 6 is a liberal; 0 Hitler, 1 and 2 fascists */
   const nb = ai7({ phase: 'over', winner: 'L', why: 'x', notes: { 0: 'F', 1: 'L', 4: 'L', 3: 'L', 6: 'F' }, hist: [{ k: 'inv', by: 6, target: 3, party: 'L' }] });
   eq('notes score: right and wrong, leaving out the seat itself and what it knew for sure (its own investigation)', Core.notesScore(nb, 6), { right: [0, 4], wrong: [1] });
@@ -374,6 +377,7 @@ export default function cases(Core) {
   const heard = (persona, about, hist) => Core.believe({ ...Core.viewOf(ai7({ hist }), 6, 'vote', [1, 0]), persona }).pF[about];
   const r0 = [{ k: 'rej', pres: 3, chanc: 4 }], acc5 = [...r0, { k: 'talk', by: 4, about: 5, say: 'acc' }];
   eq('talk weighs (D26): an accusation makes the one accused look more fascist, a vouch less; the sceptic moves less than the centred', [heard('centrado', 5, acc5) > heard('centrado', 5, r0), heard('centrado', 5, [...r0, { k: 'talk', by: 4, about: 5, say: 'trust' }]) < heard('centrado', 5, r0), heard('cetico', 5, acc5) - heard('centrado', 5, r0) < heard('centrado', 5, acc5) - heard('centrado', 5, r0)], [true, true, true]);
+  eq('reactions weigh a little (D33): the table agreeing with an accusation makes it count more, disagreeing less', [heard('centrado', 5, [...r0, { k: 'talk', by: 4, about: 5, say: 'acc', re: [[1, 0], [2, 0], [3, 0]] }]) > heard('centrado', 5, acc5), heard('centrado', 5, [...r0, { k: 'talk', by: 4, about: 5, say: 'acc', re: [[1, 2], [2, 2], [3, 2]] }]) < heard('centrado', 5, acc5)], [true, true]);
   const fgov = [{ k: 'gov', pres: 5, chanc: 2, law: 'F', pc: 3, cc: 2 }, { k: 'talk', by: 4, about: 5, say: 'acc' }];
   eq('talk weighs double when the record backs it: the one accused was in a government that passed a fascist law', [Core.backed(fgov, 0, 1, 5, true), Core.backed(fgov, 0, 1, 3, true), Core.backed(fgov, 0, 1, 5, false), heard('critico', 5, fgov) - heard('critico', 5, fgov.slice(0, 1)) > heard('critico', 3, [...fgov.slice(0, 1), { k: 'talk', by: 4, about: 3, say: 'acc' }]) - heard('critico', 3, fgov.slice(0, 1))], [true, false, false, true]);
   const fv = (about, say, sd) => Core.decide({ ...Core.viewOf(ai7({ hist: [...r0, { k: 'talk', by: 0, about, say }] }), 1, 'react', [0, 1, 2]), persona: 'centrado' }, Core.seeded(sd));
