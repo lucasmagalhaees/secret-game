@@ -658,3 +658,8 @@ body:has(.speech-peek){--dock:116px}
 @media (prefers-reduced-motion:reduce){#phase.mine{animation:none;box-shadow:0 0 0 3px var(--lib)}}
 .quick .big{font-size:20px;min-height:56px}
 .yours.won{border-color:var(--lib)}.yours.lost{border-color:var(--fas)}
+/* the undo floats above the bar for a moment; seats open the notebook; the record filters (D34) */
+.undo{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dock,60px) + 14px + env(safe-area-inset-bottom));z-index:55;box-shadow:4px 4px 0 var(--shadow)}
+.seat-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.seat-btn:focus-visible{outline:2px solid var(--fg)}
+.log-tabs{margin:6px 0}
