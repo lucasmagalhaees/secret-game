@@ -58,7 +58,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
     americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
     europa: ['Churchill', 'Mussolini', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Quisling', 'Mitterrand', 'Pétain'],
-    asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek', 'Tiglate-Pileser', 'Gengis Khan', 'Tamerlão'],
+    asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Dalai Lama', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
     africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe'],
     brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
   },
@@ -67,7 +67,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     oceania: BOT_NAMES.comunismo,
     americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende', 'Marulanda', 'Abimael Guzmán', 'Ortega'],
     europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'Gorbachev', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
-    asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai', 'Tiglate-Pileser', 'Gengis Khan'],
+    asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Kim Il-sung', 'Pol Pot', 'Xi Jinping', 'Dalai Lama', 'Saddam Hussein', 'Chiang Kai-shek', 'Gengis Khan', 'Tiglate-Pileser'],
     africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe'],
     brasil: ['Amoêdo', 'Lula', 'Zema', 'Jones Manoel', 'Aécio', 'Boulos', 'Enéas', 'Dilma', 'Serra', 'Manuela', 'FHC', 'Renan Santos']
   }
