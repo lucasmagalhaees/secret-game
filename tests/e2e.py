@@ -310,7 +310,7 @@ with sync_playwright() as p:
     pg.locator(f'#notes [data-act=note][data-i="{first}"][data-v=F]').click()
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
     assert pg.locator('#notes .persona').count() == 0 and pg.locator('#notes [data-act=denounce]').count() + pg.locator('#notes [data-act=court]').count() == 12, 'a claim for each side of each one'
-    # D37: accusing opens the court: a proof from the record (if any), a tone, then the accusation
+    # D39: accusing opens the court: a proof from the record (if any), a tone, then the accusation
     pg.locator(f'#notes [data-act=court][data-i="{first}"]').click(); assert pg.locator('#court').is_visible() and overflow() == 0, 'the court opens'
     shot(f's5-tribunal-{THEME}.png'); pg.click('#accuse'); assert pg.locator('#court').count() == 0
     if pg.locator('#contra').count(): pg.click('#contra')

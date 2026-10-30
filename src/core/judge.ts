@@ -142,7 +142,7 @@ export function denounce(g: Game, by: number, about: number, trust: boolean, ran
   return { ...traced(g, ts), log: [...g.log, ...lines], hist: [...g.hist, { ...said, ...(re.length ? { re } : {}) }] };
 }
 
-/** What the record holds against a seat (D37), for an accusation with a proof: only what the whole table saw. A
+/** What the record holds against a seat (D39), for an accusation with a proof: only what the whole table saw. A
  *  government it sat in whose story did not add up, or that passed a law of the hidden side, holds ("hit"); a Ja!
  *  vote for such a government is a weaker hint and does not hold by itself. Newest first. */
 export interface Proof { at: number; kind: 'clash' | 'law' | 'vote'; hit: boolean; title: string; text: string; pc?: number; cc?: number; law?: Law }
@@ -164,7 +164,7 @@ export function evidence(g: Game, about: number): Proof[] {
   });
   return out.reverse();
 }
-/** An accusation with a tone and maybe a proof (D37): the claim is made as usual, and it carries how firmly it was made
+/** An accusation with a tone and maybe a proof (D39): the claim is made as usual, and it carries how firmly it was made
  *  and whether the proof holds; the accused, when the proof holds, stammers. */
 export function accuse(g: Game, by: number, about: number, tone: 'soft' | 'firm' | 'proof', proof: number | null, rand: () => number): Game {
   const p = proof === null ? undefined : evidence(g, about).find(x => x.at === proof), hit = tone === 'proof' && !!p?.hit;

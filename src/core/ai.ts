@@ -129,7 +129,7 @@ export function socialMemory(v: View, seat: number): { accusations: number; defe
   const result = { accusations: 0, defenses: 0, reversals: 0, contradictions: 0 };
   const opinions = new Map<number, string>();
   v.hist.forEach((e, at) => {
-    // an accusation made firmly, or with a proof, that the record does not back costs the accuser (D37)
+    // an accusation made firmly, or with a proof, that the record does not back costs the accuser (D39)
     if (e.k === 'talk' && e.by === seat && e.say === 'acc' && (e.tone === 'firm' || e.tone === 'proof') && !e.hit && !backed(v.hist, 0, at, e.about, true)) result.contradictions++;
     if (e.k === 'gov' || e.k === 'veto') {
       opinions.delete(e.pres); opinions.delete(e.chanc);
@@ -273,7 +273,7 @@ export function believe(v: View, outside = false): Beliefs {
   })();
   const social = Array.from({ length: v.n }, (_, seat) => socialMemory({ ...v, hist: v.hist.slice(remember) }, seat));
   const repeats = v.hist.map((e, i) => e.k === 'talk' ? claimRepeats(v.hist, i, remember) : 0);
-  const support = v.hist.map((e, i) => e.k === 'talk' && (!!e.hit || backed(v.hist, remember, i, e.about, e.say === 'acc')));   // a proof that holds weighs double (D37)
+  const support = v.hist.map((e, i) => e.k === 'talk' && (!!e.hit || backed(v.hist, remember, i, e.about, e.say === 'acc')));   // a proof that holds weighs double (D39)
   const generated = worlds(v, outside);
   const viable = generated.filter(roles => {
     let enactedF = 0;

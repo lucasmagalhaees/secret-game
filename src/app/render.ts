@@ -534,7 +534,7 @@ export const PERSONA_W: Record<Persona, [string, string]> = {
 };
 /** The notebook as a side panel (D14): the bar at the bottom opens it over the game, and closes it again; on a wide
  *  screen it stays open beside the game. */
-/** The court (D37): accusing someone with a proof from the record and a tone, as a sheet over the game. */
+/** The court (D39): accusing someone with a proof from the record and a tone, as a sheet over the game. */
 function vCourt(g: Game): string {
   const t = ui.court, me = solo(g);
   if (t === null || t === undefined || me < 0 || !Core.canDenounce(g, me, t)) return '';
@@ -657,7 +657,7 @@ function vPhase(g: Game): string {
     case 'investigated':
       return gated(g, 'Investigação', () => {
         const p = Core.investigated(g) as Law;
-        // a confidential file (D36): the cover with the name lifts, the lens sweeps, the party is stamped
+        // a confidential file (D38): the cover with the name lifts, the lens sweeps, the party is stamped
         return `<div class="dossier${flipping ? ' go' : ''}"><div class="cover" aria-hidden="true"><small>Confidencial</small><b>${name(g, g.target as number)}</b></div>${turn(`<div class="role-card ${p}" id="party">${portrait(p === 'L' ? 'liberal' : 'fascista', P, R)}<small>${name(g, g.target as number)} é</small><b>${party(p)}</b><span class="inv-stamp ${p}" aria-hidden="true">${party(p)}</span><span class="lens" aria-hidden="true"></span></div>`)}</div><p class="hint">Contar a verdade ou não é com você.</p><button class="btn block" data-act="endpower">Esconder e seguir</button>`;
       });
     case 'peek':
@@ -702,7 +702,7 @@ export function stamp(text: string, party: Party): void {
   clearTimeout(stampTimer); stampTimer = setTimeout(() => { s.hidden = true; }, 1100);
 }
 /** The screen goes dark for a moment: someone was eliminated. */
-/** An elimination (D36): the screen darkens, the name comes up, ELIMINADO is stamped on it, and a card turns to say
+/** An elimination (D38): the screen darkens, the name comes up, ELIMINADO is stamped on it, and a card turns to say
  *  what the rule lets the table know: whether it was the hidden leader. The screen shakes once (an iPhone page cannot
  *  vibrate). Without a name, only the dark. */
 export function flash(who = '', wasBoss = false): void {
@@ -751,7 +751,7 @@ export function toast(text: string): void {
 /** Lets go of the field with the focus, so the screen can be painted again. */
 export function blurField(): void { const a = document.activeElement as HTMLElement | null; if (a && a.blur && $('#view')?.contains(a)) a.blur(); }
 
-/** "CONTRADIÇÃO!" (D37): an accusation whose proof holds, over the whole screen: the proof, the accused stammering,
+/** "CONTRADIÇÃO!" (D39): an accusation whose proof holds, over the whole screen: the proof, the accused stammering,
  *  and how the table took it, by name. A tap closes it; it closes by itself after a while. */
 export function contradiction(g: Game, at: number): void {
   const t = g.hist[at];

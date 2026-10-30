@@ -354,7 +354,7 @@ export default function cases(Core) {
   eq('votes in the tongue of each continent (D29): the world and Europe keep the original; the rest of the words stay', [Core.words('fascismo', 'mundo').ja, Core.words('comunismo', 'europa').nein, Core.words('fascismo', 'americas').ja, Core.words('comunismo', 'brasil').nein, Core.words('fascismo', 'asia').ja, Core.words('comunismo', 'asia').ja, Core.words('comunismo', 'africa').nein, Core.words('fascismo', 'oceania').ja, Core.words('comunismo', 'brasil').boss, Core.words().ja], ['Ja!', 'Niet!', '¡Sí!', 'Não!', 'Hai!', 'Shì!', 'Hapana!', 'Yes!', 'Stalin', 'Ja!']);
   eq('votes of the continent in the record', Core.castVotes({ ...ai7({ phase: 'vote', chanc: 4 }), region: 'brasil' }, { 0: true }, Core.seeded(5)).log.find(l => l.startsWith('Votos.')).startsWith('Votos. Sim!: Ana'), true);
   eq('read state: the suspicion gauge switch (D32)', [Core.readState({ gauge: true }).gauge, 'gauge' in Core.readState({ gauge: 1 })], [true, false]);
-  /* the court (D37): what the record holds against someone, and accusing with a tone and a proof */
+  /* the court (D39): what the record holds against someone, and accusing with a tone and a proof */
   const court = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'vote', pres: 2, chanc: 3, ja: [2, 3, 4] }, { k: 'gov', pres: 2, chanc: 3, law: 'F', pc: 1, cc: 2 }, { k: 'rej', pres: 3, chanc: 4 }] });
   const ev3 = Core.evidence(court, 3), ev4 = Core.evidence(court, 4);
   eq('evidence: a government whose story does not add up holds; a Ja! for a fascist government is a hint that does not', [ev3.map(x => [x.kind, x.hit]), ev4.map(x => [x.kind, x.hit])], [[['clash', true]], [['vote', false]]]);
