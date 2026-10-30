@@ -644,3 +644,11 @@ body:has(.speech-peek){--dock:116px}
 /* reactions to a claim rise from the foot of the screen (D31) */
 .react-fx{position:fixed;bottom:calc(var(--dock,60px) + 10px);z-index:60;font-size:30px;pointer-events:none;animation:react-up 1.8s ease-out forwards}
 @keyframes react-up{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1;transform:translateY(-20px) scale(1)}100%{transform:translateY(-55vh) scale(1.1);opacity:0}}
+/* the suspicion gauge (D32) */
+.gauge{display:flex;align-items:center;gap:12px;padding:6px 12px;margin:8px 0;border:2px solid var(--line);background:var(--surface)}
+.gauge svg{width:96px;height:56px;color:var(--fg);flex:none}
+.gauge .needle{transform-origin:60px 62px;transition:transform .8s cubic-bezier(.3,1.6,.5,1)}
+.gauge span{display:flex;flex-direction:column;font:700 13px/1.2 var(--display)}
+.gauge small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.gauge b{font-size:24px}
+@media (prefers-reduced-motion:reduce){.gauge .needle{transition:none}}

@@ -33,6 +33,9 @@ export function render(): void {
   view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
   for (const id of expanded) { const detail = document.getElementById(id); if (detail instanceof HTMLDetailsElement) detail.open = true; }
   const dr = document.getElementById('drawer'); if (dr) dr.scrollTop = keep;
+  // the needle swings from where it was to the new reading (D32)
+  const needle = view.querySelector<SVGGElement>('#gauge .needle');
+  if (needle) { const to = Number(needle.dataset.to); requestAnimationFrame(() => { needle.style.transform = `rotate(${to}deg)`; }); gaugeAt = to; }
   const diary = document.getElementById('diary'); if (diary) diary.scrollTop = diaryScroll;
 }
 
@@ -79,6 +82,7 @@ function vMore(): string {
     <p class="hint" id="traintext">${S.train ? `Você vai ser ${role(S.train).toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
     <p class="hint">Velocidade da IA</p><div class="segm" role="group" aria-label="Velocidade da IA">${(['lenta', 'normal', 'rapida'] as const).map(v => `<button class="${(S.speed || 'normal') === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${(S.speed || 'normal') === v}">${{ lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' }[v]}</button>`).join('')}</div>
     <p class="hint">Dicas do treinador</p><div class="segm" role="group" aria-label="Dicas do treinador"><button class="${S.coach ? '' : 'on'}" data-act="coach" data-v="off" aria-pressed="${!S.coach}">Desligadas</button><button class="${S.coach ? 'on' : ''}" data-act="coach" data-v="on" aria-pressed="${!!S.coach}">Ligadas</button></div>
+    <p class="hint">Desconfiômetro</p><div class="segm" role="group" aria-label="Desconfiômetro"><button class="${S.gauge ? '' : 'on'}" data-act="gauge" data-v="off" aria-pressed="${!S.gauge}">Desligado</button><button class="${S.gauge ? 'on' : ''}" data-act="gauge" data-v="on" aria-pressed="${!!S.gauge}" id="gaugeon">Ligado</button></div>
     <p class="hint">${S.coach ? 'Depois de cada governo, o treinador faz as contas com o que só você sabe: a chance da mão que o presidente disse, se as falas fecham, e quem parece mais {f}.' : 'Ligadas, o treinador explica o que dá para tirar de cada governo.'}</p>
     <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
     <p class="hint">${S.assist ? 'A ata mostra cada lei, quem governou e quem votou {ja} no governo que a aprovou, e soma por jogador. Só o que a mesa toda viu.' : 'Ligada, a partida ganha uma ata com quem aprovou cada lei.'}</p>
@@ -151,7 +155,7 @@ function vGame(g: Game): string {
     const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
     return card + bar + body + vDock(g);
   }
-  return vUndo() + vStatus(g) + vSeats(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
+  return vUndo() + vStatus(g) + vSeats(g) + vGauge(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
@@ -267,6 +271,16 @@ function vPlayers(g: Game): string {
 }
 /** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
 let liveCache: { key: string; rows: { seat: number; f: number }[] } | null = null;
+/** The suspicion gauge (D32): like an oil gauge, a needle from 0 to 100 with how much the app players suspect the person
+ *  now, on average (the same reckoning as the live bars). Only alone at the table, and only when switched on. */
+let gaugeAt = -90;
+function vGauge(g: Game): string {
+  const me = solo(g);
+  if (!S.gauge || me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';
+  const rows = liveSuspicion(g, me), v = rows.length ? rows.reduce((a, r) => a + r.f, 0) / rows.length : 0, deg = -90 + 180 * v;
+  const word = v < 0.35 ? 'tranquilo' : v < 0.6 ? 'de olho' : 'na mira';
+  return `<div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Desconfiômetro"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 43 15" stroke="#3aa05a" stroke-width="10" fill="none"/><path d="M43 15 A50 50 0 0 1 77 15" stroke="#e8b730" stroke-width="10" fill="none"/><path d="M77 15 A50 50 0 0 1 110 62" stroke="#d63c2b" stroke-width="10" fill="none"/><g class="needle" data-to="${deg.toFixed(1)}" style="transform:rotate(${gaugeAt.toFixed(1)}deg)"><path d="M60 62 L58 20 L60 14 L62 20Z" fill="currentColor"/></g><circle cx="60" cy="62" r="5" fill="currentColor"/></svg><span><small>Desconfiômetro</small><b>${pct(v)}</b> ${word}</span></div>`;
+}
 function liveSuspicion(g: Game, me: number): { seat: number; f: number }[] {
   const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => `${p.name}${p.alive ? 1 : 0}`).join()}`;
   if (!liveCache || liveCache.key !== key) liveCache = { key, rows: Core.suspicion(g, me) };

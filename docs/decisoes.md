@@ -378,6 +378,17 @@ Modelo de uma decisão:
   - "Estilizada regional" virou uma faixa com as cores do continente: no pé de cada cartão, mais larga no pé dos botões de voto (era o que a pessoa queria: "eu queria isso nas cartas de votacao", "e se possivel nas leis") e no alto e no pé de cada lei, com as cores do continente: verde, amarelo e azul no Brasil; o padrão andino nas Américas; azul e dourado na Europa; vermelho e dourado na Ásia; o kente na África; azul do mar e areia na Oceania. No Mundo não há faixa.
 - **Não sei:** se a pessoa queria algo mais forte que a faixa, como trocar a fonte ou o fundo por continente.
 
+## D31. Reações que brotam do fundo e o caderno de volta
+
+- **Contexto (29/10/2026):** "as reacoes positivas ou negativas aparecam como likes ou deslikes brotando do fundo da tela"; "quero q volte ao q era antes o menu de anotacoes mas verificando se o tamanho dos botoes de anotacao e denuncia nao quebram no layout do iphone"; "esse motivo e fatos do bloco de anotacoes ficou mt ruim".
+- **Decisão:** cada IA que reage a um claim solta um 👍 (concorda), 👎 (discorda) ou 🤷 (não sabe) que sobe do pé da tela; com "reduzir movimento", nada sobe. O caderno volta a ser uma linha por jogador, com o nome à esquerda e as colunas Libs e Nazis com 🗒️ e 📣, em botões de 40 px para caber ao lado do nome em 393 px. O "Motivo e fatos" sai da tela; o que já estava gravado continua sendo lido.
+- **Não sei:** se 40 px basta no dedo; a recomendação da Apple é 44.
+
+## D32. Desconfiômetro
+
+- **Contexto (29/10/2026):** "podia ter um desconfiometro tipo guitar hero tipo medido de oleo de carro"; "prefiro ponteiro de oleo".
+- **Decisão:** com uma pessoa só na mesa e a opção ligada em "Mais opções" (`S.gauge`, desligada de início), um ponteiro de 0 a 100 logo abaixo da faixa da mesa mostra a média de quanto as IAs desconfiam da pessoa agora (a mesma conta da desconfiança ao vivo), com verde, amarelo e vermelho e as palavras "tranquilo", "de olho" e "na mira". O ponteiro gira do valor anterior para o novo.
+
 ## Pendências
 
 | Pendência | Quem resolve |

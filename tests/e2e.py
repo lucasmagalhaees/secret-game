@@ -320,6 +320,10 @@ with sync_playwright() as p:
     assert pg.locator('#players .meter').count() == 0
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
+    # D32: the suspicion gauge, switched on in the settings
+    pg.evaluate('window.__APP.S.gauge = true'); pg.click('#livetoggle'); pg.click('#livetoggle')
+    assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the gauge shows how much the table suspects the person'
+    pg.evaluate('delete window.__APP.S.gauge'); pg.click('#livetoggle'); pg.click('#livetoggle'); assert pg.locator('#gauge').count() == 0
     # D17: the panels open from a bar at the bottom that has its own room: scrolled to the end, nothing is under it
     pg.evaluate('scrollTo(0, document.documentElement.scrollHeight)')
     assert pg.evaluate("Math.max(...[...document.querySelectorAll('main .card, #app .card')].map(c => c.getBoundingClientRect().bottom)) <= document.querySelector('.dock').getBoundingClientRect().top"), 'nothing is under the bar at the bottom'
