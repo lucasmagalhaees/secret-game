@@ -306,7 +306,7 @@ let liveCache: { key: string; rows: { seat: number; f: number }[] } | null = nul
 let gaugeAt = -90;
 function vGauge(g: Game): string {
   const me = solo(g);
-  if (!S.gauge || me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';
+  if (!(S.gauge || S.live) || me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';   // the live suspicion turns it on too
   const rows = liveSuspicion(g, me), v = rows.length ? rows.reduce((a, r) => a + r.f, 0) / rows.length : 0, deg = -90 + 180 * v;
   const word = v < 0.35 ? 'tranquilo' : v < 0.6 ? 'de olho' : 'na mira';
   return `<div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Desconfiômetro"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 43 15" stroke="#3aa05a" stroke-width="10" fill="none"/><path d="M43 15 A50 50 0 0 1 77 15" stroke="#e8b730" stroke-width="10" fill="none"/><path d="M77 15 A50 50 0 0 1 110 62" stroke="#d63c2b" stroke-width="10" fill="none"/><g class="needle" data-to="${deg.toFixed(1)}" style="transform:rotate(${gaugeAt.toFixed(1)}deg)"><path d="M60 62 L58 20 L60 14 L62 20Z" fill="currentColor"/></g><circle cx="60" cy="62" r="5" fill="currentColor"/></svg><span><small>Desconfiômetro</small><b>${pct(v)}</b> ${word}</span></div>`;
