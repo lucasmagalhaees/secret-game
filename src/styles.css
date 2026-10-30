@@ -744,3 +744,24 @@ body.shake{animation:shake .35s .7s}
 /* reputation at the table (D43): stars beside each name */
 .seat .rep{font-style:normal;letter-spacing:-1px;font-size:11px;color:#e8b730;background:none;border:0;padding:0}
 .seat .rep.r1{color:var(--fas)}
+/* the votes at a little table (D44) */
+.ballot{position:fixed;inset:0;z-index:62;pointer-events:none;background:rgba(10,8,6,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#f3e8d0;padding:16px}
+.b-q{margin:0;text-align:center;font-size:16px}
+.b-table{position:relative;width:min(330px,88vw);height:min(330px,88vw)}
+.b-felt{position:absolute;inset:22%;border-radius:50%;background:radial-gradient(#2c5a3a,#173322);border:6px solid #6b4a2a;box-shadow:0 0 0 3px #000}
+.ballot.danger .b-felt{background:radial-gradient(#7a2016,#3a0f0a)}
+.b-seat{position:absolute;width:60px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px}
+.b-seat b{font:800 11px/1 var(--display);letter-spacing:.06em}.b-seat.me b{color:#ff7a59}.b-seat.me .b-card{outline:3px solid #ff7a59}
+.b-card{width:38px;height:52px;border-radius:5px;border:2px solid #000;box-shadow:0 3px 0 #000;display:grid;place-items:center;color:#fff;font:900 18px/1 Arial,sans-serif;background:repeating-linear-gradient(45deg,#3a2f24 0 6px,#2a221a 6px 12px);animation:b-flip .45s both}
+.b-card span{display:flex;flex-direction:column;align-items:center;gap:2px;opacity:0;animation:b-show .01s both;animation-delay:inherit}
+.b-card small{font-size:9px}
+.b-card.ja{animation-name:b-flip-ja}.b-card.nein{animation-name:b-flip-nein}
+@keyframes b-flip-ja{0%{transform:rotateY(0)}49%{transform:rotateY(90deg);background:repeating-linear-gradient(45deg,#3a2f24 0 6px,#2a221a 6px 12px)}50%{background:#2f9e5b}100%{transform:none;background:#2f9e5b}}
+@keyframes b-flip-nein{0%{transform:rotateY(0)}49%{transform:rotateY(90deg);background:repeating-linear-gradient(45deg,#3a2f24 0 6px,#2a221a 6px 12px)}50%{background:#d63c2b}100%{transform:none;background:#d63c2b}}
+@keyframes b-show{to{opacity:1}}
+.b-center{position:absolute;inset:22%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.b-score{font:900 28px/1 var(--display)}.b-score .g{color:#8fd4a8}.b-score .r{color:#ff7a59}
+.b-stamp{font:900 24px/1 Impact,var(--display);text-transform:uppercase;padding:2px 8px;border:4px solid currentColor;transform:rotate(-8deg);opacity:0;animation:stamp-in .35s both}
+.b-stamp.L{color:#8fd4a8}.b-stamp.F{color:#ff7a59}
+.ballot .tap{color:#b9ab90}
+@media (prefers-reduced-motion:reduce){.b-card,.b-card span,.b-stamp{animation:none!important;opacity:1}.b-card.ja{background:#2f9e5b}.b-card.nein{background:#d63c2b}}

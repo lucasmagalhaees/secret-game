@@ -808,3 +808,28 @@ export function defenseResult(ok: boolean, kind: string): void {
   if (!box) return;
   box.innerHTML = `<b class="${ok ? 'ok' : 'no'}">${ok ? '✔ A defesa colou' : kind === 'quiet' ? '… Você ficou calado' : '✖ A mesa não comprou'}</b><p>${ok ? 'A acusação perdeu o peso para as IAs.' : 'A acusação continua valendo.'}</p><button class="btn block" data-act="contraclose">Voltar ao jogo</button>`;
 }
+
+/** The votes at a little table (D44): every seat in its place around a green table, each vote turning over in turn,
+ *  the count adding up in the middle, then ELEITO! or REJEITADO! (the table goes red when the hidden leader was just
+ *  elected chancellor in the danger zone). It closes by itself and never takes a tap. With less motion asked, only the stamp shows. */
+export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boolean, step: number): void {
+  const alive = g.players.map((p, i) => (p.alive ? i : -1)).filter(i => i >= 0), n = g.players.length, me = solo(g);
+  const order = [...alive.slice(alive.indexOf(e.pres)), ...alive.slice(0, alive.indexOf(e.pres))];
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, gap = step;
+  if (calm) return;   // with less motion asked, the stamp says it already
+  const danger = elected && g.players[e.chanc]?.role === 'hitler' && g.laws.F >= Core.HITLER_ZONE;
+  const R = 112, seats = alive.map(i => {
+    const a = -Math.PI / 2 + (2 * Math.PI * i) / n, ja = e.ja.includes(i), k = order.indexOf(i);
+    return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div><b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
+  }).join('');
+  const el = document.createElement('div');
+  el.className = `ballot${danger ? ' danger' : ''}`; el.id = 'ballot';
+  el.innerHTML = themed(`<p class="b-q"><b>${name(g, e.pres)}</b> presidente + <b>${name(g, e.chanc)}</b> chanceler</p><div class="b-table"><div class="b-felt"></div>${seats}<div class="b-center"><b class="b-score"><span class="g">0</span> × <span class="r">0</span></b><b class="b-stamp ${elected ? 'L' : 'F'}" style="animation-delay:${alive.length * gap}ms">${elected ? 'Eleito!' : 'Rejeitado!'}</b></div></div>`, W as unknown as Record<string, string>);
+  document.getElementById('ballot')?.remove();
+  document.body.appendChild(el);
+  const g1 = el.querySelector<HTMLElement>('.b-score .g'), r1 = el.querySelector<HTMLElement>('.b-score .r');
+  let y = 0, no = 0;
+  order.forEach((i, k) => setTimeout(() => { if (e.ja.includes(i)) y++; else no++; if (g1) g1.textContent = String(y); if (r1) r1.textContent = String(no); }, k * gap + 250));
+  const close = (): void => { el.remove(); };
+  setTimeout(close, alive.length * gap + 2200);
+}

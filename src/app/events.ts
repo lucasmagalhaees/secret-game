@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { beat, blurField, contradiction, defenseResult, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, contradiction, defenseResult, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -58,6 +58,8 @@ function voted(before: Game, next: Game): void {
   const e = [...next.hist].reverse().find(x => x.k === 'vote');
   const elected = !!e && e.k === 'vote' && e.ja.length * 2 > before.players.filter(p => p.alive).length;
   stamp(elected ? 'Eleito!' : 'Rejeitado!', elected ? 'L' : 'F'); sound('stamp'); if (elected) buzz([40, 60, 40]);
+  // the votes open one by one at a little table (D44), at the pace chosen for the app players
+  if (e && e.k === 'vote') ballot(next, e, elected, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3)));
 }
 /** An app player did something: the same sounds and marks as when a person does it, and the line it adds to the log. */
 function botPlayed(before: Game, next: Game): void {
