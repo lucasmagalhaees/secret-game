@@ -40,7 +40,7 @@ export const LEVELS: Level[] = ['facil', 'medio', 'dificil', 'extremo'];
  *  says nothing about the role: roles are dealt at random, so Churchill may well be the fascist. The leader of the
  *  hidden side (Hitler, Stalin) is not among them: it is a role. */
 export const BOT_NAMES: Record<Pack, string[]> = {
-  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Gandhi', 'Goebbels', 'Truman', 'Pétain', 'Lincoln', 'Himmler', 'Kennedy', 'Salazar', 'Tiglate-Pileser', 'Gengis Khan'],
+  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Gandhi', 'Goebbels', 'Truman', 'Júlio César', 'Lincoln', 'Himmler', 'Kennedy', 'Salazar', 'Tiglate-Pileser', 'Gengis Khan'],
   comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Kim Jong-un', 'Pol Pot', 'Marulanda']
 };
 /** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
@@ -56,7 +56,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     mundo: BOT_NAMES.fascismo,
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
     americas: ['Roosevelt', 'Kennedy', 'Lincoln', 'Obama', 'Washington', 'JK', 'Getúlio', 'Perón', 'Pinochet', 'Médici', 'Trump', 'Nixon', 'Bush'],
-    europa: ['Churchill', 'Mussolini', 'Franco', 'Napoleão', 'Salazar', 'Merkel', 'Goebbels', 'Thatcher', 'Rainha Vitória', 'Mitterrand', 'Pétain'],
+    europa: ['Churchill', 'Mussolini', 'Franco', 'Napoleão', 'Salazar', 'Merkel', 'Goebbels', 'Thatcher', 'Rainha Vitória', 'Mitterrand', 'Rainha Elizabeth'],
     asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Netanyahu', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
     africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
