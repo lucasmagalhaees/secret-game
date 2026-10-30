@@ -415,7 +415,8 @@ export default function cases(Core) {
   const cruxG = ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 3, chanc: 4, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 0, chanc: 5, law: 'F', pc: 3, cc: 1 }, { k: 'rej', pres: 4, chanc: 6 }] });
   const cEnd = Core.crux(cruxG, 0, 'end'), cLive = Core.crux(cruxG, 0, 'live');
   eq('crucial point: the moment that raised the suspicion the most, with the average before and after; at the end and live', [cEnd.at, cEnd.after > cEnd.before, cLive.at, Core.crux(ai7({ phase: 'nominate' }), 0, 'end')], [1, true, 1, null]);
-  eq('read state: tips, speed and the open notebook are kept; nonsense is dropped', [Core.readState({ notesOpen: true, live: true }).notesOpen && Core.readState({ live: true }).live, 'notesOpen' in Core.readState({ notesOpen: 1 }), Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, false, true, 'lenta', false, false]);
+  eq('read state: tips, speed and the open notebook are kept; nonsense is dropped', [Core.readState({ notesOpen: true, live: true }).notesOpen && Core.readState({ live: true }).gauge, 'notesOpen' in Core.readState({ notesOpen: 1 }), Core.readState({ coach: true, speed: 'rapida' }).coach, Core.readState({ speed: 'lenta' }).speed, 'speed' in Core.readState({ speed: 'normal' }), 'coach' in Core.readState({ coach: 1 })], [true, false, true, 'lenta', false, false]);
+  eq('read state: the old live suspicion is the meter now (D37); one switch, no second name', [Core.readState({ live: true }).gauge, 'live' in Core.readState({ live: true }), Core.readState({ gauge: true }).gauge, 'gauge' in Core.readState({ gauge: 1 })], [true, false, true, false]);
 
   /* the names of the app players by continent (D24) */
   const lists = Core.PACKS.flatMap(p => Core.REGIONS.map(r => Core.NAMES_BY[p][r]));
