@@ -389,6 +389,12 @@ Modelo de uma decisão:
 - **Contexto (29/10/2026):** "podia ter um desconfiometro tipo guitar hero tipo medido de oleo de carro"; "prefiro ponteiro de oleo".
 - **Decisão:** com uma pessoa só na mesa e a opção ligada em "Mais opções" (`S.gauge`, desligada de início), um ponteiro de 0 a 100 logo abaixo da faixa da mesa mostra a média de quanto as IAs desconfiam da pessoa agora (a mesma conta da desconfiança ao vivo), com verde, amarelo e vermelho e as palavras "tranquilo", "de olho" e "na mira". O ponteiro gira do valor anterior para o novo.
 
+## D35. Partida rápida e nomes revisados
+
+- **Contexto (30/10/2026):** "quero uma opcao de quick game, com um jogo de 7 integrantes, e cenario aleatorio no dificil sem assistencia"; "o botao de quick game pode ficar no botao atual jogar agora"; "o botao mudar a mesa poderia ser voltar ao inicio". E a revisão dos nomes: só nomes conhecidos no Brasil, republicanos e democratas nas Américas, sem o Polvo.
+- **Decisão:** "Jogar agora", no topo da tela inicial, monta uma partida de 7 lugares (a pessoa e 6 IAs no difícil), com tema e continente sorteados (o Brasil só com a DLC liberada), sem mexer na mesa montada à mão. Começa com a assistência desligada. No fim, "Mudar a mesa" virou "Voltar ao início". As listas de nomes foram revisadas com a pessoa, nome a nome; o Lula só aparece na DLC, com o próprio nome.
+- **Não sei:** se a assistência deve voltar sozinha depois da partida rápida; hoje ela fica desligada até a pessoa ligar de novo.
+
 ## Pendências
 
 | Pendência | Quem resolve |
