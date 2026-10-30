@@ -704,7 +704,7 @@ body:has(.speech-peek){--dock:116px}
 .court .go{background:var(--fas);color:var(--on-party)}
 /* CONTRADIÇÃO! (D39) */
 .contra{position:fixed;inset:0;z-index:70;background:radial-gradient(circle at 50% 22%,#4a1d14 0,#14110e 62%);color:#f3e8d0;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:calc(70px + env(safe-area-inset-top)) 20px 20px;cursor:pointer}
-.contra .burst{position:absolute;left:50%;top:120px;width:560px;height:560px;transform:translate(-50%,-50%);background:repeating-conic-gradient(rgba(255,122,89,.18) 0 8deg,transparent 8deg 16deg);border-radius:50%;z-index:-1}
+.contra .burst{position:absolute;left:50%;top:120px;width:560px;height:560px;transform:translate(-50%,-50%);background:repeating-conic-gradient(rgba(255,122,89,.18) 0 8deg,transparent 8deg 16deg);border-radius:50%;z-index:-1;pointer-events:none}
 .contra .boom{font:900 clamp(30px,10vw,44px)/1 Impact,var(--display);color:#ff7a59;text-shadow:4px 4px 0 #000;transform:rotate(-5deg);text-align:center;text-transform:uppercase;white-space:nowrap;animation:stamp-in .4s both}
 .contra .proof{background:rgba(10,8,6,.9);border-left:5px solid #ff7a59;padding:12px 14px}
 .contra .proof small{color:#b9ab90;font:800 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}
