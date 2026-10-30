@@ -501,3 +501,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 - **Contexto (30/10/2026):** havia dois controles para a mesma coisa, a "desconfiança ao vivo" (`S.live`: uma barra por IA, ligada na lista de jogadores) e o "desconfiômetro" (`S.gauge`: o ponteiro de óleo de carro, ligado em "Mais opções"). O pedido: "eu quero isso unificado", ligável e desligável fora e dentro do jogo.
 - **Decisão:** uma chave só, `S.gauge`, liga e desliga o medidor inteiro: o ponteiro, a barra de cada IA (na lista de jogadores e na faixa da mesa) e o momento que mais fez a desconfiança subir. Pode ser mudada em "Mais opções" e, com uma pessoa só na mesa, num botão logo abaixo da faixa da mesa durante a partida. Desligado de início. `S.live` deixa de existir: ao ler uma partida guardada com `live`, ele vira `gauge`.
 - **Reputômetro (D43), 30/10/2026:** "quero o reputômetro ligável e desligável in game". `S.rep` ganhou o mesmo botão na partida, lado a lado com o do desconfiômetro, logo abaixo da faixa da mesa (vale também com mais de uma pessoa na mesa, porque as estrelas só usam o que a mesa viu). Continua em "Mais opções" e desligado de início. Segue sendo uma chave à parte do desconfiômetro: não foi decidido juntar os dois.
+
+## D47. Sem e2e no tema claro (2026-10-30)
+
+- **Pedido:** o e2e claro só dava problema (passava de 10 min e caía por tempo).
+- **Decisão:** sai do CI e do `verify.sh`; fica só o e2e no tema escuro. O teste continua no código e roda à mão com `python3 tests/e2e.py light`. O contraste dos votos no tema claro deixa de ser medido a cada PR.

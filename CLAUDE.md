@@ -9,7 +9,7 @@ Idioma da interface: português do Brasil, informal. Comentários no código: in
 
 1. **Nunca commitar direto na `main`.** Toda mudança começa com um branch novo a partir da `main` atualizada: `git fetch origin && git switch -c tipo/descricao origin/main` (`feat/`, `fix/`, `docs/`, `chore/`, `ci/`).
 2. Rodar `scripts/verify.sh` antes de enviar e colar a saída no PR.
-3. Abrir PR para a `main` usando o template. O CI (checks, cobertura e e2e claro e escuro) tem que passar.
+3. Abrir PR para a `main` usando o template. O CI (checks, cobertura e e2e no tema escuro) tem que passar.
 4. O merge na `main` dispara o deploy de produção. Não existe outro caminho para produção.
 5. Mensagens de commit no estilo Conventional Commits, em português.
 
@@ -176,7 +176,7 @@ Uma coluna de até 720 px, pensada para 393 px de largura. Tema claro e escuro, 
 ```bash
 npm ci                       # Vite e TypeScript
 pip install -r tests/requirements.txt && playwright install chromium
-scripts/verify.sh            # tudo: tipos, build, docs, core, unit, contract, autoteste da checagem de produção, e2e claro e escuro, pwa e cobertura
+scripts/verify.sh            # tudo: tipos, build, docs, core, unit, contract, autoteste da checagem de produção, e2e no tema escuro, pwa e cobertura
 scripts/verify.sh --quick    # sem o e2e (poucos segundos)
 node tests/core.mjs          # os casos do núcleo, sem navegador
 node scripts/ai_bench.mjs    # mede os níveis da IA, partidas só de IA (alguns minutos; fora do verify.sh)
@@ -198,7 +198,7 @@ Deploy contínuo pela integração da Vercel com o GitHub: cada PR ganha uma URL
 
 O build grava o commit em `<meta name="app-commit">`. Na Vercel ele vem da variável `VERCEL_GIT_COMMIT_SHA`; fora dela, do `git`.
 
-A Vercel publica o que chegar na `main` sem olhar o CI. Quem garante que só entra código testado é a proteção do branch `main` exigindo os checks `checks`, `e2e (dark)` e `e2e (light)`.
+A Vercel publica o que chegar na `main` sem olhar o CI. Quem garante que só entra código testado é a proteção do branch `main` exigindo os checks `checks` e `e2e (dark)`. O e2e no tema claro saiu (D47); `python3 tests/e2e.py light` ainda roda à mão.
 
 **Merges em sequência podem deixar a produção numa versão antiga:** a Vercel faz um deploy por merge, e se o mais antigo termina por último ele fica com o endereço de produção. Por isso:
 
