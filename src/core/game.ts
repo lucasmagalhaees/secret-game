@@ -58,7 +58,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     americas: ['Roosevelt', 'Kennedy', 'Lincoln', 'Obama', 'Washington', 'JK', 'Getúlio', 'Perón', 'Pinochet', 'Médici', 'Trump', 'Nixon', 'Bush'],
     europa: ['Churchill', 'Mussolini', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Quisling', 'Mitterrand', 'Pétain'],
     asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Dalai Lama', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
-    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe'],
+    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Bokassa', 'Mugabe', 'Gaddafi', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Sadat'],
     brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
   },
   comunismo: {
@@ -67,7 +67,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     americas: ['Kennedy', 'Reagan', 'Lincoln', 'Obama', 'Roosevelt', 'JK', 'Fidel', 'Che', 'Chávez', 'Maduro', 'Allende', 'Evo Morales', 'Marulanda', 'Biden', 'Clinton'],
     europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'Gorbachev', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
     asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Kim Il-sung', 'Pol Pot', 'Xi Jinping', 'Dalai Lama', 'Saddam Hussein', 'Chiang Kai-shek', 'Gengis Khan', 'Tiglate-Pileser'],
-    africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe'],
+    africa: ['Mandela', 'Sankara', 'Tutu', 'Sadat', 'Mugabe', 'Gaddafi', 'Nasser', 'Haile Selassie', 'Cleópatra', 'Mubarak', 'Idi Amin'],
     brasil: ['Amoêdo', 'Lula', 'Zema', 'Jones Manoel', 'Aécio', 'Boulos', 'Enéas', 'Dilma', 'Serra', 'Manuela', 'FHC', 'Renan Santos']
   }
 };
