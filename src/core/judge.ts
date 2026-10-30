@@ -127,9 +127,9 @@ export function canDenounce(g: Game, by: number, about: number): boolean {
  *  app players weigh like any other talk. Each app player still in the game, but the one talked about, says how it
  *  takes it (agrees, is unsure, disagrees), by its side, what it believes and its personality; the one talked about,
  *  if accused, denies it. The reactions go with the talk and in the log; they are words, nobody weighs them. */
-export function denounce(g: Game, by: number, about: number, trust: boolean, rand: () => number): Game {
+export function denounce(g: Game, by: number, about: number, trust: boolean, rand: () => number, as?: Talk): Game {
   if (!canDenounce(g, by, about)) return g;
-  const said: Talk = { k: 'talk', by, about, say: trust ? 'trust' : 'acc' };
+  const said: Talk = as ?? { k: 'talk', by, about, say: trust ? 'trust' : 'acc' };
   // a claim (D30): what the person says someone is, true or a bluff
   const line = `${g.players[by].name}: "${g.players[about].name} é ${trust ? 'liberal' : words(g.pack).f}."`;
   const heard: Game = { ...g, hist: [...g.hist, said] }, ts: Trace[] = [], re: [number, number][] = [];
@@ -141,6 +141,49 @@ export function denounce(g: Game, by: number, about: number, trust: boolean, ran
   const at = g.hist.length, lines = [line, ...re.map(([i, a]) => `${g.players[i].name}: "${reply(heard, i, a, at)}"`), ...(isAi(g, about) ? [`${g.players[about].name}: "${answer(g, about, !trust, at)}"`] : [])];
   return { ...traced(g, ts), log: [...g.log, ...lines], hist: [...g.hist, { ...said, ...(re.length ? { re } : {}) }] };
 }
+
+/** What the record holds against a seat (D37), for an accusation with a proof: only what the whole table saw. A
+ *  government it sat in whose story did not add up, or that passed a law of the hidden side, holds ("hit"); a Ja!
+ *  vote for such a government is a weaker hint and does not hold by itself. Newest first. */
+export interface Proof { at: number; kind: 'clash' | 'law' | 'vote'; hit: boolean; title: string; text: string; pc?: number; cc?: number; law?: Law }
+export function evidence(g: Game, about: number): Proof[] {
+  const out: Proof[] = [], f = words(g.pack).f, nm = (i: number): string => g.players[i]?.name ?? '?';
+  let n = 0;
+  g.hist.forEach((e, at) => {
+    if (e.k === 'gov' || e.k === 'chaos') n++;
+    if ((e.k === 'gov' || e.k === 'veto') && (e.pres === about || e.chanc === about)) {
+      const pres = e.pres === about, clash = e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
+      const lawF = e.k === 'gov' && e.law === 'F', said = pres ? e.pc : e.cc;
+      if (clash) out.push({ at, kind: 'clash', hit: true, title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: pres ? `Disse que tirou ${said} ${f}${said === 1 ? '' : 's'}, e o chanceler disse outra coisa` : `Disse que recebeu ${said} ${f}${said === 1 ? '' : 's'}, e não bate com o presidente`, pc: e.pc, cc: e.cc, law: e.k === 'gov' ? e.law : undefined });
+      else if (lawF) out.push({ at, kind: 'law', hit: true, title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}`, pc: e.pc, cc: e.cc, law: 'F' });
+    }
+    if (e.k === 'vote' && e.ja.includes(about) && e.pres !== about && e.chanc !== about) {
+      const next = g.hist[at + 1];
+      if (next && next.k === 'gov' && next.law === 'F') out.push({ at, kind: 'vote', hit: false, title: `Votação · ${n + 1}º governo`, text: `Votou ${words(g.pack, g.region).ja} em ${nm(e.pres)} + ${nm(e.chanc)}, e saiu lei ${f}` });
+    }
+  });
+  return out.reverse();
+}
+/** An accusation with a tone and maybe a proof (D37): the claim is made as usual, and it carries how firmly it was made
+ *  and whether the proof holds; the accused, when the proof holds, stammers. */
+export function accuse(g: Game, by: number, about: number, tone: 'soft' | 'firm' | 'proof', proof: number | null, rand: () => number): Game {
+  const p = proof === null ? undefined : evidence(g, about).find(x => x.at === proof), hit = tone === 'proof' && !!p?.hit;
+  const tagged = (x: Game): Game => {
+    const i = x.hist.length - 1, e = x.hist[i];
+    if (!e || e.k !== 'talk') return x;
+    const hist = [...x.hist]; hist[i] = { ...e, tone, ...(p ? { proof: p.at } : {}), ...(hit ? { hit: true } : {}) };
+    return { ...x, hist };
+  };
+  const pre = tagged({ ...g, hist: [...g.hist, { k: 'talk', by, about, say: 'acc' }] });
+  const t = pre.hist[pre.hist.length - 1] as Talk;
+  // the reactions are asked with the tone and proof already known to the table
+  const next = denounce({ ...g, hist: g.hist }, by, about, false, rand, t);
+  if (next === g) return g;
+  const out = tagged(next);
+  if (hit && isAi(g, about)) { const log = [...out.log]; log[log.length - 1] = `${g.players[about].name}: "${STAMMER[(about * 7 + g.hist.length) % STAMMER.length]}"`; return { ...out, log }; }
+  return out;
+}
+const STAMMER = ['Eu… devo ter contado errado. Não, espera—', 'Isso… isso foi um mal-entendido!', 'Tá, mas… o baralho, sabe como é…', 'Eu ia explicar isso… depois.'];
 
 /** Explain only visible reactions: this feedback never uses actual roles or secret investigations. */
 export function accusationFeedback(g: Game, at: number): string {

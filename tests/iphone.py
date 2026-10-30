@@ -34,9 +34,10 @@ try:
             assert box and box['width'] >= 40 and box['height'] >= 40, box
             assert c.get_attribute('aria-label')
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
-        page.locator('[data-act=denounce][data-i="1"][data-v=acc]').dispatch_event('click')
+        page.locator('[data-act=court][data-i="1"]').dispatch_event('click'); page.locator('#accuse').dispatch_event('click')
+        if page.locator('#contra').count(): page.locator('#contra').dispatch_event('click')
         assert page.locator('#heard').is_visible(), 'a button click must repaint even while Safari keeps the editor focused'
-        assert page.locator('#notes [data-act=denounce][data-i="1"]').count() == 0
+        assert page.locator('#notes [data-act=court][data-i="1"]').count() == 0
         assert 'Lucas' in page.inner_text('#speech-peek') and 'Truman' in page.inner_text('#speech-peek')
         page.click('#speech-peek')
         assert page.locator('#diary').is_visible() and not page.locator('#drawer').is_visible()

@@ -399,6 +399,11 @@ Modelo de uma decisão:
 
 - **Contexto (30/10/2026):** "tem como melhorar a animacao de eliminacao e investigacao?" e a proposta aceita.
 - **Decisão:** na eliminação, a tela escurece, o nome aparece grande, "ELIMINADO" é carimbado e uma carta diz se era o líder escondido ("Não era o Hitler" ou "Era o Hitler!"), que é o que a regra deixa a mesa saber; a tela treme uma vez, porque o iPhone não deixa a página vibrar. Na investigação, uma pasta "Confidencial" com o nome do investigado se abre, a lupa passa e o partido é carimbado na carta. Com "reduzir movimento", nada disso se mexe.
+## D37. Tribunal: acusar com prova e "CONTRADIÇÃO!"
+
+- **Contexto (30/10/2026):** "toda vez q acusar alguem ter uma mecanica parecida com la noire e ace atorney"; "contradicao"; prévias aprovadas (prova e tom à esquerda; tela com a prova, a fala e a rosca com os nomes, sem rostos, que entregariam o papel).
+- **Decisão:** o 📣 de acusar abre o tribunal: o que a ata tem contra a pessoa (`evidence`: governo cuja conta não fecha, governo que aprovou lei do lado escondido, voto Ja! nesse governo) e o tom (Desconfio, Acuso, Tenho prova). Prova de governo segura (`hit`) vira "CONTRADIÇÃO!" na tela inteira, o acusado se enrola, e a acusação pesa o dobro para as IAs. Acusar firme, ou com prova, sem nada que segure na ata custa credibilidade a quem acusou (conta como contradição dele). O voto Ja! é só indício: não segura sozinho. Abonar (👍, "é liberal") continua direto.
+- **Não sei:** se acusar com "Desconfio" deveria pesar menos que hoje; hoje pesa como antes.
 
 ## Pendências
 

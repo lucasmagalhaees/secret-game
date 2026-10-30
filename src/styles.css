@@ -690,3 +690,31 @@ body.shake{animation:shake .35s .7s}
 .inv-stamp.L{color:var(--lib)}.inv-stamp.F{color:var(--fas)}
 .turn.go .inv-stamp{animation:stamp-in .35s 2.3s both}
 @media (prefers-reduced-motion:reduce){.flash.go:has(.exec),.exec-name,.exec-stamp,.exec-card,body.shake,.dossier.go .cover,.turn.go .inv-stamp{animation:none}.dossier .cover{display:none}}
+/* the court (D37): a sheet to pick the proof and the tone */
+.court-back{position:fixed;inset:0;z-index:58;background:rgba(0,0,0,.5)}
+.court{position:fixed;left:0;right:0;bottom:0;z-index:59;max-height:85vh;overflow-y:auto;background:var(--surface);border-top:4px solid var(--line);padding:16px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.court h2{margin:4px 0 0;font-size:20px}
+.court .ev{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:3px;border:2px solid var(--line);padding:10px;cursor:pointer;font-size:14px}
+.court .ev small{color:var(--muted);font:800 11px/1 var(--display);letter-spacing:.12em;text-transform:uppercase}
+.court .ev.on{border-color:var(--fas);box-shadow:0 0 0 3px color-mix(in srgb,var(--fas) 35%,transparent)}
+.court .ev-hit{color:var(--fas)}
+.court .lc{display:inline-block;width:12px;height:18px;border:2px solid var(--line);margin-right:2px;vertical-align:middle}.court .lc.L{background:var(--lib)}.court .lc.F{background:var(--fas)}
+.court .tones{display:flex;gap:6px}.court .tones button{flex:1;min-height:44px;border:2px solid var(--line);font:800 12px var(--display);text-transform:uppercase}
+.court .tones button.on{background:var(--fas);color:var(--on-party);border-color:var(--fas)}.court .tones button:disabled{opacity:.4}
+.court .go{background:var(--fas);color:var(--on-party)}
+/* CONTRADIÇÃO! (D37) */
+.contra{position:fixed;inset:0;z-index:70;background:radial-gradient(circle at 50% 22%,#4a1d14 0,#14110e 62%);color:#f3e8d0;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:calc(70px + env(safe-area-inset-top)) 20px 20px;cursor:pointer}
+.contra .burst{position:absolute;left:50%;top:120px;width:560px;height:560px;transform:translate(-50%,-50%);background:repeating-conic-gradient(rgba(255,122,89,.18) 0 8deg,transparent 8deg 16deg);border-radius:50%;z-index:-1}
+.contra .boom{font:900 clamp(30px,10vw,44px)/1 Impact,var(--display);color:#ff7a59;text-shadow:4px 4px 0 #000;transform:rotate(-5deg);text-align:center;text-transform:uppercase;white-space:nowrap;animation:stamp-in .4s both}
+.contra .proof{background:rgba(10,8,6,.9);border-left:5px solid #ff7a59;padding:12px 14px}
+.contra .proof small{color:#b9ab90;font:800 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}
+.contra .pr{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:18px;font-weight:700}.contra .pr span{min-width:130px}
+.contra .big{display:inline-block;width:26px;height:38px;border-radius:3px}.contra .big.L{background:#8fc4e8}.contra .big.F{background:#ff7a59}
+.contra .talk2{background:#f3e8d0;color:#1d1a17;padding:12px 14px;border-radius:14px}.contra .talk2 b{color:#b8202b;font-size:13px;letter-spacing:.1em;text-transform:uppercase}.contra .talk2 p{margin:4px 0 0;font-size:18px;font-style:italic}
+.contra .pie{display:flex;align-items:center;gap:16px;background:rgba(10,8,6,.9);padding:12px 14px}
+.contra .donut{width:96px;height:96px;border-radius:50%;flex:none;display:grid;place-content:center;text-align:center;position:relative}
+.contra .donut::before{content:"";position:absolute;inset:16px;border-radius:50%;background:#1a1612}.contra .donut b,.contra .donut small{position:relative}.contra .donut b{font-size:20px}.contra .donut small{font-size:9px;color:#b9ab90;text-transform:uppercase}
+.contra ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}.contra li{display:flex;gap:8px;align-items:flex-start}.contra li i{width:12px;height:12px;border-radius:3px;margin-top:4px;flex:none}
+.contra li span{display:flex;flex-direction:column;font-size:14px}.contra li span b{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#b9ab90}
+.contra .tap{color:#b9ab90;text-align:center;margin-top:auto}
+@media (prefers-reduced-motion:reduce){.contra .boom{animation:none}}
