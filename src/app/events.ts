@@ -66,7 +66,8 @@ function botPlayed(before: Game, next: Game): void {
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
-  if (next.players.some((p, i) => !p.alive && before.players[i].alive)) { flash(); sound('shot'); buzz(220); }
+  const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
+  if (gone >= 0) { flash(next.players[gone].name, next.players[gone].role === 'hitler'); sound('shot'); buzz(220); }
   const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
   // the votes and what a government said are already on screen, at the top: no note at the foot for them
   play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);
@@ -261,7 +262,7 @@ export function initEvents(): void {
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) {
       const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick);
-      flash(); sound('shot'); buzz(220);
+      flash(t, g.players[ui.pick].role === 'hitler'); sound('shot'); buzz(220);
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }
     else if (a === 'again') start();

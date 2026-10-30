@@ -395,6 +395,11 @@ Modelo de uma decisão:
 - **Decisão:** "Jogar agora", no topo da tela inicial, monta uma partida de 7 lugares (a pessoa e 6 IAs no difícil), com tema e continente sorteados (o Brasil só com a DLC liberada), sem mexer na mesa montada à mão. Começa com a assistência desligada. No fim, "Mudar a mesa" virou "Voltar ao início". As listas de nomes foram revisadas com a pessoa, nome a nome; o Lula só aparece na DLC, com o próprio nome.
 - **Não sei:** se a assistência deve voltar sozinha depois da partida rápida; hoje ela fica desligada até a pessoa ligar de novo.
 
+## D36. Eliminação e investigação com mais peso
+
+- **Contexto (30/10/2026):** "tem como melhorar a animacao de eliminacao e investigacao?" e a proposta aceita.
+- **Decisão:** na eliminação, a tela escurece, o nome aparece grande, "ELIMINADO" é carimbado e uma carta diz se era o líder escondido ("Não era o Hitler" ou "Era o Hitler!"), que é o que a regra deixa a mesa saber; a tela treme uma vez, porque o iPhone não deixa a página vibrar. Na investigação, uma pasta "Confidencial" com o nome do investigado se abre, a lupa passa e o partido é carimbado na carta. Com "reduzir movimento", nada disso se mexe.
+
 ## Pendências
 
 | Pendência | Quem resolve |

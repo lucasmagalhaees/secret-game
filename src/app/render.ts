@@ -644,7 +644,8 @@ function vPhase(g: Game): string {
     case 'investigated':
       return gated(g, 'Investigação', () => {
         const p = Core.investigated(g) as Law;
-        return `${turn(`<div class="role-card ${p}" id="party">${portrait(p === 'L' ? 'liberal' : 'fascista', P, R)}<small>${name(g, g.target as number)} é</small><b>${party(p)}</b><span class="lens" aria-hidden="true"></span></div>`)}<p class="hint">Contar a verdade ou não é com você.</p><button class="btn block" data-act="endpower">Esconder e seguir</button>`;
+        // a confidential file (D36): the cover with the name lifts, the lens sweeps, the party is stamped
+        return `<div class="dossier${flipping ? ' go' : ''}"><div class="cover" aria-hidden="true"><small>Confidencial</small><b>${name(g, g.target as number)}</b></div>${turn(`<div class="role-card ${p}" id="party">${portrait(p === 'L' ? 'liberal' : 'fascista', P, R)}<small>${name(g, g.target as number)} é</small><b>${party(p)}</b><span class="inv-stamp ${p}" aria-hidden="true">${party(p)}</span><span class="lens" aria-hidden="true"></span></div>`)}</div><p class="hint">Contar a verdade ou não é com você.</p><button class="btn block" data-act="endpower">Esconder e seguir</button>`;
       });
     case 'peek':
       return gated(g, 'Poder: espiar', () => `<p>As próximas 3 leis, na ordem:</p><div class="hand" id="peek">${g.deck.slice(0, 3).map(l => law(l)).join('')}</div><button class="btn block" data-act="endpower">Esconder e seguir</button>`);
@@ -688,10 +689,15 @@ export function stamp(text: string, party: Party): void {
   clearTimeout(stampTimer); stampTimer = setTimeout(() => { s.hidden = true; }, 1100);
 }
 /** The screen goes dark for a moment: someone was eliminated. */
-export function flash(): void {
+/** An elimination (D36): the screen darkens, the name comes up, ELIMINADO is stamped on it, and a card turns to say
+ *  what the rule lets the table know: whether it was the hidden leader. The screen shakes once (an iPhone page cannot
+ *  vibrate). Without a name, only the dark. */
+export function flash(who = '', wasBoss = false): void {
   const f = part('flash');
+  f.innerHTML = who ? `<div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span><span class="exec-card ${wasBoss ? 'boss' : ''}">${wasBoss ? `Era o ${W.boss}!` : `Não era o ${W.boss}`}</span></div>` : '';
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
-  setTimeout(() => { f.hidden = true; }, 900);
+  if (who) { document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake'); }
+  setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 3200 : 900);
 }
 /** A law has just been enacted: who made it, over the screen for a moment (D11). The text comes from the code and the
  *  names go through esc(). */
