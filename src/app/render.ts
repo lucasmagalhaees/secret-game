@@ -203,7 +203,8 @@ function vClaim(g: Game, seat: number, w: Ask): string {
   return `<section class="card claim" id="claim-${w}"><span class="label">Diga à mesa${many ? ` · ${name(g, seat)}` : ''}</span><p>${q}</p><div class="pick">${opts.map((o, v) => `<button class="btn ghost" data-act="say" data-w="${w}" data-i="${seat}" data-v="${v}">${o}</button>`).join('')}</div><button class="btn ghost block" data-act="say" data-w="${w}" data-i="${seat}" data-v="-1">Não falar nada</button><p class="hint">Pode mentir. As IAs ouvem e comparam com o que sabem.</p></section>`;
 }
 /** Taking back the last public choice (a nomination, a vote result), while nothing else has happened since. */
-const vUndo = (): string => ui.undo ? `<button class="undo" data-act="undo" id="undo">↶ Desfazer o último toque</button>` : '';
+/** The undo button is gone (D34): the person found it useless. */
+const vUndo = (): string => '';
 
 /** What to do in each phase, for whoever is holding the phone. */
 const HELP: Record<string, string> = {

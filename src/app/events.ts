@@ -209,7 +209,7 @@ export function initEvents(): void {
     else if (a === 'update') applyUpdate();
     else if (a === 'checkupdate') checkNow();
     else if (!g) return;
-    else if (a === 'help') { ui.help = !ui.help; render(); }
+    else if (a === 'help') { ui.help = !ui.help; render(); tick(); }
     else if (a === 'allplays') { ui.allPlays = !ui.allPlays; render(); }
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
     else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }

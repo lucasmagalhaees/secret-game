@@ -659,7 +659,11 @@ body:has(.speech-peek){--dock:116px}
 .quick .big{font-size:20px;min-height:56px}
 .yours.won{border-color:var(--lib)}.yours.lost{border-color:var(--fas)}
 /* the undo floats above the bar for a moment; seats open the notebook; the record filters (D34) */
-.undo{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dock,60px) + 14px + env(safe-area-inset-bottom));z-index:55;box-shadow:4px 4px 0 var(--shadow)}
 .seat-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
 .seat-btn:focus-visible{outline:2px solid var(--fg)}
 .log-tabs{margin:6px 0}
+
+/* the law cards never spill out of the screen on an iPhone (D34): the word shrinks, the card may narrow */
+.law{min-width:0;letter-spacing:.06em;font-size:clamp(9px,2.8vw,12px)}
+.law .sym{width:min(64px,15vw);height:min(64px,15vw)}
+.law .sym .glyph{font-size:min(38px,9vw)}

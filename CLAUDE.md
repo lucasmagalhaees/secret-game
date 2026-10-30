@@ -71,7 +71,7 @@ O que cada peça do harness cobre:
 11. Todo segredo (papel, mão de leis, partido investigado, próximas leis) só aparece depois de "Passe o celular para X" e do toque de X. Recarregar a página fecha o segredo aberto.
 12. A partida em curso fica guardada no aparelho; dá para encerrar no meio (dois toques) e jogar de novo com a mesma mesa.
 13. Um segredo aberto se fecha sozinho quando o app sai da tela. Fechar também com o celular de tela para baixo é opção do cartão "Aparência", desligada de início (D20, `S.flip`): deitado, o sensor acha que o celular foi virado.
-14. A indicação do chanceler e o resultado da votação podem ser desfeitos ("Desfazer o último toque") até acontecer outra coisa; abrir um segredo também tira o desfazer.
+14. Não há botão de desfazer (D34): a pessoa achou inútil.
 15. Cada fase tem uma explicação curta no botão "? Como funciona esta fase".
 16. No fim, a aba "Resumo" (D18) mostra cada governo e a lei que saiu, as rejeições, os vetos, o caos, os poderes e o que cada investigação mostrou de verdade.
 17. Som e vibração (`S.quiet` desliga os dois): sons feitos na hora, sem arquivo, só para o que a mesa toda já sabe (carimbo da votação, papel do descarte, martelo da lei e da eliminação, fanfarra do fim); vibração ao abrir um segredo, ao eleger e ao eliminar. Só o Android deixa uma página vibrar.

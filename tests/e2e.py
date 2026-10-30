@@ -151,15 +151,12 @@ with sync_playwright() as p:
     # help for the phase, open and closed
     pg.click('[data-act=help]'); assert 'escolhe quem vai ser o chanceler' in txt('#helptext')
     pg.click('[data-act=help]'); assert pg.locator('#helptext').count() == 0
-    # a nomination and a vote result can be taken back, until something else happens
-    nominate(4); assert pg.locator('#undo').count() == 1
-    pg.click('#undo'); assert G()['phase'] == 'nominate' and G()['chanc'] is None and pg.locator('#undo').count() == 0
+    # D34: there is no undo button any more
     nominate(4); votes(False)
     assert pg.evaluate('document.getElementById("stamp").hidden') is False and 'Rejeitado' in txt('#stamp'), 'the vote result is stamped on the screen'
     assert not over_phase('#stamp'), 'the stamp lands on the strip at the top, not on the phase'
     assert G()['tracker'] == 1 and pg.locator('#tracker.bump').count() == 1, 'the tracker shakes when it moves'
-    pg.click('#undo'); assert G()['phase'] == 'vote' and G()['tracker'] == 0 and G()['chanc'] == 4
-    votes(False); assert G()['tracker'] == 1 and G()['pres'] == 4 and 'rejeitado' in txt('#toast')
+    assert G()['tracker'] == 1 and G()['pres'] == 4 and 'rejeitado' in txt('#toast')
     nominate(5); votes(False)
     stack('LFFLFFLL')
     nominate(6); votes(False)
