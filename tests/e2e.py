@@ -183,7 +183,7 @@ with sync_playwright() as p:
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'execute'
     assert pg.locator('[data-act=execute]').is_disabled()
     pg.click('#phase [data-act=pickp][data-i="5"]'); assert 'Eliminar <b>Gil</b>' in txt('[data-act=execute]')
-    pg.click('[data-act=execute]'); assert pg.locator('#power-effect.execute').is_visible() and '<b>Gil</b>' in txt('#power-effect') and pg.locator('#power-effect b b').count() == 0
+    pg.click('[data-act=execute]'); assert 'Gil' in pg.text_content('#flash') and 'Eliminado' in pg.text_content('#flash') and pg.locator('#flash b b').count() == 0 and pg.locator('#power-effect.execute').count() == 0, 'one elimination screen, not two (D42)'
     assert G()['players'][5]['alive'] is False and '<b>Gil</b> foi eliminado' in txt('#toast') and pg.locator('#players li.dead').count() == 1
     # 5th: Duda eliminates Bia
     stack('FFLFFL'); govern(6, 'F'); assert G()['phase'] == 'execute' and G()['laws']['F'] == 5
@@ -538,9 +538,8 @@ with sync_playwright() as p:
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'execute'; g.target = null; localStorage.setItem('secrethitler.v1', JSON.stringify(window.__APP.S)); }""")
     cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "execute"')
     mp.click('#phase [data-act=pickp][data-i="2"]'); mp.click('[data-act=execute]')
-    assert mp.locator('#power-effect.execute.go').is_visible()
-    assert mp.evaluate("getComputedStyle(document.querySelector('#power-effect .power-mark')).animationName") == 'gunRecoil'
-    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .power-card')).opacity) > .9")
+    # D42: the elimination has one screen of its own, with motion: the name, the stamp, the card
+    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#flash')).opacity) > .9"); assert 'Eliminado' in mp.text_content('#flash') and mp.locator('#power-effect.execute').count() == 0
     mp.screenshot(path=str(SHOTS / f'power-execute-{THEME}.png'))
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs

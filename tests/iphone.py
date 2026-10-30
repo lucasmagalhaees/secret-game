@@ -38,6 +38,10 @@ try:
         if page.locator('#contra').count(): page.locator('#contra').dispatch_event('click')
         assert page.locator('#heard').is_visible(), 'a button click must repaint even while Safari keeps the editor focused'
         assert page.locator('#notes [data-act=court][data-i="1"]').count() == 0
+        # D42: an app player accuses the person: the accusation screen, with the answers on it, and the result there too
+        page.evaluate("(() => { const A = window.__APP, g = A.S.game, me = g.players.findIndex(p => !p.ai), by = g.players.findIndex((p, i) => p.ai && p.alive && i !== me); A.S.game = { ...g, hist: [...g.hist, { k: 'talk', by, about: me, say: 'acc' }], log: [...g.log, g.players[by].name + ': \"Explica isso.\"'] }; })()")
+        page.locator('[data-act=help]').first.dispatch_event('click')
+        assert page.locator('#defense').count() == 1, 'the answer card, when the screen is not open'
         assert 'Lucas' in page.inner_text('#speech-peek') and 'Truman' in page.inner_text('#speech-peek')
         page.click('#speech-peek')
         assert page.locator('#diary').is_visible() and not page.locator('#drawer').is_visible()

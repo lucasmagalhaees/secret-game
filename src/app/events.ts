@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { beat, blurField, contradiction, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
+import { beat, blurField, contradiction, defenseResult, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -25,7 +25,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   render();
   if (before && changed) {
     const power = next.hist.slice(before.hist.length).find(e => e.k === 'inv' || e.k === 'exec');
-    if (power && (power.k === 'inv' || power.k === 'exec')) powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
+    if (power && power.k === 'inv') powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
   }
   if (msg && changed && !spoke) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
@@ -64,7 +64,7 @@ function botPlayed(before: Game, next: Game): void {
   const told = Core.botTurn(before)?.ask;
   // an app player pointed a proof at the person (D40): the same CONTRADIÇÃO! the person gets
   const said = next.hist[next.hist.length - 1], me = next.players.findIndex(p => !p.ai);
-  if (next.hist.length > before.hist.length && said?.k === 'talk' && said.hit && said.about === me && next.players.filter(p => !p.ai).length === 1) { setTimeout(() => contradiction(next, next.hist.length - 1), 50); sound('stamp'); }
+  if (next.hist.length > before.hist.length && said?.k === 'talk' && said.say === 'acc' && said.about === me && next.players.filter(p => !p.ai).length === 1) { setTimeout(() => contradiction(next, next.hist.length - 1), 50); sound('stamp'); }
   hold = told === 'pc' || told === 'cc' || told === 'inv' || told === 'peek';
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
@@ -242,7 +242,8 @@ export function initEvents(): void {
     else if (a === 'notesopen') { ui.diary = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
-    else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' ? (t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.') : undefined); }
+    else if (a === 'contraclose') document.getElementById('contra')?.remove();
+    else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next); defenseResult(!!(t && t.k === 'talk' && t.ok), d.v || 'quiet'); }
     else if (a === 'court') { ui.court = i; ui.courtProof = null; ui.courtTone = undefined; render(); }
     else if (a === 'courtclose') { ui.court = null; render(); }
     else if (a === 'courtproof') { ui.courtProof = ui.courtProof === i ? null : i; ui.courtTone = ui.courtProof === null ? 'firm' : 'proof'; render(); }
