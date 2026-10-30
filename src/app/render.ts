@@ -520,7 +520,7 @@ function vDock(g: Game): string {
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
     `<button class="dock-btn${ui.diary ? ' open' : ''}" id="diarytoggle" data-act="diary" aria-expanded="${ui.diary}" aria-controls="diary">Diário${rows.length ? ` · ${rows.length}` : ''}</button>`
   ];
-  return `${vDrawer(g)}${vDiary(g, rows)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
+  return `${vDrawer(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
 }
 /** The personalities of the app players (D26), as the table knows them: a name and a line. */
 export const PERSONA_W: Record<Persona, [string, string]> = {
@@ -534,6 +534,19 @@ export const PERSONA_W: Record<Persona, [string, string]> = {
 };
 /** The notebook as a side panel (D14): the bar at the bottom opens it over the game, and closes it again; on a wide
  *  screen it stays open beside the game. */
+/** The court (D39): accusing someone with a proof from the record and a tone, as a sheet over the game. */
+function vCourt(g: Game): string {
+  const t = ui.court, me = solo(g);
+  if (t === null || t === undefined || me < 0 || !Core.canDenounce(g, me, t)) return '';
+  const ev = Core.evidence(g, t), pick = ui.courtProof ?? null, tone = ui.courtTone || (pick !== null ? 'proof' : 'firm');
+  const cards = (f: number, of: number): string => Array.from({ length: of }, (_, k) => `<i class="lc ${k < of - f ? 'L' : 'F'}"></i>`).join('');
+  const item = (x: ReturnType<typeof Core.evidence>[number]): string => `<button class="ev${pick === x.at ? ' on' : ''}" data-act="courtproof" data-i="${x.at}"><small>${esc(x.title)}</small><span>${esc(x.text)}</span>${x.kind === 'clash' && x.pc !== undefined && x.cc !== undefined ? `<span class="ev-cards">${cards(x.pc, 3)} → ${cards(x.cc, 2)}${x.law ? ` → <i class="lc ${x.law}"></i>` : ''}</span>` : ''}${x.hit ? `<b class="ev-hit">${x.kind === 'clash' ? 'A conta não fecha' : 'Saiu lei {f}'}</b>` : ''}</button>`;
+  const tones: ['soft' | 'firm' | 'proof', string][] = [['soft', 'Desconfio'], ['firm', 'Acuso'], ['proof', 'Tenho prova']];
+  return `<div class="court-back" data-act="courtclose"></div><section class="court" id="court" role="dialog" aria-label="Acusar ${name(g, t)}"><span class="label">📣 Acusar ${name(g, t)}</span>
+    <h2>Qual é a prova?</h2><p class="hint">${ev.length ? 'Toque no que está na ata contra ele.' : 'A ata não tem nada contra ele ainda. Dá para acusar mesmo assim.'}</p>${ev.map(item).join('')}
+    <div class="tones">${tones.map(([k, l]) => `<button class="${tone === k ? 'on' : ''}" data-act="courttone" data-v="${k}"${k === 'proof' && pick === null ? ' disabled' : ''}>${l}</button>`).join('')}</div>
+    <button class="btn block go" data-act="accuse" id="accuse">Acusar</button><button class="more" data-act="courtclose">Cancelar</button></section>`;
+}
 function vDrawer(g: Game): string {
   const kit = noteKit(g);
   if (!kit) return '';
@@ -544,7 +557,7 @@ function vDrawer(g: Game): string {
   const side = (i: number, p: Law): string => {
     const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
     const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">🗒️</button>`;
-    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="denounce" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
+    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="${p === 'L' ? 'denounce' : 'court'}" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
     return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
 
@@ -644,7 +657,8 @@ function vPhase(g: Game): string {
     case 'investigated':
       return gated(g, 'Investigação', () => {
         const p = Core.investigated(g) as Law;
-        return `${turn(`<div class="role-card ${p}" id="party">${portrait(p === 'L' ? 'liberal' : 'fascista', P, R)}<small>${name(g, g.target as number)} é</small><b>${party(p)}</b><span class="lens" aria-hidden="true"></span></div>`)}<p class="hint">Contar a verdade ou não é com você.</p><button class="btn block" data-act="endpower">Esconder e seguir</button>`;
+        // a confidential file (D38): the cover with the name lifts, the lens sweeps, the party is stamped
+        return `<div class="dossier${flipping ? ' go' : ''}"><div class="cover" aria-hidden="true"><small>Confidencial</small><b>${name(g, g.target as number)}</b></div>${turn(`<div class="role-card ${p}" id="party">${portrait(p === 'L' ? 'liberal' : 'fascista', P, R)}<small>${name(g, g.target as number)} é</small><b>${party(p)}</b><span class="inv-stamp ${p}" aria-hidden="true">${party(p)}</span><span class="lens" aria-hidden="true"></span></div>`)}</div><p class="hint">Contar a verdade ou não é com você.</p><button class="btn block" data-act="endpower">Esconder e seguir</button>`;
       });
     case 'peek':
       return gated(g, 'Poder: espiar', () => `<p>As próximas 3 leis, na ordem:</p><div class="hand" id="peek">${g.deck.slice(0, 3).map(l => law(l)).join('')}</div><button class="btn block" data-act="endpower">Esconder e seguir</button>`);
@@ -688,10 +702,15 @@ export function stamp(text: string, party: Party): void {
   clearTimeout(stampTimer); stampTimer = setTimeout(() => { s.hidden = true; }, 1100);
 }
 /** The screen goes dark for a moment: someone was eliminated. */
-export function flash(): void {
+/** An elimination (D38): the screen darkens, the name comes up, ELIMINADO is stamped on it, and a card turns to say
+ *  what the rule lets the table know: whether it was the hidden leader. The screen shakes once (an iPhone page cannot
+ *  vibrate). Without a name, only the dark. */
+export function flash(who = '', wasBoss = false): void {
   const f = part('flash');
+  f.innerHTML = who ? `<div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span><span class="exec-card ${wasBoss ? 'boss' : ''}">${wasBoss ? `Era o ${W.boss}!` : `Não era o ${W.boss}`}</span></div>` : '';
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
-  setTimeout(() => { f.hidden = true; }, 900);
+  if (who) { document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake'); }
+  setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 3200 : 900);
 }
 /** A law has just been enacted: who made it, over the screen for a moment (D11). The text comes from the code and the
  *  names go through esc(). */
@@ -731,3 +750,28 @@ export function toast(text: string): void {
 }
 /** Lets go of the field with the focus, so the screen can be painted again. */
 export function blurField(): void { const a = document.activeElement as HTMLElement | null; if (a && a.blur && $('#view')?.contains(a)) a.blur(); }
+
+/** "CONTRADIÇÃO!" (D39): an accusation whose proof holds, over the whole screen: the proof, the accused stammering,
+ *  and how the table took it, by name. A tap closes it; it closes by itself after a while. */
+export function contradiction(g: Game, at: number): void {
+  const t = g.hist[at];
+  if (!t || t.k !== 'talk' || !t.hit) return;
+  const p = Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about).find(x => x.at === t.proof);
+  const re = t.re || [], groups: [string, string, number[]][] = [['Concordam', '#2f9e5b', []], ['Não sabem', '#5b544b', []], ['Discordam', '#d63c2b', []]];
+  re.forEach(([i, a]) => groups[a]?.[2].push(i));
+  const n = Math.max(1, re.length), yes = groups[0][2].length, no = groups[2][2].length;
+  const pie = `conic-gradient(#2f9e5b 0 ${(100 * yes) / n}%, #5b544b 0 ${(100 * (n - no)) / n}%, #d63c2b 0 100%)`;
+  const cards = (f: number, of: number): string => Array.from({ length: of }, (_, k) => `<i class="big ${k < of - f ? 'L' : 'F'}"></i>`).join('');
+  const said = g.log[g.log.length - 1] || '', quote = said.slice(said.indexOf('"'));
+  const el = document.createElement('div');
+  el.className = 'contra'; el.id = 'contra';
+  el.innerHTML = themed(`<div class="burst"></div><b class="boom">Contradição!</b>
+    <div class="proof"><small>A prova · ${esc(p?.title || '')}</small>${p && p.pc !== undefined && p.cc !== undefined ? `<div class="pr"><span>${name(g, t.about)} disse</span>${t.about === (g.hist[p.at] as Gov).pres ? cards(p.pc, 3) : cards(p.cc, 2)}</div>` : `<p>${esc(p?.text || '')}</p>`}${p?.law ? `<div class="pr"><span>Saiu lei</span><i class="big ${p.law}"></i></div>` : ''}</div>
+    <div class="talk2"><b>${name(g, t.about)}</b><p>${esc(quote)}</p></div>
+    <div class="pie"><div class="donut" style="background:${pie}"><b>${yes}/${re.length}</b><small>concordam</small></div><ul>${groups.map(([l, c, xs]) => `<li><i style="background:${c}"></i><span><b>${l}</b>${xs.length ? xs.map(i => name(g, i)).join(', ') : '—'}</span></li>`).join('')}</ul></div>
+    <small class="tap">Toque para fechar</small>`, W as unknown as Record<string, string>);
+  document.getElementById('contra')?.remove();
+  document.body.appendChild(el);
+  const close = (): void => { el.remove(); };
+  el.addEventListener('click', close); setTimeout(close, 9000);
+}

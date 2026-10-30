@@ -354,6 +354,14 @@ export default function cases(Core) {
   eq('votes in the tongue of each continent (D29): the world and Europe keep the original; the rest of the words stay', [Core.words('fascismo', 'mundo').ja, Core.words('comunismo', 'europa').nein, Core.words('fascismo', 'americas').ja, Core.words('comunismo', 'brasil').nein, Core.words('fascismo', 'asia').ja, Core.words('comunismo', 'asia').ja, Core.words('comunismo', 'africa').nein, Core.words('fascismo', 'oceania').ja, Core.words('comunismo', 'brasil').boss, Core.words().ja], ['Ja!', 'Niet!', '¡Sí!', 'Não!', 'Hai!', 'Shì!', 'Hapana!', 'Yes!', 'Stalin', 'Ja!']);
   eq('votes of the continent in the record', Core.castVotes({ ...ai7({ phase: 'vote', chanc: 4 }), region: 'brasil' }, { 0: true }, Core.seeded(5)).log.find(l => l.startsWith('Votos.')).startsWith('Votos. Sim!: Ana'), true);
   eq('read state: the suspicion gauge switch (D32)', [Core.readState({ gauge: true }).gauge, 'gauge' in Core.readState({ gauge: 1 })], [true, false]);
+  /* the court (D39): what the record holds against someone, and accusing with a tone and a proof */
+  const court = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'vote', pres: 2, chanc: 3, ja: [2, 3, 4] }, { k: 'gov', pres: 2, chanc: 3, law: 'F', pc: 1, cc: 2 }, { k: 'rej', pres: 3, chanc: 4 }] });
+  const ev3 = Core.evidence(court, 3), ev4 = Core.evidence(court, 4);
+  eq('evidence: a government whose story does not add up holds; a Ja! for a fascist government is a hint that does not', [ev3.map(x => [x.kind, x.hit]), ev4.map(x => [x.kind, x.hit])], [[['clash', true]], [['vote', false]]]);
+  const hitG = Core.accuse(court, 0, 3, 'proof', ev3[0].at, Core.seeded(4)), hitT = hitG.hist.at(-1);
+  eq('accuse with a proof that holds: tagged, and the accused stammers', [hitT.k, hitT.tone, hitT.proof, hitT.hit, /…|—/.test(hitG.log.at(-1))], ['talk', 'proof', ev3[0].at, true, true]);
+  const missG = Core.accuse(court, 0, 4, 'firm', null, Core.seeded(4));
+  eq('accuse firmly without anything that holds: no hit, and the accuser loses credibility with the table', [missG.hist.at(-1).hit, Core.believe(Core.viewOf(missG, 6, 'vote', [1, 0])).pF[0] > Core.believe(Core.viewOf(Core.accuse(court, 0, 4, 'soft', null, Core.seeded(4)), 6, 'vote', [1, 0])).pF[0]], [undefined, true]);
   /* the notebook scored at the end (D28): seat 6 is a liberal; 0 Hitler, 1 and 2 fascists */
   const nb = ai7({ phase: 'over', winner: 'L', why: 'x', notes: { 0: 'F', 1: 'L', 4: 'L', 3: 'L', 6: 'F' }, hist: [{ k: 'inv', by: 6, target: 3, party: 'L' }] });
   eq('notes score: right and wrong, leaving out the seat itself and what it knew for sure (its own investigation)', Core.notesScore(nb, 6), { right: [0, 4], wrong: [1] });

@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { beat, blurField, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
+import { beat, blurField, contradiction, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -66,7 +66,8 @@ function botPlayed(before: Game, next: Game): void {
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
-  if (next.players.some((p, i) => !p.alive && before.players[i].alive)) { flash(); sound('shot'); buzz(220); }
+  const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
+  if (gone >= 0) { flash(next.players[gone].name, next.players[gone].role === 'hitler'); sound('shot'); buzz(220); }
   const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
   // the votes and what a government said are already on screen, at the top: no note at the foot for them
   play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);
@@ -192,7 +193,7 @@ export function initEvents(): void {
   document.addEventListener('click', e => {
     // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
     const tgt = e.target as HTMLElement;
-    if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote]')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
+    if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote], #court, .court-back')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
     const b = tgt.closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     // Safari may leave a textarea focused when tapping a button. Commit its text and allow the repaint.
     blurField();
@@ -237,6 +238,18 @@ export function initEvents(): void {
     else if (a === 'notesopen') { ui.diary = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
+    else if (a === 'court') { ui.court = i; ui.courtProof = null; ui.courtTone = undefined; render(); }
+    else if (a === 'courtclose') { ui.court = null; render(); }
+    else if (a === 'courtproof') { ui.courtProof = ui.courtProof === i ? null : i; ui.courtTone = ui.courtProof === null ? 'firm' : 'proof'; render(); }
+    else if (a === 'courttone') { ui.courtTone = d.v === 'soft' || d.v === 'proof' ? d.v : 'firm'; render(); }
+    else if (a === 'accuse' && ui.court !== null && ui.court !== undefined) {
+      const me = g.players.findIndex(p => !p.ai), t = ui.court, tone = ui.courtTone || (ui.courtProof !== null && ui.courtProof !== undefined ? 'proof' : 'firm');
+      const next = Core.accuse(g, me, t, tone, tone === 'proof' ? ui.courtProof ?? null : null, rand);
+      ui.court = null; ui.undo = null; play(next, Core.accusationFeedback(next, next.hist.length - 1));
+      const e = next.hist[next.hist.length - 1];
+      if (e && e.k === 'talk' && e.hit) { contradiction(next, next.hist.length - 1); sound('stamp'); buzz([60, 40, 120]); }
+      else if (e && e.k === 'talk' && e.re) reactions(e.re.map(r => r[1]));
+    }
     else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); const t = next.hist[next.hist.length - 1]; if (t && t.k === 'talk' && t.re) reactions(t.re.map(r => r[1])); }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }
     else if (a === 'open') { askOrientation(); ui.undo = null; ui.open = d.k || ''; ui.pick = null; buzz(25); render(); window.scrollTo(0, 0); }
@@ -261,7 +274,7 @@ export function initEvents(): void {
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) {
       const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick);
-      flash(); sound('shot'); buzz(220);
+      flash(t, g.players[ui.pick].role === 'hitler'); sound('shot'); buzz(220);
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }
     else if (a === 'again') start();
