@@ -329,9 +329,9 @@ with sync_playwright() as p:
     pg.locator('#seats [data-act=seatnote]').first.click(); assert pg.locator('#drawer').is_visible(), 'a seat opens the notebook (D34)'; pg.click('#notestoggle')
     assert pg.locator('#phase.mine').count() + pg.locator('#thinking').count() >= 1, 'your turn glows, or an app player is deciding (D34)'
     # D43: reputation stars beside each name
-    pg.evaluate('window.__APP.S.rep = true'); pg.click('#gaugetoggle'); pg.click('#gaugetoggle'); assert pg.locator('#seats .rep').count() >= 5; pg.evaluate('delete window.__APP.S.rep')
+    pg.click('#reptoggle'); assert pg.locator('#seats .rep').count() >= 5, 'the reputation stars turn on in the game (D43, D37)'; pg.click('#reptoggle'); assert pg.locator('#seats .rep').count() == 0
     # D37: switched on in the settings, the meter is already on in the game
-    pg.evaluate('window.__APP.S.gauge = true'); pg.click('#gaugetoggle'); pg.click('#gaugetoggle')
+    pg.evaluate('window.__APP.S.gauge = true'); pg.click('#gaugetoggle')   # the button still says "on": it repaints with the meter on
     assert pg.locator('#gauge').count() == 1 and pg.get_attribute('#gaugetoggle', 'aria-pressed') == 'true', 'on in the settings, on in the game'
     pg.click('#gaugetoggle'); assert pg.locator('#gauge').count() == 0
     # D17: the panels open from a bar at the bottom that has its own room: scrolled to the end, nothing is under it

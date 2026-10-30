@@ -283,7 +283,7 @@ function vGame(g: Game): string {
     const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vYours(g) + vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
     return card + bar + body + vDock(g);
   }
-  return vUndo() + vStatus(g) + vSeats(g) + vGauge(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
+  return vUndo() + vStatus(g) + vSeats(g) + vMeters(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
 /** The headline of each phase, printed on the page that turns in (D46). */
 const HEAD: Record<string, string> = { reveal: 'Papéis', nominate: 'Nova rodada', vote: 'Votação', president: 'Sessão legislativa', chancellor: 'Sessão legislativa', veto: 'Veto', investigate: 'Poder', peek: 'Poder', special: 'Poder', execute: 'Poder', over: 'Fim de jogo', bot: 'Vez da IA' };
@@ -416,12 +416,13 @@ let liveCache: { key: string; rows: { seat: number; f: number }[] } | null = nul
 /** The suspicion meter (D32, D37): like an oil gauge, a needle from 0 to 100 with how much the app players suspect the person
  *  now, on average (the same reckoning as the bars beside each name). Only alone at the table; the switch is here and in the settings. */
 let gaugeAt = -90;
-function vGauge(g: Game): string {
+function vMeters(g: Game): string {
   const me = solo(g);
-  if (me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';
-  // one switch for the whole meter (D37): the needle, the bar beside each app player and the crux, on in the settings or here
-  const toggle = `<button class="live-toggle" data-act="gauge" data-v="${S.gauge ? 'off' : 'on'}" aria-pressed="${!!S.gauge}" id="gaugetoggle">👁 Desconfiômetro: ${S.gauge ? 'ligado' : 'desligado'}</button>`;
-  if (!S.gauge) return toggle;
+  if (g.phase === 'reveal' || g.phase === 'over') return '';
+  // one switch for the whole suspicion meter (D37) and one for the reputation stars (D43), here and in the settings
+  const sw = (act: string, id: string, on: boolean, name: string): string => `<button class="live-toggle" data-act="${act}" data-v="${on ? 'off' : 'on'}" aria-pressed="${on}" id="${id}">${name}: ${on ? 'ligado' : 'desligado'}</button>`;
+  const toggle = `<div class="meter-toggles">${me >= 0 ? sw('gauge', 'gaugetoggle', !!S.gauge, '👁 Desconfiômetro') : ''}${sw('rep', 'reptoggle', !!S.rep, '★ Reputômetro')}</div>`;
+  if (me < 0 || !S.gauge) return toggle;
   const rows = liveSuspicion(g, me), v = rows.length ? rows.reduce((a, r) => a + r.f, 0) / rows.length : 0, deg = -90 + 180 * v;
   const word = v < 0.35 ? 'tranquilo' : v < 0.6 ? 'de olho' : 'na mira';
   return `<div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Desconfiômetro"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 43 15" stroke="#3aa05a" stroke-width="10" fill="none"/><path d="M43 15 A50 50 0 0 1 77 15" stroke="#e8b730" stroke-width="10" fill="none"/><path d="M77 15 A50 50 0 0 1 110 62" stroke="#d63c2b" stroke-width="10" fill="none"/><g class="needle" data-to="${deg.toFixed(1)}" style="transform:rotate(${gaugeAt.toFixed(1)}deg)"><path d="M60 62 L58 20 L60 14 L62 20Z" fill="currentColor"/></g><circle cx="60" cy="62" r="5" fill="currentColor"/></svg><span><small>Desconfiômetro</small><b>${pct(v)}</b> ${word}</span></div>${toggle}`;

@@ -10,6 +10,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões: 
 - IA difícil e extrema priorizam leis decisivas sobre blefes, reputação e erros aleatórios, e usam o veto disponível para bloquear uma lei que daria vitória ao adversário.
 
 ### Adicionado
+- Reputômetro (as estrelas) liga e desliga também dentro da partida, ao lado do botão do desconfiômetro.
 - Desconfiômetro unificado: uma chave só liga e desliga o ponteiro, a barra de cada IA e o momento que mais fez a desconfiança subir, nas opções e dentro da partida (antes eram dois controles: "desconfiança ao vivo" e "desconfiômetro").
 - Avisos simples de reputação no rodapé e no Diário, baseados em coerência e reações públicas, sem pontuação única.
 - Diário público com o texto completo das falas e respostas; rodapé com resumo persistente de quem falou sobre quem.
