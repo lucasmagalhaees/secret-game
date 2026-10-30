@@ -406,6 +406,7 @@ with sync_playwright() as p:
     if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     pg.click('[data-act=endtab][data-v=log]'); pg.click('#log [data-act=logfilter][data-v=talk]'); assert all(': "' in t for t in pg.locator('#log .log li').all_text_contents()), 'the record shows only what was said (D34)'; pg.click('#log [data-act=logfilter][data-v=all]'); pg.click('[data-act=endtab][data-v=res]')
+    assert pg.locator('#badges').count() == 1 and pg.locator('#share').count() == 1, 'achievements and sharing at the end (D41)'
     assert pg.locator('#yours').count() == 1 and ('venceu' in txt('#yours') or 'perdeu' in txt('#yours')), 'your game at a glance (D34)'
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
     assert pg.locator('#highlights').count() == 1 and 1 <= pg.locator('#highlights article').count() <= 3

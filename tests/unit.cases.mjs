@@ -362,6 +362,16 @@ export default function cases(Core) {
   eq('accuse with a proof that holds: tagged, and the accused stammers', [hitT.k, hitT.tone, hitT.proof, hitT.hit, /…|—/.test(hitG.log.at(-1))], ['talk', 'proof', ev3[0].at, true, true]);
   const missG = Core.accuse(court, 0, 4, 'firm', null, Core.seeded(4));
   eq('accuse firmly without anything that holds: no hit, and the accuser loses credibility with the table', [missG.hist.at(-1).hit, Core.believe(Core.viewOf(missG, 6, 'vote', [1, 0])).pF[0] > Core.believe(Core.viewOf(Core.accuse(court, 0, 4, 'soft', null, Core.seeded(4)), 6, 'vote', [1, 0])).pF[0]], [undefined, true]);
+  /* the app players take the court, the accused defends, Hitler's style (D40) */
+  const aiAcc = Core.talk({ ...court, phase: 'nominate' }, Core.talker(court), 2 * 3);
+  const at3 = aiAcc.hist.at(-1);
+  eq('an app player accusing with a proof that holds makes it a court accusation', [at3.say, at3.tone, at3.hit], ['acc', 'proof', true]);
+  const pend = { ...court, hist: [...court.hist, { k: 'talk', by: 1, about: 0, say: 'acc', tone: 'proof', proof: 1, hit: true }] };
+  eq('the accused sees an accusation waiting for an answer, once', [Core.pendingAccusation(pend, 0), Core.pendingAccusation(Core.defend(pend, 0, 'quiet'), 0)], [3, -1]);
+  const test = { ...court, hist: [{ k: 'vote', pres: 0, chanc: 3, ja: [0, 3, 4] }, { k: 'gov', pres: 0, chanc: 3, law: 'L', pc: 1, cc: 1 }, { k: 'talk', by: 1, about: 0, say: 'acc', tone: 'proof', proof: 1 }] };
+  eq('a defence holds only when the record backs it: a test that a liberal law came out of', [Core.defend(test, 0, 'test').hist.at(-1).ok, Core.defend(test, 0, 'deck').hist.at(-1).ok, Core.defend(test, 0, 'quiet').hist.at(-1).ok], [true, false, false]);
+  eq('the straight Hitler hides more than the bluffer', Core.BOSS_STYLE.certinho > Core.BOSS_STYLE.blefador, true);
+  eq('achievements (D41): only for a finished game; a liberal who eliminated Hitler and won is a hunter and a winner', [Core.achievements(court, 0), Core.achievements({ ...court, phase: 'over', winner: 'L', why: 'x', hist: [{ k: 'exec', by: 6, target: 0 }] }, 6).sort()], [[], ['hunter', 'win']]);
   /* the notebook scored at the end (D28): seat 6 is a liberal; 0 Hitler, 1 and 2 fascists */
   const nb = ai7({ phase: 'over', winner: 'L', why: 'x', notes: { 0: 'F', 1: 'L', 4: 'L', 3: 'L', 6: 'F' }, hist: [{ k: 'inv', by: 6, target: 3, party: 'L' }] });
   eq('notes score: right and wrong, leaving out the seat itself and what it knew for sure (its own investigation)', Core.notesScore(nb, 6), { right: [0, 4], wrong: [1] });

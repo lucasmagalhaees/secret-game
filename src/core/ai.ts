@@ -59,6 +59,9 @@ function knob(v: View): Knobs {
   const k = AI[v.level], p = PERSONA[v.persona || 'centrado'];
   return { ...k, noise: Math.min(1, k.noise + p.wild), act: Math.min(1, k.act * p.bluff) };
 }
+/** How each personality plays the hidden leader (D40): how much more (or less) often than usual it lets a liberal law
+ *  through early to look clean. The straight one hides deep, the bluffer and the chaotic push their luck. */
+export const BOSS_STYLE: Record<Persona, number> = { certinho: 0.25, desconfiado: 0.1, cetico: 0, critico: 0.05, centrado: 0, blefador: -0.25, caotico: -0.15 };
 /** The answers to 'react' (D26). */
 export const REACT = { agree: 0, unsure: 1, disagree: 2 } as const;
 /** How much an answer to a claim weighs, against a talk of its own (D33): a little. */
@@ -273,7 +276,7 @@ export function believe(v: View, outside = false): Beliefs {
   })();
   const social = Array.from({ length: v.n }, (_, seat) => socialMemory({ ...v, hist: v.hist.slice(remember) }, seat));
   const repeats = v.hist.map((e, i) => e.k === 'talk' ? claimRepeats(v.hist, i, remember) : 0);
-  const support = v.hist.map((e, i) => e.k === 'talk' && (!!e.hit || backed(v.hist, remember, i, e.about, e.say === 'acc')));   // a proof that holds weighs double (D39)
+  const support = v.hist.map((e, i) => e.k === 'talk' && !e.ok && (!!e.hit || backed(v.hist, remember, i, e.about, e.say === 'acc')));   // a defence that holds takes it back (D40)   // a proof that holds weighs double (D39)
   const generated = worlds(v, outside);
   const viable = generated.filter(roles => {
     let enactedF = 0;
@@ -356,7 +359,7 @@ export function believe(v: View, outside = false): Beliefs {
         const acc = e.say === 'acc', right = fasc(roles[e.about]) === acc, liar = fasc(roles[e.by]);
         const like = right ? (liar ? 1 - TALK_LIE : 1 - SLIP_TALK) : liar ? TALK_LIE : SLIP_TALK;
         const ear = PERSONA[outside ? 'centrado' : v.persona || 'centrado'];
-        const reliability = 1 / (1 + 0.35 * social[e.by].contradictions + 0.5 * social[e.by].reversals);
+        const reliability = (e.ok ? 0.4 : 1) / (1 + 0.35 * social[e.by].contradictions + 0.5 * social[e.by].reversals);
         weight((2 * like) ** (TALK_W * reliability * (support[i] ? ear.proof : ear.ear)));
         // how the table took it (D33): agreeing repeats the claim, disagreeing says the opposite, each a fraction of a
         // talk, weighed by the credibility of who answered; the one claimed and this player's own answer do not count
@@ -846,8 +849,8 @@ function hidden(v: View, rand: () => number): number {
     return m === Math.min(2, d) ? v.hand.indexOf('L') : v.hand.indexOf('F');
   }
   if (k.image && v.ask === 'cdiscard' && nF(v.hand) === 1) return weigh(v, [{ law: 'F', cc: 2 }, { law: 'L', cc: 1 }], v.me) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
-  if (v.ask === 'pdiscard') { const L = v.hand.indexOf('L'), keep = L >= 0 && !(early && rand() < 0.5 + k.trust); why(keep ? 'É o {boss}: jogou fora a liberal.' : 'É o {boss}: passou o melhor que tinha, para parecer liberal.'); return keep ? L : Math.max(0, v.hand.indexOf('F')); }
-  if (v.ask === 'cdiscard') { const L = v.hand.indexOf('L'); if (nF(v.hand) === 1 && !(early && rand() < 0.5 + k.trust)) { why('É o {boss}: aprovou a {f}.'); return L; } return liberal(v, rand); }
+  if (v.ask === 'pdiscard') { const L = v.hand.indexOf('L'), keep = L >= 0 && !(early && rand() < 0.5 + k.trust + BOSS_STYLE[v.persona || 'centrado']); why(keep ? 'É o {boss}: jogou fora a liberal.' : 'É o {boss}: passou o melhor que tinha, para parecer liberal.'); return keep ? L : Math.max(0, v.hand.indexOf('F')); }
+  if (v.ask === 'cdiscard') { const L = v.hand.indexOf('L'); if (nF(v.hand) === 1 && !(early && rand() < 0.5 + k.trust + BOSS_STYLE[v.persona || 'centrado'])) { why('É o {boss}: aprovou a {f}.'); return L; } return liberal(v, rand); }
   if (v.ask === 'veto') { why(nF(v.hand) === 0 ? 'É o {boss} e passou 2 liberais: aceitou o veto.' : 'É o {boss}: recusou o veto.'); return nF(v.hand) === 0 ? 1 : 0; }
   if (v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek') return fascistTalk(v, rand, i => seen.has(i));
   if (k.plan && seen.size && (v.ask === 'nominate' || v.ask === 'special')) {

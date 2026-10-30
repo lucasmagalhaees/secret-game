@@ -5,7 +5,7 @@ import { animalOf, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { S, ui } from './state';
 import { builtFrom, canUpdate } from './update';
-import { kept } from './history';
+import { earned, kept } from './history';
 
 /* ================= the screen =================
    Rendering is innerHTML from the state. Every text that did not come from the code goes through esc(). A field with
@@ -72,7 +72,12 @@ function vYours(g: Game): string {
   const me = solo(g);
   if (me < 0 || !g.winner) return '';
   const p = g.players[me], won = Core.partyOf(p.role) === g.winner, sc = g.notes ? Core.notesScore(g, me) : null, n = sc ? sc.right.length + sc.wrong.length : 0;
-  return `<section class="card yours ${won ? 'won' : 'lost'}" id="yours"><p class="big">${won ? '🏆 Você venceu' : '💀 Você perdeu'}</p><p>Você era <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>${n ? ` · caderno: <b>${sc?.right.length}</b> de ${n} certas` : ''}</p></section>`;
+  return `<section class="card yours ${won ? 'won' : 'lost'}" id="yours"><p class="big">${won ? '🏆 Você venceu' : '💀 Você perdeu'}</p><p>Você era <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>${n ? ` · caderno: <b>${sc?.right.length}</b> de ${n} certas` : ''}</p>${vBadges(g, me)}<button class="btn ghost block" data-act="share" id="share">📤 Compartilhar resultado</button></section>`;
+}
+/** The achievements of this game (D41), and how many of all there are the person has on the device. */
+function vBadges(g: Game, me: number): string {
+  const got = Core.achievements(g, me), all = Object.keys(Core.ACHIEVEMENTS), have = earned();
+  return `<div class="badges" id="badges"><small>Conquistas ${have.size}/${all.length}</small>${got.length ? got.map(a => `<span class="badge-a" title="${Core.ACHIEVEMENTS[a][1]}">🏅 ${Core.ACHIEVEMENTS[a][0]}</span>`).join('') : '<span class="hint">Nenhuma nesta partida.</span>'}</div>`;
 }
 function vTable(): string {
   const names = S.names, n = names.length;
@@ -190,7 +195,15 @@ const vWatching = (g: Game): string => Core.hasAi(g) && g.phase !== 'over' && !C
 function vClaims(g: Game): string {
   if (!Core.hasAi(g)) return '';
   const cards = Core.humansAlive(g).flatMap(i => Core.claims(g, i).map(w => vClaim(g, i, w)));
-  return cards.join('');
+  return vDefense(g) + cards.join('');
+}
+/** Accused by an app player (D40): answer the table. Each answer is checked against the record everyone saw. */
+function vDefense(g: Game): string {
+  const me = solo(g), at = me >= 0 && g.players[me].alive ? Core.pendingAccusation(g, me) : -1;
+  if (at < 0) return '';
+  const t = g.hist[at] as Extract<Game['hist'][number], { k: 'talk' }>;
+  const opts: [string, string][] = [['deck', 'O baralho veio assim'], ['test', 'Foi teste do chanceler'], ['lie', `${g.players[t.by].name} está mentindo`], ['quiet', 'Ficar calado']];
+  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p></section>`;
 }
 const CLAIM: Record<string, [string, string[]]> = {
   pc: ['Você foi presidente. O que diz que tirou?', ['3 liberais', '1 {f} e 2 liberais', '2 {fs} e 1 liberal', '3 {fs}']],
@@ -767,7 +780,7 @@ export function contradiction(g: Game, at: number): void {
   el.className = 'contra'; el.id = 'contra';
   el.innerHTML = themed(`<div class="burst"></div><b class="boom">Contradição!</b>
     <div class="proof"><small>A prova · ${esc(p?.title || '')}</small>${p && p.pc !== undefined && p.cc !== undefined ? `<div class="pr"><span>${name(g, t.about)} disse</span>${t.about === (g.hist[p.at] as Gov).pres ? cards(p.pc, 3) : cards(p.cc, 2)}</div>` : `<p>${esc(p?.text || '')}</p>`}${p?.law ? `<div class="pr"><span>Saiu lei</span><i class="big ${p.law}"></i></div>` : ''}</div>
-    <div class="talk2"><b>${name(g, t.about)}</b><p>${esc(quote)}</p></div>
+    <div class="talk2"><b>${name(g, g.players[t.by].ai ? t.by : t.about)}</b><p>${esc(quote)}</p></div>
     <div class="pie"><div class="donut" style="background:${pie}"><b>${yes}/${re.length}</b><small>concordam</small></div><ul>${groups.map(([l, c, xs]) => `<li><i style="background:${c}"></i><span><b>${l}</b>${xs.length ? xs.map(i => name(g, i)).join(', ') : '—'}</span></li>`).join('')}</ul></div>
     <small class="tap">Toque para fechar</small>`, W as unknown as Record<string, string>);
   document.getElementById('contra')?.remove();
