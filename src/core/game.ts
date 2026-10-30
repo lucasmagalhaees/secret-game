@@ -56,7 +56,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     mundo: BOT_NAMES.fascismo,
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
     americas: ['Roosevelt', 'Kennedy', 'Lincoln', 'Obama', 'Washington', 'JK', 'Getúlio', 'Perón', 'Pinochet', 'Médici', 'Trump', 'Nixon', 'Bush'],
-    europa: ['Churchill', 'Mussolini', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Quisling', 'Mitterrand', 'Pétain'],
+    europa: ['Churchill', 'Mussolini', 'Franco', 'Napoleão', 'Salazar', 'Merkel', 'Goebbels', 'Thatcher', 'Rainha Vitória', 'Mitterrand', 'Pétain'],
     asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Netanyahu', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
     africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
