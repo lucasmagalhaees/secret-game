@@ -667,3 +667,7 @@ body:has(.speech-peek){--dock:116px}
 .law{min-width:0;letter-spacing:.06em;font-size:clamp(9px,2.8vw,12px)}
 .law .sym{width:min(64px,15vw);height:min(64px,15vw)}
 .law .sym .glyph{font-size:min(38px,9vw)}
+/* names never break mid-word in the notebook (D34): a long name keeps its line, and the marks drop below it */
+.note-row{flex-wrap:wrap}
+.note-row .who{white-space:nowrap;overflow-wrap:normal;flex:1 0 auto}
+.note-row .sides{margin-left:auto}
