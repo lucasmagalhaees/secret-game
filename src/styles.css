@@ -718,3 +718,7 @@ body.shake{animation:shake .35s .7s}
 .contra li span{display:flex;flex-direction:column;font-size:14px}.contra li span b{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#b9ab90}
 .contra .tap{color:#b9ab90;text-align:center;margin-top:auto}
 @media (prefers-reduced-motion:reduce){.contra .boom{animation:none}}
+/* names never break mid-word in the notebook (D34): a long name keeps its line, and the marks drop below it */
+.note-row{flex-wrap:wrap}
+.note-row .who{white-space:nowrap;overflow-wrap:normal;flex:1 0 auto}
+.note-row .sides{margin-left:auto}
