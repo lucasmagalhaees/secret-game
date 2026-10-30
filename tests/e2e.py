@@ -368,7 +368,6 @@ with sync_playwright() as p:
         if pg.locator('.claim').count():
             seen.add('claim'); assert 'Pode mentir' in txt('.claim')
         if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
-        if pg.locator('#seats .bubble').count(): seen.add('bubble'); assert len(txt('#seats .bubble')) <= 41, txt('#seats .bubble')
         body = pg.evaluate('document.body.innerText')
         assert 'undefined' not in body and 'NaN' not in body, [l for l in body.split('\n') if 'undefined' in l or 'NaN' in l]
         if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
@@ -399,7 +398,7 @@ with sync_playwright() as p:
     assert pg.evaluate("getComputedStyle(document.querySelector('#ata .timeline')).listStyleType") == 'none', 'the minutes number the laws once (1ª, 2ª), not twice'
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
     assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
-    assert {'vote', 'decree', 'coach', 'seats', 'said', 'bubble'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert {'vote', 'decree', 'coach', 'seats', 'said'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     spoken = [e for e in g['hist'] if e['k'] == 'talk' and e['say'] != 'quiet' and g['players'][e['by']].get('ai')]
     assert spoken and any(g['players'][e['by']]['name'] + ': \"' in log for e in spoken), 'NPC statements are recorded with a speaker; wording varies with context'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'

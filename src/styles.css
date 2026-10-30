@@ -859,14 +859,5 @@ html[data-look="poster"] body::after{content:"";position:fixed;inset:-50%;z-inde
 button.law{transition:translate .15s ease-out}
 button.law:hover,button.law:focus-visible{translate:0 -4px}
 .btn{transition:transform .06s,box-shadow .06s}
-/* 12. what an app player just said, in a bubble over its name */
-.seat{position:relative}
 .seats{overflow-x:clip}
-.bubble{position:absolute;bottom:calc(100% + 6px);left:0;z-index:5;width:max-content;max-width:min(200px,55vw);padding:4px 8px;font:600 12px/1.25 var(--font);
-  background:var(--surface);color:var(--fg);border:2px solid var(--line);border-radius:10px;pointer-events:none;white-space:normal}
-.seat.rt .bubble{left:auto;right:0}
-.bubble::after{content:"";position:absolute;top:100%;left:12px;border:6px solid transparent;border-top-color:var(--line)}
-.seat.rt .bubble::after{left:auto;right:12px}
-.bubble.pop{animation:pop .25s ease-out both}
-@keyframes pop{0%{transform:scale(.4) translateY(8px);opacity:0}100%{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.fxl{display:none}#phase.enter[data-head]::before{display:none}html[data-look="poster"] body::after{display:none}button.law:hover,button.law:focus-visible{translate:none}}
