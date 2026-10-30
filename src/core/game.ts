@@ -46,8 +46,7 @@ export const BOT_NAMES: Record<Pack, string[]> = {
 /** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
  *  first. */
 /** Where the names of the app players come from (D24): the whole world (BOT_NAMES), or one continent. In each list,
- *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. Lula
- *  goes by "Polvo", as the person asked. */
+ *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. */
 export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa', 'oceania', 'brasil'];
 /** The password that unlocks the Brazil expansion (D27). Written in the page on purpose: a joke among friends, not a lock. */
 export const DLC_KEY = 'unlockresenha';
@@ -56,7 +55,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
   fascismo: {
     mundo: BOT_NAMES.fascismo,
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
-    americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
+    americas: ['Roosevelt', 'Kennedy', 'Lincoln', 'Obama', 'Washington', 'JK', 'Getúlio', 'Perón', 'Pinochet', 'Médici', 'Videla', 'Stroessner'],
     europa: ['Churchill', 'Mussolini', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Quisling', 'Mitterrand', 'Pétain'],
     asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Dalai Lama', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
     africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe'],
@@ -65,7 +64,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
   comunismo: {
     mundo: BOT_NAMES.comunismo,
     oceania: BOT_NAMES.comunismo,
-    americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende', 'Marulanda', 'Abimael Guzmán', 'Ortega'],
+    americas: ['Kennedy', 'Reagan', 'Lincoln', 'Obama', 'Roosevelt', 'JK', 'Fidel', 'Che', 'Chávez', 'Maduro', 'Allende', 'Evo Morales', 'Marulanda'],
     europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'Gorbachev', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
     asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Kim Il-sung', 'Pol Pot', 'Xi Jinping', 'Dalai Lama', 'Saddam Hussein', 'Chiang Kai-shek', 'Gengis Khan', 'Tiglate-Pileser'],
     africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe'],
