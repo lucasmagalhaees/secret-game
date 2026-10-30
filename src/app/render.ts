@@ -101,6 +101,7 @@ function vMore(): string {
     <p class="hint" id="traintext">${S.train ? `Você vai ser ${role(S.train).toLowerCase()}, para treinar esse lado. Vale quando só você é gente na mesa; as IAs não sabem que você escolheu.` : 'O seu papel é sorteado, como numa partida normal.'}</p>
     <p class="hint">Velocidade da IA</p><div class="segm" role="group" aria-label="Velocidade da IA">${(['lenta', 'normal', 'rapida'] as const).map(v => `<button class="${(S.speed || 'normal') === v ? 'on' : ''}" data-act="speed" data-v="${v}" aria-pressed="${(S.speed || 'normal') === v}">${{ lenta: 'Lenta', normal: 'Normal', rapida: 'Rápida' }[v]}</button>`).join('')}</div>
     <p class="hint">Dicas do treinador</p><div class="segm" role="group" aria-label="Dicas do treinador"><button class="${S.coach ? '' : 'on'}" data-act="coach" data-v="off" aria-pressed="${!S.coach}">Desligadas</button><button class="${S.coach ? 'on' : ''}" data-act="coach" data-v="on" aria-pressed="${!!S.coach}">Ligadas</button></div>
+    <p class="hint">Reputômetro</p><div class="segm" role="group" aria-label="Reputômetro"><button class="${S.rep ? '' : 'on'}" data-act="rep" data-v="off" aria-pressed="${!S.rep}">Desligado</button><button class="${S.rep ? 'on' : ''}" data-act="rep" data-v="on" aria-pressed="${!!S.rep}" id="repon">Ligado</button></div>
     <p class="hint">Desconfiômetro</p><div class="segm" role="group" aria-label="Desconfiômetro"><button class="${S.gauge ? '' : 'on'}" data-act="gauge" data-v="off" aria-pressed="${!S.gauge}">Desligado</button><button class="${S.gauge ? 'on' : ''}" data-act="gauge" data-v="on" aria-pressed="${!!S.gauge}" id="gaugeon">Ligado</button></div>
     <p class="hint">${S.coach ? 'Depois de cada governo, o treinador faz as contas com o que só você sabe: a chance da mão que o presidente disse, se as falas fecham, e quem parece mais {f}.' : 'Ligadas, o treinador explica o que dá para tirar de cada governo.'}</p>
     <p class="hint">Assistência</p><div class="segm" role="group" aria-label="Assistência"><button class="${S.assist ? '' : 'on'}" data-act="assist" data-v="off" aria-pressed="${!S.assist}">Desligada</button><button class="${S.assist ? 'on' : ''}" data-act="assist" data-v="on" aria-pressed="${!!S.assist}">Ata com votos</button></div>
@@ -200,7 +201,7 @@ function vClaims(g: Game): string {
 /** Accused by an app player (D40): answer the table. Each answer is checked against the record everyone saw. */
 function vDefense(g: Game): string {
   const me = solo(g), at = me >= 0 && g.players[me].alive ? Core.pendingAccusation(g, me) : -1;
-  if (at < 0) return '';
+  if (at < 0 || document.getElementById('contra')) return '';
   const t = g.hist[at] as Extract<Game['hist'][number], { k: 'talk' }>;
   const opts: [string, string][] = [['deck', 'O baralho veio assim'], ['test', 'Foi teste do chanceler'], ['lie', `${g.players[t.by].name} está mentindo`], ['quiet', 'Ficar calado']];
   return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p></section>`;
@@ -486,7 +487,7 @@ function vSeats(g: Game): string {
   const kit = noteKit(g), me = solo(g), live = S.live && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
-    const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}`;
+    const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}${S.rep && p.alive ? (r => `<i class="rep r${r}" title="Reputação na mesa" aria-label="Reputação ${r} de 3">${'★'.repeat(r)}${'☆'.repeat(3 - r)}</i>`)(Core.reputation(g, i)) : ''}`;
     return `<li class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}</li>`;
   }).join('')}</ul>`;
 }
@@ -768,7 +769,10 @@ export function blurField(): void { const a = document.activeElement as HTMLElem
  *  and how the table took it, by name. A tap closes it; it closes by itself after a while. */
 export function contradiction(g: Game, at: number): void {
   const t = g.hist[at];
-  if (!t || t.k !== 'talk' || !t.hit) return;
+  if (!t || t.k !== 'talk' || t.say !== 'acc') return;
+  // accused by an app player (D42): the same screen, with the answer to give; without a proof that holds, no CONTRADIÇÃO!
+  const me = solo(g), accused = t.about === me && !!g.players[t.by].ai;
+  if (!t.hit && !accused) return;
   const p = Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about).find(x => x.at === t.proof);
   const re = t.re || [], groups: [string, string, number[]][] = [['Concordam', '#2f9e5b', []], ['Não sabem', '#5b544b', []], ['Discordam', '#d63c2b', []]];
   re.forEach(([i, a]) => groups[a]?.[2].push(i));
@@ -778,13 +782,54 @@ export function contradiction(g: Game, at: number): void {
   const said = g.log[g.log.length - 1] || '', quote = said.slice(said.indexOf('"'));
   const el = document.createElement('div');
   el.className = 'contra'; el.id = 'contra';
-  el.innerHTML = themed(`<div class="burst"></div><b class="boom">Contradição!</b>
+  el.innerHTML = themed(`<div class="burst"></div><b class="boom">${t.hit ? 'Contradição!' : 'Acusação!'}</b>
     <div class="proof"><small>A prova · ${esc(p?.title || '')}</small>${p && p.pc !== undefined && p.cc !== undefined ? `<div class="pr"><span>${name(g, t.about)} disse</span>${t.about === (g.hist[p.at] as Gov).pres ? cards(p.pc, 3) : cards(p.cc, 2)}</div>` : `<p>${esc(p?.text || '')}</p>`}${p?.law ? `<div class="pr"><span>Saiu lei</span><i class="big ${p.law}"></i></div>` : ''}</div>
     <div class="talk2"><b>${name(g, g.players[t.by].ai ? t.by : t.about)}</b><p>${esc(quote)}</p></div>
-    <div class="pie"><div class="donut" style="background:${pie}"><b>${yes}/${re.length}</b><small>concordam</small></div><ul>${groups.map(([l, c, xs]) => `<li><i style="background:${c}"></i><span><b>${l}</b>${xs.length ? xs.map(i => name(g, i)).join(', ') : '—'}</span></li>`).join('')}</ul></div>
-    <small class="tap">Toque para fechar</small>`, W as unknown as Record<string, string>);
+    ${accused ? defenseBox(g, t, p) : ''}<div class="pie"${re.length ? '' : ' hidden'}><div class="donut" style="background:${pie}"><b>${yes}/${re.length}</b><small>concordam</small></div><ul>${groups.map(([l, c, xs]) => `<li><i style="background:${c}"></i><span><b>${l}</b>${xs.length ? xs.map(i => name(g, i)).join(', ') : '—'}</span></li>`).join('')}</ul></div>
+    <small class="tap">${accused ? '' : 'Toque para fechar'}</small>`, W as unknown as Record<string, string>);
   document.getElementById('contra')?.remove();
   document.body.appendChild(el);
   const close = (): void => { el.remove(); };
-  el.addEventListener('click', close); setTimeout(close, 9000);
+  // while the person has to answer, only an answer (or the close button after it) closes the screen
+  if (!accused) { el.addEventListener('click', close); setTimeout(close, 9000); }
+}
+/** The answers to an accusation (D42), only those the record could back, each saying when it holds. */
+function defenseBox(g: Game, t: Extract<Game['hist'][number], { k: 'talk' }>, p: ReturnType<typeof Core.evidence>[number] | undefined): string {
+  const me = t.about, gov = p ? g.hist[p.at] : undefined, isGov = !!gov && (gov.k === 'gov' || gov.k === 'veto');
+  const opts: [string, string, string][] = [];
+  if (isGov && gov.k === 'gov' && gov.law === 'F') opts.push(['deck', 'O baralho veio assim', 'Cola se as histórias do governo batem.']);
+  if (isGov && gov.pres === me) opts.push(['test', 'Foi teste do chanceler', 'Cola se você passou uma de cada e saiu liberal.']);
+  opts.push(['lie', `${g.players[t.by].name} está mentindo`, 'Cola se a prova dele não se sustenta na ata.'], ['quiet', 'Ficar calado', 'Nunca cola, mas não piora.']);
+  return `<div class="defend" id="defend"><b>Sua resposta</b>${opts.map(([k, l, h]) => `<button data-act="defend" data-v="${k}"><span>${esc(l)}</span><small>${h}</small></button>`).join('')}</div>`;
+}
+/** How the answer went, on the same screen (D42), then a button to go back to the game. */
+export function defenseResult(ok: boolean, kind: string): void {
+  const box = document.getElementById('defend');
+  if (!box) return;
+  box.innerHTML = `<b class="${ok ? 'ok' : 'no'}">${ok ? '✔ A defesa colou' : kind === 'quiet' ? '… Você ficou calado' : '✖ A mesa não comprou'}</b><p>${ok ? 'A acusação perdeu o peso para as IAs.' : 'A acusação continua valendo.'}</p><button class="btn block" data-act="contraclose">Voltar ao jogo</button>`;
+}
+
+/** The votes at a little table (D44): every seat in its place around a green table, each vote turning over in turn,
+ *  the count adding up in the middle, then ELEITO! or REJEITADO! (the table goes red when the hidden leader was just
+ *  elected chancellor in the danger zone). It closes by itself and never takes a tap. With less motion asked, only the stamp shows. */
+export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boolean, step: number): void {
+  const alive = g.players.map((p, i) => (p.alive ? i : -1)).filter(i => i >= 0), n = g.players.length, me = solo(g);
+  const order = [...alive.slice(alive.indexOf(e.pres)), ...alive.slice(0, alive.indexOf(e.pres))];
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, gap = step;
+  if (calm) return;   // with less motion asked, the stamp says it already
+  const danger = elected && g.players[e.chanc]?.role === 'hitler' && g.laws.F >= Core.HITLER_ZONE;
+  const R = 112, seats = alive.map(i => {
+    const a = -Math.PI / 2 + (2 * Math.PI * i) / n, ja = e.ja.includes(i), k = order.indexOf(i);
+    return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div><b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
+  }).join('');
+  const el = document.createElement('div');
+  el.className = `ballot${danger ? ' danger' : ''}`; el.id = 'ballot';
+  el.innerHTML = themed(`<p class="b-q"><b>${name(g, e.pres)}</b> presidente + <b>${name(g, e.chanc)}</b> chanceler</p><div class="b-table"><div class="b-felt"></div>${seats}<div class="b-center"><b class="b-score"><span class="g">0</span> × <span class="r">0</span></b><b class="b-stamp ${elected ? 'L' : 'F'}" style="animation-delay:${alive.length * gap}ms">${elected ? 'Eleito!' : 'Rejeitado!'}</b></div></div>`, W as unknown as Record<string, string>);
+  document.getElementById('ballot')?.remove();
+  document.body.appendChild(el);
+  const g1 = el.querySelector<HTMLElement>('.b-score .g'), r1 = el.querySelector<HTMLElement>('.b-score .r');
+  let y = 0, no = 0;
+  order.forEach((i, k) => setTimeout(() => { if (e.ja.includes(i)) y++; else no++; if (g1) g1.textContent = String(y); if (r1) r1.textContent = String(no); }, k * gap + 250));
+  const close = (): void => { el.remove(); };
+  setTimeout(close, alive.length * gap + 2200);
 }

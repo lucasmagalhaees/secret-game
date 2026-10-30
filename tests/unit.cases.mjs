@@ -372,6 +372,7 @@ export default function cases(Core) {
   eq('a defence holds only when the record backs it: a test that a liberal law came out of', [Core.defend(test, 0, 'test').hist.at(-1).ok, Core.defend(test, 0, 'deck').hist.at(-1).ok, Core.defend(test, 0, 'quiet').hist.at(-1).ok], [true, false, false]);
   eq('the straight Hitler hides more than the bluffer', Core.BOSS_STYLE.certinho > Core.BOSS_STYLE.blefador, true);
   eq('achievements (D41): only for a finished game; a liberal who eliminated Hitler and won is a hunter and a winner', [Core.achievements(court, 0), Core.achievements({ ...court, phase: 'over', winner: 'L', why: 'x', hist: [{ k: 'exec', by: 6, target: 0 }] }, 6).sort()], [[], ['hunter', 'win']]);
+  eq('reputation (D43): 3 stars clean; a story that does not add up and a firm accusation the record does not back cost stars', [Core.reputation(court, 5), Core.reputation(court, 2), Core.reputation({ ...court, hist: [...court.hist, { k: 'talk', by: 2, about: 4, say: 'acc', tone: 'firm' }] }, 2), Core.readState({ rep: true }).rep], [3, 2, 1, true]);
   /* the notebook scored at the end (D28): seat 6 is a liberal; 0 Hitler, 1 and 2 fascists */
   const nb = ai7({ phase: 'over', winner: 'L', why: 'x', notes: { 0: 'F', 1: 'L', 4: 'L', 3: 'L', 6: 'F' }, hist: [{ k: 'inv', by: 6, target: 3, party: 'L' }] });
   eq('notes score: right and wrong, leaving out the seat itself and what it knew for sure (its own investigation)', Core.notesScore(nb, 6), { right: [0, 4], wrong: [1] });

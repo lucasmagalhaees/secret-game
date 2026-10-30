@@ -183,7 +183,7 @@ with sync_playwright() as p:
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'execute'
     assert pg.locator('[data-act=execute]').is_disabled()
     pg.click('#phase [data-act=pickp][data-i="5"]'); assert 'Eliminar <b>Gil</b>' in txt('[data-act=execute]')
-    pg.click('[data-act=execute]'); assert pg.locator('#power-effect.execute').is_visible() and '<b>Gil</b>' in txt('#power-effect') and pg.locator('#power-effect b b').count() == 0
+    pg.click('[data-act=execute]'); assert 'Gil' in pg.text_content('#flash') and 'Eliminado' in pg.text_content('#flash') and pg.locator('#flash b b').count() == 0 and pg.locator('#power-effect.execute').count() == 0, 'one elimination screen, not two (D42)'
     assert G()['players'][5]['alive'] is False and '<b>Gil</b> foi eliminado' in txt('#toast') and pg.locator('#players li.dead').count() == 1
     # 5th: Duda eliminates Bia
     stack('FFLFFL'); govern(6, 'F'); assert G()['phase'] == 'execute' and G()['laws']['F'] == 5
@@ -325,6 +325,8 @@ with sync_playwright() as p:
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
     pg.locator('#seats [data-act=seatnote]').first.click(); assert pg.locator('#drawer').is_visible(), 'a seat opens the notebook (D34)'; pg.click('#notestoggle')
     assert pg.locator('#phase.mine').count() + pg.locator('#thinking').count() >= 1, 'your turn glows, or an app player is deciding (D34)'
+    # D43: reputation stars beside each name
+    pg.evaluate('window.__APP.S.rep = true'); pg.click('#livetoggle'); pg.click('#livetoggle'); assert pg.locator('#seats .rep').count() >= 5; pg.evaluate('delete window.__APP.S.rep')
     # D32: the suspicion gauge, switched on in the settings
     pg.evaluate('window.__APP.S.gauge = true'); pg.click('#livetoggle'); pg.click('#livetoggle')
     assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the gauge shows how much the table suspects the person'
@@ -407,6 +409,8 @@ with sync_playwright() as p:
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
     pg.click('[data-act=endtab][data-v=log]'); pg.click('#log [data-act=logfilter][data-v=talk]'); assert all(': "' in t for t in pg.locator('#log .log li').all_text_contents()), 'the record shows only what was said (D34)'; pg.click('#log [data-act=logfilter][data-v=all]'); pg.click('[data-act=endtab][data-v=res]')
     assert pg.locator('#badges').count() == 1 and pg.locator('#share').count() == 1, 'achievements and sharing at the end (D41)'
+    with pg.expect_download() as shot_dl: pg.click('#share')
+    assert shot_dl.value.suggested_filename.endswith('.png'), 'the result is a picture (D41)'
     assert pg.locator('#yours').count() == 1 and ('venceu' in txt('#yours') or 'perdeu' in txt('#yours')), 'your game at a glance (D34)'
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
     assert pg.locator('#highlights').count() == 1 and 1 <= pg.locator('#highlights article').count() <= 3
@@ -538,9 +542,8 @@ with sync_playwright() as p:
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'execute'; g.target = null; localStorage.setItem('secrethitler.v1', JSON.stringify(window.__APP.S)); }""")
     cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "execute"')
     mp.click('#phase [data-act=pickp][data-i="2"]'); mp.click('[data-act=execute]')
-    assert mp.locator('#power-effect.execute.go').is_visible()
-    assert mp.evaluate("getComputedStyle(document.querySelector('#power-effect .power-mark')).animationName") == 'gunRecoil'
-    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .power-card')).opacity) > .9")
+    # D42: the elimination has one screen of its own, with motion: the name, the stamp, the card
+    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#flash')).opacity) > .9"); assert 'Eliminado' in mp.text_content('#flash') and mp.locator('#power-effect.execute').count() == 0
     mp.screenshot(path=str(SHOTS / f'power-execute-{THEME}.png'))
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs

@@ -849,3 +849,10 @@ export function achievements(g: Game, me: number): string[] {
   if (won && role !== 'liberal' && !g.hist.some(e => e.k === 'talk' && e.about === me && e.hit)) out.push('ghost');
   return out;
 }
+
+/** Reputation at the table (D43): 1 to 3 stars, from what everyone saw: stories that did not add up, firm accusations
+ *  the record did not back, and changing one's mind about someone with nothing new in between. Never a role. */
+export function reputation(g: Game, seat: number): 1 | 2 | 3 {
+  const m = socialMemory(viewOf(g, seat, 'vote', [1, 0]), seat), bad = m.contradictions + 0.5 * m.reversals;
+  return bad < 1 ? 3 : bad < 2 ? 2 : 1;
+}
