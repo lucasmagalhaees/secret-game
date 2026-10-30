@@ -30,7 +30,7 @@ export function render(): void {
   const expanded = [...view.querySelectorAll<HTMLDetailsElement>('.note-detail[open]')].map(d => d.id);
   const diaryScroll = document.getElementById('diary')?.scrollTop ?? 0;
   const keep = document.getElementById('drawer')?.scrollTop ?? 0;   // repainting must not scroll the notebook back up
-  view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
+  view.innerHTML = themed(g ? vGame(g) : ui.gallery ? vGallery() : vQuick() + vPack() + vTable() + vRules() + vHistory() + vSettings(), W as unknown as Record<string, string>);
   for (const id of expanded) { const detail = document.getElementById(id); if (detail instanceof HTMLDetailsElement) detail.open = true; }
   const dr = document.getElementById('drawer'); if (dr) dr.scrollTop = keep;
   // the needle swings from where it was to the new reading (D32)
@@ -60,6 +60,20 @@ const law = (l: Law, k?: number): string => {
 };
 
 /* ---------- before the game: the table ---------- */
+/** Play again at once (D34): with a table that is ready, one big button with the last setup, before anything else. */
+function vQuick(): string {
+  const n = S.names.length, people = S.names.filter((_, i) => !S.ai?.[i]).length;
+  if (n < Core.MIN_PLAYERS || !people || S.game) return '';
+  const lv = LEVEL[(S.level || 'medio') as Level][0], where = Core.REGION_NAMES[S.region || 'mundo'];
+  return `<section class="card quick" id="quick"><button class="btn block big" data-act="quickstart" id="quickstart">▶ Jogar agora</button><p class="hint">${n} lugares${S.ai?.some(Boolean) ? ` · IA ${lv.toLowerCase()}` : ''} · ${Core.WORDS[S.pack || 'fascismo'].theme} · ${where}</p></section>`;
+}
+/** Your game at a glance, at the top of the result (D34): won or lost, with what role, and how the notebook did. */
+function vYours(g: Game): string {
+  const me = solo(g);
+  if (me < 0 || !g.winner) return '';
+  const p = g.players[me], won = Core.partyOf(p.role) === g.winner, sc = g.notes ? Core.notesScore(g, me) : null, n = sc ? sc.right.length + sc.wrong.length : 0;
+  return `<section class="card yours ${won ? 'won' : 'lost'}" id="yours"><p class="big">${won ? '🏆 Você venceu' : '💀 Você perdeu'}</p><p>Você era <span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>${n ? ` · caderno: <b>${sc?.right.length}</b> de ${n} certas` : ''}</p></section>`;
+}
 function vTable(): string {
   const names = S.names, n = names.length;
   let h = `<section class="card" id="table"><span class="label">Mesa (${Core.MIN_PLAYERS} a ${Core.MAX_PLAYERS} jogadores)</span>`;
@@ -147,12 +161,14 @@ function vGame(g: Game): string {
   const acting = bot && !side.includes(bot.ask) ? bot : under && under.ask !== 'votes' && g.players[under.seat]?.ai ? under : null;
   const phase = acting ? vBot(g, acting.seat, acting.ask) : vPhase(g);
   // what the person has to do comes first; what helps them decide (their claim, the trainer) right after it
-  const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}`);
+  // your turn stands out (D34): the phase a person must act on glows; an app player's stays calm
+  const mine = !acting && g.phase !== 'over' && !!under && !g.players[under.seat]?.ai && Core.hasAi(g);
+  const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}${mine ? ' mine' : ''}`);
   if (g.phase === 'over') {
     // the end, in tabs (D18): the result first; the whole game and the record one tap away
     const tabs: [EndTab, string][] = [['res', 'Resultado'], ['jogo', 'Resumo'], ['log', 'Registro']];
     const bar = `<div class="segm endtabs" role="tablist" aria-label="Fim de jogo">${tabs.map(([k, l]) => `<button role="tab" id="tab-${k}" class="${ui.endTab === k ? 'on' : ''}" data-act="endtab" data-v="${k}" aria-selected="${ui.endTab === k}">${l}</button>`).join('')}</div>`;
-    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
+    const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vYours(g) + vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
     return card + bar + body + vDock(g);
   }
   return vUndo() + vStatus(g) + vSeats(g) + vGauge(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);

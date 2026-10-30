@@ -320,6 +320,7 @@ with sync_playwright() as p:
     assert pg.locator('#players .meter').count() == 0
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
     pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
+    assert pg.locator('#phase.mine').count() + pg.locator('#thinking').count() >= 1, 'your turn glows, or an app player is deciding (D34)'
     # D32: the suspicion gauge, switched on in the settings
     pg.evaluate('window.__APP.S.gauge = true'); pg.click('#livetoggle'); pg.click('#livetoggle')
     assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the gauge shows how much the table suspects the person'
@@ -400,6 +401,7 @@ with sync_playwright() as p:
     assert pg.locator('#review').count() == 1 and 'Suas jogadas' in txt('#review') and pg.locator('#review .plays li').count() == min(4, sum(1 for x in plays if x['good'])) + min(4, sum(1 for x in plays if not x['good'])), ('the review of the person, the main plays of each kind', plays)
     if pg.locator('#review [data-act=allplays]').count(): pg.click('#review [data-act=allplays]'); assert pg.locator('#review .plays li').count() == len(plays); pg.click('#review [data-act=allplays]')
     assert overflow() == 0; shot(f's6-contra-ia-fim-{THEME}.png')
+    assert pg.locator('#yours').count() == 1 and ('venceu' in txt('#yours') or 'perdeu' in txt('#yours')), 'your game at a glance (D34)'
     assert pg.locator('#notescore').count() == 1 and ('certas' in txt('#notescore') or 'Nada para contar' in txt('#notescore')) and G()['notes'], 'the notebook scored at the end, and kept with the game (D28)'
     assert pg.locator('#highlights').count() == 1 and 1 <= pg.locator('#highlights article').count() <= 3
     # the reasons are still recorded with the game, for the export (D23), though no panel shows them (D28)
