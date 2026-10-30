@@ -54,7 +54,8 @@ function afterPaint(g: Game | null): void {
   // rising tension: from the danger zone on, the border of the screen glows red, more with each fascist law
   if (g && g.phase !== 'over' && g.laws.F >= Core.HITLER_ZONE) root.dataset.tension = String(Math.min(g.laws.F, 5)); else delete root.dataset.tension;
   ambient(!!g && g.phase !== 'over' && g.phase !== 'reveal', g?.phase === 'vote');
-  const same = !!g && !!fxGame && fxGame.players.length === g.players.length && fxGame.players.every((p, i) => p.name === g.players[i].name) && g.hist.length >= fxHist && g.log.length >= fxLog;
+  const same = !!g && !!fxGame && fxGame.players.length === g.players.length && fxGame.players.every((p, i) => p.name === g.players[i].name) && g.hist.length >= fxHist && g.log.length >= fxLog && fxGame.pack === g.pack;
+  if (!same) { bubbles.clear(); document.querySelectorAll('#seats .bubble').forEach(b => b.remove()); }
   if (g && same) {
     for (const e of g.hist.slice(fxHist)) {
       if (e.k === 'chaos') chaosFx(e.law);
