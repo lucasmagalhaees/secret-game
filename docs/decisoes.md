@@ -405,6 +405,17 @@ Modelo de uma decisão:
 - **Decisão:** o 📣 de acusar abre o tribunal: o que a ata tem contra a pessoa (`evidence`: governo cuja conta não fecha, governo que aprovou lei do lado escondido, voto Ja! nesse governo) e o tom (Desconfio, Acuso, Tenho prova). Prova de governo segura (`hit`) vira "CONTRADIÇÃO!" na tela inteira, o acusado se enrola, e a acusação pesa o dobro para as IAs. Acusar firme, ou com prova, sem nada que segure na ata custa credibilidade a quem acusou (conta como contradição dele). O voto Ja! é só indício: não segura sozinho. Abonar (👍, "é liberal") continua direto.
 - **Não sei:** se acusar com "Desconfio" deveria pesar menos que hoje; hoje pesa como antes.
 
+## D40. As IAs usam o tribunal; defesa; o Hitler de cada personalidade
+
+- **Contexto (30/10/2026):** "Faz o 2,3,4 da IA": fascista (e qualquer IA) que usa o tribunal, defesa no tribunal, Hitler com estilo próprio.
+- **Decisão:** a IA que acusa alguém com uma prova que segura na ata faz isso como acusação de tribunal (pesa o dobro); o fascista sem prova forte contra um liberal pode exibir um indício fraco como prova (blefe que custa credibilidade se a mesa conferir). Quando acusam a pessoa, ela responde: "O baralho veio assim", "Foi teste do chanceler", "Está mentindo" ou fica calada; a resposta é conferida com a ata, e a que bate tira o peso da acusação. Quando a IA aponta uma prova que bate contra a pessoa, aparece o mesmo "CONTRADIÇÃO!". O Hitler de cada personalidade joga diferente (`BOSS_STYLE`): o certinho se esconde mais, o blefador e o caótico arriscam cedo.
+- **Não sei:** o equilíbrio com isso não foi medido com o `ai_bench`.
+
+## D41. Conquistas e compartilhar o resultado
+
+- **Contexto (30/10/2026):** "Do ui/ux faz a 5 e 6" (compartilhar o resultado, conquistas) e o caderno com nomes desalinhados.
+- **Decisão:** no fim, "Sua partida" mostra as conquistas desta partida (`ACHIEVEMENTS`, `achievements`: primeira vitória, líder invisível, caçador, caderno perfeito, CONTRADIÇÃO!, mesa dura, sem rastro) e quantas de todas a pessoa já tem nas partidas guardadas, e um botão "Compartilhar resultado" desenha uma imagem (quem venceu, o papel, o caderno, as conquistas) e manda pelo compartilhar do celular, ou baixa. No caderno, todo nome fica na própria linha, acima das duas colunas, para nomes curtos e longos ficarem iguais.
+
 ## Pendências
 
 | Pendência | Quem resolve |

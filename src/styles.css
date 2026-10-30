@@ -722,3 +722,14 @@ body.shake{animation:shake .35s .7s}
 .note-row{flex-wrap:wrap}
 .note-row .who{white-space:nowrap;overflow-wrap:normal;flex:1 0 auto}
 .note-row .sides{margin-left:auto}
+/* accused by an app player (D40) */
+.defense{border-color:var(--fas)}
+.defense .pick{display:grid;grid-template-columns:1fr 1fr;gap:6px}.defense .pick .btn{min-height:44px;font-size:13px;padding:6px}
+/* the notebook a little tighter, so a long name keeps both sides beside it at 393px (iPhone) */
+/* every name on its own line above its two sides, so short and long names line up the same (D41) */
+.note-row{flex-direction:column;align-items:stretch;gap:6px}
+.note-row .sides{margin-left:0;justify-content:flex-end}
+/* achievements (D41) */
+.badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.badges small{width:100%;color:var(--muted);font:800 11px/1 var(--display);letter-spacing:.12em;text-transform:uppercase}
+.badge-a{background:#e8b730;color:#1d1a17;font-weight:800;font-size:13px;padding:5px 10px;border-radius:999px}

@@ -8,7 +8,7 @@
 import { backed, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
 import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
-import type { Ask, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
+import type { Ask, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
 const isAi = (g: Game, i: number): boolean => !!g.players[i]?.ai;
@@ -90,8 +90,36 @@ const talkOptions = (g: Game, me: number): number[] => [...g.players.flatMap((p,
 export function talk(g: Game, by: number, a: number): Game {
   if (talker(g) !== by || !talkOptions(g, by).includes(a)) return g;
   const quiet = a === QUIET, about = quiet ? -1 : a >> 1, kind: Talk['say'] = quiet ? 'quiet' : a % 2 ? 'trust' : 'acc';
-  const line = quiet ? [] : [`${g.players[by].name}: "${npcStatement(g, by, about, kind === 'trust')}"`];
-  return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}) }] };
+  // the app players take the court too (D40): an accusation with a proof that holds is made as one; a fascist who has
+  // only a weak hint against a liberal may wave it as a proof all the same (a bluff that costs it if the table looks)
+  const ev = kind === 'acc' ? evidence(g, about) : [], strong = ev.find(x => x.hit), weak = ev[0];
+  const bluff = !strong && !!weak && g.players[by].role !== 'liberal' && g.players[about].role === 'liberal';
+  const court = strong ? { tone: 'proof' as const, proof: strong.at, hit: true } : bluff ? { tone: 'proof' as const, proof: weak.at } : {};
+  const line = quiet ? [] : [`${g.players[by].name}: "${strong || bluff ? `${(strong || weak).text}. ${g.players[about].name}, explica isso.` : npcStatement(g, by, about, kind === 'trust')}"`];
+  return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}), ...court }] };
+}
+/** The accusation against `me` still waiting for an answer this round (D40), if any: its index in the history. */
+export function pendingAccusation(g: Game, me: number): number {
+  const mark = lastIndex(g, ['vote', 'rej', 'gov', 'veto', 'chaos', 'inv', 'peek', 'special', 'exec']);
+  for (let i = g.hist.length - 1; i > mark; i--) { const e = g.hist[i]; if (e.k === 'talk' && e.about === me && e.say === 'acc' && e.by !== me && !e.def) return i; }
+  return -1;
+}
+/** The accused answers (D40). Whether the answer holds is worked out from the record the whole table saw: "the deck
+ *  came like that" holds when the government passed a law of the hidden side and the stories add up; "it was a test"
+ *  holds when, as president, one said 1 of each and a liberal law came out; "they lie" holds when the accusation had no
+ *  proof that holds; silence never does. A defence that holds takes the weight off the accusation for the app players. */
+export function defend(g: Game, me: number, kind: Defense): Game {
+  const at = pendingAccusation(g, me);
+  if (at < 0) return g;
+  const t = g.hist[at] as Talk, gov = t.proof !== undefined ? g.hist[t.proof] : undefined;
+  const isGov = !!gov && (gov.k === 'gov' || gov.k === 'veto');
+  const clash = isGov && gov.pc !== undefined && gov.cc !== undefined && gov.pc >= 0 && gov.cc >= 0 && Math.max(0, gov.pc - 1) !== gov.cc && !(gov.pc === 1 && gov.cc === 1);
+  const ok = kind === 'deck' ? isGov && !clash && gov.k === 'gov' && gov.law === 'F'
+    : kind === 'test' ? isGov && gov.pres === me && gov.pc === 1 && gov.k === 'gov' && gov.law === 'L'
+    : kind === 'lie' ? !t.hit : false;
+  const words_: Record<Defense, string> = { deck: 'O baralho veio assim, não tive escolha.', test: 'Foi teste do chanceler, e eu contei.', lie: `${g.players[t.by].name} está mentindo.`, quiet: '…' };
+  const hist = [...g.hist]; hist[at] = { ...t, def: kind, ok };
+  return { ...g, hist, log: [...g.log, `${g.players[me].name}: "${words_[kind]}"`, ...(ok ? [] : kind === 'quiet' ? [] : ['A mesa não comprou a defesa.'])] };
 }
 
 /** NPC statements use a public target and recorded context, never a private party or hand. */
@@ -794,4 +822,30 @@ export function botStep(g: Game, rand: () => number): Game | null {
     case 'special': return specialElect(g, a);
     default: return execute(g, a);
   }
+}
+
+/* ---------- achievements (D41) ---------- */
+/** The achievements there are, with a name and how to earn them. */
+export const ACHIEVEMENTS: Record<string, [string, string]> = {
+  win: ['Primeira vitória', 'Vencer uma partida'],
+  boss: ['Líder invisível', 'Vencer sendo o líder escondido'],
+  hunter: ['Caçador', 'Eliminar o líder escondido'],
+  perfect: ['Caderno perfeito', 'Acertar todas as anotações, com pelo menos 3'],
+  contra: ['CONTRADIÇÃO!', 'Acusar com uma prova que bate'],
+  hard: ['Mesa dura', 'Vencer contra a IA no difícil ou no extremo'],
+  ghost: ['Sem rastro', 'Vencer do lado escondido sem nenhuma prova que bata contra você']
+};
+/** What the person in seat `me` earned in this finished game (D41). Only from what happened. */
+export function achievements(g: Game, me: number): string[] {
+  if (g.phase !== 'over' || !g.winner || !g.players[me]) return [];
+  const role = g.players[me].role, won = partyOf(role) === g.winner, out: string[] = [];
+  if (won) out.push('win');
+  if (won && role === 'hitler') out.push('boss');
+  if (g.hist.some(e => e.k === 'exec' && e.by === me && g.players[e.target]?.role === 'hitler')) out.push('hunter');
+  const sc = notesScore(g, me);
+  if (sc.right.length >= 3 && !sc.wrong.length) out.push('perfect');
+  if (g.hist.some(e => e.k === 'talk' && e.by === me && e.hit)) out.push('contra');
+  if (won && (g.level === 'dificil' || g.level === 'extremo') && g.players.some(p => p.ai)) out.push('hard');
+  if (won && role !== 'liberal' && !g.hist.some(e => e.k === 'talk' && e.about === me && e.hit)) out.push('ghost');
+  return out;
 }
