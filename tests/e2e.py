@@ -187,6 +187,8 @@ with sync_playwright() as p:
     assert G()['players'][5]['alive'] is False and '<b>Gil</b> foi eliminado' in txt('#toast') and pg.locator('#players li.dead').count() == 1
     # 5th: Duda eliminates Bia
     stack('FFLFFL'); govern(6, 'F'); assert G()['phase'] == 'execute' and G()['laws']['F'] == 5
+    # D46: the border glows from the danger zone on, by law; the new phase comes in under its headline
+    assert pg.evaluate('document.documentElement.dataset.tension') == '5' and pg.locator('#phase[data-head="Poder"]').count() == 1
     pg.click('#phase [data-act=pickp][data-i="1"]'); pg.click('[data-act=execute]'); assert G()['pres'] == 4
 
     # veto: refused, then the chancellor must enact one
@@ -365,6 +367,7 @@ with sync_playwright() as p:
         if pg.locator('.claim').count():
             seen.add('claim'); assert 'Pode mentir' in txt('.claim')
         if pg.locator('#decree:not([hidden])').count(): seen.add('decree')
+        if pg.locator('#seats .bubble').count(): seen.add('bubble'); assert len(txt('#seats .bubble')) <= 41, txt('#seats .bubble')
         body = pg.evaluate('document.body.innerText')
         assert 'undefined' not in body and 'NaN' not in body, [l for l in body.split('\n') if 'undefined' in l or 'NaN' in l]
         if g['phase'] in ('nominate', 'vote') and 'seats' not in seen:
@@ -395,7 +398,7 @@ with sync_playwright() as p:
     assert pg.evaluate("getComputedStyle(document.querySelector('#ata .timeline')).listStyleType") == 'none', 'the minutes number the laws once (1ª, 2ª), not twice'
     pg.click('#ata [data-act=assist]'); assert pg.locator('#ata').count() == 0; pg.click('#tab-log'); pg.click('#showata'); pg.click('#tab-jogo'); assert pg.locator('#ata').count() == 1
     assert pg.locator('#summary').count() == 1; pg.click('#tab-res')
-    assert {'vote', 'decree', 'coach', 'seats', 'said'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
+    assert {'vote', 'decree', 'coach', 'seats', 'said', 'bubble'} <= seen and 'Votos. Ja!' in log and ('disse que tirou' in log or 'disse que recebeu' in log), (seen, g['log'][-8:])
     spoken = [e for e in g['hist'] if e['k'] == 'talk' and e['say'] != 'quiet' and g['players'][e['by']].get('ai')]
     assert spoken and any(g['players'][e['by']]['name'] + ': \"' in log for e in spoken), 'NPC statements are recorded with a speaker; wording varies with context'
     assert pg.locator('#thoughts li').count() >= 1 and '→' in txt('#thoughts') and pg.locator('#thoughts svg.spark').count() >= 1, 'at the end, what the app players thought of the person'
@@ -545,6 +548,13 @@ with sync_playwright() as p:
     # D42: the elimination has one screen of its own, with motion: the name, the stamp, the card
     mp.wait_for_function("Number(getComputedStyle(document.querySelector('#flash')).opacity) > .9"); assert 'Eliminado' in mp.text_content('#flash') and mp.locator('#power-effect.execute').count() == 0
     mp.screenshot(path=str(SHOTS / f'power-execute-{THEME}.png'))
+    # D46: chaos, a veto accepted and a special election each get their effect, over the screen and never taking a tap;
+    # the enacted law flies to its slot and lands with a thud
+    mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'nominate'; g.laws.F += 1; g.hist.push({ k: 'chaos', law: 'F' }, { k: 'veto', pres: 0, chanc: 1 }, { k: 'special', by: 0, target: g.pres }); document.querySelector('[data-act=help]').click(); }""")
+    assert mp.locator('.fxl.chaos').count() == 1 and mp.locator('.fxl.veto-fx .tear').count() == 2 and mp.locator('.fxl.ribbon').count() == 1 and mp.locator('.fly .law').count() == 1
+    assert mp.evaluate("getComputedStyle(document.querySelector('.fxl')).pointerEvents") == 'none' and mp.locator('#seats .seat.sash').count() == 1
+    mp.wait_for_selector('#board .slot.lit.thud', state='attached', timeout=3000)
+    mp.screenshot(path=str(SHOTS / f'fx-{THEME}.png'))
     cov.stop(mp, f'e2e-motion-{THEME}')
     assert not merrs, merrs
     b.close()

@@ -690,6 +690,23 @@ export function review(g: Game, me: number): Play[] {
       else if (side(t) === 'F') add(i, true, 1, `Na eleição especial, você deu a presidência a um aliado, ${P(t)}.`);
     }
   });
+  // the accusations (D45): judged by who the accused turned out to be, and by whether the record backed them then
+  g.hist.forEach((e, i) => {
+    if (e.k !== 'talk' || e.by !== me || e.say !== 'acc' || e.about < 0) return;
+    const hidden = side(e.about) === 'F', who = P(e.about);
+    if (lib && e.hit && hidden) add(i, true, 2, `Você acusou ${who} com uma prova que a ata sustentava, e era {f}: CONTRADIÇÃO! na hora certa.`);
+    else if (lib && hidden) add(i, true, 1, `Você acusou ${who}, e era {f}.`);
+    else if (lib && (e.tone === 'firm' || e.tone === 'proof') && !e.hit) add(i, false, 1.5, `Você acusou ${who} com firmeza sem prova que segurasse, e era liberal: queimou a sua credibilidade e jogou a mesa contra um aliado.`);
+    else if (lib) add(i, false, 1, `Você acusou ${who}, que era liberal.`);
+    else if (!hidden && e.hit) add(i, true, 2, `Você acusou ${who}, um liberal, com uma prova que a ata sustentava: a mesa comprou.`);
+    else if (!hidden) add(i, (e.tone === 'firm' || e.tone === 'proof') ? false : true, 1, (e.tone === 'firm' || e.tone === 'proof') ? `Você acusou ${who}, um liberal, com firmeza e sem prova: a mesa pode ter desconfiado de você.` : `Você jogou a desconfiança em ${who}, um liberal.`);
+    else add(i, false, 2, `Você acusou ${who}, que era do seu time.`);
+  });
+  g.hist.forEach((e, i) => {
+    if (e.k !== 'talk' || e.about !== me || !e.def) return;
+    if (e.ok) add(i, true, 1.5, `Acusado por ${P(e.by)}, você se defendeu com o que a ata sustentava, e a acusação perdeu o peso.`);
+    else if (e.def !== 'quiet') add(i, false, 1, `Acusado por ${P(e.by)}, você deu uma defesa que a ata não sustentava.`);
+  });
   // the notebook (D28): every seat marked right, that this seat did not know for sure, is a deduction well made
   const notes = notesScore(g, me);
   for (const i of notes.right) add(g.hist.length - 1, true, 1, `Nas anotações, você marcou ${P(i)} como ${side(i) === 'L' ? 'liberal' : g.players[i].role === 'hitler' ? '{f} (era o {boss})' : '{f}'}, e acertou.`);

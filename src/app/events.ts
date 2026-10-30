@@ -1,8 +1,8 @@
 import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
-import { buzz, later, reactions, sound } from './fx';
-import { ballot, beat, blurField, contradiction, defenseResult, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
+import { buzz, later, reactions, sound, unlockAudio } from './fx';
+import { ballot, beat, blurField, bossWin, contradiction, defenseResult, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -30,7 +30,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   if (msg && changed && !spoke) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
     keep(next);                                                              // kept on the device for export (D23)
-    confetti(next.winner); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
+    confetti(next.winner); bossWin(next); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
   }
   tick();
 }
@@ -54,12 +54,16 @@ export function tick(): void {
 let hold = false;
 const takeHold = (): number => { const h = hold; hold = false; return h ? CLAIM_HOLD[S.speed || 'normal'] : 0; };
 /** What everyone notices when a vote is counted: the stamp, and the vibration when it elects. */
-function voted(before: Game, next: Game): void {
+function voted(before: Game, next: Game, then: () => void = () => {}): void {
   const e = [...next.hist].reverse().find(x => x.k === 'vote');
   const elected = !!e && e.k === 'vote' && e.ja.length * 2 > before.players.filter(p => p.alive).length;
-  stamp(elected ? 'Eleito!' : 'Rejeitado!', elected ? 'L' : 'F'); sound('stamp'); if (elected) buzz([40, 60, 40]);
-  // the votes open one by one at a little table (D44), at the pace chosen for the app players
-  if (e && e.k === 'vote') ballot(next, e, elected, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3)));
+  const land = (): void => { stamp(elected ? 'Eleito!' : 'Rejeitado!', elected ? 'L' : 'F'); sound('stamp'); if (elected) buzz([40, 60, 40]); then(); };
+  // the votes open one by one at a little table first (D44): nothing (sound, stamp, the end of the game) gives the
+  // result away before the last card turns (D45); taps wait meanwhile
+  const wait = e && e.k === 'vote' ? ballot(next, e, elected, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3))) : 0;
+  if (!wait) { land(); return; }
+  ui.busy = true;
+  setTimeout(() => { ui.busy = false; land(); }, wait);
 }
 /** An app player did something: the same sounds and marks as when a person does it, and the line it adds to the log. */
 function botPlayed(before: Game, next: Game): void {
@@ -68,7 +72,11 @@ function botPlayed(before: Game, next: Game): void {
   const said = next.hist[next.hist.length - 1], me = next.players.findIndex(p => !p.ai);
   if (next.hist.length > before.hist.length && said?.k === 'talk' && said.say === 'acc' && said.about === me && next.players.filter(p => !p.ai).length === 1) { setTimeout(() => contradiction(next, next.hist.length - 1), 50); sound('stamp'); }
   hold = told === 'pc' || told === 'cc' || told === 'inv' || told === 'peek';
-  if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) voted(before, next);
+  const rest = (): void => afterBot(before, next);
+  if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) { voted(before, next, rest); return; }
+  rest();
+}
+function afterBot(before: Game, next: Game): void {
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
   const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
@@ -88,8 +96,7 @@ function myVote(i: number, yes: boolean): void {
 function count(g: Game): void {
   const next = Core.castVotes(g, ui.votes, rand);
   if (next === g) return;
-  voted(g, next); gavelIf(g, next);
-  choose(g, next, next.phase === 'over' ? lawMsg(g, next) || next.why : next.log[next.log.length - 1]);
+  voted(g, next, () => { gavelIf(g, next); choose(g, next, next.phase === 'over' ? lawMsg(g, next) || next.why : next.log[next.log.length - 1]); });
 }
 /** A public choice that can be taken back with "Desfazer" until something else happens. */
 const choose = (before: Game, next: Game, msg?: string): void => play(next, msg, before);
@@ -196,6 +203,7 @@ function askOrientation(): void {
 
 export function initEvents(): void {
   document.addEventListener('click', e => {
+    unlockAudio();                                                         // the radio hiss may start only after a tap (D46)
     // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
     const tgt = e.target as HTMLElement;
     if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote], #court, .court-back')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }

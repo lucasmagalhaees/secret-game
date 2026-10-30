@@ -669,15 +669,15 @@ body:has(.speech-peek){--dock:116px}
 .law .sym .glyph{font-size:min(38px,9vw)}
 /* elimination (D38): name, stamp, the card that says whether it was the leader; the screen shakes once */
 .flash .exec{position:absolute;inset:0;background:rgba(8,6,4,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center}
-.flash.go:has(.exec){animation:dark-hold 3.2s ease-out both}
-@keyframes dark-hold{0%{opacity:0}6%{opacity:1}88%{opacity:1}100%{opacity:0}}
+.flash.go:has(.exec){animation:dark-hold 3.7s ease-out both}
+@keyframes dark-hold{0%{opacity:1}90%{opacity:1}100%{opacity:0}}
 .exec-name{font:900 clamp(34px,10vw,56px)/1 var(--display);color:#f3e8d0;letter-spacing:.04em;animation:exec-in .5s .1s both}
 .exec-stamp{font:900 clamp(28px,8vw,44px)/1 var(--display);text-transform:uppercase;color:#d63c2b;border:5px solid #d63c2b;padding:6px 14px;transform:rotate(-8deg);animation:stamp-in .35s .7s both}
 .exec-card{font:800 16px/1.2 var(--display);text-transform:uppercase;letter-spacing:.08em;color:#1d1a17;background:#f3e8d0;padding:14px 18px;border:3px solid #000;animation:flip .7s 1.4s both}
 .exec-card.boss{background:#d63c2b;color:#fff}
 @keyframes exec-in{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
 @keyframes stamp-in{from{opacity:0;transform:rotate(-8deg) scale(2.4)}to{opacity:1;transform:rotate(-8deg) scale(1)}}
-body.shake{animation:shake .35s .7s}
+#view.shake{animation:shake .35s .05s}
 @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 /* investigation (D38): a confidential file opens, the lens sweeps, the party is stamped */
 .dossier{position:relative}
@@ -689,7 +689,7 @@ body.shake{animation:shake .35s .7s}
 .inv-stamp{position:absolute;right:10px;top:12px;font:900 15px/1 var(--display);text-transform:uppercase;letter-spacing:.06em;padding:5px 9px;border:4px solid currentColor;transform:rotate(-10deg);opacity:.92}
 .inv-stamp.L{color:var(--lib)}.inv-stamp.F{color:var(--fas)}
 .turn.go .inv-stamp{animation:stamp-in .35s 2.3s both}
-@media (prefers-reduced-motion:reduce){.flash.go:has(.exec),.exec-name,.exec-stamp,.exec-card,body.shake,.dossier.go .cover,.turn.go .inv-stamp{animation:none}.dossier .cover{display:none}}
+@media (prefers-reduced-motion:reduce){.flash.go:has(.exec),.exec-name,.exec-stamp,.exec-card,#view.shake,.dossier.go .cover,.turn.go .inv-stamp{animation:none}.dossier .cover{display:none}}
 /* the court (D39): a sheet to pick the proof and the tone */
 .court-back{position:fixed;inset:0;z-index:58;background:rgba(0,0,0,.5)}
 .court{position:fixed;left:0;right:0;bottom:0;z-index:59;max-height:85vh;overflow-y:auto;background:var(--surface);border-top:4px solid var(--line);padding:16px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
@@ -704,7 +704,7 @@ body.shake{animation:shake .35s .7s}
 .court .go{background:var(--fas);color:var(--on-party)}
 /* CONTRADIÇÃO! (D39) */
 .contra{position:fixed;inset:0;z-index:70;background:radial-gradient(circle at 50% 22%,#4a1d14 0,#14110e 62%);color:#f3e8d0;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:calc(70px + env(safe-area-inset-top)) 20px 20px;cursor:pointer}
-.contra .burst{position:absolute;left:50%;top:120px;width:560px;height:560px;transform:translate(-50%,-50%);background:repeating-conic-gradient(rgba(255,122,89,.18) 0 8deg,transparent 8deg 16deg);border-radius:50%;z-index:-1}
+.contra .burst{position:absolute;left:50%;top:120px;width:560px;height:560px;transform:translate(-50%,-50%);background:repeating-conic-gradient(rgba(255,122,89,.18) 0 8deg,transparent 8deg 16deg);border-radius:50%;z-index:-1;pointer-events:none}
 .contra .boom{font:900 clamp(30px,10vw,44px)/1 Impact,var(--display);color:#ff7a59;text-shadow:4px 4px 0 #000;transform:rotate(-5deg);text-align:center;text-transform:uppercase;white-space:nowrap;animation:stamp-in .4s both}
 .contra .proof{background:rgba(10,8,6,.9);border-left:5px solid #ff7a59;padding:12px 14px}
 .contra .proof small{color:#b9ab90;font:800 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase}
@@ -749,7 +749,6 @@ body.shake{animation:shake .35s .7s}
 .b-q{margin:0;text-align:center;font-size:16px}
 .b-table{position:relative;width:min(330px,88vw);height:min(330px,88vw)}
 .b-felt{position:absolute;inset:22%;border-radius:50%;background:radial-gradient(#2c5a3a,#173322);border:6px solid #6b4a2a;box-shadow:0 0 0 3px #000}
-.ballot.danger .b-felt{background:radial-gradient(#7a2016,#3a0f0a)}
 .b-seat{position:absolute;width:60px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px}
 .b-seat b{font:800 11px/1 var(--display);letter-spacing:.06em}.b-seat.me b{color:#ff7a59}.b-seat.me .b-card{outline:3px solid #ff7a59}
 .b-card{width:38px;height:52px;border-radius:5px;border:2px solid #000;box-shadow:0 3px 0 #000;display:grid;place-items:center;color:#fff;font:900 18px/1 Arial,sans-serif;background:repeating-linear-gradient(45deg,#3a2f24 0 6px,#2a221a 6px 12px);animation:b-flip .45s both}
@@ -765,3 +764,107 @@ body.shake{animation:shake .35s .7s}
 .b-stamp.L{color:#8fd4a8}.b-stamp.F{color:#ff7a59}
 .ballot .tap{color:#b9ab90}
 @media (prefers-reduced-motion:reduce){.b-card,.b-card span,.b-stamp{animation:none!important;opacity:1}.b-card.ja{background:#2f9e5b}.b-card.nein{background:#d63c2b}}
+/* the table comes in and leaves (D45) */
+.ballot{animation:b-in .4s ease-out both}
+.ballot .b-felt{animation:b-felt .5s .1s cubic-bezier(.2,1.4,.4,1) both}
+.ballot .b-seat{animation:b-seat .4s .25s ease-out both}
+.ballot.out{animation:b-out .45s ease-in both}
+@keyframes b-in{from{opacity:0}to{opacity:1}}
+@keyframes b-out{to{opacity:0;transform:scale(1.04)}}
+@keyframes b-felt{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes b-seat{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%)}}
+.ballot.danger .b-felt{animation:b-felt .5s .1s both,b-danger .6s 1 both;animation-delay:.1s,var(--danger-at,2s)}
+@keyframes b-danger{from{filter:none}to{filter:hue-rotate(-120deg) saturate(1.6)}}
+/* the shot (D45): a white flash, the glass cracks from the hit, the crack stays under the name */
+.flash .muzzle{position:absolute;inset:0;z-index:3;background:#fff;opacity:0;animation:muzzle .25s ease-out both}
+@keyframes muzzle{0%{opacity:.95}100%{opacity:0}}
+.flash .crack{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.flash .crack path{fill:none;stroke:rgba(255,255,255,.75);stroke-width:2;stroke-linejoin:round;stroke-dasharray:700;stroke-dashoffset:700;animation:crack .35s .08s ease-out forwards}
+.flash .crack circle{fill:#000;stroke:rgba(255,255,255,.8);stroke-width:2;transform-origin:center;animation:muzzle .2s reverse both}
+@keyframes crack{to{stroke-dashoffset:0}}
+.flash .exec{z-index:1}
+.flash .exec>*{animation-delay:calc(var(--d,0s) + .5s)}
+.exec-name{--d:.1s}.exec-stamp{--d:.7s}.exec-card{--d:1.4s}
+@media (prefers-reduced-motion:reduce){.flash .muzzle,.flash .crack{display:none}}
+
+/* ---------- D46: more motion ---------- */
+/* effect layers over the screen: never take a tap */
+.fxl{position:fixed;inset:0;z-index:30;pointer-events:none;display:grid;place-items:center;overflow:hidden}
+.fxl .law{width:64px;height:92px;pointer-events:none}
+/* 1. the enacted law flies to its slot, spinning, and the slot (and its power) lights up on landing */
+.fly .law{animation:fly .8s cubic-bezier(.5,0,.6,1) both}
+@keyframes fly{0%{opacity:0;transform:scale(1.8) rotate(-30deg)}20%{opacity:1;transform:scale(1.5) rotate(0)}100%{opacity:.9;transform:translate(var(--dx),var(--dy)) scale(.4) rotate(720deg)}}
+.slot.lit.thud{animation:thud .35s ease-out}
+@keyframes thud{0%{transform:scale(1.25)}60%{transform:scale(.92)}100%{transform:none}}
+.slot.lit small{animation:lit 1.6s .8s ease-out both}
+@keyframes lit{0%,100%{text-shadow:none}30%{text-shadow:0 0 8px #ffd678,0 0 14px #ffd678;color:var(--fg)}}
+/* 2. chaos: the top law falls spinning, CAOS! flashes, the three rejection marks burst */
+.chaos .law.fall{position:absolute;top:30%;animation:fall 1.3s cubic-bezier(.5,0,.8,.4) both}
+@keyframes fall{0%{transform:translateY(-60vh) rotate(0)}100%{transform:translateY(30vh) rotate(900deg);opacity:.2}}
+.chaos-sign{font:900 64px/1 var(--display);text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--fas);padding:6px 18px;border:4px solid #15110e;transform:rotate(-6deg);animation:sign 1.4s ease-out both}
+@keyframes sign{0%{opacity:0;transform:scale(2.4) rotate(-6deg)}15%{opacity:1;transform:scale(1) rotate(-6deg)}25%,45%{opacity:.4}35%,55%,85%{opacity:1}100%{opacity:0;transform:rotate(-6deg)}}
+.burst-dots{position:absolute;bottom:22%;left:50%;display:flex;gap:10px}
+.burst-dots i{width:16px;height:16px;border-radius:50%;background:var(--fas);border:2px solid #15110e;animation:burst .9s .2s ease-out both}
+.burst-dots i:nth-child(1){--bx:-90px}.burst-dots i:nth-child(2){--bx:0px}.burst-dots i:nth-child(3){--bx:90px}
+@keyframes burst{0%{transform:none}40%{transform:scale(1.8)}100%{transform:translate(var(--bx),-120px) scale(.2);opacity:0}}
+/* 3. the role card trembles in its envelope before turning; a fascist's allies come in one by one */
+.turn.go .back{animation:tremble .28s 2 linear,turnAway .8s .56s cubic-bezier(.3,.7,.3,1) both}
+.turn.go .role-card{animation-delay:.56s}
+@keyframes tremble{0%,100%{transform:none}25%{transform:translateX(-3px) rotate(-1deg)}75%{transform:translateX(3px) rotate(1deg)}}
+.allies.go .ally{animation:enter .4s ease-out both}
+.allies.go .ally:nth-child(1){animation-delay:1.5s}.allies.go .ally:nth-child(2){animation-delay:2.1s}
+/* 4. a veto accepted: two cards (backs only) tear in half */
+.veto-fx{grid-auto-flow:column;gap:24px;align-content:center}
+.veto-fx .chaos-sign{position:absolute;font-size:48px}
+.tear{display:flex;width:70px;height:100px}
+.tear i{flex:1;background:repeating-linear-gradient(45deg,#15110e 0 8px,#2b241f 8px 16px);border:3px solid #15110e}
+.tear .l{clip-path:polygon(0 0,100% 0,80% 20%,100% 40%,75% 60%,100% 80%,85% 100%,0 100%);animation:tearL 1s .3s ease-in both}
+.tear .r{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,15% 80%,0 60%,25% 40%,0 20%,20% 0);margin-left:-6px;animation:tearR 1s .3s ease-in both}
+@keyframes tearL{to{transform:translate(-40px,60px) rotate(-35deg);opacity:0}}
+@keyframes tearR{to{transform:translate(40px,70px) rotate(30deg);opacity:0}}
+/* 5. special election: a ribbon crosses the screen; the chosen president wears a sash for that round */
+.ribbon>div{width:140vw;padding:10px 0;text-align:center;background:var(--accent-bg,#c4381f);color:#fff;border-block:4px solid #15110e;transform:rotate(-8deg);animation:ribbon 1.6s cubic-bezier(.2,.8,.4,1) both}
+.ribbon b{display:block;font:900 26px/1.1 var(--display);text-transform:uppercase;letter-spacing:.1em}
+.ribbon span{font:700 18px/1.2 var(--display)}
+@keyframes ribbon{0%{transform:translateX(-120%) rotate(-8deg)}30%,70%{transform:translateX(0) rotate(-8deg)}100%{transform:translateX(120%) rotate(-8deg)}}
+.seat.sash{background-image:linear-gradient(120deg,transparent 0 40%,#d9a520 40% 55%,transparent 55%)}
+/* 6. the end: roles turn over one by one, the hidden side last; the leader yells over a red screen */
+.role.unveil{display:inline-block;animation:unveil .5s calc(var(--k,0) * .25s + .3s) cubic-bezier(.3,.7,.3,1) both}
+@keyframes unveil{0%{transform:perspective(400px) rotateY(90deg);opacity:0}100%{transform:none;opacity:1}}
+.boss-win{background:rgba(160,16,10,.55);animation:redIn 2.6s ease-out both}
+@keyframes redIn{0%{opacity:0}10%,75%{opacity:1}100%{opacity:0}}
+.boss-yell{display:grid;justify-items:center;gap:8px;width:min(260px,70vw)}
+.boss-yell svg{width:100%;height:auto;animation:yell .12s 12 linear}
+.boss-yell b{font:900 28px/1 var(--display);text-transform:uppercase;color:#fff;text-shadow:0 2px 0 #15110e}
+@keyframes yell{0%,100%{transform:none}50%{transform:translate(2px,-2px) scale(1.02)}}
+/* 7. rising tension: a faint red border from the danger zone on, pulsing slowly, stronger with each fascist law */
+html[data-tension] body::before{content:"";position:fixed;inset:0;z-index:25;pointer-events:none;box-shadow:inset 0 0 var(--tv,60px) rgba(196,30,20,var(--ta,.25));animation:tension 4s ease-in-out infinite}
+html[data-tension="4"] body::before{--tv:80px;--ta:.35}
+html[data-tension="5"] body::before{--tv:110px;--ta:.5;animation-duration:2.6s}
+@keyframes tension{0%,100%{opacity:.55}50%{opacity:1}}
+/* 8. living paper: a very light film grain over the poster */
+html[data-look="poster"] body::after{content:"";position:fixed;inset:-50%;z-index:24;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1s steps(4) infinite}
+@keyframes grain{0%{transform:none}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}}
+/* 10. a new phase comes in like a newspaper page turning, with its headline */
+#phase.enter{animation:page .5s cubic-bezier(.3,.7,.3,1) both;transform-origin:left center;position:relative}
+#phase.enter[data-head]::before{content:attr(data-head);position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;
+  font:900 30px/1 var(--display);text-transform:uppercase;letter-spacing:.08em;color:var(--fg);background:var(--surface);border-bottom:3px double var(--line);animation:headline .6s ease-in both}
+@keyframes page{0%{transform:perspective(900px) rotateY(-70deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes headline{0%,45%{opacity:1}100%{opacity:0;visibility:hidden}}
+/* 11. tactile: law cards lift a little under the finger or the focus */
+button.law{transition:translate .15s ease-out}
+button.law:hover,button.law:focus-visible{translate:0 -4px}
+.btn{transition:transform .06s,box-shadow .06s}
+/* 12. what an app player just said, in a bubble over its name */
+.seat{position:relative}
+.seats{overflow-x:clip}
+.bubble{position:absolute;bottom:calc(100% + 6px);left:0;z-index:5;width:max-content;max-width:min(200px,55vw);padding:4px 8px;font:600 12px/1.25 var(--font);
+  background:var(--surface);color:var(--fg);border:2px solid var(--line);border-radius:10px;pointer-events:none;white-space:normal}
+.seat.rt .bubble{left:auto;right:0}
+.bubble::after{content:"";position:absolute;top:100%;left:12px;border:6px solid transparent;border-top-color:var(--line)}
+.seat.rt .bubble::after{left:auto;right:12px}
+.bubble.pop{animation:pop .25s ease-out both}
+@keyframes pop{0%{transform:scale(.4) translateY(8px);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.fxl{display:none}#phase.enter[data-head]::before{display:none}html[data-look="poster"] body::after{display:none}button.law:hover,button.law:focus-visible{translate:none}}
