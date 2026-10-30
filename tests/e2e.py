@@ -236,6 +236,9 @@ with sync_playwright() as p:
     pg.click('#phase [data-act=pickp][data-i="0"]'); pg.click('[data-act=execute]')
     assert G()['winner'] == 'L' and 'liberais venceram' in txt('#phase')
     pg.click('[data-act=table]'); assert G() is None and pg.locator('#table').count() == 1
+    # D35: the quick game: 7 seats, the hard level, no assistance, theme and continent at random
+    pg.click('#quickgame'); g = G(); assert len(g['players']) == 7 and sum(1 for p in g['players'] if p.get('ai')) == 6 and g['level'] == 'dificil' and not pg.evaluate('window.__APP.S.assist'), 'quick game'
+    pg.click('[data-act=end]'); pg.click('[data-act=end]'); assert G() is None
 
     # a table of 5: Hitler knows the fascist, and the 3rd fascist law lets the president see the next 3 laws
     pg.locator('#names li', has_text='Fê').locator('[data-act=rmname]').click()

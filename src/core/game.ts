@@ -40,14 +40,13 @@ export const LEVELS: Level[] = ['facil', 'medio', 'dificil', 'extremo'];
  *  says nothing about the role: roles are dealt at random, so Churchill may well be the fascist. The leader of the
  *  hidden side (Hitler, Stalin) is not among them: it is a role. */
 export const BOT_NAMES: Record<Pack, string[]> = {
-  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'De Gaulle', 'Goebbels', 'Truman', 'Göring', 'Eisenhower', 'Himmler', 'Kennedy', 'Salazar', 'Tiglate-Pileser', 'Gengis Khan'],
-  comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Ho Chi Minh', 'Pol Pot', 'Marulanda']
+  fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Gandhi', 'Goebbels', 'Truman', 'Júlio César', 'Lincoln', 'Himmler', 'Kennedy', 'Salazar', 'Tiglate-Pileser', 'Gengis Khan'],
+  comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Kim Jong-un', 'Pol Pot', 'Marulanda']
 };
 /** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
  *  first. */
 /** Where the names of the app players come from (D24): the whole world (BOT_NAMES), or one continent. In each list,
- *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. Lula
- *  goes by "Polvo", as the person asked. */
+ *  the two sides of the theme mixed, well-known names only. The name says nothing of the role, which is dealt. */
 export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa', 'oceania', 'brasil'];
 /** The password that unlocks the Brazil expansion (D27). Written in the page on purpose: a joke among friends, not a lock. */
 export const DLC_KEY = 'unlockresenha';
@@ -56,19 +55,19 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
   fascismo: {
     mundo: BOT_NAMES.fascismo,
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
-    americas: ['Roosevelt', 'Pinochet', 'Kennedy', 'Videla', 'Lincoln', 'Stroessner', 'JK', 'Trujillo', 'Getúlio', 'Somoza', 'Alfonsín', 'Médici'],
-    europa: ['Churchill', 'Mussolini', 'De Gaulle', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Göring', 'Mitterrand', 'Pétain'],
-    asia: ['Gandhi', 'Tojo', 'Nehru', 'Marcos', 'Sun Yat-sen', 'Suharto', 'Cory Aquino', 'Park Chung-hee', 'Lee Kuan Yew', 'Hirohito', 'Benazir Bhutto', 'Chiang Kai-shek', 'Tiglate-Pileser', 'Gengis Khan', 'Tamerlão'],
-    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Nkrumah', 'Bokassa', 'Kaunda', 'Verwoerd', 'Nyerere', 'Botha', 'Kenyatta', 'Mugabe'],
+    americas: ['Roosevelt', 'Kennedy', 'Lincoln', 'Obama', 'Washington', 'JK', 'Getúlio', 'Perón', 'Pinochet', 'Médici', 'Trump', 'Nixon', 'Bush'],
+    europa: ['Churchill', 'Mussolini', 'Franco', 'Napoleão', 'Salazar', 'Merkel', 'Goebbels', 'Thatcher', 'Rainha Vitória', 'Macron', 'Rainha Elizabeth'],
+    asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Confúcio', 'Khomeini', 'Netanyahu', 'Kim Jong-un', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
+    africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
   },
   comunismo: {
     mundo: BOT_NAMES.comunismo,
     oceania: BOT_NAMES.comunismo,
-    americas: ['Kennedy', 'Fidel', 'Reagan', 'Che', 'Roosevelt', 'Chávez', 'JK', 'Maduro', 'Lincoln', 'Polvo', 'Alfonsín', 'Allende', 'Marulanda', 'Abimael Guzmán', 'Ortega'],
-    europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'De Gaulle', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
-    asia: ['Gandhi', 'Mao', 'Nehru', 'Ho Chi Minh', 'Sun Yat-sen', 'Pol Pot', 'Lee Kuan Yew', 'Kim Il-sung', 'Cory Aquino', 'Deng Xiaoping', 'Chiang Kai-shek', 'Zhou Enlai', 'Tiglate-Pileser', 'Gengis Khan'],
-    africa: ['Mandela', 'Sankara', 'Tutu', 'Mengistu', 'Nkrumah', 'Agostinho Neto', 'Kenyatta', 'Samora Machel', 'Kaunda', 'Nyerere', 'Sadat', 'Mugabe'],
+    americas: ['Kennedy', 'Reagan', 'Lincoln', 'Obama', 'Roosevelt', 'JK', 'Fidel', 'Che', 'Chávez', 'Maduro', 'Allende', 'Evo Morales', 'Marulanda', 'Biden', 'Clinton'],
+    europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'Gorbachev', 'Macron', 'Merkel', 'Júlio César', 'Napoleão', 'Putin'],
+    asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Kim Il-sung', 'Pol Pot', 'Xi Jinping', 'Netanyahu', 'Saddam Hussein', 'Confúcio', 'Gengis Khan', 'Tiglate-Pileser'],
+    africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Lula', 'Zema', 'Jones Manoel', 'Aécio', 'Boulos', 'Enéas', 'Dilma', 'Serra', 'Manuela', 'FHC', 'Renan Santos']
   }
 };

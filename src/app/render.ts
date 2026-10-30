@@ -62,10 +62,10 @@ const law = (l: Law, k?: number): string => {
 /* ---------- before the game: the table ---------- */
 /** Play again at once (D34): with a table that is ready, one big button with the last setup, before anything else. */
 function vQuick(): string {
-  const n = S.names.length, people = S.names.filter((_, i) => !S.ai?.[i]).length;
-  if (n < Core.MIN_PLAYERS || !people || S.game) return '';
-  const lv = LEVEL[(S.level || 'medio') as Level][0], where = Core.REGION_NAMES[S.region || 'mundo'];
-  return `<section class="card quick" id="quick"><button class="btn block big" data-act="quickstart" id="quickstart">▶ Jogar agora</button><p class="hint">${n} lugares${S.ai?.some(Boolean) ? ` · IA ${lv.toLowerCase()}` : ''} · ${Core.WORDS[S.pack || 'fascismo'].theme} · ${where}</p></section>`;
+  // "Jogar agora" is the quick game (D35): 7 seats, you and 6 app players at the hard level, no assistance, theme and
+  // continent drawn at random; the table below stays for setting up a game by hand
+  if (S.game) return '';
+  return `<section class="card quick" id="quick"><button class="btn block big" data-act="quickgame" id="quickgame">▶ Jogar agora</button><p class="hint">Partida rápida: 7 lugares, você e 6 IAs no difícil, sem assistência, tema e continente sorteados.</p></section>`;
 }
 /** Your game at a glance, at the top of the result (D34): won or lost, with what role, and how the notebook did. */
 function vYours(g: Game): string {
@@ -652,7 +652,7 @@ function vPhase(g: Game): string {
       return `<section class="card" id="phase"><span class="label">Poder: eliminar</span><p class="big"><b>${pres}</b>, quem sai do jogo?</p>${pickList(g, i => Core.canTarget(g, i), 'pickp')}<button class="btn block danger" data-act="execute"${ui.pick === null ? ' disabled' : ''}>${ui.pick === null ? 'Escolha alguém' : `Eliminar ${name(g, ui.pick)}`}</button></section>`;
     default:
       return `<section class="card win ${g.winner}" id="phase"><span class="label">Fim de jogo</span><div class="cheer">${portrait(g.winner === 'L' ? 'liberal' : 'hitler', P, R)}</div><p class="big"><b>${g.winner === 'L' ? 'Os liberais venceram!' : 'Os {fs} venceram!'}</b></p><p>${esc(g.why)}</p>
-        <button class="btn block" data-act="again">Jogar de novo com a mesma mesa</button><button class="btn ghost block" data-act="table">Mudar a mesa</button></section>`;
+        <button class="btn block" data-act="again">Jogar de novo com a mesma mesa</button><button class="btn ghost block" data-act="table">Voltar ao início</button></section>`;
   }
 }
 

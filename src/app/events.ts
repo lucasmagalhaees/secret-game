@@ -124,6 +124,20 @@ function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): 
   if (region !== 'mundo') next.region = region; else delete next.region;
   setS(next); saveS(); render();
 }
+/** Quick game (D35): 7 seats, the person and 6 app players at the hard level, no assistance, a theme and a continent
+ *  drawn at random (Brazil only once unlocked). The person keeps their name; the app players get names of the scene. */
+function quickGame(): void {
+  const me = S.names.find((_, i) => !S.ai?.[i]) || 'Você';
+  const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = regions[Math.floor(rand() * regions.length)];
+  const pack = Core.PACKS[Math.floor(rand() * Core.PACKS.length)];
+  let names = [me];
+  while (names.length < 7) names = [...names, Core.botName(names, rand, pack, region)];
+  // the table set up by hand stays as it was: the quick game is built apart from it
+  const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
+  if (!r.ok) return;
+  const next = { ...S }; delete next.notes; delete next.noteDetails; delete next.assist; setS(next); saveS();
+  ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play(r.game, 'Partida rápida. Veja seu papel em segredo.');
+}
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
   const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
@@ -198,7 +212,8 @@ export function initEvents(): void {
     else if (a === 'coach') { const next = { ...S }; if (d.v === 'on') next.coach = true; else delete next.coach; setS(next); saveS(); render(); }
     else if (a === 'speed') { const next = { ...S }; if (d.v === 'lenta' || d.v === 'rapida') next.speed = d.v; else delete next.speed; setS(next); saveS(); render(); }
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
-    else if (a === 'start' || a === 'quickstart') start();
+    else if (a === 'start') start();
+    else if (a === 'quickgame') quickGame();
     else if (a === 'gallery') { ui.gallery = !ui.gallery; render(); scrollTo(0, 0); }   // every drawing (D25)
     else if (a === 'exportgames') void exportGames();
     else if (a === 'wipe') { if (ui.confirmWipe) { ui.confirmWipe = false; wipe(); } else ui.confirmWipe = true; render(); }
