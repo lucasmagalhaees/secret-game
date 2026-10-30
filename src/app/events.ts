@@ -176,7 +176,10 @@ function askOrientation(): void {
 
 export function initEvents(): void {
   document.addEventListener('click', e => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
+    // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
+    const tgt = e.target as HTMLElement;
+    if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote]')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
+    const b = tgt.closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     // Safari may leave a textarea focused when tapping a button. Commit its text and allow the repaint.
     blurField();
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
