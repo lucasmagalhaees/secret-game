@@ -246,7 +246,6 @@ export function initEvents(): void {
     else if (a === 'help') { ui.help = !ui.help; render(); tick(); }
     else if (a === 'allplays') { ui.allPlays = !ui.allPlays; render(); }
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
-    else if (a === 'live') { const next = { ...S }; if (S.live) delete next.live; else next.live = true; setS(next); saveS(); render(); }
     else if (a === 'diary') { ui.diary = !ui.diary; if (ui.diary) { delete S.notesOpen; saveS(); } render(); const diary = $('#diary'); if (ui.diary && diary) diary.scrollTop = diary.scrollHeight; }
     else if (a === 'logfilter') { ui.logFilter = d.v === 'talk' || d.v === 'gov' ? d.v : 'all'; render(); }
     else if (a === 'seatnote') { ui.diary = false; const next = { ...S, notesOpen: true as const }; setS(next); saveS(); render(); document.getElementById(`note-row-${i}`)?.scrollIntoView({ block: 'center' }); }

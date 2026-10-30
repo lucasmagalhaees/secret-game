@@ -495,3 +495,8 @@ O teste móvel em tests/iphone.py verifica os dois tipos de botão, área de toq
 ## D36 — Avisos de reputação (2026-10-29)
 
 A sugestão de crédito social virou reputação na mesa, sem pontuação única. Um aviso curto mostra “Credibilidade caiu” para repetição ou inversão sem fatos novos; “Sua fala ganhou apoio”, “Sua fala encontrou resistência” ou “A mesa está dividida” resumem as reações públicas. O rodapé mantém o aviso junto da última conversa, e o Diário explica a causa. Os avisos não revelam papéis, não inventam uma opinião unânime e não mudam as penalidades moderadas já existentes na IA. A reputação se refere apenas às ações dos jogadores nesta partida.
+
+## D37 — Desconfiômetro unificado (2026-10-30)
+
+- **Contexto (30/10/2026):** havia dois controles para a mesma coisa, a "desconfiança ao vivo" (`S.live`: uma barra por IA, ligada na lista de jogadores) e o "desconfiômetro" (`S.gauge`: o ponteiro de óleo de carro, ligado em "Mais opções"). O pedido: "eu quero isso unificado", ligável e desligável fora e dentro do jogo.
+- **Decisão:** uma chave só, `S.gauge`, liga e desliga o medidor inteiro: o ponteiro, a barra de cada IA (na lista de jogadores e na faixa da mesa) e o momento que mais fez a desconfiança subir. Pode ser mudada em "Mais opções" e, com uma pessoa só na mesa, num botão logo abaixo da faixa da mesa durante a partida. Desligado de início. `S.live` deixa de existir: ao ler uma partida guardada com `live`, ele vira `gauge`.

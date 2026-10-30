@@ -321,18 +321,19 @@ with sync_playwright() as p:
     assert pg.locator('#heard .claim-impact').is_visible() and len(txt('#heard .claim-impact')) > 10
     assert pg.locator('#tellF, #tellL').count() == 0, 'one claim at a time (D30)'; shot(f's5-denunciar-{THEME}.png')
     pg.click('#notestoggle'); assert not pg.locator('#drawer').is_visible() and pg.locator('#players .tag.mark.F').count() == 1 and '· 1' in txt('#notestoggle'), 'closed, the marks stay in view'
-    # the live suspicion: off by default, on with a tap, one bar per app player
-    assert pg.locator('#players .meter').count() == 0
-    pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
-    pg.click('#livetoggle'); assert pg.locator('#players .meter').count() == 0
+    # the suspicion meter (D32, D37): one switch for the needle and the bars, off by default, on with a tap in the game
+    assert pg.locator('#players .meter').count() == 0 and pg.locator('#gauge').count() == 0
+    pg.click('#gaugetoggle'); assert pg.locator('#players .meter').count() == 6 and all(0 <= int(t.rstrip('%')) <= 100 for t in pg.locator('#players .meter b').all_text_contents()), 'live: how much each app player suspects the person'
+    assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the needle comes with the bars: one meter'
+    pg.click('#gaugetoggle'); assert pg.locator('#players .meter').count() == 0 and pg.locator('#gauge').count() == 0, 'one tap turns the whole meter off'
     pg.locator('#seats [data-act=seatnote]').first.click(); assert pg.locator('#drawer').is_visible(), 'a seat opens the notebook (D34)'; pg.click('#notestoggle')
     assert pg.locator('#phase.mine').count() + pg.locator('#thinking').count() >= 1, 'your turn glows, or an app player is deciding (D34)'
     # D43: reputation stars beside each name
-    pg.evaluate('window.__APP.S.rep = true'); pg.click('#livetoggle'); pg.click('#livetoggle'); assert pg.locator('#seats .rep').count() >= 5; pg.evaluate('delete window.__APP.S.rep')
-    # D32: the suspicion gauge, switched on in the settings
-    pg.evaluate('window.__APP.S.gauge = true'); pg.click('#livetoggle'); pg.click('#livetoggle')
-    assert pg.locator('#gauge').count() == 1 and 0 <= int(pg.get_attribute('#gauge', 'aria-valuenow')) <= 100 and overflow() == 0, 'the gauge shows how much the table suspects the person'
-    pg.evaluate('delete window.__APP.S.gauge'); pg.click('#livetoggle'); assert pg.locator('#gauge').count() == 1, 'the live suspicion shows it too'; pg.click('#livetoggle'); assert pg.locator('#gauge').count() == 0
+    pg.evaluate('window.__APP.S.rep = true'); pg.click('#gaugetoggle'); pg.click('#gaugetoggle'); assert pg.locator('#seats .rep').count() >= 5; pg.evaluate('delete window.__APP.S.rep')
+    # D37: switched on in the settings, the meter is already on in the game
+    pg.evaluate('window.__APP.S.gauge = true'); pg.click('#gaugetoggle'); pg.click('#gaugetoggle')
+    assert pg.locator('#gauge').count() == 1 and pg.get_attribute('#gaugetoggle', 'aria-pressed') == 'true', 'on in the settings, on in the game'
+    pg.click('#gaugetoggle'); assert pg.locator('#gauge').count() == 0
     # D17: the panels open from a bar at the bottom that has its own room: scrolled to the end, nothing is under it
     pg.evaluate('scrollTo(0, document.documentElement.scrollHeight)')
     assert pg.evaluate("Math.max(...[...document.querySelectorAll('main .card, #app .card')].map(c => c.getBoundingClientRect().bottom)) <= document.querySelector('.dock').getBoundingClientRect().top"), 'nothing is under the bar at the bottom'

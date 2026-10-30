@@ -403,10 +403,9 @@ function vPlayers(g: Game): string {
   // at the end the roles turn over one by one, the liberals first and the hidden side last, the leader at the very end
   const rank = (r: Role): number => (r === 'liberal' ? 0 : r === 'hitler' ? 2 : 1);
   const order = g.players.map((_, i) => i).sort((a, b) => rank(g.players[a].role) - rank(g.players[b].role) || a - b), unveil = g.phase === 'over' && entering;
-  const live = S.live && me >= 0 && g.phase !== 'over' && g.phase !== 'reveal' ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
+  const live = S.gauge && me >= 0 && g.phase !== 'over' && g.phase !== 'reveal' ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
   const meter = (i: number): string => { const f = live?.get(i); return f === undefined ? '' : `<span class="meter" title="Quanto ${esc(g.players[i].name)} desconfia de você agora"><i style="width:${Math.round(f * 100)}%"></i><b>${pct(f)}</b></span>`; };
-  const liveBtn = me >= 0 && g.phase !== 'over' ? `<button class="live-toggle" data-act="live" aria-pressed="${!!S.live}" id="livetoggle">👁 Desconfiança ao vivo: ${S.live ? 'ligada' : 'desligada'}</button>` : '';
-  return `<section class="card" id="players"><span class="label">Jogadores</span>${liveBtn}${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
+  return `<section class="card" id="players"><span class="label">Jogadores</span>${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}${unveil ? ' unveil' : ''}" style="--k:${order.indexOf(i)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
     return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
@@ -414,15 +413,18 @@ function vPlayers(g: Game): string {
 }
 /** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
 let liveCache: { key: string; rows: { seat: number; f: number }[] } | null = null;
-/** The suspicion gauge (D32): like an oil gauge, a needle from 0 to 100 with how much the app players suspect the person
- *  now, on average (the same reckoning as the live bars). Only alone at the table, and only when switched on. */
+/** The suspicion meter (D32, D37): like an oil gauge, a needle from 0 to 100 with how much the app players suspect the person
+ *  now, on average (the same reckoning as the bars beside each name). Only alone at the table; the switch is here and in the settings. */
 let gaugeAt = -90;
 function vGauge(g: Game): string {
   const me = solo(g);
-  if (!(S.gauge || S.live) || me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';   // the live suspicion turns it on too
+  if (me < 0 || g.phase === 'reveal' || g.phase === 'over') return '';
+  // one switch for the whole meter (D37): the needle, the bar beside each app player and the crux, on in the settings or here
+  const toggle = `<button class="live-toggle" data-act="gauge" data-v="${S.gauge ? 'off' : 'on'}" aria-pressed="${!!S.gauge}" id="gaugetoggle">👁 Desconfiômetro: ${S.gauge ? 'ligado' : 'desligado'}</button>`;
+  if (!S.gauge) return toggle;
   const rows = liveSuspicion(g, me), v = rows.length ? rows.reduce((a, r) => a + r.f, 0) / rows.length : 0, deg = -90 + 180 * v;
   const word = v < 0.35 ? 'tranquilo' : v < 0.6 ? 'de olho' : 'na mira';
-  return `<div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Desconfiômetro"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 43 15" stroke="#3aa05a" stroke-width="10" fill="none"/><path d="M43 15 A50 50 0 0 1 77 15" stroke="#e8b730" stroke-width="10" fill="none"/><path d="M77 15 A50 50 0 0 1 110 62" stroke="#d63c2b" stroke-width="10" fill="none"/><g class="needle" data-to="${deg.toFixed(1)}" style="transform:rotate(${gaugeAt.toFixed(1)}deg)"><path d="M60 62 L58 20 L60 14 L62 20Z" fill="currentColor"/></g><circle cx="60" cy="62" r="5" fill="currentColor"/></svg><span><small>Desconfiômetro</small><b>${pct(v)}</b> ${word}</span></div>`;
+  return `<div class="gauge" id="gauge" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v * 100)}" aria-label="Desconfiômetro"><svg viewBox="0 0 120 70" aria-hidden="true"><path d="M10 62 A50 50 0 0 1 43 15" stroke="#3aa05a" stroke-width="10" fill="none"/><path d="M43 15 A50 50 0 0 1 77 15" stroke="#e8b730" stroke-width="10" fill="none"/><path d="M77 15 A50 50 0 0 1 110 62" stroke="#d63c2b" stroke-width="10" fill="none"/><g class="needle" data-to="${deg.toFixed(1)}" style="transform:rotate(${gaugeAt.toFixed(1)}deg)"><path d="M60 62 L58 20 L60 14 L62 20Z" fill="currentColor"/></g><circle cx="60" cy="62" r="5" fill="currentColor"/></svg><span><small>Desconfiômetro</small><b>${pct(v)}</b> ${word}</span></div>${toggle}`;
 }
 function liveSuspicion(g: Game, me: number): { seat: number; f: number }[] {
   const key = `${g.log.length}:${g.hist.length}:${g.players.map(p => `${p.name}${p.alive ? 1 : 0}`).join()}`;
@@ -596,7 +598,7 @@ function ledger(g: Game, i: number): string {
  *  app player suspects them. */
 function vSeats(g: Game): string {
   if (g.phase === 'reveal') return '';
-  const kit = noteKit(g), me = solo(g), live = S.live && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
+  const kit = noteKit(g), me = solo(g), live = S.gauge && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
   const sash = sashOf(g), now = Date.now();
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
