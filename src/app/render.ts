@@ -3,6 +3,7 @@ import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, R
 import type { EndTab } from './state';
 import { animalOf, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
+import { ambient, thud } from './fx';
 import { S, ui } from './state';
 import { builtFrom, canUpdate } from './update';
 import { earned, kept } from './history';
@@ -37,6 +38,109 @@ export function render(): void {
   const needle = view.querySelector<SVGGElement>('#gauge .needle');
   if (needle) { const to = Number(needle.dataset.to); requestAnimationFrame(() => { needle.style.transform = `rotate(${to}deg)`; }); gaugeAt = to; }
   const diary = document.getElementById('diary'); if (diary) diary.scrollTop = diaryScroll;
+  afterPaint(g);
+}
+
+/* ---------- D46: more motion, all of it about what the whole table already knows ----------
+   Each effect only plays for what changed since the last paint of the same game; a page that is reloaded (or a game
+   that is opened) shows how things are, without replaying anything. Overlays never take a tap (pointer-events:none)
+   and nothing waits for them. With less motion asked, only what is still (the tension border, the bubbles) shows. */
+const still = (): boolean => matchMedia('(prefers-reduced-motion: reduce)').matches;
+let fxGame: Game | null = null, fxHist = 0, fxLog = 0, landed: Law | null = null;
+/** What each app player just said (D46): seat -> the excerpt and when it goes away. */
+const bubbles = new Map<number, { text: string; until: number; born: number }>();
+function afterPaint(g: Game | null): void {
+  const root = document.documentElement;
+  // rising tension: from the danger zone on, the border of the screen glows red, more with each fascist law
+  if (g && g.phase !== 'over' && g.laws.F >= Core.HITLER_ZONE) root.dataset.tension = String(Math.min(g.laws.F, 5)); else delete root.dataset.tension;
+  ambient(!!g && g.phase !== 'over' && g.phase !== 'reveal', g?.phase === 'vote');
+  const same = !!g && !!fxGame && fxGame.players.length === g.players.length && fxGame.players.every((p, i) => p.name === g.players[i].name) && g.hist.length >= fxHist && g.log.length >= fxLog;
+  if (g && same) {
+    for (const e of g.hist.slice(fxHist)) {
+      if (e.k === 'chaos') chaosFx(e.law);
+      else if (e.k === 'veto') tearFx();
+      else if (e.k === 'special') ribbonFx(g, e.target);
+    }
+    for (const line of g.log.slice(fxLog)) speak(g, line);
+    if (landed) flyLaw(landed);
+  }
+  fitBubbles();
+  landed = null;
+  fxGame = g; fxHist = g ? g.hist.length : 0; fxLog = g ? g.log.length : 0;
+}
+/** A layer over the screen for one effect; it never takes a tap and removes itself. */
+function layer(cls: string, html: string, ms: number): HTMLElement {
+  const el = document.createElement('div');
+  el.className = `fxl ${cls}`; el.setAttribute('aria-hidden', 'true'); el.innerHTML = html;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), ms);
+  return el;
+}
+/** A law was enacted: a card flies in from the middle of the screen, spins, and lands on its slot (or on the score at
+ *  the top, when the board is off screen); the slot (and its power) lights up when it lands. */
+function flyLaw(l: Law): void {
+  const slot = document.querySelector<HTMLElement>(`#board .slot.${l}.new`);
+  slot?.classList.add('lit');
+  if (still() || !slot) return;
+  const r = slot.getBoundingClientRect(), on = r.top >= 0 && r.bottom <= innerHeight;
+  const to = on ? r : (document.querySelector(`#score .chip.${l}`) || slot).getBoundingClientRect();
+  const el = layer('fly', `<div class="law ${l}"><span class="sym">${seal(l, P)}</span></div>`, 1000);
+  const card = el.firstElementChild as HTMLElement;
+  const dx = to.left + to.width / 2 - innerWidth / 2, dy = to.top + to.height / 2 - innerHeight / 2;
+  card.style.setProperty('--dx', `${dx.toFixed(0)}px`); card.style.setProperty('--dy', `${dy.toFixed(0)}px`);
+  setTimeout(() => { slot.classList.add('thud'); thud(); }, 800);
+}
+/** Three governments in a row without a law: the page shakes, the top law falls spinning, CAOS! flashes and the three
+ *  rejection marks burst. */
+function chaosFx(l: Law): void {
+  if (still()) return;
+  const v = part('view'); v.classList.remove('shake'); void v.offsetWidth; v.classList.add('shake');
+  layer('chaos', `<div class="law ${l} fall"><span class="sym">${seal(l, P)}</span></div><b class="chaos-sign">Caos!</b><span class="burst-dots"><i></i><i></i><i></i></span>`, 1600);
+}
+/** A veto accepted: the two laws tear in half. Their faces are not shown: only the backs of the cards tear. */
+function tearFx(): void {
+  if (still()) return;
+  const half = (k: number): string => `<div class="tear" style="--k:${k}"><i class="l"></i><i class="r"></i></div>`;
+  layer('veto-fx', `${half(0)}${half(1)}<b class="chaos-sign">Veto!</b>`, 1500);
+}
+/** A special election: a ribbon crosses the screen with the name of the new president. */
+function ribbonFx(g: Game, to: number): void {
+  if (still()) return;
+  layer('ribbon', `<div><b>Eleição especial</b><span>${name(g, to)}</span></div>`, 1700);
+}
+/** The president of the special election wears a sash in the seats strip for that round. */
+function sashOf(g: Game): number {
+  for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'special') return e.target === g.pres ? e.target : -1; if (e.k === 'gov' || e.k === 'veto' || e.k === 'rej' || e.k === 'chaos') return -1; }
+  return -1;
+}
+/** A line of the log said by an app player: a bubble over its name in the seats strip for a moment. */
+function speak(g: Game, line: string): void {
+  const by = g.players.findIndex(p => p.ai && (line.startsWith(p.name + ': "') || line.startsWith(p.name + ' disse que')));
+  if (by < 0) return;
+  const raw = line.slice(g.players[by].name.length).replace(/^:\s*/, '').replace(/^ disse que /, '').replace(/^"|"$/g, '');
+  const text = raw.length > 42 ? `${raw.slice(0, 40)}…` : raw, now = Date.now();
+  bubbles.set(by, { text, until: now + 2500, born: now });
+  const seat = document.querySelector(`#seats [data-seat="${by}"]`);
+  if (seat) { seat.querySelector('.bubble')?.remove(); seat.insertAdjacentHTML('beforeend', bubbleHtml(by, now)); fitBubbles(); }
+  setTimeout(() => { const b = bubbles.get(by); if (b && b.until <= Date.now()) { bubbles.delete(by); document.querySelector(`#seats [data-seat="${by}"] .bubble`)?.remove(); } }, 2550);
+}
+/** A bubble that would stick out of the screen is anchored to the other side of its seat. */
+function fitBubbles(): void {
+  for (const b of document.querySelectorAll<HTMLElement>('#seats .bubble')) {
+    const r = b.getBoundingClientRect(), seat = b.parentElement as HTMLElement;
+    if (r.right > document.documentElement.clientWidth - 4) seat.classList.add('rt'); else if (r.left < 4) seat.classList.remove('rt');
+  }
+}
+function bubbleHtml(i: number, now: number): string {
+  const b = bubbles.get(i);
+  if (!b || b.until <= now) return '';
+  return `<span class="bubble${now - b.born < 250 ? ' pop' : ''}" role="status">${esc(b.text)}</span>`;
+}
+/** The hidden leader was elected chancellor in the danger zone and the game is over: red screen and the leader yelling.
+ *  The game is over: every role is open by then. */
+export function bossWin(g: Game): void {
+  if (still() || g.winner !== 'F' || g.laws.F >= Core.WIN.F) return;
+  layer('boss-win', `<div class="boss-yell">${portrait('hitler', P, R)}<b>${esc(W.boss)} chanceler!</b></div>`, 2600);
 }
 
 /** The words of the theme of what is on screen (D12): the game's, or before a game the one chosen at the table. */
@@ -169,7 +273,8 @@ function vGame(g: Game): string {
   // what the person has to do comes first; what helps them decide (their claim, the trainer) right after it
   // your turn stands out (D34): the phase a person must act on glows; an app player's stays calm
   const mine = !acting && g.phase !== 'over' && !!under && !g.players[under.seat]?.ai && Core.hasAi(g);
-  const card = phase.replace('<section class="card', `<section class="card${entering ? ' enter' : ''}${mine ? ' mine' : ''}`);
+  const head = entering ? ` data-head="${HEAD[acting ? 'bot' : g.phase] || ''}"` : '';
+  const card = phase.replace('<section class="card', `<section${head} class="card${entering ? ' enter' : ''}${mine ? ' mine' : ''}`);
   if (g.phase === 'over') {
     // the end, in tabs (D18): the result first; the whole game and the record one tap away
     const tabs: [EndTab, string][] = [['res', 'Resultado'], ['jogo', 'Resumo'], ['log', 'Registro']];
@@ -179,6 +284,8 @@ function vGame(g: Game): string {
   }
   return vUndo() + vStatus(g) + vSeats(g) + vGauge(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
+/** The headline of each phase, printed on the page that turns in (D46). */
+const HEAD: Record<string, string> = { reveal: 'Papéis', nominate: 'Nova rodada', vote: 'Votação', president: 'Sessão legislativa', chancellor: 'Sessão legislativa', veto: 'Veto', investigate: 'Poder', peek: 'Poder', special: 'Poder', execute: 'Poder', over: 'Fim de jogo', bot: 'Vez da IA' };
 /** A player run by the app is deciding: the screen says who and what, and shows nothing secret. */
 const DOING: Record<string, string> = {
   reveal: 'está vendo o próprio papel', nominate: 'está escolhendo o chanceler', votes: 'A mesa está votando', pdiscard: 'está olhando as 3 leis',
@@ -274,6 +381,7 @@ function vStatus(g: Game): string {
 }
 function vBoard(g: Game): string {
   const fresh = { L: g.laws.L > seenLaws.L ? g.laws.L - 1 : -1, F: g.laws.F > seenLaws.F ? g.laws.F - 1 : -1 };
+  landed = fresh.F >= 0 ? 'F' : fresh.L >= 0 ? 'L' : null;
   seenLaws = { ...g.laws };
   const slots = (p: Law): string => Array.from({ length: Core.WIN[p] }, (_, i) => {
     const filled = g.laws[p] > i, tag = i + 1 === Core.WIN[p] ? 'vitória' : p === 'F' ? POWER_LABEL[Core.powerAt(g, i + 1) || ''] || '' : '';
@@ -291,11 +399,14 @@ function vPlayers(g: Game): string {
   const dead = new Set(g.players.filter(p => !p.alive).map(p => p.name)), fresh = [...dead].filter(x => !seenDead.has(x));
   seenDead = dead;
   const kit = noteKit(g), notes = S.notes || {}, me = solo(g);
+  // at the end the roles turn over one by one, the liberals first and the hidden side last, the leader at the very end
+  const rank = (r: Role): number => (r === 'liberal' ? 0 : r === 'hitler' ? 2 : 1);
+  const order = g.players.map((_, i) => i).sort((a, b) => rank(g.players[a].role) - rank(g.players[b].role) || a - b), unveil = g.phase === 'over' && entering;
   const live = S.live && me >= 0 && g.phase !== 'over' && g.phase !== 'reveal' ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
   const meter = (i: number): string => { const f = live?.get(i); return f === undefined ? '' : `<span class="meter" title="Quanto ${esc(g.players[i].name)} desconfia de você agora"><i style="width:${Math.round(f * 100)}%"></i><b>${pct(f)}</b></span>`; };
   const liveBtn = me >= 0 && g.phase !== 'over' ? `<button class="live-toggle" data-act="live" aria-pressed="${!!S.live}" id="livetoggle">👁 Desconfiança ao vivo: ${S.live ? 'ligada' : 'desligada'}</button>` : '';
   return `<section class="card" id="players"><span class="label">Jogadores</span>${liveBtn}${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
-    const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
+    const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}${unveil ? ' unveil' : ''}" style="--k:${order.indexOf(i)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
     return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${esc(p.name)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
   }).join('')}</ul></section>`;
@@ -485,10 +596,11 @@ function ledger(g: Game, i: number): string {
 function vSeats(g: Game): string {
   if (g.phase === 'reveal') return '';
   const kit = noteKit(g), me = solo(g), live = S.live && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
+  const sash = sashOf(g), now = Date.now();
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
     const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}${S.rep && p.alive ? (r => `<i class="rep r${r}" title="Reputação na mesa" aria-label="Reputação ${r} de 3">${'★'.repeat(r)}${'☆'.repeat(3 - r)}</i>`)(Core.reputation(g, i)) : ''}`;
-    return `<li class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}</li>`;
+    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === sash ? ' sash' : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}${bubbleHtml(i, now)}</li>`;
   }).join('')}</ul>`;
 }
 /** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */
@@ -648,7 +760,7 @@ function vPhase(g: Game): string {
         const me = g.players[g.reveal], mates = Core.knows(g, g.reveal);
         const names = (r: Role): string => mates.filter(m => m.role === r).map(m => `<b>${esc(m.name)}</b>`).join(', ');
         const row = (cls: string, label: string, who: string): string => who ? `<div class="ally ${cls}"><small>${label}</small><span>${who}</span></div>` : '';
-        const info = me.role === 'fascista' ? `<div class="allies" id="allies">${row('H', '{boss}', names('hitler'))}${row('F', 'Outros {fs}', names('fascista'))}</div>`
+        const info = me.role === 'fascista' ? `<div class="allies${flipping ? ' go' : ''}" id="allies">${row('H', '{boss}', names('hitler'))}${row('F', 'Outros {fs}', names('fascista'))}</div>`
           : me.role === 'hitler' ? (mates.length ? `<div class="allies" id="allies">${row('F', 'Seu {f}', names('fascista'))}</div><p class="hint">Ele sabe quem você é.</p>` : '<p>Você não sabe quem são os {fs}. Eles sabem quem você é.</p>') : '<p>Você não sabe quem é quem. Ache o {boss}.</p>';
         const trained = g.train && !me.ai ? `<p class="hint" id="trained">Treino: você escolheu ser ${role(g.train).toLowerCase()}.</p>` : '';
         return `${turn(`<div class="role-card ${Core.partyOf(me.role)}${me.role === 'hitler' ? ' H' : ''}" id="role">${portrait(me.role, P, R)}<small>Você é</small><b>${role(me.role)}</b></div>`)}${info}${trained}<button class="btn block" data-act="hiderole">Entendi, esconder</button>`;
