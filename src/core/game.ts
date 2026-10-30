@@ -57,17 +57,17 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
     americas: ['Roosevelt', 'Kennedy', 'Lincoln', 'Obama', 'Washington', 'JK', 'Getúlio', 'Perón', 'Pinochet', 'Médici', 'Trump', 'Nixon', 'Bush'],
     europa: ['Churchill', 'Mussolini', 'Franco', 'Adenauer', 'Salazar', 'Attlee', 'Goebbels', 'Thatcher', 'Quisling', 'Mitterrand', 'Pétain'],
-    asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Dalai Lama', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
-    africa: ['Mandela', 'Idi Amin', 'Tutu', 'Mobutu', 'Bokassa', 'Mugabe', 'Gaddafi', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Sadat'],
+    asia: ['Gandhi', 'Tojo', 'Hirohito', 'Nehru', 'Saddam Hussein', 'Indira Gandhi', 'Khomeini', 'Netanyahu', 'Chiang Kai-shek', 'Gengis Khan', 'Imperador Meiji', 'Bin Laden', 'Tiglate-Pileser'],
+    africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Bolsonaro', 'Zema', 'Plínio Salgado', 'Aécio', 'Figueiredo', 'Enéas', 'Geisel', 'Serra', 'Castelo Branco', 'FHC', 'Ustra']
   },
   comunismo: {
     mundo: BOT_NAMES.comunismo,
     oceania: BOT_NAMES.comunismo,
     americas: ['Kennedy', 'Reagan', 'Lincoln', 'Obama', 'Roosevelt', 'JK', 'Fidel', 'Che', 'Chávez', 'Maduro', 'Allende', 'Evo Morales', 'Marulanda', 'Biden', 'Clinton'],
-    europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'Gorbachev', 'Ceaușescu', 'Havel', 'Brejnev', 'Kohl', 'Honecker'],
-    asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Kim Il-sung', 'Pol Pot', 'Xi Jinping', 'Dalai Lama', 'Saddam Hussein', 'Chiang Kai-shek', 'Gengis Khan', 'Tiglate-Pileser'],
-    africa: ['Mandela', 'Sankara', 'Tutu', 'Sadat', 'Mugabe', 'Gaddafi', 'Nasser', 'Haile Selassie', 'Cleópatra', 'Mubarak', 'Idi Amin'],
+    europa: ['Churchill', 'Lenin', 'Thatcher', 'Trotsky', 'Adenauer', 'Tito', 'Gorbachev', 'Ceaușescu', 'Merkel', 'Brejnev', 'Napoleão', 'Putin'],
+    asia: ['Gandhi', 'Mao', 'Nehru', 'Kim Jong-un', 'Kim Il-sung', 'Pol Pot', 'Xi Jinping', 'Netanyahu', 'Saddam Hussein', 'Chiang Kai-shek', 'Gengis Khan', 'Tiglate-Pileser'],
+    africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Lula', 'Zema', 'Jones Manoel', 'Aécio', 'Boulos', 'Enéas', 'Dilma', 'Serra', 'Manuela', 'FHC', 'Renan Santos']
   }
 };
