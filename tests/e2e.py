@@ -332,6 +332,17 @@ with sync_playwright() as p:
     pg.click('#talktoggle'); assert pg.locator('#selfclaim').count() == 0
     if pg.locator('#askpick').count(): pg.click('#askpick'); assert 'me indica' in G()['log'][-1]
     else: pg.click('#talktoggle')
+    for act in ('tavoid', 'tinv', 'twhy'):   # D66: the other requests, each from a chip of the panel
+        pg.click('#talktoggle')
+        if pg.locator(f'#talk [data-act={act}]').count(): pg.locator(f'#talk [data-act={act}]').first.click(); assert G()['hist'][-1]['k'] in ('ask', 'why')
+        else: pg.click('#talktoggle')
+    if pg.locator('#talk.open').count(): pg.click('#talktoggle')
+    pg.click('#talktoggle')
+    if pg.locator('#talk [data-act=tbloc]').count():
+        pg.locator('#talk [data-act=tbloc]').first.click(); pg.locator('#talk [data-act=tbloc]').nth(1).click(); pg.click('#blocgo')
+        assert G()['hist'][-1]['k'] == 'bloc' and len(G()['hist'][-1]['with']) == 2
+    elif pg.locator('#talk.open').count(): pg.click('#talktoggle')
+    if pg.locator('#diary.open').count(): pg.click('#diarytoggle')
     if not pg.locator('#notes').is_visible(): pg.click('#notestoggle')
     pg.locator(f'#notes [data-act=court][data-i="{first}"]').click(); assert pg.locator('#court').is_visible() and overflow() == 0, 'the court opens'
     shot(f's5-tribunal-{THEME}.png'); pg.click('#accuse'); assert pg.locator('#court').count() == 0
