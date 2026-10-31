@@ -66,10 +66,9 @@ export type Event =
   | { k: 'self'; by: number }
   | { k: 'plea'; by: number; about: number; ja: boolean }
   /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app
-   *  player about its last vote, an oath on one's own government, a voting bloc. */
+   *  player about its last vote, a voting bloc. */
   | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv'; who: number }
   | { k: 'why'; by: number; about: number; say: string }
-  | { k: 'swear'; by: number; at: number }
   | { k: 'bloc'; by: number; with: number[]; yes: number[] }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;
@@ -170,10 +169,9 @@ export type Seen =
   | { k: 'self'; by: number }
   | { k: 'plea'; by: number; about: number; ja: boolean }
   /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app
-   *  player about its last vote, an oath on one's own government, a voting bloc. */
+   *  player about its last vote, a voting bloc. */
   | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv'; who: number }
   | { k: 'why'; by: number; about: number; say: string }
-  | { k: 'swear'; by: number; at: number }
   | { k: 'bloc'; by: number; with: number[]; yes: number[] }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;

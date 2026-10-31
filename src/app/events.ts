@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { ballot, beat, blurField, bossWin, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, bossWin, claimFx, freeze, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -33,6 +33,10 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   if (before && changed) {
     const power = next.hist.slice(before.hist.length).find(e => e.k === 'inv' || e.k === 'exec');
     if (power && power.k === 'inv') powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
+    // D70: what an investigator told the table turns its card over on the screen
+    const told = next.hist.findIndex((e, k) => k < before.hist.length && e.k === 'inv' && (e.said === 'L' || e.said === 'F') && (before.hist[k] as { said?: string }).said === undefined);
+    const te = told >= 0 ? next.hist[told] : undefined;
+    if (te && te.k === 'inv' && (te.said === 'L' || te.said === 'F')) { const t = te, s = te.said; freeze(frozenFor() + 2800); setTimeout(() => claimFx(next, t.by, t.target, s), Math.max(0, frozenFor())); }
     // D66: an app player doubted what the person said: the debate opens, as for any accusation
     const me = next.players.findIndex(p => !p.ai), doubt = next.players.filter(p => !p.ai).length === 1 ? next.hist.findIndex((e, k) => k >= before.hist.length && e.k === 'talk' && e.say === 'acc' && e.about === me && e.by !== me) : -1;
     if (doubt >= 0 && ui.debate !== doubt) setTimeout(() => openDebate(doubt), 60);
@@ -120,7 +124,9 @@ function afterBot(before: Game, next: Game): void {
   gavelIf(before, next);
   const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
   if (gone >= 0) { const ex = [...next.hist].reverse().find(e => e.k === 'exec'); flash(next.players[gone].name, next.players[gone].role === 'hitler', ex?.k === 'exec' ? ex.why : ''); sound('shot'); buzz(220); }
-  const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
+  // D70: what an app player says of another is not flashed at the foot (too quick to read): it stays in the Diary
+  const talked = next.hist.length > before.hist.length && next.hist[next.hist.length - 1].k === 'talk';
+  const line = next.log.length > before.log.length && !talked ? next.log[next.log.length - 1] : '';
   // the votes and what a government said are already on screen, at the top: no note at the foot for them
   play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);
 }
@@ -299,9 +305,7 @@ export function initEvents(): void {
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'contraclose') document.getElementById('contra')?.remove();
     else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
-    else if (a === 'talk') { ui.talk = !ui.talk; if (ui.talk) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
     else if (a === 'tself') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
-    else if (a === 'tswear') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.swear(g, me), 'Você garantiu sua história. Se aparecer contradição, sua reputação despenca.'); }
     else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
     else if (a === 'tavoid' || a === 'tinv') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, a === 'tavoid' ? 'avoid' : 'inv', i), 'Pedido feito à mesa.'); }
     else if (a === 'twhy') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askWhy(g, me, i)); ui.diary = true; render(); }

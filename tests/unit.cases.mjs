@@ -218,8 +218,8 @@ export default function cases(Core) {
   }
   { // D66: requests to whoever presides, asking why, an oath, a bloc
     const tg = ai7({ phase: 'nominate', hist: [{ k: 'vote', pres: 3, chanc: 4, ja: [3, 4, 5] }, { k: 'gov', pres: 3, chanc: 4, law: 'L', pc: 1, cc: 0 }] });
-    const a1 = Core.askTable(tg, 0, 'pick', 0), a2 = Core.askWhy(tg, 0, 5), sw = Core.swear({ ...tg, hist: [...tg.hist] }, 3), bl = Core.formBloc(tg, 0, [1, 4, 5, 6]);
-    eq('D66: a request lasts until the next government, once; asking why gets an answer; an oath only on one\'s own government; a bloc takes up to three', [a1.hist.at(-1).k, Core.canAsk(a1, 0, 'pick', 0), a2.log.at(-1).includes('Votei'), Core.canWhy(a2, 0, 5), Core.canSwear(tg, 0), sw.hist.at(-1).k, bl.hist.at(-1).with.length, !!Core.blocOf(bl, 0)], ['ask', false, true, false, -1, 'swear', 3, true]);
+    const a1 = Core.askTable(tg, 0, 'pick', 0), a2 = Core.askWhy(tg, 0, 5), bl = Core.formBloc(tg, 0, [1, 4, 5, 6]);
+    eq('D66: a request lasts until the next government, once; asking why gets an answer; a bloc takes up to three', [a1.hist.at(-1).k, Core.canAsk(a1, 0, 'pick', 0), a2.log.at(-1).includes('Votei'), Core.canWhy(a2, 0, 5), bl.hist.at(-1).with.length, !!Core.blocOf(bl, 0)], ['ask', false, true, false, 3, true]);
     const nb = view({ level: 'medio', me: 6, known: [null, null, null, null, null, null, 'liberal'], pres: 6, chanc: null, ask: 'nominate', options: [0, 1, 2, 3, 4, 5], hist: [{ k: 'ask', by: 2, what: 'pick', who: 2 }, { k: 'ask', by: 1, what: 'avoid', who: 0 }] });
     eq('D66: a liberal presiding weighs what it was asked: the one who asked to be picked moves up', Core.decideWhy(nb, hi).why.rows.length > 0, true);
   }

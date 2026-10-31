@@ -113,6 +113,12 @@ function sashOf(g: Game): number {
   for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'special') return e.target === g.pres ? e.target : -1; if (e.k === 'gov' || e.k === 'veto' || e.k === 'rej' || e.k === 'chaos') return -1; }
   return -1;
 }
+/** D70: an investigator told the table what it saw: the card of the side it named turns over, on the whole screen. It
+ *  is only what was said (the investigator may lie), and the screen says so. */
+export function claimFx(g: Game, by: number, target: number, said: 'L' | 'F'): void {
+  const role: Role = said === 'L' ? 'liberal' : 'fascista';
+  layer(`claim-fx ${said}`, `<div class="cf-card"><small>${esc(g.players[by].name)} diz que</small><b class="cf-name">${esc(g.players[target].name)}</b><div class="cf-flip"><div class="cf-back"></div><div class="cf-front ${said}">${portrait(role, P, R)}<span>${said === 'L' ? 'Liberal' : esc(W.F)}</span></div></div><em>Pode estar mentindo.</em></div>`, 2800);
+}
 /** The hidden leader was elected chancellor in the danger zone and the game is over: red screen and the leader yelling.
  *  The game is over: every role is open by then. */
 export function bossWin(g: Game): void {
@@ -359,7 +365,7 @@ function vSummary(g: Game): string {
       case 'gov': return `<li class="gov ${e.law}">${n(e.pres)} + ${n(e.chanc)} aprovaram lei ${pl(e.law as Law)}${hands(e)}</li>`;
       case 'rej': return `<li class="rej">${n(e.pres)} + ${n(e.chanc)} rejeitados</li>`;
       case 'veto': return `<li class="rej">${n(e.pres)} + ${n(e.chanc)} vetaram as duas leis${hands(e)}</li>`;
-      case 'vote': case 'talk': case 'self': case 'plea': case 'ask': case 'why': case 'swear': case 'bloc': return '';
+      case 'vote': case 'talk': case 'self': case 'plea': case 'ask': case 'why': case 'bloc': return '';
       case 'chaos': return `<li class="gov ${e.law}">Caos: entrou lei ${pl(e.law)}</li>`;
       case 'inv': return `<li class="inv">${n(e.by)} investigou ${n(e.target)}: era ${pl(e.party)}${e.said && e.said !== '-' ? `<small class="hands">disse ${e.said === 'L' ? 'liberal' : W.f}${e.said !== e.party ? ' — mentiu' : ''}</small>` : ''}</li>`;
       case 'peek': return `<li>${n(e.by)} espiou as próximas 3 leis${e.saw ? `<small class="hands">viu ${cards(e.saw)}${e.said !== undefined && e.said >= 0 ? ` (disse ${e.said}F)` : ''}</small>` : ''}</li>`;
@@ -652,30 +658,27 @@ function vDock(g: Game): string {
   const peek = last ? `<button class="speech-peek" id="speech-peek" data-act="diary" aria-label="Abrir Diário: ${esc(short)}"><span>${esc(short)}</span><small>${notice ? `<span class="reputation-cue ${notice.tone}">${esc(notice.title)}</span>` : ''}Diário ›</small></button>` : '';
   const btns = [
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
-    kit ? `<button class="dock-btn${ui.talk ? ' open' : ''}" id="talktoggle" data-act="talk" aria-expanded="${!!ui.talk}" aria-controls="talk"><span aria-hidden="true">${ui.talk ? '✕' : '💬'}</span> Mesa</button>` : '',
 
   ];
-  return `${vDrawer(g)}${vTalk(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
+  return `${vDrawer(g)}${vFab(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
 }
 /** D65/D66: talking to the table, in one panel, grouped by what each thing is for; only what can be done now shows. */
 function vTalk(g: Game): string {
   const me = solo(g);
-  if (me < 0 || !g.players[me].alive) return '';
+  if (me < 0 || !g.players[me].alive || g.phase === 'over') return '';
   const others = g.players.map((_, i) => i).filter(i => i !== me && g.players[i].alive);
   const chips = (act: string, ok: (i: number) => boolean, on: (i: number) => boolean = () => false): string => `<div class="chips">${others.filter(ok).map(i => `<button class="${on(i) ? 'on' : ''}" data-act="${act}" data-i="${i}" aria-pressed="${on(i)}">${esc(g.players[i].name)}</button>`).join('')}</div>`;
   const sec = (title: string, hint: string, body: string): string => body ? `<section class="tsec"><b>${title}</b><small>${hint}</small>${body}</section>` : '';
-  const self = Core.canSelfClaim(g, me) ? '<button class="tbtn" data-act="tself" id="selfclaim">📣 “Eu sou liberal”</button>' : '';
-  const swAt = Core.canSwear(g, me), swGov = swAt >= 0 ? g.hist[swAt] as Gov : null;
-  const swSaid = swGov ? (swGov.pres === me ? (swGov.pc !== undefined && swGov.pc >= 0 ? `que tirou ${swGov.pc} ${swGov.pc === 1 ? W.f : W.fs} de 3` : '') : (swGov.cc !== undefined && swGov.cc >= 0 ? `que recebeu ${swGov.cc} ${swGov.cc === 1 ? W.f : W.fs} de 2` : '')) : '';
-  const sw = swGov && swSaid ? `<button class="tbtn" data-act="tswear" id="swear">✋ Garantir minha história<small>Você disse ${esc(swSaid)} no governo com ${esc(g.players[swGov.pres === me ? swGov.chanc : swGov.pres].name)}. Garantir faz a mesa acreditar um pouco mais em você; se depois aparecer contradição, sua reputação despenca.</small></button>` : '';
   const why = others.some(i => Core.canWhy(g, me, i)) ? chips('twhy', i => Core.canWhy(g, me, i)) : '';
   const bloc = Core.blocOf(g, me), sel = ui.blocSel || [];
   const blocBody = bloc ? `<p class="hint">No bloco: ${bloc.yes.length ? bloc.yes.map(i => esc(g.players[i].name)).join(', ') : 'ninguém topou'}.</p>`
     : `${chips('tbloc', i => !!g.players[i].ai, i => sel.includes(i))}<button class="tbtn" data-act="tblocgo" id="blocgo"${sel.length ? '' : ' disabled'}>🤝 Chamar ${sel.length ? sel.length : ''} para o bloco</button>`;
-  return `<aside class="drawer talk${ui.talk ? ' open' : ''}" id="talk" aria-label="Falar com a mesa"><span class="label">Falar com a mesa</span><p class="hint">Tudo aqui é dito em voz alta. Pesa pelo quanto a mesa confia em você.</p>
-    ${sec('Sobre você', 'Dizer é de graça; mentir custa caro se a mesa descobrir.', self + sw)}
-    ${sec('Por que votou assim?', 'A IA explica o voto da última votação.', why)}
-    ${sec('Bloco', `Até 3 votando com você por ${Core.BLOC_ROUNDS} rodadas. Se o bloco eleger um governo que aprove lei ${W.f}, todos perdem reputação.`, blocBody)}</aside>`;
+  return `<div class="talk" id="talk">${sec('Por que votou assim?', 'A IA explica o voto da última votação.', why)}${sec('Bloco', `Até 3 votando com você por ${Core.BLOC_ROUNDS} rodadas. Se o bloco eleger um governo que aprove lei ${W.f}, todos perdem reputação.`, blocBody)}</div>`;
+}
+/** D70: "I am liberal", a button that floats over the game, out of the scroll, while the person may say it. */
+function vFab(g: Game): string {
+  const me = solo(g);
+  return me >= 0 && Core.canSelfClaim(g, me) ? '<button class="fab-lib" data-act="tself" id="selfclaim" aria-label="Dizer à mesa: eu sou liberal">📣 Sou liberal</button>' : '';
 }
 /** The personalities of the app players (D26), as the table knows them: a name and a line. */
 export const PERSONA_W: Record<Persona, [string, string]> = {
@@ -721,7 +724,7 @@ function vDrawer(g: Game): string {
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><p class="claim-impact" role="status">${esc(Core.accusationFeedback(g, at))}</p><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
   return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ anota o que você acha (só você vê). 📣 diz à mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
-    ${heard}</aside>`;
+    ${heard}${vTalk(g)}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
 const whyText = (g: Game, line: string): string => line.replace(/\{p(\d+)\}/g, (_, i: string) => (g.players[+i] ? `<b>${name(g, +i)}</b>` : '?'));
@@ -764,7 +767,7 @@ function logRounds(g: Game): string {
 
 /** How far the game has gone, counting what changes a phase and not what is said beside it (a claim, a talk): the
  *  screen of a phase stays put, and a secret stays open, while the app players speak (D21). */
-export const beat = (g: Game): number => g.hist.filter(e => !['talk', 'self', 'plea', 'ask', 'why', 'swear', 'bloc'].includes(e.k)).length;
+export const beat = (g: Game): number => g.hist.filter(e => !['talk', 'self', 'plea', 'ask', 'why', 'bloc'].includes(e.k)).length;
 /** The key of the secret a phase shows, and who may see it; null for a phase with nothing secret. The game moves on
  *  every round, so the same phase in another round has another key and starts closed. */
 export function gateKey(g: Game): { key: string; who: number } | null {
