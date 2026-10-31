@@ -329,7 +329,7 @@ with sync_playwright() as p:
     # D39: accusing opens the court: a proof from the record (if any), a tone, then the accusation
     # D70: "I am liberal" floats over the game; asking why and the bloc live at the end of the notebook
     assert pg.locator('#talktoggle').count() == 0, 'no Mesa button: two-item bar'
-    pg.locator('#selfclaim').dispatch_event('click'); assert 'Eu sou liberal' in G()['log'][-1] and pg.locator('#selfclaim').count() == 0
+    pg.locator('#selfclaim').dispatch_event('click'); assert 'Eu sou liberal' in G()['log'][-1] and pg.locator('#selfclaim[disabled]').count() == 1
     if not pg.locator('#drawer').is_visible(): pg.click('#notestoggle')
     if pg.locator('#drawer #talk [data-act=twhy]').count(): pg.locator('#drawer #talk [data-act=twhy]').first.click(); assert G()['hist'][-1]['k'] == 'why'
     if pg.locator('#diary.open').count(): pg.click('#diary .diary-close')

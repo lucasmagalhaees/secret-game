@@ -1008,10 +1008,9 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .talk .tbtn small{display:block;margin-top:4px;font:400 13px/1.35 var(--font);opacity:.85}
 .plea>small{display:block;margin:-2px 0 8px;font-size:13px;opacity:.85}
 
-/* D70: "I am liberal" floats over the game, above the bar at the bottom */
-.fab-lib{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(150px + env(safe-area-inset-bottom));z-index:40;min-height:48px;padding:10px 16px;border:3px solid var(--line);border-radius:999px;background:var(--lib);color:var(--on-party);font:800 15px/1 var(--display);letter-spacing:.04em;box-shadow:4px 4px 0 var(--shadow)}
-.fab-lib:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--shadow)}
-@media (min-width:760px){.fab-lib{right:calc(50% - 360px + 14px)}}
+/* D72: "I am liberal" sits in the bar at the bottom, on the left of the notebook */
+.dock-btn.lib{background:var(--lib);color:var(--on-party)}
+.dock-btn.lib:disabled{background:var(--surface);color:var(--muted);opacity:.7}
 
 /* D70: what the investigator says: the card of the side it named turns over */
 .claim-fx{background:#0b0907;z-index:70;animation:invScene 2.8s ease both}

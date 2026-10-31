@@ -639,3 +639,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** renomear "reputômetro" para "reputação" e "desconfiômetro" para "desconfiança".
 - **Decisão:** os botões e os textos da tela passam a dizer "Reputação" e "Desconfiança". Os nomes guardados (`S.rep`, `S.gauge`) não mudam, para não perder a escolha de quem já jogou.
+
+## D72. Sou liberal no rodapé (2026-10-31)
+
+- **Pedido:** o "Sou liberal" fica melhor no rodapé, à esquerda, com Anotações à direita.
+- **Decisão:** sai o botão flutuante (D70); a barra de baixo tem "📣 Sou liberal" (azul) à esquerda e "Anotações" à direita. Depois de dizer, o botão fica apagado ("Já disse") até a próxima rodada, para a barra não mudar de lugar.
