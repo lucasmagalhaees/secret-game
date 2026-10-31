@@ -1012,19 +1012,24 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .dock-btn.lib{background:var(--lib);color:var(--on-party)}
 .dock-btn.lib:disabled{background:var(--surface);color:var(--muted);opacity:.7}
 
-/* D70: what the investigator says: the card of the side it named turns over */
-.claim-fx{background:#0b0907;z-index:70;animation:invScene 2.8s ease both}
-.cf-card{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;color:#f3e8d0}
-.cf-card small{font:800 13px/1 var(--display);text-transform:uppercase;letter-spacing:.1em}
-.cf-name{font:900 clamp(26px,8vw,38px)/1.1 var(--display)}
-.cf-flip{position:relative;width:min(56vw,220px);aspect-ratio:3/4;perspective:800px}
-.cf-back,.cf-front{position:absolute;inset:0;border:4px solid #15110e;backface-visibility:hidden;box-shadow:8px 8px 0 #000}
-.cf-back{background:repeating-linear-gradient(45deg,#3a2f26 0 10px,#2b231c 10px 20px);animation:cfBack .6s .5s ease-in both}
-.cf-front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transform:rotateY(180deg);animation:cfFront .6s .5s ease-out both}
-.cf-front.L{background:var(--lib-bg);color:var(--lib)}.cf-front.F{background:var(--fas-bg);color:var(--fas)}
+/* D74: the investigation in one piece: envelope with the name, the card comes out and turns */
+.claim-fx{background:#0b0907;z-index:70;animation:invScene 3.6s ease both}
+.cf-card{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:#f3e8d0}
+.cf-card>small{font:800 13px/1 var(--display);text-transform:uppercase;letter-spacing:.1em}
+.cf-env{position:relative;width:min(80vw,300px);height:400px}
+.cf-body{position:absolute;left:0;right:0;bottom:0;height:150px;background:#e9d9b4;border:4px solid #15110e;z-index:3;display:grid;place-items:center;box-shadow:8px 8px 0 #000}
+.cf-body b{font:900 clamp(22px,7vw,30px)/1.1 var(--display);color:#15110e;padding:0 10px;overflow-wrap:anywhere}
+.cf-flap{position:absolute;left:0;right:0;bottom:90px;height:60px;background:#d8c49a;border:4px solid #15110e;clip-path:polygon(0 0,100% 0,50% 100%);z-index:4;transform-origin:top;animation:flapOpen .35s .3s ease-in both}
+.cf-flip{position:absolute;left:50%;bottom:10px;width:min(52vw,190px);aspect-ratio:3/4;margin-left:calc(min(52vw,190px) / -2);perspective:800px;z-index:2;animation:cfOut .7s .55s cubic-bezier(.2,1.1,.4,1) both}
+.cf-back,.cf-front{position:absolute;inset:0;border:4px solid #15110e;backface-visibility:hidden;box-shadow:6px 6px 0 #000}
+.cf-back{background:repeating-linear-gradient(45deg,#3a2f26 0 10px,#2b231c 10px 20px);animation:cfBack .5s 1.3s ease-in both}
+.cf-front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transform:rotateY(180deg);animation:cfFront .5s 1.3s ease-out both}
+.cf-front.L{background:var(--lib-bg);color:var(--lib)}.cf-front.F{background:var(--fas-bg);color:var(--fas)}.cf-front.q{background:#2b231c;color:#f3e8d0}
 .cf-front svg{width:78%;height:auto}
-.cf-front span{font:900 20px/1 var(--display);text-transform:uppercase;letter-spacing:.1em}
-.cf-card em{font-size:13px;opacity:.75}
+.cf-front span{font:900 20px/1 var(--display);text-transform:uppercase;letter-spacing:.1em}.cf-front.q span{font-size:56px}
+.claim-fx.q .cf-back,.claim-fx.q .cf-front{animation:none}.claim-fx.q .cf-back{display:none}.claim-fx.q .cf-front{transform:none}
+.cf-card em{font-size:13px;opacity:.8;max-width:300px}
+@keyframes cfOut{from{transform:translateY(0)}to{transform:translateY(-125px)}}
 @keyframes cfBack{to{transform:rotateY(-180deg)}}
 @keyframes cfFront{to{transform:rotateY(0)}}
 
@@ -1052,3 +1057,21 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .sway .krow>span{flex:1}.sway .krow b{display:block}.sway .krow small{margin:2px 0 0;opacity:.8}
 .sway-to{margin:10px 0 4px}.sway-res{margin:10px 0 0;font-weight:800}.sway-res.ok{color:#2f7d4a}.sway-res.no{color:#b33a22}
 .ballot.hold .b-stamp{display:none}   /* D73: the result waits for the window to turn a vote */
+
+/* D74: skipping the window to turn a vote */
+.sway-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sway-skip{min-height:40px;padding:6px 14px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:800 14px/1 var(--display);box-shadow:3px 3px 0 var(--line)}
+/* D74: the hidden leader eliminated: its card tears in half before the liberals' dawn */
+.flash:has(.tear-boss).go{animation:dark-hold 6.8s ease-out both}
+.tear-boss{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;opacity:0;animation:tbIn .3s 3.1s ease-out forwards,tbOut .4s 4.6s ease-in forwards}
+.tb-half{position:absolute;width:min(56vw,220px);aspect-ratio:3/4;background:var(--fas-bg);border:4px solid #15110e;display:grid;place-items:center}
+.tb-half svg{width:80%}
+.tb-half.l{clip-path:polygon(0 0,52% 0,46% 18%,55% 35%,44% 55%,54% 72%,47% 100%,0 100%);animation:tearL .6s 3.8s cubic-bezier(.3,.6,.4,1) forwards}
+.tb-half.r{clip-path:polygon(52% 0,100% 0,100% 100%,47% 100%,54% 72%,44% 55%,55% 35%,46% 18%);animation:tearR .6s 3.8s cubic-bezier(.3,.6,.4,1) forwards}
+@keyframes tbIn{to{opacity:1}}
+@keyframes tbOut{to{opacity:0}}
+@keyframes tearL{to{transform:translate(-60px,30px) rotate(-14deg)}}
+@keyframes tearR{to{transform:translate(60px,40px) rotate(12deg)}}
+.flash .fate.boss{animation-delay:4.9s}
+.fate.boss .birds i{animation-delay:calc(5s + var(--n) * .12s)}
+@media (prefers-reduced-motion:reduce){.tear-boss{display:none}}
