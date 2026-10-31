@@ -70,8 +70,17 @@ export function tick(): void {
     if (S.game !== g) return;
     const next = Core.botStep(g, rand);
     if (next) botPlayed(g, next);
-  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal'] + takeHold());
+  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal'] + takeHold() + askHold(g, t.seat, t.ask));
 }
+/** D67: an app player who presides waits a moment before it nominates or investigates, while the person may still ask. */
+const askHold = (g: Game, seat: number, ask: string): number => {
+  const me = g.players.findIndex(p => !p.ai);
+  if (me < 0 || g.players.filter(p => !p.ai).length !== 1 || !g.players[me].alive || !g.players[seat]?.ai) return 0;
+  const asked = (() => { for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') return false; if (e.k === 'ask' && e.by === me) return true; } return false; })();
+  const open = !asked && (ask === 'nominate' || ask === 'investigate');
+  return open ? ASK_HOLD[S.speed || 'normal'] : 0;
+};
+const ASK_HOLD = { lenta: 6000, normal: 4000, rapida: 2500 } as const;
 /** A claim was just told: the next step waits for it to be read (D21). Taken once. */
 let hold = false;
 const takeHold = (): number => { const h = hold; hold = false; return h ? CLAIM_HOLD[S.speed || 'normal'] : 0; };

@@ -273,7 +273,24 @@ const DOING: Record<string, string> = {
 };
 function vBot(g: Game, seat: number, ask: string): string {
   const who = ask === 'votes' ? '' : `<b>${name(g, seat)}</b> ${AI_TAG} `;
-  return `<section class="card" id="phase"><span class="label">Vez da IA</span><p class="big thinking" id="thinking">${who}${DOING[ask]}<span class="dots-wait" aria-hidden="true"><i></i><i></i><i></i></span></p></section>`;
+  return `<section class="card" id="phase"><span class="label">Vez da IA</span><p class="big thinking" id="thinking">${who}${DOING[ask]}<span class="dots-wait" aria-hidden="true"><i></i><i></i><i></i></span></p>${vAskNow(g, seat, ask)}</section>`;
+}
+/** D67: while an app player presides and is choosing, the person can ask it right there, before it decides: pick me,
+ *  do not pick someone (nomination), investigate someone (investigation). The app player waits a moment for it. */
+function vAskNow(g: Game, seat: number, ask: string): string {
+  const me = solo(g);
+  if (me < 0 || !g.players[me].alive || !g.players[seat]?.ai || (ask !== 'nominate' && ask !== 'investigate')) return '';
+  const others = g.players.map((_, i) => i).filter(i => i !== me && i !== seat && g.players[i].alive);
+  const chip = (what: 'avoid' | 'inv', i: number): string => `<button data-act="${what === 'avoid' ? 'tavoid' : 'tinv'}" data-i="${i}">${esc(g.players[i].name)}</button>`;
+  const done = g.hist.slice(-6).some(e => e.k === 'ask' && e.by === me);
+  if (ask === 'nominate') {
+    const pick = Core.canAsk(g, me, 'pick', me), avoid = others.filter(i => Core.canAsk(g, me, 'avoid', i));
+    if (!pick && !avoid.length) return done ? '<p class="asknow-done">Pedido feito. Pesa pelo quanto confiam em você.</p>' : '';
+    return `<div class="asknow" id="asknow"><b>Peça antes que ${esc(g.players[seat].name)} escolha</b>${pick ? '<button class="tbtn" data-act="tpick" id="askpick">🙋 “Me indica para chanceler”</button>' : ''}${avoid.length ? `<small>Não indicar:</small><div class="chips">${avoid.map(i => chip('avoid', i)).join('')}</div>` : ''}</div>`;
+  }
+  const inv = others.filter(i => Core.canAsk(g, me, 'inv', i));
+  if (!inv.length) return done ? '<p class="asknow-done">Pedido feito. Pesa pelo quanto confiam em você.</p>' : '';
+  return `<div class="asknow" id="asknow"><b>Sugira quem ${esc(g.players[seat].name)} deve investigar</b><div class="chips">${inv.map(i => chip('inv', i)).join('')}</div></div>`;
 }
 /** The person at a table with app players was eliminated: the game plays on to the end, for them to watch. */
 const vWatching = (g: Game): string => Core.hasAi(g) && g.phase !== 'over' && !Core.humansAlive(g).length
@@ -636,7 +653,7 @@ function vDock(g: Game): string {
   const btns = [
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
     kit ? `<button class="dock-btn${ui.talk ? ' open' : ''}" id="talktoggle" data-act="talk" aria-expanded="${!!ui.talk}" aria-controls="talk"><span aria-hidden="true">${ui.talk ? '✕' : '💬'}</span> Mesa</button>` : '',
-    `<button class="dock-btn${ui.diary ? ' open' : ''}" id="diarytoggle" data-act="diary" aria-expanded="${ui.diary}" aria-controls="diary">Diário${rows.length ? ` · ${rows.length}` : ''}</button>`
+
   ];
   return `${vDrawer(g)}${vTalk(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
 }
@@ -649,16 +666,12 @@ function vTalk(g: Game): string {
   const sec = (title: string, hint: string, body: string): string => body ? `<section class="tsec"><b>${title}</b><small>${hint}</small>${body}</section>` : '';
   const self = Core.canSelfClaim(g, me) ? '<button class="tbtn" data-act="tself" id="selfclaim">📣 “Eu sou liberal”</button>' : '';
   const sw = Core.canSwear(g, me) >= 0 ? '<button class="tbtn" data-act="tswear" id="swear">✋ Jurar pela minha mão no último governo</button>' : '';
-  const pick = Core.canAsk(g, me, 'pick', me) ? '<button class="tbtn" data-act="tpick" id="askpick">🙋 “Quem presidir: me indica”</button>' : '';
-  const avoid = others.some(i => Core.canAsk(g, me, 'avoid', i)) ? `<small class="sub">Não indicar:</small>${chips('tavoid', i => Core.canAsk(g, me, 'avoid', i))}` : '';
-  const inv = others.some(i => Core.canAsk(g, me, 'inv', i)) ? `<small class="sub">Investigar:</small>${chips('tinv', i => Core.canAsk(g, me, 'inv', i))}` : '';
   const why = others.some(i => Core.canWhy(g, me, i)) ? chips('twhy', i => Core.canWhy(g, me, i)) : '';
   const bloc = Core.blocOf(g, me), sel = ui.blocSel || [];
   const blocBody = bloc ? `<p class="hint">No bloco: ${bloc.yes.length ? bloc.yes.map(i => esc(g.players[i].name)).join(', ') : 'ninguém topou'}.</p>`
     : `${chips('tbloc', i => !!g.players[i].ai, i => sel.includes(i))}<button class="tbtn" data-act="tblocgo" id="blocgo"${sel.length ? '' : ' disabled'}>🤝 Chamar ${sel.length ? sel.length : ''} para o bloco</button>`;
   return `<aside class="drawer talk${ui.talk ? ' open' : ''}" id="talk" aria-label="Falar com a mesa"><span class="label">Falar com a mesa</span><p class="hint">Tudo aqui é dito em voz alta. Pesa pelo quanto a mesa confia em você.</p>
     ${sec('Sobre você', 'Custa nada dizer; custa caro se depois aparecer o contrário.', self + sw)}
-    ${sec('Para quem presidir', 'Vale até o próximo governo.', pick + avoid + inv)}
     ${sec('Por que votou assim?', 'A IA explica o voto da última votação.', why)}
     ${sec('Bloco', `Até 3 votando com você por ${Core.BLOC_ROUNDS} rodadas. Se o bloco eleger um governo que aprove lei ${W.f}, todos perdem reputação.`, blocBody)}</aside>`;
 }

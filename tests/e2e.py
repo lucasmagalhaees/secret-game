@@ -330,19 +330,23 @@ with sync_playwright() as p:
     pg.click('#talktoggle'); assert pg.locator('#talk.open').count() == 1 and overflow() == 0
     pg.click('#selfclaim'); assert 'Eu sou liberal' in G()['log'][-1]
     pg.click('#talktoggle'); assert pg.locator('#selfclaim').count() == 0
-    if pg.locator('#askpick').count(): pg.click('#askpick'); assert 'me indica' in G()['log'][-1]
+    pg.click('#talktoggle')
+    if pg.locator('#talk [data-act=twhy]').count(): pg.locator('#talk [data-act=twhy]').first.click(); assert G()['hist'][-1]['k'] == 'why'
     else: pg.click('#talktoggle')
-    for act in ('tavoid', 'tinv', 'twhy'):   # D66: the other requests, each from a chip of the panel
-        pg.click('#talktoggle')
-        if pg.locator(f'#talk [data-act={act}]').count(): pg.locator(f'#talk [data-act={act}]').first.click(); assert G()['hist'][-1]['k'] in ('ask', 'why')
-        else: pg.click('#talktoggle')
     if pg.locator('#talk.open').count(): pg.click('#talktoggle')
     pg.click('#talktoggle')
     if pg.locator('#talk [data-act=tbloc]').count():
         pg.locator('#talk [data-act=tbloc]').first.click(); pg.locator('#talk [data-act=tbloc]').nth(1).click(); pg.click('#blocgo')
         assert G()['hist'][-1]['k'] == 'bloc' and len(G()['hist'][-1]['with']) == 2
     elif pg.locator('#talk.open').count(): pg.click('#talktoggle')
-    if pg.locator('#diary.open').count(): pg.click('#diarytoggle')
+    if pg.locator('#diary.open').count(): pg.click('#diary .diary-close')
+    # D67: while an app player presides and chooses, the person asks it right there, in its turn
+    kept67 = pg.evaluate('JSON.stringify(window.__APP.S.game)'); think67 = pg.evaluate('window.__APP.ui.think')
+    pg.evaluate("(() => { const A = window.__APP, g = A.S.game, me = g.players.findIndex(p => !p.ai), p = g.players.findIndex((x, i) => x.ai && x.alive && i !== me); A.ui.think = 600000; g.pres = p; g.chanc = null; g.phase = 'nominate'; g.hist.push({ k: 'gov', pres: p, chanc: me, law: 'L', pc: 1, cc: 0 }); })()")
+    pg.click('[data-act=help]'); pg.click('[data-act=help]')
+    assert pg.locator('#asknow').count() == 1 and pg.locator('.dock #diarytoggle').count() == 0, 'the request box in the app player\'s turn; the dock keeps two buttons'
+    pg.click('#asknow #askpick'); assert 'me indica' in G()['log'][-1] and pg.locator('#asknow #askpick').count() == 0
+    pg.evaluate(f'(() => {{ window.__APP.S.game = JSON.parse({kept67!r}); window.__APP.ui.think = {json.dumps(think67)}; }})()'); pg.click('[data-act=help]'); pg.click('[data-act=help]')
     if not pg.locator('#notes').is_visible(): pg.click('#notestoggle')
     pg.locator(f'#notes [data-act=court][data-i="{first}"]').click(); assert pg.locator('#court').is_visible() and overflow() == 0, 'the court opens'
     shot(f's5-tribunal-{THEME}.png'); pg.click('#accuse'); assert pg.locator('#court').count() == 0
