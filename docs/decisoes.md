@@ -597,3 +597,16 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** poder fazer o "self claim" e tentar virar um voto na mesa de propósito.
 - **Decisão:** jogando sozinho com a IA, as anotações têm "📣 Dizer à mesa: Eu sou liberal", uma vez por rodada. Custa nada e diz pouco (todo mundo diz), mas se depois uma investigação disser o contrário, conta como duas contradições para quem disse. Na votação, "Pedir voto": escolhe uma IA e pede Ja! ou Nein! (uma vez por IA em cada votação). O pedido pesa no voto dela pelo quanto ela confia em quem pediu (`PLEA_W`, 0,2 vezes 1 − chance de ser do lado escondido; o cético pesa menos). O fascista da IA vota pelo próprio plano.
+
+## D66. Mais jeitos de falar com a mesa (2026-10-31)
+
+- **Pedido:** todas as sugestões de interação social (pedir indicação, combinar a história, cobrar explicação, abonar, pedir investigação, jurar pela mão, bloco, reação a blefe de investigação), com boas práticas de UI e UX.
+- **Decisão:** um painel só, "💬 Mesa", na barra de baixo, junto de Anotações e Diário (um painel por vez), agrupado pelo que cada coisa faz e mostrando só o que dá para fazer agora, com botões de 44 px:
+  - **Sobre você:** "Eu sou liberal" (D65) e "Jurar pela minha mão" no último governo de que participou; se a história desse governo não fechar ou uma investigação disser o contrário, o juramento custa três contradições.
+  - **Para quem presidir:** "me indica", "não indica X" e "investiga X", valendo até o próximo governo; a IA que preside pesa cada pedido pelo quanto confia em quem pediu (`REQ_W`, 0,25; o cético menos).
+  - **Por que votou assim?:** a IA explica o voto da última votação com o que dizia acreditar do governo naquele momento (a conta pública, nunca o raciocínio privado).
+  - **Bloco:** até 3 IAs por `BLOC_ROUNDS` (3) rodadas; entra quem confia em você (o lado escondido só entra com os seus). Quem está no bloco ouve o voto da pessoa como um pedido forte; se o bloco eleger um governo que aprove lei do lado escondido, cada membro que votou Ja! perde reputação.
+  - **Abonar:** o 👍 das anotações agora é uma aposta: se uma investigação disser que o abonado é do lado escondido, quem abonou perde reputação.
+  - **Combinar a história:** o aliado da IA já confirma a versão do presidente aliado (D51).
+  - **Blefe de investigação:** se a pessoa diz que investigou e viu o lado escondido, uma IA liberal que tem quase certeza do contrário diz "Duvido", o que é uma acusação e abre o debate.
+  O "Eu sou liberal" saiu das anotações e foi para este painel.

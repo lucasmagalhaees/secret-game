@@ -58,7 +58,13 @@ export function say(g: Game, seat: number, what: Ask, v: number): Game {
   }
   if (what === 'inv') {
     const i = lastIndex(g, ['inv']), e = g.hist[i] as Extract<Event, { k: 'inv' }>;
-    return set(i, { said: quiet ? '-' : v ? 'F' : 'L' }, quiet ? `${who} não disse o que viu na investigação.` : `${who} disse que ${g.players[e.target].name} é ${v ? words(g.pack).f : 'liberal'}.`);
+    const told = set(i, { said: quiet ? '-' : v ? 'F' : 'L' }, quiet ? `${who} não disse o que viu na investigação.` : `${who} disse que ${g.players[e.target].name} é ${v ? words(g.pack).f : 'liberal'}.`);
+    // D66: a person who calls someone the hidden side may be doubted: a liberal app player that is fairly sure the
+    // one named is clean says so, which is an accusation against the person (and opens the debate)
+    if (quiet || !v || g.players[seat].ai) return told;
+    const doubter = g.players.map((_, j) => j).find(j => j !== seat && j !== e.target && g.players[j].ai && g.players[j].alive && partyOf(g.players[j].role) === 'L' && believe(viewOf(told, j, 'vote', [1, 0]), true).pF[e.target] < 0.2);
+    if (doubter === undefined) return told;
+    return { ...told, hist: [...told.hist, { k: 'talk', by: doubter, about: seat, say: 'acc', tone: 'soft' }], log: [...told.log, `${g.players[doubter].name}: "Duvido. ${g.players[e.target].name} parece limpo para mim. ${who}, essa investigação está mal contada."`] };
   }
   const i = lastIndex(g, ['peek']);
   return set(i, { said: v }, quiet ? `${who} não disse o que espiou.` : `${who} disse que as próximas 3 leis são ${fN(v, 3, words(g.pack).f, 'liberal')}.`);
@@ -766,6 +772,8 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
   for (const i of order.length === alive.length ? order : alive) {
     if (!isAi(g, i)) { cast.push([i, votes[i]]); continue; }
     const asked = g.hist.slice(sinceRound(g) + 1).flatMap(e => (e.k === 'plea' && e.about === i ? [[e.by, e.ja] as [number, boolean]] : []));
+    // D66: a bloc member hears its leader's vote as a strong plea
+    for (const p of g.players.map((_, j) => j)) { const bl = !isAi(g, p) ? blocOf(g, p) : null; if (bl && bl.yes.includes(i) && typeof votes[p] === 'boolean') asked.push([p, votes[p]], [p, votes[p]]); }
     const r = ask(g, i, 'vote', [1, 0], rand, [...cast], asked); ts.push(r.t); cast.push([i, r.a === 1]);
   }
   const ja = alive.filter(i => cast.some(([j, v]) => j === i && v));
@@ -1036,4 +1044,62 @@ export function plea(g: Game, me: number, to: number, ja: boolean): Game {
   if (!canPlea(g, me, to)) return g;
   const W = words(g.pack, g.region);
   return { ...g, hist: [...g.hist, { k: 'plea', by: me, about: to, ja }], log: [...g.log, `${g.players[me].name}: "${g.players[to].name}, vota ${ja ? W.ja : W.nein} nesse governo."`] };
+}
+
+/* ---------- D66: more ways to talk to the table ----------
+   Requests to whoever presides (pick me, do not pick someone, investigate someone) last until the next government and
+   weigh by how much that player trusts whoever asks. Asking an app player why it voted as it did gets a public answer
+   (what it said it believed of that government, never its private reckoning). Swearing by one's own government stakes
+   the reputation on that story. A bloc asks up to three app players to vote with you for three rounds: those who trust
+   you join; a law of the hidden side passed by a government the bloc elected costs every member. */
+const lastGov = (g: Game): number => lastIndex(g, ['gov', 'veto', 'chaos']);
+export const canAsk = (g: Game, me: number, what: 'pick' | 'avoid' | 'inv', who: number): boolean =>
+  g.phase !== 'over' && g.phase !== 'reveal' && !!g.players[me]?.alive && !!g.players[who]?.alive && (what === 'pick' ? who === me : who !== me) &&
+  !g.hist.slice(lastGov(g) + 1).some(e => e.k === 'ask' && e.by === me && e.what === what);
+export function askTable(g: Game, me: number, what: 'pick' | 'avoid' | 'inv', who: number): Game {
+  if (!canAsk(g, me, what, who)) return g;
+  const n = g.players[who].name, line = what === 'pick' ? 'Quem for presidente: me indica para chanceler.' : what === 'avoid' ? `Quem for presidente: não indica ${n}.` : `Quem tiver o poder de investigar: investiga ${n}.`;
+  return { ...g, hist: [...g.hist, { k: 'ask', by: me, what, who }], log: [...g.log, `${g.players[me].name}: "${line}"`] };
+}
+/** The last vote this seat cast that can be asked about, as an index in the history. */
+const lastVote = (g: Game): number => lastIndex(g, ['vote']);
+export const canWhy = (g: Game, me: number, about: number): boolean => {
+  const at = lastVote(g);
+  return at >= 0 && about !== me && !!g.players[about]?.ai && g.players[about].alive && !g.hist.slice(at + 1).some(e => e.k === 'why' && e.by === me && e.about === about);
+};
+export function askWhy(g: Game, me: number, about: number): Game {
+  if (!canWhy(g, me, about)) return g;
+  const at = lastVote(g), v = g.hist[at] as Extract<Event, { k: 'vote' }>, ja = v.ja.includes(about), W = words(g.pack, g.region);
+  const pub = believe(viewOf({ ...g, hist: g.hist.slice(0, at) }, about, 'vote', [1, 0]), true);
+  const r = Math.round(100 * (1 - (1 - pub.pF[v.pres]) * (1 - pub.pF[v.chanc])));
+  const say = ja ? `Votei ${W.ja} porque achei esse governo mais limpo que a média: uns ${r}% de chance de ter alguém do lado escondido.` : `Votei ${W.nein} porque achei arriscado: uns ${r}% de chance de ter alguém do lado escondido.`;
+  return { ...g, hist: [...g.hist, { k: 'why', by: me, about, say }], log: [...g.log, `${g.players[me].name}: "${g.players[about].name}, por que votou ${ja ? W.ja : W.nein}?"`, `${g.players[about].name}: "${say}"`] };
+}
+export const canSwear = (g: Game, me: number): number => {
+  const at = lastGov(g), e = g.hist[at];
+  return at >= 0 && e && (e.k === 'gov' || e.k === 'veto') && (e.pres === me || e.chanc === me) && !g.hist.some(x => x.k === 'swear' && x.by === me && x.at === at) ? at : -1;
+};
+export function swear(g: Game, me: number): Game {
+  const at = canSwear(g, me);
+  if (at < 0) return g;
+  return { ...g, hist: [...g.hist, { k: 'swear', by: me, at }], log: [...g.log, `${g.players[me].name}: "Juro pela minha mão nesse governo. Se eu estiver mentindo, podem me cobrar."`] };
+}
+export const BLOC_ROUNDS = 3;
+export const blocOf = (g: Game, me: number): Extract<Event, { k: 'bloc' }> | null => {
+  for (let i = g.hist.length - 1; i >= 0; i--) {
+    const e = g.hist[i];
+    if (e.k === 'bloc' && e.by === me) return g.hist.slice(i).filter(x => x.k === 'gov' || x.k === 'veto' || x.k === 'chaos' || x.k === 'rej').length < BLOC_ROUNDS ? e : null;
+  }
+  return null;
+};
+export function formBloc(g: Game, me: number, who: number[]): Game {
+  const pick = [...new Set(who)].filter(i => i !== me && g.players[i]?.ai && g.players[i].alive).slice(0, 3);
+  if (!pick.length || blocOf(g, me) || g.phase === 'over') return g;
+  const yes = pick.filter(i => {
+    const p = g.players[i];
+    if (partyOf(p.role) === 'F') return partyOf(g.players[me].role) === 'F';   // the hidden side joins its own, and keeps away from the others
+    return 1 - believe(viewOf(g, i, 'vote', [1, 0]), true).pF[me] > 0.55;
+  });
+  const nm = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ');
+  return { ...g, hist: [...g.hist, { k: 'bloc', by: me, with: pick, yes }], log: [...g.log, `${g.players[me].name}: "${nm(pick)}: vamos votar juntos nas próximas rodadas?"`, yes.length ? `${nm(yes)} topou.` : 'Ninguém topou.', ...(pick.length > yes.length ? [`${nm(pick.filter(i => !yes.includes(i)))} preferiu não.`] : [])] };
 }

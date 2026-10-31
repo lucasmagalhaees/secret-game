@@ -984,3 +984,15 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .plea-go{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .plea-go .btn{min-height:44px;font-size:14px}
 .plea small{display:block;margin-top:6px;opacity:.8}
+
+/* D66: the "talk to the table" panel */
+.drawer.talk .tsec{margin-top:12px;padding-top:10px;border-top:2px dashed var(--line)}
+.drawer.talk .tsec>b{display:block;font:800 13px/1 var(--display);text-transform:uppercase;letter-spacing:.08em}
+.drawer.talk .tsec>small{display:block;margin:4px 0 8px;font-size:13px;opacity:.8}
+.drawer.talk .sub{display:block;margin:8px 0 4px;font-weight:700;font-size:13px}
+.drawer.talk .tbtn{display:block;width:100%;min-height:44px;margin:6px 0;padding:8px 12px;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--fg);box-shadow:3px 3px 0 var(--line);font:700 15px/1.2 var(--font)}
+.drawer.talk .tbtn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
+.drawer.talk .tbtn:disabled{opacity:.5}
+.drawer.talk .chips{display:flex;flex-wrap:wrap;gap:6px}
+.drawer.talk .chips button{min-height:40px;padding:6px 10px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 14px/1 var(--font)}
+.drawer.talk .chips button.on{background:var(--fg);color:var(--surface)}

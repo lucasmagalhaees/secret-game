@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { ballot, beat, blurField, bossWin, debateSheet, defenseResult, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, bossWin, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -26,6 +26,9 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   if (before && changed) {
     const power = next.hist.slice(before.hist.length).find(e => e.k === 'inv' || e.k === 'exec');
     if (power && power.k === 'inv') powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
+    // D66: an app player doubted what the person said: the debate opens, as for any accusation
+    const me = next.players.findIndex(p => !p.ai), doubt = next.players.filter(p => !p.ai).length === 1 ? next.hist.findIndex((e, k) => k >= before.hist.length && e.k === 'talk' && e.say === 'acc' && e.about === me && e.by !== me) : -1;
+    if (doubt >= 0 && ui.debate !== doubt) setTimeout(() => openDebate(doubt), 60);
   }
   if (msg && changed && !spoke) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
@@ -43,6 +46,7 @@ let botTimer: ReturnType<typeof setTimeout> | undefined;
 /** D57: a debate on the accusation at `at`, on its own pages over the game, which waits. */
 function openDebate(at: number): void {
   const g = S.game;
+  if (ui.debate === at) return;
   if (!g || g.players.filter(p => !p.ai).length !== 1) return;
   ui.debate = at; clearTimeout(botTimer); runDebate();
 }
@@ -271,19 +275,27 @@ export function initEvents(): void {
     else if (a === 'help') { ui.help = !ui.help; render(); tick(); }
     else if (a === 'allplays') { ui.allPlays = !ui.allPlays; render(); }
     else if (a === 'endtab') { ui.endTab = d.v === 'jogo' || d.v === 'log' ? d.v : 'res'; render(); scrollTo(0, 0); }
-    else if (a === 'diary') { ui.diary = !ui.diary; if (ui.diary) { delete S.notesOpen; saveS(); } render(); const diary = $('#diary'); if (ui.diary && diary) diary.scrollTop = diary.scrollHeight; }
+    else if (a === 'diary') { ui.diary = !ui.diary; if (ui.diary) { ui.talk = false; delete S.notesOpen; saveS(); } render(); const diary = $('#diary'); if (ui.diary && diary) diary.scrollTop = diary.scrollHeight; }
     else if (a === 'logfilter') { ui.logFilter = d.v === 'talk' || d.v === 'gov' ? d.v : 'all'; render(); }
     else if (a === 'seatnote') { ui.diary = false; const next = { ...S, notesOpen: true as const }; setS(next); saveS(); render(); document.getElementById(`note-row-${i}`)?.scrollIntoView({ block: 'center' }); }
-    else if (a === 'notesopen') { ui.diary = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
+    else if (a === 'notesopen') { ui.diary = false; ui.talk = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'contraclose') document.getElementById('contra')?.remove();
     else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
+    else if (a === 'talk') { ui.talk = !ui.talk; if (ui.talk) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
+    else if (a === 'tself') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
+    else if (a === 'tswear') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.swear(g, me), 'Você jurou pela sua mão.'); }
+    else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
+    else if (a === 'tavoid' || a === 'tinv') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, a === 'tavoid' ? 'avoid' : 'inv', i), 'Pedido feito à mesa.'); }
+    else if (a === 'twhy') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askWhy(g, me, i)); ui.diary = true; render(); }
+    else if (a === 'tbloc') { const sel = ui.blocSel || []; ui.blocSel = sel.includes(i) ? sel.filter(x => x !== i) : sel.length < 3 ? [...sel, i] : sel; render(); }
+    else if (a === 'tblocgo' && ui.blocSel?.length) { const me = g.players.findIndex(p => !p.ai), sel = ui.blocSel; ui.blocSel = []; ui.talk = false; const next = Core.formBloc(g, me, sel); play(next, (() => { const b = Core.blocOf(next, me); return b && b.yes.length ? `${b.yes.length} topou o bloco.` : 'Ninguém topou o bloco.'; })()); }
     else if (a === 'selfclaim') { const me = g.players.findIndex(p => !p.ai); play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
     else if (a === 'pleato') { ui.pleaTo = ui.pleaTo === i ? null : i; render(); }
     else if (a === 'plea' && ui.pleaTo !== null && ui.pleaTo !== undefined) { const me = g.players.findIndex(p => !p.ai), to = ui.pleaTo; ui.pleaTo = null; play(Core.plea(g, me, to, d.v === '1'), `Você pediu o voto de ${g.players[to].name}.`); }
     else if (a === 'dclose') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }
-    else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next); defenseResult(!!(t && t.k === 'talk' && t.ok), d.v || 'quiet'); }
+    else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' && t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.'); }
     else if (a === 'court') { ui.court = i; ui.courtProof = null; ui.courtTone = undefined; render(); }
     else if (a === 'courtclose') { ui.court = null; render(); }
     else if (a === 'courtproof') { ui.courtProof = ui.courtProof === i ? null : i; ui.courtTone = ui.courtProof === null ? 'firm' : 'proof'; render(); }

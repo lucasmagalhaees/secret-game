@@ -326,8 +326,13 @@ with sync_playwright() as p:
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
     assert pg.locator('#notes .persona').count() == 0 and pg.locator('#notes [data-act=denounce]').count() + pg.locator('#notes [data-act=court]').count() == 12, 'a claim for each side of each one'
     # D39: accusing opens the court: a proof from the record (if any), a tone, then the accusation
-    if pg.locator('#selfclaim').count():   # D65: say you are liberal, once a round
-        pg.click('#selfclaim'); assert 'Eu sou liberal' in G()['log'][-1] and pg.locator('#selfclaim').count() == 0
+    # D65/D66: talking to the table, from its own panel: say you are liberal, ask whoever presides to pick you
+    pg.click('#talktoggle'); assert pg.locator('#talk.open').count() == 1 and overflow() == 0
+    pg.click('#selfclaim'); assert 'Eu sou liberal' in G()['log'][-1]
+    pg.click('#talktoggle'); assert pg.locator('#selfclaim').count() == 0
+    if pg.locator('#askpick').count(): pg.click('#askpick'); assert 'me indica' in G()['log'][-1]
+    else: pg.click('#talktoggle')
+    if not pg.locator('#notes').is_visible(): pg.click('#notestoggle')
     pg.locator(f'#notes [data-act=court][data-i="{first}"]').click(); assert pg.locator('#court').is_visible() and overflow() == 0, 'the court opens'
     shot(f's5-tribunal-{THEME}.png'); pg.click('#accuse'); assert pg.locator('#court').count() == 0
     if pg.locator('#contra').count(): pg.click('#contra')

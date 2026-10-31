@@ -65,6 +65,12 @@ export type Event =
   /** D65: someone says its own side out loud; someone asks another for its vote on this government. */
   | { k: 'self'; by: number }
   | { k: 'plea'; by: number; about: number; ja: boolean }
+  /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app
+   *  player about its last vote, an oath on one's own government, a voting bloc. */
+  | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv'; who: number }
+  | { k: 'why'; by: number; about: number; say: string }
+  | { k: 'swear'; by: number; at: number }
+  | { k: 'bloc'; by: number; with: number[]; yes: number[] }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;
 /** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
@@ -163,6 +169,12 @@ export type Seen =
   | { k: 'exec'; by: number; target: number; why?: string }
   | { k: 'self'; by: number }
   | { k: 'plea'; by: number; about: number; ja: boolean }
+  /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app
+   *  player about its last vote, an oath on one's own government, a voting bloc. */
+  | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv'; who: number }
+  | { k: 'why'; by: number; about: number; say: string }
+  | { k: 'swear'; by: number; at: number }
+  | { k: 'bloc'; by: number; with: number[]; yes: number[] }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;
 
