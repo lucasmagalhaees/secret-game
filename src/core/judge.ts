@@ -5,7 +5,7 @@
    what was offered is not played: the first allowed option is. So no player run by the app sees more than its seat or
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
-import { backed, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
+import { backed, earlyGov, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
 import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
 import type { Ask, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
@@ -183,7 +183,7 @@ export function evidence(g: Game, about: number): Proof[] {
       const pres = e.pres === about, clash = e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
       const lawF = e.k === 'gov' && e.law === 'F', said = pres ? e.pc : e.cc;
       if (clash) out.push({ at, kind: 'clash', hit: true, title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: pres ? `Disse que tirou ${said} ${f}${said === 1 ? '' : 's'}, e o chanceler disse outra coisa` : `Disse que recebeu ${said} ${f}${said === 1 ? '' : 's'}, e não bate com o presidente`, pc: e.pc, cc: e.cc, law: e.k === 'gov' ? e.law : undefined });
-      else if (lawF) out.push({ at, kind: 'law', hit: true, title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}`, pc: e.pc, cc: e.cc, law: 'F' });
+      else if (lawF) out.push({ at, kind: 'law', hit: !earlyGov(g.hist as Seen[], at), title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}${earlyGov(g.hist as Seen[], at) ? ' (no começo do jogo: prova fraca)' : ''}`, pc: e.pc, cc: e.cc, law: 'F' });
     }
     if (e.k === 'vote' && e.ja.includes(about) && e.pres !== about && e.chanc !== about) {
       const next = g.hist[at + 1];
@@ -756,7 +756,7 @@ function seenBy(e: Event, me: number): Seen {
     }
     case 'inv': { const { party, ...rest } = e; return e.by === me ? { ...rest, party } : rest; }
     case 'peek': { const { saw, ...rest } = e; return e.by === me && saw ? { ...rest, saw } : rest; }
-    case 'exec': return { k: 'exec', by: e.by, target: e.target };
+    case 'exec': return { k: 'exec', by: e.by, target: e.target, ...(e.why ? { why: e.why } : {}) };
     default: return e;
   }
 }
@@ -837,8 +837,23 @@ export function botStep(g: Game, rand: () => number): Game | null {
     case 'veto': return answerVeto(g, a === 1, rand);
     case 'investigate': return investigate(g, a);
     case 'special': return specialElect(g, a);
-    default: return execute(g, a);
+    default: return justify(g, execute(g, a));
   }
+}
+/** D53: an app player says why it eliminated someone, from what the whole table saw: the strongest proof in the record,
+ *  an accusation it had made, or that it was the one it suspected most. A hidden-side player gives a reason the same way:
+ *  the reason is public, never its private reckoning. */
+export function execReason(g: Game, by: number, t: number): string {
+  const p = evidence(g, t), hit = p.find(x => x.hit) ?? p[0];
+  if (hit) return hit.text.replace(/^./, c => c.toLowerCase());
+  if (g.hist.some(e => e.k === 'talk' && e.by === by && e.about === t && e.say === 'acc')) return 'eu já tinha dito que não confiava';
+  return 'era de quem eu mais desconfiava';
+}
+function justify(before: Game, g: Game): Game {
+  const i = g.hist.length - 1, e = g.hist[i];
+  if (g === before || !e || e.k !== 'exec') return g;
+  const why = execReason(before, e.by, e.target);
+  return { ...g, hist: g.hist.map((x, j) => (j === i ? { ...e, why } : x)), log: [...g.log, `${g.players[e.by].name}: "Eliminei ${g.players[e.target].name}: ${why}."`] };
 }
 
 /* ---------- achievements (D41) ---------- */

@@ -14,7 +14,7 @@ const outDir = path.join(root, 'tests', '.build-bench');
 await build({ root, configFile: false, logLevel: 'silent', build: { outDir, emptyOutDir: true, minify: false, target: 'node22', lib: { entry: path.join(root, 'src', 'core', 'index.ts'), formats: ['es'], fileName: () => 'core.mjs' } } });
 const { Core } = await import(pathToFileURL(path.join(outDir, 'core.mjs')).href);
 
-const GAMES = Number(process.argv[2]) || 200, SIZES = [5, 6, 7, 8, 9, 10];
+const DIAG = process.env.BENCH_DIAG === '1', GAMES = Number(process.argv[2]) || 200, SIZES = [5, 6, 7, 8, 9, 10];
 /** One game with every seat run by the app, each seat at the level `levelOf` gives it. */
 function play(n, seed, levelOf) {
   const rand = Core.seeded(seed), names = Core.BOT_NAMES.fascismo.slice(0, n);
@@ -35,6 +35,7 @@ const ends = {};
 for (const lib of Core.LEVELS) {
   let row = lib.padEnd(22);
   for (const fas of Core.LEVELS) {
+    if (DIAG && fas !== lib) { row += '-'.padStart(9); continue; }   // BENCH_DIAG=1: only the same level on both sides, faster
     let won = 0;
     for (let i = 0; i < GAMES; i++) {
       const g = play(SIZES[i % SIZES.length], 7000 * i + 3, p => (p.role === 'liberal' ? lib : fas));
@@ -50,6 +51,7 @@ console.log('\nComo terminam (mesmo nível dos dois lados):');
 for (const [k, v] of Object.entries(ends).sort()) console.log(`  ${k}: ${v}`);
 console.log(stuck ? `\n${stuck} partidas não terminaram` : '\nTodas as partidas terminaram.');
 
+if (DIAG) process.exit(0);
 console.log(`\n"Você" (uma IA média num lugar) contra a mesa de cada nível, ${3 * GAMES} partidas por nível:`);
 for (const X of Core.LEVELS) {
   const w = { L: [0, 0], F: [0, 0] };

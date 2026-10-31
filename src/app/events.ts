@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound, unlockAudio } from './fx';
-import { ballot, beat, blurField, bossWin, contradiction, defenseResult, confetti, decree, flash, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, bossWin, contradiction, defenseResult, confetti, decree, clearFlash, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -80,7 +80,7 @@ function afterBot(before: Game, next: Game): void {
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
   const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
-  if (gone >= 0) { flash(next.players[gone].name, next.players[gone].role === 'hitler'); sound('shot'); buzz(220); }
+  if (gone >= 0) { const ex = [...next.hist].reverse().find(e => e.k === 'exec'); flash(next.players[gone].name, next.players[gone].role === 'hitler', ex?.k === 'exec' ? ex.why : ''); sound('shot'); buzz(220); }
   const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
   // the votes and what a government said are already on screen, at the top: no note at the foot for them
   play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);
@@ -146,6 +146,7 @@ function quickGame(): void {
   let names = [me];
   while (names.length < 7) names = [...names, Core.botName(names, rand, pack, region)];
   // the table set up by hand stays as it was: the quick game is built apart from it
+  clearFlash();
   const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
   if (!r.ok) return;
   const next = { ...S }; delete next.notes; delete next.noteDetails; delete next.assist; setS(next); saveS();
@@ -153,6 +154,7 @@ function quickGame(): void {
 }
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
+  clearFlash();
   const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   if (S.notes || S.noteDetails) { const next = { ...S }; delete next.notes; delete next.noteDetails; setS(next); }     // a new game starts a clean notebook

@@ -89,6 +89,12 @@ export const ALLY_JA = 0.8, ANY_JA = 0.7;   // D33: people vote Ja about 74% of 
 export const HITLER_BURNT = 0.35;
 /** How often the hard level misses a decisive law (D33); the extreme never does. */
 export const DECISIVE_SLIP = 0.1;
+/** D51: before the danger zone the hidden side's first plan is to stay clean, so the leader can be elected chancellor
+ *  later: how often a fascist with the choice lets the liberal law through, per level (a burnt fascist is voted down). */
+/** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
+ *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
+export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.6, extremo: 0.65 };
+export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
 export const ALLY_PICK = 1.5;
@@ -107,11 +113,22 @@ export const TALK_W = 0.3;
 export const TALK_LIE = 0.6, SLIP_TALK = 0.1;
 /** Whether what `by`'s talk says about `about` is backed by the record from `from` to `upto` (D26). */
 export function backed(hist: Seen[], from: number, upto: number, about: number, acc: boolean): boolean {
-  return hist.slice(from, upto).some(e => {
+  return hist.slice(from, upto).some((e, k) => {
     if (e.k !== 'gov' || (e.pres !== about && e.chanc !== about)) return false;
     const clash = e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
-    return acc ? e.law === 'F' || clash : e.law === 'L' && !clash;
+    // D52: an early law proves little either way (the hidden side plays clean early, and smears a liberal); only a story
+    // that does not add up still holds then
+    const early = earlyGov(hist, from + k);
+    return acc ? (e.law === 'F' && !early) || clash : e.law === 'L' && !clash && !early;
   });
+}
+/** D52: governments this early (the first EARLY_GOVS, or the one that made the first fascist law) prove little. */
+export const EARLY_GOVS = 2;
+export function earlyGov(hist: Seen[], at: number): boolean {
+  let govs = 0, F = 0;
+  for (let i = 0; i < at; i++) { const e = hist[i]; if (e.k === 'gov') { govs++; if (e.law === 'F') F++; } else if (e.k === 'chaos' && e.law === 'F') F++; }
+  const e = hist[at];
+  return govs < EARLY_GOVS || (e?.k === 'gov' && e.law === 'F' && F === 0);
 }
 
 /** How many times this speaker made the same claim since the last new fact involving its target. */
@@ -436,6 +453,10 @@ function liberalJa(v: View, b: Beliefs): boolean {
     why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);
     return false;
   }
+  if (v.laws.F >= HITLER_ZONE && gov[1] !== v.me && b.pF[gov[1]] > ZONE_SURE[v.level]) {
+    why(`Já há ${HITLER_ZONE} leis {fs}: daqui em diante só vota Ja! num chanceler de quem tem boa certeza. ${P(gov[1])} tem ${pc(b.pF[gov[1]])} de chance de ser do lado escondido, acima do que o nível aceita (${pc(ZONE_SURE[v.level])}): {nein}`);
+    return false;
+  }
   const r = risk(b, gov.filter(i => i !== v.me)), ok = r <= base + slack;
   why(`Chance de ter alguém do lado escondido neste governo: ${pc(r)}. Num par qualquer da mesa: ${pc(base)}. Aceita até ${pc(base + slack)} (folga de 5%, ${v.mood >= 0 ? '+' : ''}${pc(MOOD * v.mood)} do temperamento${0.05 + MOOD * v.mood < 0 ? ', nunca abaixo de zero' : ''}${v.tracker === TRACKER_MAX - 1 ? ', +20% porque mais uma rejeição traz o caos' : ''}): ${ok ? '{ja}' : '{nein}'}`);
   return ok;
@@ -728,6 +749,14 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
     const e = lastOwn(v, ['gov', 'veto'], e => e.chanc === v.me);
     if (!e?.got) return -1;
     const m = nF(e.got), story = chancStory(m, e.k === 'veto' ? undefined : e.law);
+    // D51: a chancellor never pins the blame on an allied president. It backs the president's story when there is one,
+    // and otherwise takes the blame itself (the truth) when the president is the hidden leader.
+    if (isAlly(e.pres) && e.pres !== v.me) {
+      const backed = e.pc !== undefined && e.pc >= 0 ? Math.max(0, e.pc - 1) : -1;
+      if (backed >= 0 && v.options.includes(backed)) { why(`O presidente é aliado e disse que tirou ${nmF(e.pc as number, 3)}: confirmou a história dele.`); return backed; }
+      // the president said nothing (forgot or kept quiet): the chancellor still does not burn it
+      if (story > m) { why(v.known[e.pres] === 'hitler' ? 'O presidente é o líder e não disse nada: não pôs a culpa nele, disse a verdade e ficou com a culpa.' : 'O presidente é aliado e não disse nada: não pôs a culpa nele, disse a verdade e ficou com a culpa.'); return m; }
+    }
     const lie = story !== m && rand() < act;
     why(story === m ? `Disse a verdade (${nmF(m, 2)}).` : lie ? `Recebeu ${nmF(m, 2)} e aprovou a {f}. Mentiu: ${nmF(story, 2)}, para parecer que não teve escolha.` : `A verdade a entrega, mas não mentiu desta vez (o nível mente ${pc(act)} das vezes).`);
     return lie ? story : m;
@@ -767,14 +796,18 @@ const passes = (d: number): number[] => [...new Set([Math.min(2, d), Math.max(0,
 /** A fascist who knows its team (and Hitler at a small table): plays for it, and looks like a liberal when it can. */
 function fascist(v: View, rand: () => number, allies: number[], hitler: number): number {
   const o = v.options, k = knob(v), isAlly = (i: number): boolean => allies.includes(i);
-  const early = v.laws.F < HITLER_ZONE, clean = (): boolean => rand() < k.trust && early;
+  const early = v.laws.F < HITLER_ZONE, clean = (): boolean => rand() < k.trust && early, fresh = (): boolean => early && EARLY_CLEAN[v.level] > 0 && rand() < EARLY_CLEAN[v.level];
   const groom = k.plan && early && hitler >= 0 && v.alive[hitler];
   if (v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek') return fascistTalk(v, rand, isAlly);
   if (v.ask === 'pdiscard') {
     const L = v.hand.indexOf('L'), F = Math.max(0, v.hand.indexOf('F'));
     if (L < 0) { why('Só tinha {fs}: qualquer uma.'); return 0; }
     if (groom && v.chanc === hitler) { why(`O chanceler é o {boss}: passou uma liberal para ele aprovar e parecer limpo antes da ${HITLER_ZONE}ª lei {f}.`); return F; }   // Hitler gets a liberal law to pass
-    if (isAlly(v.chanc as number)) { why('O chanceler é aliado: jogou fora a liberal e passou {fs}.'); return L; }
+    if (isAlly(v.chanc as number)) {
+      if (fresh()) { why(`O chanceler é aliado: passou uma liberal para os dois ficarem limpos antes da ${HITLER_ZONE}ª lei {f}.`); return F; }
+      why('O chanceler é aliado: jogou fora a liberal e passou {fs}.'); return L;
+    }
+    if (fresh()) { why(`Antes da ${HITLER_ZONE}ª lei {f}, o plano é parecer liberal: passou uma liberal.`); return F; }
     if (k.image) {                                                           // the chancellor is a liberal: what will the table think?
       const d = nF(v.hand), ms = passes(d);
       const m = ms[weigh(v, ms.map(m => { const law: Law = m === 2 ? 'F' : 'L'; return { law, pc: presStory(d, m, law), cc: m }; }), hitler)];
@@ -789,10 +822,13 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     if (nF(v.hand) === 0) { why(o.includes(2) ? 'Recebeu 2 liberais: pediu veto, para não aprovar liberal.' : 'Recebeu 2 liberais: sem escolha.'); return o.includes(2) ? 2 : 0; }
     if (nF(v.hand) === 2) { why('Recebeu 2 {fs}: aprovou uma.'); return 0; }
     if (groom && v.me === hitler) { why(`É o {boss}: aprovou a liberal para parecer limpo antes da ${HITLER_ZONE}ª lei {f}.`); return v.hand.indexOf('F'); }   // Hitler stays clean until it pays
+    if (isAlly(v.pres) && v.pres === hitler && k.plan && early) { why(`O presidente é o {boss} e passou uma de cada: aprovou a liberal para limpar a barra dele antes da ${HITLER_ZONE}ª lei {f}.`); return v.hand.indexOf('F'); }
+    if (fresh()) { why(`Antes da ${HITLER_ZONE}ª lei {f}, o plano é parecer liberal: aprovou a liberal.`); return v.hand.indexOf('F'); }
     if (k.image && !isAlly(v.pres)) {                                        // a liberal president passed one of each
       const ways: { law: Law; pc?: number; cc: number }[] = [{ law: 'F', cc: 2 }, { law: 'L', cc: 1 }];
       return weigh(v, ways, hitler) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
     }
+    if (isAlly(v.pres) && v.pres === hitler && k.image) return weigh(v, [{ law: 'F', pc: 1, cc: 1 }, { law: 'L', pc: 1, cc: 1 }], hitler) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
     const c = !isAlly(v.pres) && clean(); why(c ? 'Aprovou a liberal para parecer limpa.' : 'Aprovou a {f}.'); return c ? v.hand.indexOf('F') : v.hand.indexOf('L');
   }
   if (v.ask === 'veto') { why(nF(v.hand) === 0 ? 'Sabe que passou 2 liberais: aceitou o veto, para não sair liberal.' : 'Passou {fs}: recusou o veto, para sair lei {f}.'); return nF(v.hand) === 0 ? 1 : 0; }
