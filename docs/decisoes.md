@@ -669,3 +669,13 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 - **Pedido:** na última partida exportada, a pessoa (liberal) foi acusada e eliminada por "ter estado em 2 governos que aprovaram lei comunista", e a mesa toda achou que procedia, mas ela só tinha recebido cartas comunistas. E o som do tiro na eliminação vinha antes da tela e entregava o suspense.
 - **O que a ata mostra:** num governo ela foi chanceler, recebeu 2 comunistas e o presidente disse que tirou 3 (as histórias batiam, não havia escolha); no outro, foi presidente e tirou 3 comunistas. A prova "na conta" (D54) contava os dois governos, sem descontar os em que não houve escolha (o D75 só tinha descontado a prova de um governo só). E no debate, como a prova era a conta e não um governo, o "não tive escolha" não aparecia.
 - **Decisão:** a conta de governos não inclui aqueles em que a pessoa não teve escolha com as histórias batendo; no debate, qualquer que seja a prova, o acusado tem "Nas minhas leis, não tive escolha" (0,75), listando esses governos. Quem elimina não dá como motivo um voto que ela mesma deu (ou um governo em que estava). O som do tiro sai, e a vibração junto. Na lista de jogadores, uma marca longa ou a barra de desconfiança não espremem mais o nome (a marca da investigação virou "🔍 Comunista"); nas anotações, o nome fica em cima e os dois lados dividem a largura, com os botões centrados.
+
+## D77. Um motivo, uma acusação (2026-10-31)
+
+- **Pedido:** muita acusação repetida. Um motivo só pode estar ligado a uma acusação; a segunda tem que vir de outro ponto.
+- **Decisão:** uma prova usada numa acusação contra um jogador (por qualquer um) fica gasta para ele (`usedProofs`): no tribunal aparece riscada, "já usada numa acusação", e a IA não a usa de novo. Sem uma prova nova, a IA não acusa quem já foi acusado: fica calada (sai o "Fulano já disse, e eu também não confio").
+
+## D78. O papel que você sabe, em todo nome (2026-10-31)
+
+- **Pedido:** jogando do lado escondido, o nome dos companheiros aparecia sem o papel e confundia. Em todo lugar que aparecer o nome de um jogador cujo papel verdadeiro a pessoa sabe (é do time dela, ou ela investigou), uma cor ou legenda.
+- **Decisão:** jogando sozinho com a IA, todo nome de jogador cujo lado a pessoa sabe de certeza aparece na cor do lado, com uma etiqueta pequena ("Comunista", "Stalin", "🔍 Liberal"): nos cartões da vez, nos pedidos, no debate, na votação, nas telas de efeito e nas listas.

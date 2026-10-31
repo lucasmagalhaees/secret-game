@@ -120,7 +120,7 @@ export function claimFx(g: Game, by: number, target: number, said: 'L' | 'F' | '
   // investigator named (or stays face down if it said nothing). Only what was said: it may be a lie.
   const role: Role = said === 'L' ? 'liberal' : 'fascista';
   const face = said === '-' ? '<div class="cf-front q"><span>?</span><small>Ficou calado</small></div>' : `<div class="cf-front ${said}">${portrait(role, P, R)}<span>${said === 'L' ? 'Liberal' : esc(W.F)}</span></div>`;
-  layer(`claim-fx ${said === '-' ? 'q' : said}`, `<div class="cf-card"><small>${esc(g.players[by].name)} investigou</small><div class="cf-env"><div class="cf-flip"><div class="cf-back"></div>${face}</div><div class="cf-body"><b>${esc(g.players[target].name)}</b></div><div class="cf-flap"></div></div><em>${said === '-' ? 'Não disse o que viu.' : `${esc(g.players[by].name)} diz que é ${said === 'L' ? 'liberal' : esc(W.f)}. Pode estar mentindo.`}</em></div>`, 3600);
+  layer(`claim-fx ${said === '-' ? 'q' : said}`, `<div class="cf-card"><small>${name(g, by)} investigou</small><div class="cf-env"><div class="cf-flip"><div class="cf-back"></div>${face}</div><div class="cf-body"><b>${name(g, target)}</b></div><div class="cf-flap"></div></div><em>${said === '-' ? 'Não disse o que viu.' : `${name(g, by)} diz que é ${said === 'L' ? 'liberal' : esc(W.f)}. Pode estar mentindo.`}</em></div>`, 3600);
 }
 /** The hidden leader was elected chancellor in the danger zone and the game is over: red screen and the leader yelling.
  *  The game is over: every role is open by then. */
@@ -136,7 +136,22 @@ const party = (p: Law): string => (p === 'L' ? 'Liberal' : W.F);
 const POWER_LABEL: Record<string, string> = { investigate: 'investiga', peek: 'espia', special: 'eleição', execute: 'elimina' };
 /** The icon of each power on the board (D48). */
 const POWER_ICON: Record<string, string> = { investigate: '🔍', peek: '👁', special: '🗳', execute: '✖', win: '★' };
-const name = (g: Game, i: number): string => esc(g.players[i].name);
+/** D78: what the person playing alone knows for sure of each seat (its team by the rules, what it investigated):
+ *  wherever a name shows, it shows in that side's colour with a small mark, so the person never mixes them up. */
+let knownFor: Game | null = null, knownMap = new Map<number, ['L' | 'F', string]>();
+function known(g: Game): Map<number, ['L' | 'F', string]> {
+  if (knownFor === g) return knownMap;
+  knownFor = g; knownMap = new Map();
+  const me = solo(g);
+  if (me < 0 || g.phase === 'over') return knownMap;
+  for (const k of Core.knows(g, me)) { const j = g.players.findIndex(p => p.name === k.name); if (j >= 0) knownMap.set(j, ['F', k.role === 'hitler' ? W.boss : W.F]); }
+  for (const e of g.hist) if (e.k === 'inv' && e.by === me && e.party && !knownMap.has(e.target)) knownMap.set(e.target, [e.party, `🔍 ${e.party === 'L' ? 'Liberal' : W.F}`]);
+  return knownMap;
+}
+const name = (g: Game, i: number): string => {
+  const k = g.players[i] ? known(g).get(i) : undefined, n = esc(g.players[i]?.name ?? '?');
+  return k ? `<span class="kn ${k[0]}" title="${esc(k[1])}">${n}<i class="kn-tag">${esc(k[1])}</i></span>` : n;
+};
 const AI_TAG = '<small class="ai">IA</small>';
 /** What each level does, in a line (D10). */
 export const LEVEL: Record<Level, [string, string]> = {
@@ -293,19 +308,19 @@ function vAskNow(g: Game, seat: number, ask: string): string {
     const rows = Core.killReasons(g, me).filter(r => Core.canAsk(g, me, 'kill', r.who));
     if (!rows.length) return g.hist.slice(-6).some(e => e.k === 'ask' && e.by === me) ? '<p class="asknow-done">Sugestão feita. Pesa pela prova e pelo quanto confiam em você.</p>' : '';
     const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.2 ? '<i class="pw w">fraca</i>' : '<i class="pw w">—</i>';
-    return `<div class="asknow" id="asknow"><b>Aponte quem você quer fora, e por quê</b>${rows.map(r => `<button class="krow" data-act="tkill" data-i="${r.who}"><span><b>${esc(g.players[r.who].name)}</b><small>${esc(r.text)}</small></span>${pw(r.power)}</button>`).join('')}<small>${esc(g.players[seat].name)} decide em alguns segundos. Pesa pela prova e pelo quanto confia em você.</small></div>`;
+    return `<div class="asknow" id="asknow"><b>Aponte quem você quer fora, e por quê</b>${rows.map(r => `<button class="krow" data-act="tkill" data-i="${r.who}"><span><b>${name(g, r.who)}</b><small>${esc(r.text)}</small></span>${pw(r.power)}</button>`).join('')}<small>${name(g, seat)} decide em alguns segundos. Pesa pela prova e pelo quanto confia em você.</small></div>`;
   }
   const others = g.players.map((_, i) => i).filter(i => i !== me && i !== seat && g.players[i].alive);
-  const chip = (what: 'avoid' | 'inv', i: number): string => `<button data-act="${what === 'avoid' ? 'tavoid' : 'tinv'}" data-i="${i}">${esc(g.players[i].name)}</button>`;
+  const chip = (what: 'avoid' | 'inv', i: number): string => `<button data-act="${what === 'avoid' ? 'tavoid' : 'tinv'}" data-i="${i}">${name(g, i)}</button>`;
   const done = g.hist.slice(-6).some(e => e.k === 'ask' && e.by === me);
   if (ask === 'nominate') {
     const pick = Core.canAsk(g, me, 'pick', me), avoid = others.filter(i => Core.canAsk(g, me, 'avoid', i));
     if (!pick && !avoid.length) return done ? '<p class="asknow-done">Pedido feito. Pesa pelo quanto confiam em você.</p>' : '';
-    return `<div class="asknow" id="asknow"><b>Peça antes que ${esc(g.players[seat].name)} escolha</b>${pick ? '<button class="tbtn" data-act="tpick" id="askpick">🙋 “Me indica para chanceler”</button>' : ''}${avoid.length ? `<small>Não indicar:</small><div class="chips">${avoid.map(i => chip('avoid', i)).join('')}</div>` : ''}</div>`;
+    return `<div class="asknow" id="asknow"><b>Peça antes que ${name(g, seat)} escolha</b>${pick ? '<button class="tbtn" data-act="tpick" id="askpick">🙋 “Me indica para chanceler”</button>' : ''}${avoid.length ? `<small>Não indicar:</small><div class="chips">${avoid.map(i => chip('avoid', i)).join('')}</div>` : ''}</div>`;
   }
   const inv = others.filter(i => Core.canAsk(g, me, 'inv', i));
   if (!inv.length) return done ? '<p class="asknow-done">Pedido feito. Pesa pelo quanto confiam em você.</p>' : '';
-  return `<div class="asknow" id="asknow"><b>Sugira quem ${esc(g.players[seat].name)} deve investigar</b><div class="chips">${inv.map(i => chip('inv', i)).join('')}</div></div>`;
+  return `<div class="asknow" id="asknow"><b>Sugira quem ${name(g, seat)} deve investigar</b><div class="chips">${inv.map(i => chip('inv', i)).join('')}</div></div>`;
 }
 /** The person at a table with app players was eliminated: the game plays on to the end, for them to watch. */
 const vWatching = (g: Game): string => Core.hasAi(g) && g.phase !== 'over' && !Core.humansAlive(g).length
@@ -676,7 +691,7 @@ function vTalk(g: Game): string {
   const me = solo(g);
   if (me < 0 || !g.players[me].alive || g.phase === 'over') return '';
   const others = g.players.map((_, i) => i).filter(i => i !== me && g.players[i].alive);
-  const chips = (act: string, ok: (i: number) => boolean, on: (i: number) => boolean = () => false): string => `<div class="chips">${others.filter(ok).map(i => `<button class="${on(i) ? 'on' : ''}" data-act="${act}" data-i="${i}" aria-pressed="${on(i)}">${esc(g.players[i].name)}</button>`).join('')}</div>`;
+  const chips = (act: string, ok: (i: number) => boolean, on: (i: number) => boolean = () => false): string => `<div class="chips">${others.filter(ok).map(i => `<button class="${on(i) ? 'on' : ''}" data-act="${act}" data-i="${i}" aria-pressed="${on(i)}">${name(g, i)}</button>`).join('')}</div>`;
   const sec = (title: string, hint: string, body: string): string => body ? `<section class="tsec"><b>${title}</b><small>${hint}</small>${body}</section>` : '';
   const why = others.some(i => Core.canWhy(g, me, i)) ? chips('twhy', i => Core.canWhy(g, me, i)) : '';
   const bloc = Core.blocOf(g, me), sel = ui.blocSel || [];
@@ -716,9 +731,10 @@ function vCourt(g: Game): string {
   if (t === null || t === undefined || me < 0 || !Core.canDenounce(g, me, t)) return '';
   const ev = Core.evidence(g, t), pick = ui.courtProof ?? null, tone = ui.courtTone || (pick !== null ? 'proof' : 'firm');
   const cards = (f: number, of: number): string => Array.from({ length: of }, (_, k) => `<i class="lc ${k < of - f ? 'L' : 'F'}"></i>`).join('');
-  const item = (x: ReturnType<typeof Core.evidence>[number]): string => `<button class="ev${pick === x.at ? ' on' : ''}" data-act="courtproof" data-i="${x.at}"><small>${esc(x.title)}</small><span>${esc(x.text)}</span>${x.kind === 'clash' && x.pc !== undefined && x.cc !== undefined ? `<span class="ev-cards">${cards(x.pc, 3)} → ${cards(x.cc, 2)}${x.law ? ` → <i class="lc ${x.law}"></i>` : ''}</span>` : ''}${x.hit ? `<b class="ev-hit">${x.kind === 'clash' ? 'A conta não fecha' : 'Saiu lei {f}'}</b>` : ''}</button>`;
+  const spent = Core.usedProofs(g, t);
+  const item = (x: ReturnType<typeof Core.evidence>[number]): string => spent.has(x.at) ? `<div class="ev spent"><small>${esc(x.title)} · já usada numa acusação</small><span>${esc(x.text)}</span></div>` : `<button class="ev${pick === x.at ? ' on' : ''}" data-act="courtproof" data-i="${x.at}"><small>${esc(x.title)}</small><span>${esc(x.text)}</span>${x.kind === 'clash' && x.pc !== undefined && x.cc !== undefined ? `<span class="ev-cards">${cards(x.pc, 3)} → ${cards(x.cc, 2)}${x.law ? ` → <i class="lc ${x.law}"></i>` : ''}</span>` : ''}${x.hit ? `<b class="ev-hit">${x.kind === 'clash' ? 'A conta não fecha' : 'Saiu lei {f}'}</b>` : ''}</button>`;
   const tones: ['soft' | 'firm' | 'proof', string][] = [['soft', 'Desconfio'], ['firm', 'Acuso'], ['proof', 'Tenho prova']];
-  return `<div class="court-back" data-act="courtclose"></div><section class="court" id="court" role="dialog" aria-label="Acusar ${name(g, t)}"><span class="label">📣 Acusar ${name(g, t)}</span>
+  return `<div class="court-back" data-act="courtclose"></div><section class="court" id="court" role="dialog" aria-label="Acusar ${esc(g.players[t].name)}"><span class="label">📣 Acusar ${name(g, t)}</span>
     <h2>Qual é a prova?</h2><p class="hint">${ev.length ? 'Toque no que está na ata contra ele.' : 'A ata não tem nada contra ele ainda. Dá para acusar mesmo assim.'}</p>${ev.map(item).join('')}
     <div class="tones">${tones.map(([k, l]) => `<button class="${tone === k ? 'on' : ''}" data-act="courttone" data-v="${k}"${k === 'proof' && pick === null ? ' disabled' : ''}>${l}</button>`).join('')}</div>
     <button class="btn block go" data-act="accuse" id="accuse">Acusar</button><button class="more" data-act="courtclose">Cancelar</button></section>`;
@@ -733,14 +749,14 @@ function vDrawer(g: Game): string {
   const side = (i: number, p: Law): string => {
     const m = claimed(i), on = m === p, can = Core.canDenounce(g, me, i), dead = !g.players[i].alive;
     const pen = `<button class="pen${on ? ' on' : ''}" data-act="note" data-i="${i}" data-v="${on ? '' : p}" aria-pressed="${on}" title="${on ? 'Desmarcar' : `Anotar como ${p === 'L' ? 'liberal' : W.f}`}" aria-label="${on ? 'Desmarcar' : 'Anotar como ' + (p === 'L' ? 'liberal' : W.f)}">🗒️</button>`;
-    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="${p === 'L' ? 'denounce' : 'court'}" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${name(g, i)} é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
+    const say = dead ? '' : can ? `<button class="tell ${p}${m && m !== p ? ' bluff' : ''}" data-act="${p === 'L' ? 'denounce' : 'court'}" data-i="${i}" data-v="${p === 'L' ? 'trust' : 'acc'}" title="${m && m !== p ? 'Blefe: ' : ''}dizer à mesa que é ${p === 'L' ? 'liberal' : W.f}" aria-label="Dizer à mesa que ${esc(g.players[i].name)} é ${p === 'L' ? 'liberal' : W.f}">📣</button>` : '<span class="told" title="Já falou dele nesta rodada">✓</span>';
     return `<span class="side ${p}${on ? ' on' : ''}"><b>${p === 'L' ? W.libs : W.short}</b><span>${pen}${say}</span></span>`;
   };
 
   const rows = g.players.map((p, i) => (i === me ? '' : `<li id="note-row-${i}" class="${claimed(i)}${p.alive ? '' : ' dead'}"><div class="note-row"><span class="who">${esc(p.name)}${p.alive ? '' : ' <small>(eliminado)</small>'}${kit.sure(i) ? ' <small>(sabe)</small>' : ''}</span><span class="sides">${side(i, 'L')}${side(i, 'F')}</span></div></li>`)).join('');
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
-  const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><p class="claim-impact" role="status">${esc(Core.accusationFeedback(g, at))}</p><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
+  const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${name(g, last.about)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><p class="claim-impact" role="status">${esc(Core.accusationFeedback(g, at))}</p><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${name(g, i)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${name(g, last.about)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
   return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ anota o que você acha (só você vê). 📣 diz à mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
     ${heard}${vTalk(g)}</aside>`;
 }
@@ -1004,17 +1020,17 @@ export function debateSheet(g: Game, at: number): void {
   if (!t || t.k !== 'talk') return;
   const me = solo(g), who = Core.debateNext(g, at), lines = t.deb || [];
   const stars = (i: number): string => g.players[i]?.ai ? ` <span class="lab">${'★'.repeat(Core.eloq(g, i))}${'☆'.repeat(3 - Core.eloq(g, i))} lábia</span>` : '';
-  const who_ = (i: number): string => `${esc(g.players[i].name)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
+  const who_ = (i: number): string => `${name(g, i)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
   const proof = t.proof !== undefined ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about).find(x => x.at === t.proof) : undefined;
   const say = (i: number, text: string, tag: string): string => `<div class="dsay ${i === t.by ? 'acc' : 'def'}"><b>${who_(i)} · ${tag}${stars(i)}</b><p>“${esc(text)}”</p></div>`;
   const line = (k: number, tag: string): string => lines[k] ? say(lines[k].who, lines[k].text, tag) : '';
-  const args = (): string => who === me ? `<div class="dargs"><b>${lines.length === 0 ? 'Sua defesa' : lines.length === 1 ? 'Sua réplica' : 'Sua tréplica'}</b>${Core.debateArgs(g, at).map(a => `<button data-act="darg" data-v="${esc(a.id)}"><span>${esc(a.label)}</span><i class="pw ${a.power >= 0.45 ? 'f' : a.power >= 0.25 ? 'm' : 'w'}">${a.power >= 0.45 ? 'forte' : a.power >= 0.25 ? 'média' : a.power > 0 ? 'fraca' : '—'}</i><small>“${esc(a.text)}”</small></button>`).join('')}</div>` : who >= 0 ? `<p class="dwait">${esc(g.players[who].name)} está pensando no que dizer…</p>` : '';
-  const accLine = `${proof ? proof.text + '. ' : ''}${esc(g.players[t.about].name)}, explica isso.`;
+  const args = (): string => who === me ? `<div class="dargs"><b>${lines.length === 0 ? 'Sua defesa' : lines.length === 1 ? 'Sua réplica' : 'Sua tréplica'}</b>${Core.debateArgs(g, at).map(a => `<button data-act="darg" data-v="${esc(a.id)}"><span>${esc(a.label)}</span><i class="pw ${a.power >= 0.45 ? 'f' : a.power >= 0.25 ? 'm' : 'w'}">${a.power >= 0.45 ? 'forte' : a.power >= 0.25 ? 'média' : a.power > 0 ? 'fraca' : '—'}</i><small>“${esc(a.text)}”</small></button>`).join('')}</div>` : who >= 0 ? `<p class="dwait">${name(g, who)} está pensando no que dizer…</p>` : '';
+  const accLine = `${proof ? proof.text + '. ' : ''}${name(g, t.about)}, explica isso.`;
   const p1 = `${say(t.by, accLine, t.hit ? 'acusação · Contradição!' : 'acusação')}${t.about === me ? myPlays(g, me, proof && proof.at < 100000 ? proof.at : -1) : ''}${line(0, t.about === me ? 'sua defesa' : 'defesa')}${lines.length === 0 ? args() : ''}`;
   const p2 = lines.length < 1 ? '<p class="dwait">A réplica vem depois da defesa.</p>' : `${line(1, 'réplica')}${lines.length === 1 ? args() : ''}${line(2, 'tréplica')}${lines.length === 2 ? args() : ''}`;
   const v = t.verdict || [], yes = v.filter(x => x[1] === 1).length, no = v.filter(x => x[1] === 0).length;
   const mark = ['✖ não procede', '✔ procede', '? não sabe'];
-  const p3 = t.verdict ? `<ul class="dvotes">${v.map(([j, a]) => `<li class="v${a}"><b>${esc(g.players[j].name)}</b><span>${mark[a]}</span></li>`).join('')}</ul><div class="dres ${yes > no ? 'acc' : 'def'}"><b>Resultado</b><p>${yes} de ${v.length} acham que a acusação procede. ${yes > no ? `A acusação contra ${esc(g.players[t.about].name)} pesa.` : `${esc(g.players[t.about].name)} se defendeu: a acusação perdeu o peso.`}${t.backfire ? ` <b>A acusação era fraca e virou contra ${esc(g.players[t.by].name)}, que perdeu reputação na mesa.</b>` : ''}</p></div><button class="btn block" data-act="dclose">Voltar ao jogo</button>` : '<p class="dwait">O veredito sai depois da tréplica.</p>';
+  const p3 = t.verdict ? `<ul class="dvotes">${v.map(([j, a]) => `<li class="v${a}"><b>${name(g, j)}</b><span>${mark[a]}</span></li>`).join('')}</ul><div class="dres ${yes > no ? 'acc' : 'def'}"><b>Resultado</b><p>${yes} de ${v.length} acham que a acusação procede. ${yes > no ? `A acusação contra ${name(g, t.about)} pesa.` : `${name(g, t.about)} se defendeu: a acusação perdeu o peso.`}${t.backfire ? ` <b>A acusação era fraca e virou contra ${name(g, t.by)}, que perdeu reputação na mesa.</b>` : ''}</p></div><button class="btn block" data-act="dclose">Voltar ao jogo</button>` : '<p class="dwait">O veredito sai depois da tréplica.</p>';
   const page = (n: number, title: string, body: string): string => `<section class="dpage"><div class="dcard"><header><span>${n}/3</span><b>${title}</b></header>${body}</div></section>`;
   const cur = t.verdict ? 2 : lines.length >= 1 ? 1 : 0;
   let el = document.getElementById('debate');
@@ -1048,7 +1064,7 @@ export function swayReasonsShow(g: Game, to: number, reasons: { id: string; labe
   if (!box || !el) return;
   el.querySelectorAll('.b-seat').forEach(s => s.classList.toggle('picked', (s as HTMLElement).dataset.i === String(to)));
   const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.25 ? '<i class="pw m">média</i>' : '<i class="pw w">fraca</i>';
-  box.innerHTML = `<p class="sway-to">Convencer <b>${esc(g.players[to].name)}</b>:</p>${reasons.map(r => `<button class="krow" data-act="swaysay" data-v="${r.id}"><span><b>${esc(r.label)}</b><small>“${esc(r.text)}”</small></span>${pw(r.power)}</button>`).join('')}`;
+  box.innerHTML = `<p class="sway-to">Convencer <b>${name(g, to)}</b>:</p>${reasons.map(r => `<button class="krow" data-act="swaysay" data-v="${r.id}"><span><b>${esc(r.label)}</b><small>“${esc(r.text)}”</small></span>${pw(r.power)}</button>`).join('')}`;
 }
 export function swayResult(g: Game, to: number, flipped: boolean): void {
   const box = document.getElementById('swayopts'), el = document.getElementById('ballot');
@@ -1056,6 +1072,6 @@ export function swayResult(g: Game, to: number, flipped: boolean): void {
   const seat = el.querySelector<HTMLElement>(`.b-seat[data-i="${to}"] .b-card`);
   if (seat && flipped) { const ja = seat.classList.contains('ja'); seat.classList.toggle('ja', !ja); seat.classList.toggle('nein', ja); const sp = seat.querySelector('span'); if (sp) sp.textContent = ja ? W.nein : W.ja; seat.classList.add('flipped'); const g1 = el.querySelector('.b-score .g'), r1 = el.querySelector('.b-score .r'); if (g1) g1.textContent = String(el.querySelectorAll('.b-card.ja').length); if (r1) r1.textContent = String(el.querySelectorAll('.b-card.nein').length); }
   el.querySelectorAll('.b-seat').forEach(s => { s.removeAttribute('data-act'); s.classList.remove('tap'); });
-  box.innerHTML = `<p class="sway-res ${flipped ? 'ok' : 'no'}">${flipped ? `✔ ${esc(g.players[to].name)} virou o voto.` : `✖ ${esc(g.players[to].name)} manteve o voto.`}</p>`;
+  box.innerHTML = `<p class="sway-res ${flipped ? 'ok' : 'no'}">${flipped ? `✔ ${name(g, to)} virou o voto.` : `✖ ${name(g, to)} manteve o voto.`}</p>`;
 }
 export function swayClose(): void { const el = document.getElementById('ballot'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 450); } }
