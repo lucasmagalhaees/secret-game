@@ -233,6 +233,14 @@ export default function cases(Core) {
     const sc = Core.selfClaimProof(ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 0, chanc: 5, law: 'L', pc: 1, cc: 0 }] }), 0, 'laws');
     eq('D73: who to eliminate, with the reason; what one can show to say it is liberal; each app player says whether it believes', [kr[0].who === 4 || kr[0].power >= kr[kr.length - 1].power, sp[0].id, sc.hist.at(-1).re.length, Core.canSelfClaim(sc, 0)], [true, 'laws', 6, false]);
   }
+  { // D75: the chancellor who got two of the hidden side had no choice: checkmate, or turn it on a president who lied
+    const ng = ai7({ hist: [{ k: 'gov', pres: 1, chanc: 0, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 5, chanc: 0, law: 'F', pc: 3, cc: 2 }, { k: 'talk', by: 4, about: 0, say: 'acc', tone: 'proof', proof: 2 }] });
+    const lied = ai7({ hist: [{ k: 'gov', pres: 1, chanc: 0, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 5, chanc: 0, law: 'F', pc: 1, cc: 2 }, { k: 'talk', by: 4, about: 0, say: 'acc', tone: 'proof', proof: 2 }] });
+    const pz = Core.evidence({ ...ng, hist: ng.hist.slice(0, 3) }, 0).find(x => x.at === 2);
+    eq('D75: two of the hidden side in hand is no proof; the defence has its checkmate, or turns it on the lying president', [pz.hit, Core.debateArgs(ng, 3)[0].id, Core.debateArgs(lied, 3)[0].id, Core.debateArgs(lied, 3)[0].power >= 0.8], [false, 'nochoice', 'turnpres', true]);
+    const dz = view({ level: 'dificil', laws: { L: 1, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 5, chanc: 2, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }] });
+    eq('D75: from the 3rd law on, a liberal votes Nein on a chancellor who sat in two governments that passed hidden-side laws', [Core.decide(dz, () => 0.5), Core.ZONE_DIRTY], [0, 2]);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);
