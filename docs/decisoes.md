@@ -577,3 +577,18 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** numa mesa real, o voto de um influencia o do outro: ninguém vota ao mesmo tempo, e quem confia em alguém tende a segui-lo. A pessoa escolheu a cascata completa, com o voto dela incluído (substitui o "as IAs votam sem ver o voto de ninguém" do D45).
 - **Decisão:** a mesa vota em ordem, a partir de quem senta depois do presidente. Cada IA ouve os votos de quem votou antes (`View.cast`) e pesa cada um pelo quanto confia em quem votou: Ja! de quem ela confia alarga o que ela aceita, Nein! estreita (`CASCADE_W`, 0,15, vezes a confiança 1 − chance de ser do lado escondido; o cético pesa menos, o certinho mais). O fascista vota pelo próprio plano, como antes. Equilíbrio (`BENCH_DIAG=1 node scripts/ai_bench.mjs 300`): liberais 46%, 55%, 57% e 56% (fácil→extremo; antes 49%, 54%, 58% e 58%).
+
+## D50. Sem o chiado de rádio (2026-10-31)
+
+- **Pedido:** tirar o som do rádio.
+- **Decisão:** o chiado de rádio velho do D46 sai. Os outros sons (carimbo, papel, martelo, baque da lei, fanfarra) ficam.
+
+## D63. Os toques esperam a animação (2026-10-31)
+
+- **Pedido:** quando uma animação toca, os botões têm que congelar, senão tudo dá bug. E o chiado de rádio ainda tocava (o D50 não tinha chegado à `main`).
+- **Decisão:** cada efeito sobre a tela (eliminação, investigação, caos, veto, eleição especial, lei voando) congela os toques e as IAs até acabar (`ui.frozen`); só os botões do debate continuam valendo. Com "reduzir movimento", nada se mexe e nada congela. O D50 entrou junto.
+
+## D64. A investigação na tela toda (2026-10-31)
+
+- **Pedido:** a animação do detetive ficou ruim; melhor uma mão tirando o nome do envelope, com a lupa, ocupando a tela toda como a eliminação.
+- **Decisão:** sai o detetive (D58). A tela escurece, um envelope grande abre, uma mão de luva puxa o papel com o nome do investigado e uma lupa dourada passa sobre ele; tudo some em uns 3 s, com os toques congelados (D63). Só o nome aparece: o partido continua em segredo.
