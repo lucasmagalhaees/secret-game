@@ -252,6 +252,13 @@ export default function cases(Core) {
     const u2 = Core.accuse(ug, 0, 3, 'proof', 2, Core.seeded(1)), t2 = u2.hist.at(-1);
     eq('D77: a proof already used against a player is spent: a second accusation cannot use it', [Core.usedProofs(ug, 3).has(2), t2.proof === undefined || t2.hit !== true], [true, true]);
   }
+  { // D80: the person, as president, handed a liberal and a fascist; the chancellor passed the fascist and says it got two
+    const hg = ai7({ hist: [{ k: 'gov', pres: 4, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 0, chanc: 6, law: 'F', drew: ['F', 'F', 'L'], got: ['F', 'L'], cc: 2 }, { k: 'talk', by: 0, about: 6, say: 'acc', tone: 'proof', proof: 1 }] });
+    const d1 = Core.debateArgs(hg, 2), h2 = Core.debateSay(hg, 2, d1[0].id), a2 = Core.debateArgs(h2, 2);
+    eq('D80: no checkmate for the chancellor the accuser handed a liberal; the accuser says what it passed, not "governed with itself"', [d1[0].id !== 'nochoice' || d1[0].power < 0.5, a2[0].id, a2.some(x => x.id === 'press'), a2[0].text.includes('1 liberal'), Core.evidence({ ...hg, hist: hg.hist.slice(0, 2) }, 6, 0)[0].text.startsWith('Eu te passei')], [true, 'myhand', false, true, true]);
+    const inv = view({ level: 'dificil', laws: { L: 1, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 2, chanc: 5, law: 'F', pc: 3, cc: 2 }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'inv', by: 2, target: 5, said: 'L' }] });
+    eq('D80: one who governed with the chancellor when a hidden-side law came out cannot clear it by investigating', Core.decide(inv, () => 0.5), 0);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);
