@@ -826,6 +826,8 @@ export function stamp(text: string, party: Party): void {
 /** An elimination (D38): the screen darkens, the name comes up, ELIMINADO is stamped on it, and a card turns to say
  *  what the rule lets the table know: whether it was the hidden leader. The screen shakes once (an iPhone page cannot
  *  vibrate). Without a name, only the dark. */
+/** A new game closes the elimination screen of the last one: its words belong to that game. */
+export function clearFlash(): void { const f = part('flash'); f.hidden = true; f.innerHTML = ''; }
 export function flash(who = '', wasBoss = false, why = ''): void {
   const f = part('flash');
   // a shot (D45): the muzzle flashes, the screen cracks from where it hit, then the name and the stamp
