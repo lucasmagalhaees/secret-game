@@ -634,3 +634,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** "garantir minha história" não fazia sentido ao lado de dizer o que tirou; o "sou liberal" podia ser um botão flutuante, fora da rolagem, e o botão Mesa perderia o sentido; as falas de um personagem sobre o outro passavam rápido demais e poluíam; na investigação, quando o investigador diz o que viu, aparecer o desenho do lado que ele disse, com uma transição, mesmo que ele minta.
 - **Decisão:** sai o "garantir minha história" (D69) de vez, inclusive das contas das IAs. "📣 Sou liberal" é um botão redondo que flutua sobre o jogo, acima da barra de baixo, enquanto a pessoa pode dizer (uma vez por rodada). Sai o botão Mesa: a barra fica só com Anotações; "Por que votou assim?" e o bloco vão para o fim do caderno de anotações. As falas das IAs não aparecem mais no aviso do pé da tela: ficam no Diário. Quando um investigador diz o que viu, a tela escurece e a carta do lado que ele disse vira, com o desenho do liberal ou do fascista e o aviso "Pode estar mentindo"; os toques esperam (D63).
+
+## D71. Reputação e Desconfiança (2026-10-31)
+
+- **Pedido:** renomear "reputômetro" para "reputação" e "desconfiômetro" para "desconfiança".
+- **Decisão:** os botões e os textos da tela passam a dizer "Reputação" e "Desconfiança". Os nomes guardados (`S.rep`, `S.gauge`) não mudam, para não perder a escolha de quem já jogou.

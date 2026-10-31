@@ -339,6 +339,7 @@ with sync_playwright() as p:
         assert G()['hist'][-1]['k'] == 'bloc' and len(G()['hist'][-1]['with']) == 2
     if pg.locator('#diary.open').count(): pg.click('#diary .diary-close')
     # D67: while an app player presides and chooses, the person asks it right there, in its turn
+    if pg.locator('#drawer').is_visible(): pg.click('#notestoggle')
     kept67 = pg.evaluate('JSON.stringify(window.__APP.S.game)'); think67 = pg.evaluate('window.__APP.ui.think')
     pg.evaluate("(() => { const A = window.__APP, g = A.S.game, me = g.players.findIndex(p => !p.ai), p = g.players.findIndex((x, i) => x.ai && x.alive && i !== me); A.ui.think = 600000; g.pres = p; g.chanc = null; g.phase = 'nominate'; g.hist.push({ k: 'gov', pres: p, chanc: me, law: 'L', pc: 1, cc: 0 }); })()")
     pg.click('[data-act=help]'); pg.click('[data-act=help]')
