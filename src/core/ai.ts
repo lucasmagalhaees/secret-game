@@ -331,6 +331,8 @@ export function believe(v: View, outside = false): Beliefs {
   const ws = (viable.length ? viable : generated).map(roles => {
     let socialLog = 0;
     for (let seat = 0; seat < v.n; seat++) if (!mine(seat)) socialLog += Math.min(3, social[seat].reversals) * Math.log(fasc(roles[seat]) ? 1.3 : 0.85);
+    // D69: an oath on one's own story is a costly signal: worth a little, as long as nothing has broken it
+    for (const e of v.hist) if (e.k === 'swear' && !mine(e.by) && social[e.by].contradictions === 0) socialLog += Math.log(fasc(roles[e.by]) ? 0.85 : 1);
     let logW = socialLog, L = 0, F = 0, knownD: number | null = null;
     const weight = (p: number): void => { logW += Math.log(p); };
     const gone = new Set<number>(), knowsTeam = (j: number): boolean => roles[j] === 'fascista' || (roles[j] === 'hitler' && v.n <= HITLER_KNOWS_UPTO);
