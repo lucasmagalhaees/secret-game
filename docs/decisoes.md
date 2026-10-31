@@ -679,3 +679,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** jogando do lado escondido, o nome dos companheiros aparecia sem o papel e confundia. Em todo lugar que aparecer o nome de um jogador cujo papel verdadeiro a pessoa sabe (é do time dela, ou ela investigou), uma cor ou legenda.
 - **Decisão:** jogando sozinho com a IA, todo nome de jogador cujo lado a pessoa sabe de certeza aparece na cor do lado, com uma etiqueta pequena ("Comunista", "Stalin", "🔍 Liberal"): nos cartões da vez, nos pedidos, no debate, na votação, nas telas de efeito e nas listas.
+
+## D79. O "KD" de cada um, e o papel nos lugares que faltavam (2026-10-31)
+
+- **Pedido:** ainda havia lugares sem o papel conhecido ao lado do nome; e, do lado do nome, um "KD" como no Call of Duty: quantas leis fascistas cada um aprovou como presidente e como chanceler.
+- **Decisão:** a etiqueta do D78 passa também para a lista de jogadores, a faixa da mesa, o caderno, os botões de escolher jogador (chanceler, investigar, eliminar, eleição especial), o resumo e o bloco. Ao lado do nome, nesses mesmos lugares, `1P·0C` na cor do lado escondido: leis fascistas (comunistas) aprovadas como presidente e como chanceler, contadas só do que a mesa toda viu; some enquanto for zero.

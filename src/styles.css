@@ -1089,3 +1089,6 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .kn.F{color:var(--fas)}.kn.L{color:var(--lib)}
 .kn-tag{font-style:normal;font:800 9px/1 var(--display);text-transform:uppercase;letter-spacing:.06em;margin-left:4px;padding:2px 4px;border:1.5px solid currentColor;border-radius:3px;vertical-align:2px}
 .ballot .kn,.flash .kn,.claim-fx .kn,.debate .kn{filter:brightness(1.4)}
+
+/* D79: a seat's record, fascist laws as president·chancellor */
+.kd{font-style:normal;font-size:.68em;font-weight:800;margin-left:4px;padding:0 3px;border:1px solid var(--fas, #c4381f);color:var(--fas, #c4381f);border-radius:3px;white-space:nowrap;vertical-align:middle}
