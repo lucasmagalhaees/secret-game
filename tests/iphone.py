@@ -62,7 +62,7 @@ try:
         assert 'PRIVATE_REASON' not in page.inner_text('#diary'), 'a private notebook reason is never a public transcript'
         shots = ROOT / 'tests/shots'; shots.mkdir(exist_ok=True)
         page.screenshot(path=str(shots / f'iphone-diary-{engine}.png'))
-        page.click('#diarytoggle'); page.click('#notestoggle')
+        page.click('#diary .diary-close'); page.click('#notestoggle')
         page.screenshot(path=str(shots / f'iphone-notes-{engine}.png'))
         # Make the ending concrete: the same characters appear in the headline and the decisive event.
         page.evaluate('''() => { const g=window.__APP.S.game;

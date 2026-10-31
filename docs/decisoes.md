@@ -610,3 +610,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
   - **Combinar a história:** o aliado da IA já confirma a versão do presidente aliado (D51).
   - **Blefe de investigação:** se a pessoa diz que investigou e viu o lado escondido, uma IA liberal que tem quase certeza do contrário diz "Duvido", o que é uma acusação e abre o debate.
   O "Eu sou liberal" saiu das anotações e foi para este painel.
+
+## D67. Pedir na hora certa, e só dois botões embaixo (2026-10-31)
+
+- **Pedido:** com três botões, a barra de baixo cortou o Diário. Os pedidos a quem preside deviam aparecer na hora: quando o presidente da IA vai indicar, uma janelinha para pedir a indicação; tirar o botão do Diário; ver o que faz sentido ficar no painel Mesa.
+- **Decisão:** a barra fica com Anotações e Mesa; o Diário abre pela linha da última fala, logo acima. Quando uma IA preside e está escolhendo o chanceler, o cartão dela mostra "Peça antes que X escolha": "Me indica" e "Não indicar" com os nomes; quando ela vai investigar, "Sugira quem investigar". Ela espera um pouco para dar tempo (4 s no normal, 6 s na lenta, 2,5 s na rápida) enquanto a pessoa não pediu nada desde o último governo. O pedir voto continua na própria votação. No painel Mesa ficam só as coisas que não têm hora: dizer que é liberal, jurar pela mão, perguntar por que alguém votou assim e o bloco.
