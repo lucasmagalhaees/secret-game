@@ -16,7 +16,7 @@ import { earned, kept } from './history';
 /* What the last paint showed, so that only what just changed moves: the phase card slides in when the phase changes,
    a secret flips in when it is opened, and a law stamps onto the board when it is enacted. A tap that only picks a
    card repaints without moving anything. */
-let seenPhase = '', seenOpen = '', seenLaws = { L: 0, F: 0 }, seenTracker = 0, seenHist = 0, seenDead = new Set<string>(), entering = false, flipping = false;
+let seenPres = -1, seenChanc = -1, seenSeatsOf = '', seenPhase = '', seenOpen = '', seenLaws = { L: 0, F: 0 }, seenTracker = 0, seenHist = 0, seenDead = new Set<string>(), entering = false, flipping = false;
 
 export function render(): void {
   const view = part('view'), active = document.activeElement;
@@ -577,10 +577,16 @@ function vSeats(g: Game): string {
   if (g.phase === 'reveal') return '';
   const kit = noteKit(g), me = solo(g), live = S.gauge && me >= 0 ? new Map(liveSuspicion(g, me).map(x => [x.seat, x.f])) : null;
   const sash = sashOf(g);
+  // D49: the president always wears a sash (gold in a special election); the chancellor, once elected, wears a medal.
+  // Each pops in when it changes hands in this game, not when a page is reopened.
+  const key = g.players.map(p => p.name).join('|'), same = key === seenSeatsOf;
+  const chanc = g.chanc !== null && g.chanc !== undefined && g.phase !== 'nominate' && g.phase !== 'vote' ? g.chanc : -1;
+  const newPres = same && g.pres !== seenPres, newChanc = same && chanc >= 0 && chanc !== seenChanc;
+  seenSeatsOf = key; seenPres = g.pres; seenChanc = chanc;
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
     const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}${S.rep && p.alive ? (r => `<i class="rep r${r}" title="Reputação na mesa" aria-label="Reputação ${r} de 3">${'★'.repeat(r)}${'☆'.repeat(3 - r)}</i>`)(Core.reputation(g, i)) : ''}`;
-    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === sash ? ' sash' : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}</li>`;
+    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === g.pres ? ` pres-sash${i === sash ? ' sash' : ''}${newPres ? ' in' : ''}` : ''}${i === chanc ? ` medal${newChanc ? ' in' : ''}` : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${esc(p.name)}${tags}</button>` : `${esc(p.name)}${tags}`}</li>`;
   }).join('')}</ul>`;
 }
 /** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */

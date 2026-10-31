@@ -552,7 +552,7 @@ with sync_playwright() as p:
     # the enacted law flies to its slot and lands with a thud
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'nominate'; delete g.winner; g.players.forEach(p => { p.alive = true; }); g.laws.F += 1; g.hist.push({ k: 'chaos', law: 'F' }, { k: 'veto', pres: 0, chanc: 1 }, { k: 'special', by: 0, target: g.pres }); (document.querySelector('[data-act=help]') || document.querySelector('[data-act=endtab]')).click(); }""")
     assert mp.locator('.fxl.chaos').count() == 1 and mp.locator('.fxl.veto-fx .tear').count() == 2 and mp.locator('.fxl.ribbon').count() == 1 and mp.locator('.fly .law').count() == 1
-    assert mp.evaluate("getComputedStyle(document.querySelector('.fxl')).pointerEvents") == 'none' and mp.locator('#seats .seat.sash').count() == 1
+    assert mp.evaluate("getComputedStyle(document.querySelector('.fxl')).pointerEvents") == 'none' and mp.locator('#seats .seat.pres-sash.sash').count() == 1
     mp.wait_for_selector('#board .slot.lit.thud', state='attached', timeout=3000)
     mp.screenshot(path=str(SHOTS / f'fx-{THEME}.png'))
     cov.stop(mp, f'e2e-motion-{THEME}')
