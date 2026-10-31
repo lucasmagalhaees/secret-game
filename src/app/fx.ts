@@ -63,30 +63,6 @@ export function thud(): void {
   tone(a, 70, t, 0.2, 'sine', 0.45); hiss(a, t, 0.06, 0.3, 400);
 }
 
-/* An old radio hissing very low under the game (D46), made on the spot. It only starts after a tap (browsers keep sound
-   off until then), fades out during the vote for suspense, and stops with "Som e vibração" off or outside a game. */
-let touched = false, bed: { src: AudioBufferSourceNode; gain: GainNode } | null = null, want = false, hush = false;
-const BED_VOL = 0.012;
-/** A tap happened: sound may start now. */
-export function unlockAudio(): void { if (touched) return; touched = true; ambient(want, hush); }
-export function ambient(on: boolean, dim: boolean): void {
-  want = on; hush = dim;
-  if (!on || S.quiet || !touched) {
-    if (bed) { const b = bed; bed = null; try { b.gain.gain.setTargetAtTime(0, b.src.context.currentTime, 0.2); setTimeout(() => b.src.stop(), 800); } catch (e) { /* already stopped */ } }
-    return;
-  }
-  const a = audio(); if (!a) return;
-  if (!bed) {
-    const n = a.sampleRate * 2, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(i / 3000));
-    const src = a.createBufferSource(), f = a.createBiquadFilter(), gain = a.createGain();
-    src.buffer = buf; src.loop = true; f.type = 'bandpass'; f.frequency.value = 2200; f.Q.value = 0.7; gain.gain.value = 0;
-    src.connect(f).connect(gain).connect(a.destination); src.start();
-    bed = { src, gain };
-  }
-  bed.gain.gain.setTargetAtTime(dim ? 0 : BED_VOL, a.currentTime, dim ? 0.4 : 1.2);
-}
-
 /** The table's reactions to a claim, rising from the foot of the screen (D31): 👍 who agrees, 👎 who does not, 🤷 who
  *  is unsure. Nothing rises when the device asks for less motion. */
 export function reactions(answers: number[]): void {

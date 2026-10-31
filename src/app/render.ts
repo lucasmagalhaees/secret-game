@@ -3,7 +3,7 @@ import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, R
 import type { EndTab } from './state';
 import { animalOf, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
-import { ambient, thud } from './fx';
+import { thud } from './fx';
 import { S, ui } from './state';
 import { builtFrom, canUpdate } from './update';
 import { earned, kept } from './history';
@@ -51,7 +51,6 @@ function afterPaint(g: Game | null): void {
   const root = document.documentElement;
   // rising tension: from the danger zone on, the border of the screen glows red, more with each fascist law
   if (g && g.phase !== 'over' && g.laws.F >= Core.HITLER_ZONE) root.dataset.tension = String(Math.min(g.laws.F, 5)); else delete root.dataset.tension;
-  ambient(!!g && g.phase !== 'over' && g.phase !== 'reveal', g?.phase === 'vote');
   const same = !!g && !!fxGame && fxGame.players.length === g.players.length && fxGame.players.every((p, i) => p.name === g.players[i].name) && g.hist.length >= fxHist && fxGame.pack === g.pack;
   if (g && same) {
     for (const e of g.hist.slice(fxHist)) {

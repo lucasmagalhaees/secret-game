@@ -1,7 +1,7 @@
 import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
-import { buzz, later, reactions, sound, unlockAudio } from './fx';
+import { buzz, later, reactions, sound } from './fx';
 import { ballot, beat, blurField, bossWin, debateSheet, defenseResult, confetti, decree, clearFlash, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
@@ -227,7 +227,6 @@ function askOrientation(): void {
 
 export function initEvents(): void {
   document.addEventListener('click', e => {
-    unlockAudio();                                                         // the radio hiss may start only after a tap (D46)
     // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
     const tgt = e.target as HTMLElement;
     if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote], #court, .court-back, #debate')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
