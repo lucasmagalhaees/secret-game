@@ -39,6 +39,7 @@ with sync_playwright() as p:
     H = pg.locator('[data-act=help]').first; H.dispatch_event('click'); H.dispatch_event('click')
     pg.locator('#phase [data-act=myvote]').first.click()
     pg.wait_for_selector('#sway', timeout=8000); pg.screenshot(path=str(ROOT / 'tests/shots/social-sway.png'))
+    assert pg.locator('#sway [data-act=swayskip]').count() == 1, 'the window can be skipped (D74)'
     pg.locator('#ballot .b-seat.tap').first.dispatch_event('click'); pg.wait_for_selector('#swayopts [data-act=swaysay]'); pg.screenshot(path=str(ROOT / 'tests/shots/social-sway-reasons.png'))
     pg.locator('#swayopts [data-act=swaysay]').first.dispatch_event('click'); pg.wait_for_selector('.sway-res')
     pg.wait_for_function("!document.getElementById('ballot')", timeout=8000)

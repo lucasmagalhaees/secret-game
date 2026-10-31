@@ -653,3 +653,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
   - **Sugerir quem eliminar:** quando uma IA vai eliminar, o cartão dela mostra cada candidato com o motivo mais forte da ata e a força (`killReasons`); a sugestão pesa pela prova e pela confiança. A IA espera uns segundos para dar tempo (D67).
   - **Sou liberal com prova:** o botão do rodapé abre "Provar que você é liberal", com o que a ata tem a favor (investigação que disse liberal, leis liberais aprovadas, lei do lado escondido jogada fora, gente que confia, ou só a palavra), cada um com força. Cada IA diz se acredita, não sabe ou duvida, pela prova, pelo que já achava e pelo lado dela; as reações sobem na tela e ficam no Diário.
   - Um teste novo, `tests/social.py`, joga as três coisas com movimento ligado.
+
+## D74. Envelope e carta numa peça só, pular a virada, carta do líder rasgada (2026-10-31)
+
+- **Pedido:** a investigação emendar direto: o envelope com o nome de quem foi investigado, e dele sai a carta, sem pausa; um botão para pular a janela de virar voto; ao eliminar o Hitler (ou o Stalin), a carta dele rasgada antes da animação que já existe.
+- **Decisão:** numa mesa com IA, a investigação toca uma vez só, quando o investigador conta o que viu: a tela escurece, o envelope tem o nome do investigado, a aba abre, a carta sobe e vira para o lado que ele disse (ou fica com "?" se ficou calado), com "Fulano diz que é ... Pode estar mentindo". Passando o celular, sem IA, ninguém conta e o envelope antigo continua (D64). A janela "Virar um voto" ganhou "Pular ›", que conta os votos na hora. Eliminado o líder escondido, depois do tiro a carta dele aparece e se rasga ao meio antes do amanhecer liberal.

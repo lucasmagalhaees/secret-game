@@ -32,11 +32,13 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   render();
   if (before && changed) {
     const power = next.hist.slice(before.hist.length).find(e => e.k === 'inv' || e.k === 'exec');
-    if (power && power.k === 'inv') powerEffect(next, power.target, power.k === 'inv' ? 'investigate' : 'execute');
+    // D74: at a table with app players the investigation plays once, when the investigator tells what it saw (the
+    // envelope and the card together); passing the phone around, nobody tells, so the envelope plays now
+    if (power && power.k === 'inv' && !Core.hasAi(next)) powerEffect(next, power.target, 'investigate');
     // D70: what an investigator told the table turns its card over on the screen
-    const told = next.hist.findIndex((e, k) => k < before.hist.length && e.k === 'inv' && (e.said === 'L' || e.said === 'F') && (before.hist[k] as { said?: string }).said === undefined);
+    const told = next.hist.findIndex((e, k) => k < before.hist.length && e.k === 'inv' && (e.said === 'L' || e.said === 'F' || e.said === '-') && (before.hist[k] as { said?: string }).said === undefined);
     const te = told >= 0 ? next.hist[told] : undefined;
-    if (te && te.k === 'inv' && (te.said === 'L' || te.said === 'F')) { const t = te, s = te.said; freeze(frozenFor() + 2800); setTimeout(() => claimFx(next, t.by, t.target, s), Math.max(0, frozenFor())); }
+    if (te && te.k === 'inv' && te.said) { const t = te, s = te.said; freeze(frozenFor() + 3600); setTimeout(() => claimFx(next, t.by, t.target, s), Math.max(0, frozenFor())); }
     // D66: an app player doubted what the person said: the debate opens, as for any accusation
     const me = next.players.findIndex(p => !p.ai), doubt = next.players.filter(p => !p.ai).length === 1 ? next.hist.findIndex((e, k) => k >= before.hist.length && e.k === 'talk' && e.say === 'acc' && e.about === me && e.by !== me) : -1;
     if (doubt >= 0 && ui.debate !== doubt) setTimeout(() => openDebate(doubt), 60);
@@ -330,6 +332,7 @@ export function initEvents(): void {
     else if (a === 'tself') { ui.proof = !ui.proof; if (ui.proof) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
     else if (a === 'tproof') { const me = g.players.findIndex(p => !p.ai), next = Core.selfClaimProof(g, me, d.v || ''); ui.proof = false; const e = next.hist[next.hist.length - 1]; const re = e && e.k === 'self' ? e.re || [] : []; play(next, `Você disse que é liberal: ${re.filter(r => r[1] === 0).length} acreditam, ${re.filter(r => r[1] === 2).length} duvidam.`); reactions(re.map(r => r[1])); }
     else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
+    else if (a === 'swayskip' && swaying) swayEnd();
     else if (a === 'swayto' && swaying && !swaying.done) { const s = swaying; s.to = i; const me = s.g.players.findIndex(p => !p.ai); swayReasonsShow(s.g, i, Core.swayReasons(s.g, me, i, s.cast)); clearTimeout(s.timer); s.timer = setTimeout(swayEnd, SWAY_MS); }
     else if (a === 'swaysay' && swaying && !swaying.done && swaying.to !== null) { const s = swaying, me = s.g.players.findIndex(p => !p.ai), r = Core.sway(s.g, me, s.to as number, s.cast, d.v || '', rand); s.cast = r.cast; s.said = r.said; s.done = true; swayResult(s.g, s.to as number, r.flipped); clearTimeout(s.timer); s.timer = setTimeout(swayEnd, 1600); }
     else if (a === 'tkill') { const me = g.players.findIndex(p => !p.ai); play(Core.askTable(g, me, 'kill', i), `Você sugeriu eliminar ${g.players[i].name}.`); }
