@@ -1082,7 +1082,7 @@ export const canSwear = (g: Game, me: number): number => {
 export function swear(g: Game, me: number): Game {
   const at = canSwear(g, me);
   if (at < 0) return g;
-  return { ...g, hist: [...g.hist, { k: 'swear', by: me, at }], log: [...g.log, `${g.players[me].name}: "Juro pela minha mão nesse governo. Se eu estiver mentindo, podem me cobrar."`] };
+  return { ...g, hist: [...g.hist, { k: 'swear', by: me, at }], log: [...g.log, `${g.players[me].name}: "Garanto o que eu disse sobre as cartas desse governo. Se eu estiver mentindo, podem me cobrar."`] };
 }
 export const BLOC_ROUNDS = 3;
 export const blocOf = (g: Game, me: number): Extract<Event, { k: 'bloc' }> | null => {
