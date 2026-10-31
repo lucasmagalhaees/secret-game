@@ -825,12 +825,12 @@ body:has(.speech-peek){--dock:116px}
 @keyframes tearL{to{transform:translate(-40px,60px) rotate(-35deg);opacity:0}}
 @keyframes tearR{to{transform:translate(40px,70px) rotate(30deg);opacity:0}}
 /* 5. special election: a ribbon crosses the screen; the chosen president wears a sash for that round */
-.ribbon>div{width:140vw;padding:10px 0;text-align:center;background:var(--accent-bg,#c4381f);color:#fff;border-block:4px solid #15110e;transform:rotate(-8deg);animation:ribbon 1.6s cubic-bezier(.2,.8,.4,1) both}
-.ribbon b{display:block;font:900 26px/1.1 var(--display);text-transform:uppercase;letter-spacing:.1em}
+.ribbon>div{width:100%;box-sizing:border-box;padding:10px 0;text-align:center;background:var(--accent-bg,#c4381f);color:#fff;border-block:4px solid #15110e;transform:rotate(-6deg);animation:ribbon 1.6s cubic-bezier(.2,.8,.4,1) both}
+.ribbon b{display:block;font:900 clamp(18px,6.4vw,26px)/1.1 var(--display);text-transform:uppercase;letter-spacing:.1em}
 .ribbon span{font:700 18px/1.2 var(--display)}
-@keyframes ribbon{0%{transform:translateX(-120%) rotate(-8deg)}30%,70%{transform:translateX(0) rotate(-8deg)}100%{transform:translateX(120%) rotate(-8deg)}}
-.seat.pres-sash{position:relative;overflow:hidden}
-.seat.pres-sash::before{content:"";position:absolute;inset:-20% auto -20% 38%;width:14%;background:var(--fas);transform:skewX(-28deg);opacity:.85;pointer-events:none;border-inline:1.5px solid #15110e}
+@keyframes ribbon{0%{transform:translateX(-110%) rotate(-6deg)}30%,70%{transform:translateX(0) rotate(-6deg)}100%{transform:translateX(110%) rotate(-6deg)}}
+.seat.pres-sash{position:relative;overflow:hidden;isolation:isolate}
+.seat.pres-sash::before{content:"";position:absolute;z-index:-1;inset:-20% auto -20% 38%;width:14%;background:var(--fas);transform:skewX(-28deg);opacity:.85;pointer-events:none;border-inline:1.5px solid #15110e}
 .seat.pres-sash.sash::before{background:#d9a520}
 .seat.pres-sash.in::before{animation:sashIn .5s cubic-bezier(.2,.8,.3,1) both}
 @keyframes sashIn{0%{translate:-260% 0;opacity:0}100%{translate:0;opacity:.85}}

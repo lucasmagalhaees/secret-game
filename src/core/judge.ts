@@ -173,7 +173,7 @@ export function denounce(g: Game, by: number, about: number, trust: boolean, ran
 /** What the record holds against a seat (D39), for an accusation with a proof: only what the whole table saw. A
  *  government it sat in whose story did not add up, or that passed a law of the hidden side, holds ("hit"); a Ja!
  *  vote for such a government is a weaker hint and does not hold by itself. Newest first. */
-export interface Proof { at: number; kind: 'clash' | 'law' | 'vote'; hit: boolean; title: string; text: string; pc?: number; cc?: number; law?: Law }
+export interface Proof { at: number; kind: 'clash' | 'law' | 'vote' | 'inv' | 'exec' | 'count'; hit: boolean; title: string; text: string; pc?: number; cc?: number; law?: Law }
 export function evidence(g: Game, about: number): Proof[] {
   const out: Proof[] = [], f = words(g.pack).f, nm = (i: number): string => g.players[i]?.name ?? '?';
   let n = 0;
@@ -189,7 +189,15 @@ export function evidence(g: Game, about: number): Proof[] {
       const next = g.hist[at + 1];
       if (next && next.k === 'gov' && next.law === 'F') out.push({ at, kind: 'vote', hit: false, title: `Votação · ${n + 1}º governo`, text: `Votou ${words(g.pack, g.region).ja} em ${nm(e.pres)} + ${nm(e.chanc)}, e saiu lei ${f}` });
     }
+    // D54: what an investigation was said to show, and who someone eliminated. Both are words or choices the table saw,
+    // not facts: the investigator may lie, the one who eliminated may have guessed. They back an accusation, weakly.
+    if (e.k === 'inv' && e.target === about && e.said === 'F') out.push({ at, kind: 'inv', hit: false, title: `Investigação · ${nm(e.by)}`, text: `${nm(e.by)} investigou e disse que é ${f}` });
+    if (e.k === 'exec' && e.by === about) out.push({ at, kind: 'exec', hit: false, title: `Eliminação · ${n}º governo`, text: `Eliminou ${nm(e.target)}, que não era o ${words(g.pack).boss}` });
   });
+  // D54: how many laws of the hidden side came out of the governments it sat in; two or more hold
+  const govF = g.hist.map((e, i) => (e.k === 'gov' && e.law === 'F' && (e.pres === about || e.chanc === about) ? i : -1)).filter(i => i >= 0);
+  if (govF.length >= 2) out.push({ at: 100000 + govF[govF.length - 1], kind: 'count', hit: true, title: 'Na conta', text: `Esteve em ${govF.length} governos que aprovaram lei ${f}` });
+  out.sort((a, b) => (a.at % 100000) - (b.at % 100000) || a.at - b.at);
   return out.reverse();
 }
 /** An accusation with a tone and maybe a proof (D39): the claim is made as usual, and it carries how firmly it was made

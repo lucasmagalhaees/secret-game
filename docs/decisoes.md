@@ -532,3 +532,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** mostrar a justificativa de quem eliminou.
 - **Decisão:** a IA que elimina diz o porquê, com o que a mesa toda viu (`execReason`): a prova mais forte da ata, uma acusação que ela já tinha feito, ou que era de quem mais desconfiava. A frase entra no registro e aparece na tela da eliminação, embaixo do carimbo. O fascista dá o motivo do mesmo jeito: é público, não o que ela pensa de verdade.
+
+## D54. Acusar com investigação, eliminação e a conta das leis (2026-10-31)
+
+- **Pedido:** poder acusar com base no resultado de uma investigação, numa eliminação e em quantas leis do lado escondido os governos de alguém aprovaram. E a animação da eleição especial estava quebrada.
+- **Decisão:** o tribunal ganha três provas novas. "X investigou e disse que é {f}" e "Eliminou Y" são palavras e escolhas que a mesa viu, não fatos (o investigador pode mentir), então apoiam a acusação fraco. "Esteve em N governos que aprovaram lei {f}" vale como prova quando N é 2 ou mais. A faixa da eleição especial cabe na tela (antes saía cortada) e a faixa do presidente fica atrás do nome.
