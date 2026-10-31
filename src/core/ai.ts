@@ -93,8 +93,8 @@ export const DECISIVE_SLIP = 0.1;
  *  later: how often a fascist with the choice lets the liberal law through, per level (a burnt fascist is voted down). */
 /** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
  *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
-export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.6, dificil: 0.4, extremo: 0.35 };
-export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.25, dificil: 0.35, extremo: 0.4 };
+export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.5, extremo: 0.5 };
+export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.3, extremo: 0.25 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
 export const ALLY_PICK = 1.5;
