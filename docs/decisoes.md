@@ -516,3 +516,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** o presidente com faixa ficou legal; animação para o chanceler.
 - **Decisão:** na faixa da mesa, o presidente da vez sempre usa uma faixa (dourada na eleição especial), que entra deslizando quando a presidência muda; o chanceler eleito ganha uma medalha com a balança, que cai e quica quando é eleito. Só o que a mesa toda já sabe; nada se mexe com "reduzir movimento" nem ao reabrir a partida.
+
+## D50. Sem o chiado de rádio (2026-10-31)
+
+- **Pedido:** tirar o som do rádio.
+- **Decisão:** o chiado de rádio velho do D46 sai. Os outros sons (carimbo, papel, martelo, baque da lei, fanfarra) ficam.
