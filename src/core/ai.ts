@@ -94,7 +94,7 @@ export const DECISIVE_SLIP = 0.1;
 /** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
  *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
 export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.45, dificil: 0.3, extremo: 0.25 };
-export const EARLY_CLEAN: Record<Level, number> = { facil: 0.3, medio: 0.5, dificil: 0.7, extremo: 0.8 };
+export const EARLY_CLEAN: Record<Level, number> = { facil: 0.25, medio: 0.25, dificil: 0.35, extremo: 0.4 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
 export const ALLY_PICK = 1.5;
