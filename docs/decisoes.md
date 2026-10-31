@@ -557,3 +557,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** uma arma atirando na eliminação; na investigação, a silhueta de um detetive de sobretudo e chapéu, com a lupa, tirando o nome de um envelope.
 - **Decisão:** na eliminação, um revólver entra pela lateral, mira, dispara (clarão), recua e então o vidro trinca e aparece o nome. Na investigação, a silhueta do detetive passa a lupa e um papel com o nome de quem é investigado sai do envelope; o partido continua em segredo. Com "reduzir movimento", nada se mexe.
+
+## D59. O que vem depois do tiro, e o detetive que some (2026-10-31)
+
+- **Pedido:** depois da eliminação, a cena se esvai e fica só se era o Hitler ou não; se era, uma animação dos liberais chegando ao poder; se não, uma transição de que o jogo continua. Na investigação, o detetive à Sherlock Holmes (chapéu, sobretudo, cachimbo, envelope) se esvai no fim.
+- **Decisão:** o nome, o carimbo e a trinca somem e entra só o veredito: "Era o {boss}!" sobre um amanhecer azul com raios e pássaros subindo, "Os liberais chegam ao poder"; ou "Não era o {boss}", com uma faixa que atravessa a tela, "O jogo continua". O detetive ganha cachimbo com fumaça e se esvai no fim. Com "reduzir movimento", nada se mexe: o veredito aparece embaixo do nome.

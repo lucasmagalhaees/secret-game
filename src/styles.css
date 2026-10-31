@@ -671,7 +671,7 @@ body:has(.speech-peek){--dock:116px}
 .law .sym .glyph{font-size:min(38px,9vw)}
 /* elimination (D38): name, stamp, the card that says whether it was the leader; the screen shakes once */
 .flash .exec{position:absolute;inset:0;background:rgba(8,6,4,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center}
-.flash.go:has(.exec){animation:dark-hold 3.7s ease-out both}
+.flash.go:has(.exec){animation:dark-hold 5.4s ease-out both}
 @keyframes dark-hold{0%{opacity:1}90%{opacity:1}100%{opacity:0}}
 .exec-name{font:900 clamp(34px,10vw,56px)/1 var(--display);color:#f3e8d0;letter-spacing:.04em;animation:exec-in .5s .1s both}
 .exec-stamp{font:900 clamp(28px,8vw,44px)/1 var(--display);text-transform:uppercase;color:#d63c2b;border:5px solid #d63c2b;padding:6px 14px;transform:rotate(-8deg);animation:stamp-in .35s .7s both}
@@ -940,7 +940,10 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .slip{position:absolute;left:14px;right:14px;top:40px;z-index:1;background:var(--surface);color:var(--fg);border:3px solid var(--line);padding:8px 10px;text-align:center}
 .slip small{display:block;font:700 11px/1 var(--display);text-transform:uppercase;letter-spacing:.08em}
 .slip b{display:block;font:900 18px/1.2 var(--display);overflow-wrap:anywhere}
-.power-effect.investigate.go .detective{animation:powerNotice 2.6s ease both}
+.power-effect.investigate.go .detective{animation:sleuthFade 3s ease both}
+@keyframes sleuthFade{0%{opacity:0}10%,75%{opacity:1}100%{opacity:0;filter:blur(3px)}}
+.power-effect.investigate.go .puff{animation:puff 1.6s .2s ease-out infinite}
+@keyframes puff{0%{opacity:0;transform:translateY(4px)}40%{opacity:.9}100%{opacity:0;transform:translateY(-10px)}}
 .power-effect.investigate.go .sleuth{animation:sleuthIn .5s ease-out both}
 .power-effect.investigate.go .lens{animation:lensSweep 1.2s .3s ease-in-out both}
 .power-effect.investigate.go .env-flap{animation:flapOpen .35s .6s ease-in both}
@@ -950,3 +953,25 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 @keyframes flapOpen{to{transform:rotateX(180deg);opacity:0}}
 @keyframes slipOut{from{transform:translateY(0)}to{transform:translateY(-96px)}}
 @media (prefers-reduced-motion:reduce){.flash .gun{display:none}.power-effect.investigate.go .detective,.power-effect.investigate.go .sleuth,.power-effect.investigate.go .lens,.power-effect.investigate.go .env-flap{animation:none}.power-effect.investigate.go .slip{animation:none;transform:translateY(-96px)}}
+
+/* D59: after the shot the name and the crack fade away, and only the verdict is left: the hidden leader (the liberals
+   come to power: a blue dawn, birds rising) or not (the game goes on: a band sweeps across) */
+.flash .exec,.flash .crack,.flash .gun{animation-fill-mode:both}
+.flash.go .exec{animation:fadeAway .5s 2.7s ease-in forwards}
+.flash.go .crack{animation:fadeAway .5s 2.7s ease-in forwards}
+@keyframes fadeAway{to{opacity:0;transform:scale(.97)}}
+.fate{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;opacity:0;animation:fateIn .5s 3.1s ease-out forwards;overflow:hidden}
+.fate>span{position:relative;padding:0 16px;font:800 clamp(16px,4.6vw,24px)/1.2 var(--display);text-transform:uppercase;letter-spacing:.08em;color:#f3e8d0}
+.fate .exec-card{animation:none;position:relative;z-index:1}
+@keyframes fateIn{from{opacity:0}to{opacity:1}}
+.fate.boss{background:radial-gradient(circle at 50% 110%,#5aa0e0 0,#2b5d8a 45%,#0e2238 100%)}
+.fate.boss .rays{position:absolute;left:50%;bottom:-40%;width:180vmax;height:180vmax;transform:translateX(-50%);background:repeating-conic-gradient(rgba(255,255,255,.14) 0 6deg,transparent 6deg 14deg);border-radius:50%;animation:raysTurn 6s linear infinite}
+@keyframes raysTurn{to{transform:translateX(-50%) rotate(40deg)}}
+.fate.boss .birds{position:absolute;inset:0}
+.fate.boss .birds i{position:absolute;bottom:-10%;left:calc(8% + var(--n) * 13%);width:28px;height:14px;border-top:4px solid #f3e8d0;border-radius:50% 50% 0 0;animation:birdUp 2.2s calc(3.2s + var(--n) * .12s) ease-out both}
+.fate.boss .birds i:nth-child(1){--n:0}.fate.boss .birds i:nth-child(2){--n:1}.fate.boss .birds i:nth-child(3){--n:2}.fate.boss .birds i:nth-child(4){--n:3}.fate.boss .birds i:nth-child(5){--n:4}.fate.boss .birds i:nth-child(6){--n:5}.fate.boss .birds i:nth-child(7){--n:6}
+@keyframes birdUp{from{transform:translateY(0) scale(.6);opacity:0}20%{opacity:1}to{transform:translateY(-110vh) scale(1.2);opacity:0}}
+.fate.on{background:rgba(8,6,4,.94)}
+.fate.on .sweep{position:absolute;top:44%;left:0;width:100%;height:120px;background:#f3e8d0;transform:translateX(-101%) skewX(-12deg);animation:sweep 1.6s 3.3s cubic-bezier(.6,0,.3,1) both;opacity:.1}
+@keyframes sweep{0%{transform:translateX(-101%) skewX(-12deg)}100%{transform:translateX(101%) skewX(-12deg)}}
+@media (prefers-reduced-motion:reduce){.flash.go .exec,.flash.go .crack{animation:none}.fate{animation:none;opacity:1;inset:auto 0 6% 0;background:none!important}.fate.boss .rays,.fate.boss .birds,.fate.on .sweep{display:none}}
