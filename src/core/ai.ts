@@ -736,7 +736,8 @@ function fascistTalk(v: View, rand: () => number, isAlly: (i: number) => boolean
     if (isAlly(e.pres) && e.pres !== v.me) {
       const backed = e.pc !== undefined && e.pc >= 0 ? Math.max(0, e.pc - 1) : -1;
       if (backed >= 0 && v.options.includes(backed)) { why(`O presidente é aliado e disse que tirou ${nmF(e.pc as number, 3)}: confirmou a história dele.`); return backed; }
-      if (story > m && v.known[e.pres] === 'hitler') { why('O presidente é o líder: não pôs a culpa nele, disse a verdade e ficou com a culpa.'); return m; }
+      // the president said nothing (forgot or kept quiet): the chancellor still does not burn it
+      if (story > m) { why(v.known[e.pres] === 'hitler' ? 'O presidente é o líder e não disse nada: não pôs a culpa nele, disse a verdade e ficou com a culpa.' : 'O presidente é aliado e não disse nada: não pôs a culpa nele, disse a verdade e ficou com a culpa.'); return m; }
     }
     const lie = story !== m && rand() < act;
     why(story === m ? `Disse a verdade (${nmF(m, 2)}).` : lie ? `Recebeu ${nmF(m, 2)} e aprovou a {f}. Mentiu: ${nmF(story, 2)}, para parecer que não teve escolha.` : `A verdade a entrega, mas não mentiu desta vez (o nível mente ${pc(act)} das vezes).`);
