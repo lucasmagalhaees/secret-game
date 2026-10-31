@@ -285,8 +285,9 @@ function vDefense(g: Game): string {
   const me = solo(g), at = me >= 0 && g.players[me].alive ? Core.pendingAccusation(g, me) : -1;
   if (at < 0 || document.getElementById('contra')) return '';
   const t = g.hist[at] as Extract<Game['hist'][number], { k: 'talk' }>;
+  const plays = myPlays(g, me, t.proof !== undefined && t.proof !== null && t.proof < 100000 ? t.proof : -1);
   const opts: [string, string][] = [['deck', 'O baralho veio assim'], ['test', 'Foi teste do chanceler'], ['lie', `${g.players[t.by].name} está mentindo`], ['quiet', 'Ficar calado']];
-  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p></section>`;
+  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p>${plays}</section>`;
 }
 const CLAIM: Record<string, [string, string[]]> = {
   pc: ['Você foi presidente. O que diz que tirou?', ['3 liberais', '1 {f} e 2 liberais', '2 {fs} e 1 liberal', '3 {fs}']],
@@ -904,13 +905,34 @@ export function contradiction(g: Game, at: number): void {
   if (!accused) { el.addEventListener('click', close); setTimeout(close, 9000); }
 }
 /** The answers to an accusation (D42), only those the record could back, each saying when it holds. */
+/** D55: the person's own plays, to defend with: the play the accusation points at (what it got, what it passed or
+ *  enacted, what it said it got) and the plays that speak for it (liberal laws it made, investigations it told). Only
+ *  the accused sees this on its own screen: the hands are its own. */
+function myPlays(g: Game, me: number, at: number): string {
+  const mini = (ls?: Law[]): string => (ls || []).map(l => `<i class="mini ${l}">${l === 'L' ? 'L' : W.F[0]}</i>`).join('');
+  const said = (n: number | undefined, of: number): string => n === undefined ? 'não disse nada' : n < 0 ? 'ficou calado' : `disse ${n} ${n === 1 ? W.f : W.fs} de ${of}`;
+  const gov = (e: Game['hist'][number], i: number): string => {
+    if (e.k !== 'gov' && e.k !== 'veto') return '';
+    const pres = e.pres === me, other = name(g, pres ? e.chanc : e.pres), out = e.k === 'veto' ? 'veto' : e.law === 'L' ? 'saiu liberal' : `saiu ${W.f}`;
+    const got = pres ? `tirou ${mini(e.drew)} · passou ${mini(e.got)}` : `recebeu ${mini(e.got)}`;
+    return `<li${i === at ? ' class="hit"' : ''}><b>${pres ? 'Presidente' : 'Chanceler'} com ${other}</b> · ${out}<small>Você ${got} · ${said(pres ? e.pc : e.cc, pres ? 3 : 2)}</small></li>`;
+  };
+  const target = at >= 0 ? g.hist[at] : undefined, rows: string[] = [];
+  if (target && (target.k === 'gov' || target.k === 'veto') && (target.pres === me || target.chanc === me)) rows.push(gov(target, at));
+  g.hist.forEach((e, i) => {
+    if (i === at || rows.length >= 4) return;
+    if ((e.k === 'gov' && e.law === 'L') && (e.pres === me || e.chanc === me)) rows.push(gov(e, i));
+    if (e.k === 'inv' && e.by === me) rows.push(`<li><b>Investigou ${name(g, e.target)}</b><small>Viu ${e.party === 'L' ? 'liberal' : W.f} · ${e.said === undefined ? 'não disse nada' : e.said === '-' ? 'ficou calado' : `disse ${e.said === 'L' ? 'liberal' : W.f}`}</small></li>`);
+  });
+  return rows.length ? `<div class="myplays"><b>Suas jogadas</b><ol>${rows.join('')}</ol></div>` : '';
+}
 function defenseBox(g: Game, t: Extract<Game['hist'][number], { k: 'talk' }>, p: ReturnType<typeof Core.evidence>[number] | undefined): string {
   const me = t.about, gov = p ? g.hist[p.at] : undefined, isGov = !!gov && (gov.k === 'gov' || gov.k === 'veto');
   const opts: [string, string, string][] = [];
   if (isGov && gov.k === 'gov' && gov.law === 'F') opts.push(['deck', 'O baralho veio assim', 'Cola se as histórias do governo batem.']);
   if (isGov && gov.pres === me) opts.push(['test', 'Foi teste do chanceler', 'Cola se você passou uma de cada e saiu liberal.']);
   opts.push(['lie', `${g.players[t.by].name} está mentindo`, 'Cola se a prova dele não se sustenta na ata.'], ['quiet', 'Ficar calado', 'Nunca cola, mas não piora.']);
-  return `<div class="defend" id="defend"><b>Sua resposta</b>${opts.map(([k, l, h]) => `<button data-act="defend" data-v="${k}"><span>${esc(l)}</span><small>${h}</small></button>`).join('')}</div>`;
+  return `${myPlays(g, me, p && p.at < 100000 ? p.at : -1)}<div class="defend" id="defend"><b>Sua resposta</b>${opts.map(([k, l, h]) => `<button data-act="defend" data-v="${k}"><span>${esc(l)}</span><small>${h}</small></button>`).join('')}</div>`;
 }
 /** How the answer went, on the same screen (D42), then a button to go back to the game. */
 export function defenseResult(ok: boolean, kind: string): void {

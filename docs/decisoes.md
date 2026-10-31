@@ -537,3 +537,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** poder acusar com base no resultado de uma investigação, numa eliminação e em quantas leis do lado escondido os governos de alguém aprovaram. E a animação da eleição especial estava quebrada.
 - **Decisão:** o tribunal ganha três provas novas. "X investigou e disse que é {f}" e "Eliminou Y" são palavras e escolhas que a mesa viu, não fatos (o investigador pode mentir), então apoiam a acusação fraco. "Esteve em N governos que aprovaram lei {f}" vale como prova quando N é 2 ou mais. A faixa da eleição especial cabe na tela (antes saía cortada) e a faixa do presidente fica atrás do nome.
+
+## D55. Suas jogadas na hora de se defender (2026-10-31)
+
+- **Pedido:** ao se defender, ver as próprias jogadas que servem de defesa: qual jogada está sendo acusada, se era presidente ou chanceler, que cartas recebeu, o que passou ou aprovou e o que disse que recebeu.
+- **Decisão:** a tela da acusação mostra "Suas jogadas" acima das respostas: primeiro a jogada apontada pela prova (destacada), depois as que falam a favor (governos que aprovaram lei liberal, investigações e o que disse delas), até 4. As mãos são da própria pessoa e só aparecem na tela dela, jogando sozinha com a IA.
