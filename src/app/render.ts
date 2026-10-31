@@ -735,7 +735,7 @@ export const PERSONA_W: Record<Persona, [string, string]> = {
 function vCourt(g: Game): string {
   const t = ui.court, me = solo(g);
   if (t === null || t === undefined || me < 0 || !Core.canDenounce(g, me, t)) return '';
-  const ev = Core.evidence(g, t), pick = ui.courtProof ?? null, tone = ui.courtTone || (pick !== null ? 'proof' : 'firm');
+  const ev = Core.evidence(g, t, me), pick = ui.courtProof ?? null, tone = ui.courtTone || (pick !== null ? 'proof' : 'firm');
   const cards = (f: number, of: number): string => Array.from({ length: of }, (_, k) => `<i class="lc ${k < of - f ? 'L' : 'F'}"></i>`).join('');
   const spent = Core.usedProofs(g, t);
   const item = (x: ReturnType<typeof Core.evidence>[number]): string => spent.has(x.at) ? `<div class="ev spent"><small>${esc(x.title)} · já usada numa acusação</small><span>${esc(x.text)}</span></div>` : `<button class="ev${pick === x.at ? ' on' : ''}" data-act="courtproof" data-i="${x.at}"><small>${esc(x.title)}</small><span>${esc(x.text)}</span>${x.kind === 'clash' && x.pc !== undefined && x.cc !== undefined ? `<span class="ev-cards">${cards(x.pc, 3)} → ${cards(x.cc, 2)}${x.law ? ` → <i class="lc ${x.law}"></i>` : ''}</span>` : ''}${x.hit ? `<b class="ev-hit">${x.kind === 'clash' ? 'A conta não fecha' : 'Saiu lei {f}'}</b>` : ''}</button>`;
@@ -1027,7 +1027,7 @@ export function debateSheet(g: Game, at: number): void {
   const me = solo(g), who = Core.debateNext(g, at), lines = t.deb || [];
   const stars = (i: number): string => g.players[i]?.ai ? ` <span class="lab">${'★'.repeat(Core.eloq(g, i))}${'☆'.repeat(3 - Core.eloq(g, i))} lábia</span>` : '';
   const who_ = (i: number): string => `${name(g, i)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
-  const proof = t.proof !== undefined ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about).find(x => x.at === t.proof) : undefined;
+  const proof = t.proof !== undefined ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about, t.by).find(x => x.at === t.proof) : undefined;
   const say = (i: number, text: string, tag: string): string => `<div class="dsay ${i === t.by ? 'acc' : 'def'}"><b>${who_(i)} · ${tag}${stars(i)}</b><p>“${esc(text)}”</p></div>`;
   const line = (k: number, tag: string): string => lines[k] ? say(lines[k].who, lines[k].text, tag) : '';
   const args = (): string => who === me ? `<div class="dargs"><b>${lines.length === 0 ? 'Sua defesa' : lines.length === 1 ? 'Sua réplica' : 'Sua tréplica'}</b>${Core.debateArgs(g, at).map(a => `<button data-act="darg" data-v="${esc(a.id)}"><span>${esc(a.label)}</span><i class="pw ${a.power >= 0.45 ? 'f' : a.power >= 0.25 ? 'm' : 'w'}">${a.power >= 0.45 ? 'forte' : a.power >= 0.25 ? 'média' : a.power > 0 ? 'fraca' : '—'}</i><small>“${esc(a.text)}”</small></button>`).join('')}</div>` : who >= 0 ? `<p class="dwait">${name(g, who)} está pensando no que dizer…</p>` : '';

@@ -255,7 +255,7 @@ export default function cases(Core) {
   { // D80: the person, as president, handed a liberal and a fascist; the chancellor passed the fascist and says it got two
     const hg = ai7({ hist: [{ k: 'gov', pres: 4, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 0, chanc: 6, law: 'F', drew: ['F', 'F', 'L'], got: ['F', 'L'], cc: 2 }, { k: 'talk', by: 0, about: 6, say: 'acc', tone: 'proof', proof: 1 }] });
     const d1 = Core.debateArgs(hg, 2), h2 = Core.debateSay(hg, 2, d1[0].id), a2 = Core.debateArgs(h2, 2);
-    eq('D80: no checkmate for the chancellor the accuser handed a liberal; the accuser says what it passed, not "governed with itself"', [d1[0].id !== 'nochoice' || d1[0].power < 0.5, a2[0].id, a2.some(x => x.id === 'press'), a2[0].text.includes('1 liberal')], [true, 'myhand', false, true]);
+    eq('D80: no checkmate for the chancellor the accuser handed a liberal; the accuser says what it passed, not "governed with itself"', [d1[0].id !== 'nochoice' || d1[0].power < 0.5, a2[0].id, a2.some(x => x.id === 'press'), a2[0].text.includes('1 liberal'), Core.evidence({ ...hg, hist: hg.hist.slice(0, 2) }, 6, 0)[0].text.startsWith('Eu te passei')], [true, 'myhand', false, true, true]);
     const inv = view({ level: 'dificil', laws: { L: 1, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 2, chanc: 5, law: 'F', pc: 3, cc: 2 }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'inv', by: 2, target: 5, said: 'L' }] });
     eq('D80: one who governed with the chancellor when a hidden-side law came out cannot clear it by investigating', Core.decide(inv, () => 0.5), 0);
   }
