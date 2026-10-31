@@ -111,9 +111,12 @@ function requests(v: View, b: Beliefs, what: 'pick' | 'avoid' | 'inv' | 'kill'):
 /** D75: from HITLER_ZONE on, a liberal neither nominates nor votes Ja for a chancellor who sat in this many governments
  *  that passed a law of the hidden side (a public fact), unless an investigation said it is liberal. */
 export const ZONE_DIRTY = 2;
+const dirtyCount = (v: View, i: number): number => v.hist.filter(e => e.k === 'gov' && e.law === 'F' && (e.pres === i || e.chanc === i)).length;
 const dirtyIn = (v: View, i: number): boolean => {
-  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L')) return false;
-  return v.hist.filter(e => e.k === 'gov' && e.law === 'F' && (e.pres === i || e.chanc === i)).length >= ZONE_DIRTY;
+  // an investigation that said "liberal" clears it only if the investigator is not dirty itself: in the exported games
+  // the hidden side covered its allies in 14 of its investigations
+  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || dirtyCount(v, e.by) < ZONE_DIRTY))) return false;
+  return dirtyCount(v, i) >= ZONE_DIRTY;
 };
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
