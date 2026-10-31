@@ -180,5 +180,7 @@ export interface View {
   pres: number; chanc: number | null; lastPres: number | null; lastChanc: number | null;
   phase?: Phase;
   ask: Ask; options: number[]; hand: Law[];
+  /** D62: in a vote, the votes already cast at the table, in order, before this seat's turn (seat, Ja). */
+  cast?: [number, boolean][];
   hist: Seen[];
 }

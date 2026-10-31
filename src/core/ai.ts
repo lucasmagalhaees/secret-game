@@ -94,6 +94,8 @@ export const DECISIVE_SLIP = 0.1;
 /** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
  *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
 export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.6, extremo: 0.65 };
+/** D62: how much the votes already cast weigh on a liberal's vote, by how much it trusts each voter (the sceptic less). */
+export const CASCADE_W = 0.15;
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
@@ -449,7 +451,10 @@ function liberalJa(v: View, b: Beliefs): boolean {
   base = pairs ? base / pairs : 1;
   // the temper of this player: the wary one wants a government clearly cleaner than most, the trusting one goes along
   // never below zero: even the most wary one accepts a government no riskier than any other pair (D22)
-  const slack = Math.max(0, 0.05 + MOOD * v.mood) + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
+  // D62: the votes heard before its turn: a Ja from someone it trusts makes it easier, a Nein harder
+  const heard = (v.cast || []).filter(([j]) => j !== v.me), lean = heard.length ? heard.reduce((a, [j, ja]) => a + (1 - b.pF[j]) * (ja ? 1 : -1), 0) / heard.length : 0;
+  const pull = CASCADE_W * (v.persona === 'cetico' ? 0.4 : v.persona === 'certinho' ? 1.2 : 1) * lean;
+  const slack = Math.max(0, 0.05 + MOOD * v.mood) + pull + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
   rows(b, gov.filter(i => i !== v.me));
   if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) {
     why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);

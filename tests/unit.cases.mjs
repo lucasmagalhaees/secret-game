@@ -203,6 +203,12 @@ export default function cases(Core) {
     const before = Core.socialMemory({ hist: wg.hist }, 4).contradictions, after = Core.socialMemory({ hist: w4.hist }, 4).contradictions;
     eq('D61: a weak accusation (a vote) can be met by a counterattack; when it falls, it turns against the accuser', [Core.debateArgs(wg, at).some(x => x.id === 'counter'), w4.hist[at].backfire, after > before], [true, true, true]);
   }
+  { // D62: the votes cast before its turn weigh on a liberal's vote: Ja from trusted seats pulls it along, Nein holds it back
+    const base = { level: 'dificil', pres: 3, chanc: 5, ask: 'vote', options: [1, 0] };
+    const lean = (ja) => Core.decideWhy(view({ ...base, cast: [[1, ja], [2, ja], [6, ja]] }), hi).why.text.join(' ');
+    const pct = (t) => Number((t.match(/Aceita até (\d+)%/) || [])[1]);
+    eq('D62: votes in turn: trusted Ja widens what a liberal accepts, trusted Nein narrows it', [pct(lean(true)) > pct(lean(false))], [true]);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);

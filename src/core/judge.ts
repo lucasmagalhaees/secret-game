@@ -759,7 +759,15 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
   const alive = seats(g, i => g.players[i].alive);
   if (alive.some(i => !isAi(g, i) && typeof votes[i] !== 'boolean')) return g;
   const ts: Trace[] = [];
-  const ja = alive.filter(i => { if (!isAi(g, i)) return votes[i]; const r = ask(g, i, 'vote', [1, 0], rand); ts.push(r.t); return r.a === 1; });
+  // D62: the table votes in turn, from the seat after the president around: each one hears the votes before it, as at
+  // a real table, and may follow those it trusts (a person's vote included)
+  const order = alive.map((_, k) => alive[(Math.max(0, alive.findIndex(i => i > g.pres)) + k) % alive.length]).filter((x, k, xs) => xs.indexOf(x) === k);
+  const cast: [number, boolean][] = [];
+  for (const i of order.length === alive.length ? order : alive) {
+    if (!isAi(g, i)) { cast.push([i, votes[i]]); continue; }
+    const r = ask(g, i, 'vote', [1, 0], rand, [...cast]); ts.push(r.t); cast.push([i, r.a === 1]);
+  }
+  const ja = alive.filter(i => cast.some(([j, v]) => j === i && v));
   const nein = alive.filter(i => !ja.includes(i)), list = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ') || 'ninguém';
   const n: Game = { ...traced(g, ts), log: [...g.log, `Votos. ${words(g.pack, g.region).ja}: ${list(ja)}. ${words(g.pack, g.region).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
   return vote(n, ja.length > nein.length, rand);
@@ -792,8 +800,8 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
 }
 /** Asks one seat one question, through its view; an answer outside the options is taken as the first option. Comes
  *  back with the answer and the record of it, with the reason the seat gave (D16). */
-function ask(g: Game, seat: number, q: Ask, options: number[], rand: () => number): { a: number; t: Trace } {
-  const v = viewOf(g, seat, q, options), d = decideWhy(v, rand), a = options.includes(d.a) ? d.a : options[0];
+function ask(g: Game, seat: number, q: Ask, options: number[], rand: () => number, cast?: [number, boolean][]): { a: number; t: Trace } {
+  const v = { ...viewOf(g, seat, q, options), ...(cast && cast.length ? { cast } : {}) }, d = decideWhy(v, rand), a = options.includes(d.a) ? d.a : options[0];
   return { a, t: { seat, ask: q, a, at: g.hist.length, ...(v.hand.length ? { hand: v.hand } : {}), why: d.why } };
 }
 /** The game with these decisions added to the record of them. */
