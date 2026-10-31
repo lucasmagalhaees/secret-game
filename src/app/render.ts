@@ -566,7 +566,7 @@ function noteKit(g: Game): { me: number; cell: (i: number, edit: boolean) => str
   if (me < 0 || g.phase === 'over' || g.phase === 'reveal') return null;
   const sure = new Map<number, [string, Law]>();
   for (const k of Core.knows(g, me)) sure.set(g.players.findIndex(p => p.name === k.name), [role(k.role), 'F']);
-  for (const e of g.hist) if (e.k === 'inv' && e.by === me && !sure.has(e.target)) sure.set(e.target, [`${party(e.party)} (investigou)`, e.party]);
+  for (const e of g.hist) if (e.k === 'inv' && e.by === me && !sure.has(e.target)) sure.set(e.target, [`🔍 ${party(e.party)}`, e.party]);
   const notes = S.notes || {};
   const cell = (i: number, edit: boolean): string => {
     if (i === me) return edit ? '' : '<span class="tag you">Você</span>';
