@@ -582,3 +582,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** tirar o som do rádio.
 - **Decisão:** o chiado de rádio velho do D46 sai. Os outros sons (carimbo, papel, martelo, baque da lei, fanfarra) ficam.
+
+## D63. Os toques esperam a animação (2026-10-31)
+
+- **Pedido:** quando uma animação toca, os botões têm que congelar, senão tudo dá bug. E o chiado de rádio ainda tocava (o D50 não tinha chegado à `main`).
+- **Decisão:** cada efeito sobre a tela (eliminação, investigação, caos, veto, eleição especial, lei voando) congela os toques e as IAs até acabar (`ui.frozen`); só os botões do debate continuam valendo. Com "reduzir movimento", nada se mexe e nada congela. O D50 entrou junto.

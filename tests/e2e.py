@@ -538,6 +538,11 @@ with sync_playwright() as p:
     mctx = b.new_context(viewport=dict(width=393, height=852), color_scheme=THEME, locale='pt-BR', reduced_motion='no-preference')
     mctx.route('**/*', lambda r: r.abort() if r.request.url.startswith('http') else r.continue_())
     mp = mctx.new_page(); merrs = []
+    # D63: while an animation plays, taps wait; a scripted click waits for it to end first
+    _mclick = mp.click
+    def _mwait(): mp.wait_for_function('!(window.__APP && window.__APP.ui.frozen > Date.now())', timeout=10000)
+    def _msafe(sel, **kw): _mwait(); return _mclick(sel, **kw)
+    mp.click = _msafe
     mp.on('pageerror', lambda e: merrs.append(str(e)))
     cov.start(mp)
     mp.goto((ROOT / 'dist' / 'index.html').as_uri()); mp.wait_for_function('window.__APP && window.__APP.S')
@@ -572,6 +577,7 @@ with sync_playwright() as p:
     mp.screenshot(path=str(SHOTS / f'power-execute-{THEME}.png'))
     # D46: chaos, a veto accepted and a special election each get their effect, over the screen and never taking a tap;
     # the enacted law flies to its slot and lands with a thud
+    _mwait()
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'nominate'; delete g.winner; g.players.forEach(p => { p.alive = true; }); g.laws.F += 1; g.hist.push({ k: 'chaos', law: 'F' }, { k: 'veto', pres: 0, chanc: 1 }, { k: 'special', by: 0, target: g.pres }); (document.querySelector('[data-act=help]') || document.querySelector('[data-act=endtab]')).click(); }""")
     assert mp.locator('.fxl.chaos').count() == 1 and mp.locator('.fxl.veto-fx .tear').count() == 2 and mp.locator('.fxl.ribbon').count() == 1 and mp.locator('.fly .law').count() == 1
     assert mp.evaluate("getComputedStyle(document.querySelector('.fxl')).pointerEvents") == 'none' and mp.locator('#seats .seat.pres-sash.sash').count() == 1

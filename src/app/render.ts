@@ -63,11 +63,16 @@ function afterPaint(g: Game | null): void {
   landed = null;
   fxGame = g; fxHist = g ? g.hist.length : 0;
 }
+/** D63: while an animation plays, taps wait (the debate and the elimination screen's own buttons excepted) and the app
+ *  players wait too: nothing changes under an effect that is still on screen. */
+export function freeze(ms: number): void { if (!still()) ui.frozen = Math.max(ui.frozen || 0, Date.now() + ms); }
+export const frozenFor = (): number => Math.max(0, (ui.frozen || 0) - Date.now());
 /** A layer over the screen for one effect; it never takes a tap and removes itself. */
 function layer(cls: string, html: string, ms: number): HTMLElement {
   const el = document.createElement('div');
   el.className = `fxl ${cls}`; el.setAttribute('aria-hidden', 'true'); el.innerHTML = html;
   document.body.appendChild(el);
+  freeze(ms);
   setTimeout(() => el.remove(), ms);
   return el;
 }
@@ -833,6 +838,7 @@ export function flash(who = '', wasBoss = false, why = ''): void {
   // a shot (D45): the muzzle flashes, the screen cracks from where it hit, then the name and the stamp
   f.innerHTML = who ? `<svg class="gun" viewBox="0 0 220 120" aria-hidden="true"><path d="M8 30 h150 l10 -8 h22 v22 h-30 v10 h-60 l-6 18 h-20 l-8 44 h-40 l12 -50 h-30 z" fill="#1a1714" stroke="#f3e8d0" stroke-width="3" stroke-linejoin="round"/><circle cx="96" cy="52" r="9" fill="none" stroke="#f3e8d0" stroke-width="3"/><path class="bang" d="M196 33 l18 -14 -4 14 10 4 -12 6 12 10 -18 -4" fill="#ffd678" stroke="#fff" stroke-width="2"/></svg><div class="muzzle"></div><svg class="crack" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M230 300 L305 299 L378 277 L454 290 L528 275 M230 300 L326 320 L417 358 L517 362 L613 385 M230 300 L314 384 L394 472 L450 580 L494 695 M230 300 L238 390 L285 473 L261 571 L320 652 M230 300 L225 372 L202 443 L221 518 L190 588 M230 300 L171 367 L128 446 L77 519 L16 585 M230 300 L146 339 L57 368 L-26 410 L-105 459 M230 300 L120 297 L10 277 L-100 269 L-205 222 M230 300 L162 250 L78 231 L9 180 L-50 117 M230 300 L155 239 L100 157 L40 81 L-37 19 M230 300 L224 215 L215 130 L206 45 L188 -39 M230 300 L270 180 L320 64 L313 -70 L415 -171 M230 300 L322 209 L390 96 L477 0 L586 -76 M230 300 L304 241 L377 180 L448 117 L558 109 M270 304 L264 321 L252 334 L235 340 L217 338 L202 329 L192 314 L190 296 L196 279 L208 266 L225 260 L243 262 L258 271 L268 286 L270 304 M325 309 L311 350 L282 380 L242 394 L200 390 L164 368 L141 332 L135 291 L149 250 L178 220 L218 206 L260 210 L296 232 L319 268 L325 309"/><circle cx="230" cy="300" r="9"/></svg><div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span>${why ? `<p class="exec-why">“${esc(why)}”</p>` : ''}</div>${wasBoss ? `<div class="fate boss"><div class="rays"></div><div class="birds">${'<i></i>'.repeat(7)}</div><b class="exec-card boss">Era o ${W.boss}!</b><span>Os liberais chegam ao poder</span></div>` : `<div class="fate on"><i class="sweep"></i><b class="exec-card">Não era o ${W.boss}</b><span>O jogo continua</span></div>`}` : '';
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  freeze(who ? 5400 : 900);
   if (who) { const v = part('view'); v.classList.remove('shake'); void v.offsetWidth; v.classList.add('shake'); }   // the page under it shakes, not the body: a moved body would carry the fixed screens with it
   setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 5400 : 900);
 }
@@ -856,7 +862,7 @@ export function powerEffect(g: Game, target: number, kind: 'investigate' | 'exec
     d.innerHTML = `<div class="detective"><svg class="sleuth" viewBox="0 0 120 160" aria-hidden="true"><path d="M30 44 h60 l14 6 -14 4 h-60 l-14 -4z M40 44 l6 -26 h28 l6 26z" fill="#15110e"/><path d="M42 18 h36" stroke="#8a2b1a" stroke-width="5"/><circle cx="60" cy="64" r="15" fill="#15110e"/><path d="M28 158 l6 -66 q26 -14 52 0 l6 66z" fill="#15110e"/><path d="M48 80 l12 22 12 -22" fill="none" stroke="#f3e8d0" stroke-width="2"/><path d="M66 70 q10 4 14 0 v-6 h6 v8 q-2 6 -8 6 q-8 0 -12 -4z" fill="#15110e"/><path class="puff" d="M84 54 q-6 -6 0 -12 q6 -6 0 -12" fill="none" stroke="#8a8378" stroke-width="3" stroke-linecap="round"/><path class="arm" d="M86 96 l18 -20" stroke="#15110e" stroke-width="10" stroke-linecap="round"/><g class="lens"><circle cx="108" cy="64" r="12" fill="rgba(255,255,255,.35)" stroke="#15110e" stroke-width="5"/><path d="M100 72 l-6 7" stroke="#15110e" stroke-width="6" stroke-linecap="round"/></g></svg><div class="envelope"><div class="slip"><small>Investigando</small><b>${name(g, target)}</b></div><div class="env-body"></div><div class="env-flap"></div></div></div>`;
     d.className = 'power-effect investigate'; d.hidden = false;
     void d.offsetWidth; d.classList.add('go');
-    clearTimeout(powerTimer); powerTimer = setTimeout(() => { d.hidden = true; }, 3000);
+    freeze(3000); clearTimeout(powerTimer); powerTimer = setTimeout(() => { d.hidden = true; }, 3000);
     return;
   }
   d.innerHTML = `<div class="power-card"><svg class="power-mark" viewBox="0 0 42 42" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">${mark}</svg><div><small>Eliminado da mesa</small><b>${name(g, target)}</b></div></div>`;

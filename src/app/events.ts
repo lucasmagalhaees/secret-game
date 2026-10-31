@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { ballot, beat, blurField, bossWin, debateSheet, defenseResult, confetti, decree, clearFlash, flash, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, bossWin, debateSheet, defenseResult, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -61,6 +61,7 @@ export function tick(): void {
   clearTimeout(botTimer);
   const g = S.game, t = g ? Core.botTurn(g) : null;
   if (!g || !t || (ui.debate !== null && ui.debate !== undefined)) return;   // the game waits while a debate is on (D57)
+  if (frozenFor() > 0) { botTimer = setTimeout(tick, frozenFor() + 50); return; }   // and while an animation plays (D63)
   botTimer = setTimeout(() => {
     if (S.game !== g) return;
     const next = Core.botStep(g, rand);
@@ -230,7 +231,7 @@ export function initEvents(): void {
     // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
     const tgt = e.target as HTMLElement;
     if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote], #court, .court-back, #debate')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
-    const b = tgt.closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
+    const b = tgt.closest<HTMLElement>('[data-act]'); if (!b || ui.busy || (frozenFor() > 0 && !b.closest('#debate'))) return;   // D63
     // Safari may leave a textarea focused when tapping a button. Commit its text and allow the repaint.
     blurField();
     const a = b.dataset.act, d = b.dataset, g = S.game, i = Number(d.i);
