@@ -1005,3 +1005,5 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .asknow .chips{display:flex;flex-wrap:wrap;gap:6px}
 .asknow .chips button{min-height:40px;padding:6px 10px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 14px/1 var(--font)}
 .asknow-done{margin-top:10px;font-style:italic;opacity:.85}
+.drawer.talk .tbtn small{display:block;margin-top:4px;font:400 13px/1.35 var(--font);opacity:.85}
+.plea>small{display:block;margin:-2px 0 8px;font-size:13px;opacity:.85}

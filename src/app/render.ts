@@ -665,13 +665,15 @@ function vTalk(g: Game): string {
   const chips = (act: string, ok: (i: number) => boolean, on: (i: number) => boolean = () => false): string => `<div class="chips">${others.filter(ok).map(i => `<button class="${on(i) ? 'on' : ''}" data-act="${act}" data-i="${i}" aria-pressed="${on(i)}">${esc(g.players[i].name)}</button>`).join('')}</div>`;
   const sec = (title: string, hint: string, body: string): string => body ? `<section class="tsec"><b>${title}</b><small>${hint}</small>${body}</section>` : '';
   const self = Core.canSelfClaim(g, me) ? '<button class="tbtn" data-act="tself" id="selfclaim">📣 “Eu sou liberal”</button>' : '';
-  const sw = Core.canSwear(g, me) >= 0 ? '<button class="tbtn" data-act="tswear" id="swear">✋ Jurar pela minha mão no último governo</button>' : '';
+  const swAt = Core.canSwear(g, me), swGov = swAt >= 0 ? g.hist[swAt] as Gov : null;
+  const swSaid = swGov ? (swGov.pres === me ? (swGov.pc !== undefined && swGov.pc >= 0 ? `que tirou ${swGov.pc} ${swGov.pc === 1 ? W.f : W.fs} de 3` : '') : (swGov.cc !== undefined && swGov.cc >= 0 ? `que recebeu ${swGov.cc} ${swGov.cc === 1 ? W.f : W.fs} de 2` : '')) : '';
+  const sw = swGov && swSaid ? `<button class="tbtn" data-act="tswear" id="swear">✋ Garantir minha história<small>Você disse ${esc(swSaid)} no governo com ${esc(g.players[swGov.pres === me ? swGov.chanc : swGov.pres].name)}. Garantir faz a mesa acreditar um pouco mais em você; se depois aparecer contradição, sua reputação despenca.</small></button>` : '';
   const why = others.some(i => Core.canWhy(g, me, i)) ? chips('twhy', i => Core.canWhy(g, me, i)) : '';
   const bloc = Core.blocOf(g, me), sel = ui.blocSel || [];
   const blocBody = bloc ? `<p class="hint">No bloco: ${bloc.yes.length ? bloc.yes.map(i => esc(g.players[i].name)).join(', ') : 'ninguém topou'}.</p>`
     : `${chips('tbloc', i => !!g.players[i].ai, i => sel.includes(i))}<button class="tbtn" data-act="tblocgo" id="blocgo"${sel.length ? '' : ' disabled'}>🤝 Chamar ${sel.length ? sel.length : ''} para o bloco</button>`;
   return `<aside class="drawer talk${ui.talk ? ' open' : ''}" id="talk" aria-label="Falar com a mesa"><span class="label">Falar com a mesa</span><p class="hint">Tudo aqui é dito em voz alta. Pesa pelo quanto a mesa confia em você.</p>
-    ${sec('Sobre você', 'Custa nada dizer; custa caro se depois aparecer o contrário.', self + sw)}
+    ${sec('Sobre você', 'Dizer é de graça; mentir custa caro se a mesa descobrir.', self + sw)}
     ${sec('Por que votou assim?', 'A IA explica o voto da última votação.', why)}
     ${sec('Bloco', `Até 3 votando com você por ${Core.BLOC_ROUNDS} rodadas. Se o bloco eleger um governo que aprove lei ${W.f}, todos perdem reputação.`, blocBody)}</aside>`;
 }
@@ -844,7 +846,8 @@ function vPlea(g: Game, me: number): string {
   const can = g.players.map((_, i) => i).filter(i => Core.canPlea(g, me, i));
   if (!can.length) return '';
   const to = ui.pleaTo !== undefined && ui.pleaTo !== null && can.includes(ui.pleaTo) ? ui.pleaTo : null, Wv = Core.words(g.pack, g.region);
-  return `<div class="plea" id="plea"><b>Pedir voto</b><div class="plea-who">${can.map(i => `<button class="${i === to ? 'on' : ''}" data-act="pleato" data-i="${i}" aria-pressed="${i === to}">${esc(g.players[i].name)}</button>`).join('')}</div>${to !== null ? `<div class="plea-go"><button class="btn vote L" data-act="plea" data-v="1">${esc(g.players[to].name)}, vota ${Wv.ja}</button><button class="btn vote F" data-act="plea" data-v="0">${esc(g.players[to].name)}, vota ${Wv.nein}</button></div>` : '<small>Escolha a quem pedir. Pesa pelo quanto confiam em você.</small>'}</div>`;
+  const Wn = (ja: boolean): string => `${ja ? Wv.ja : Wv.nein} (${ja ? 'aprovar' : 'barrar'} este governo)`;
+  return `<div class="plea" id="plea"><b>Convencer alguém</b><small>Peça a uma IA que vote como você quer. Ela segue o pedido conforme confia em você.</small><div class="plea-who">${can.map(i => `<button class="${i === to ? 'on' : ''}" data-act="pleato" data-i="${i}" aria-pressed="${i === to}">${esc(g.players[i].name)}</button>`).join('')}</div>${to !== null ? `<div class="plea-go"><button class="btn vote L" data-act="plea" data-v="1">Pedir ${esc(Wn(true))}</button><button class="btn vote F" data-act="plea" data-v="0">Pedir ${esc(Wn(false))}</button></div>` : '<small>Toque num nome para escolher a quem pedir.</small>'}</div>`;
 }
 /* ---------- settings ---------- */
 /** The finished games kept on this device (D23), and the button that exports them. */

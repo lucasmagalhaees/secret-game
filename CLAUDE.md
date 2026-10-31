@@ -47,6 +47,9 @@ O que cada peça do harness cobre:
 | `tests/e2e.py` | Tudo passar isolado e o fluxo real pela interface estar quebrado |
 | `tests/pwa.py` | Dizer que o app abre sem internet e avisa de versão nova sem nunca ter visto acontecer |
 | `tests/cov.py` (cobertura medida pelo navegador) | Achar que está testado sem estar |
+| `tests/guard.py` (no `verify.sh --quick`, D68) | Função nova do `Core` ou botão novo (`data-act`) entrar sem nenhum teste que o toque |
+| `scripts/affected.py` (no `verify.sh`, só informa) | Mudar id, `data-act`, classe ou animação da tela sem mexer nos testes de tela que dependem deles |
+| `window.__SEED` nos testes de tela (D68) | O e2e e a cobertura mudarem de uma rodada para outra (e entre a máquina e o CI) por causa do sorteio |
 | `scripts/check_production.py` (workflow `Produção`, depois de cada merge) | CI verde e deploy feito, mas a produção servindo outra versão |
 | `tsc` em modo `strict` (primeiro passo do `verify.sh`) | Chamar função com o dado errado, ou ler um campo que pode não existir |
 | Hook de parada (`.claude/hooks/verify-on-stop.sh`) | Encerrar a tarefa com checagem falhando |

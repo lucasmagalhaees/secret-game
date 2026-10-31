@@ -10,7 +10,14 @@ import { applyUpdate, checkNow } from './update';
 /* ================= events =================
    One listener for every tap, by data-act; one for what is typed. Chance comes from Math.random here: the core only
    ever gets it as a function. */
-const rand = (): number => Math.random();
+// tests may fix the chance (ui.seed), so a run plays the same game every time, here and in CI (D68)
+let seededFrom: number | undefined, seededRand: (() => number) | undefined;
+const rand = (): number => {
+  const seed = ui.seed ?? (globalThis as { __SEED?: number }).__SEED;
+  if (seed === undefined) return Math.random();
+  if (seededFrom !== seed) { seededFrom = seed; seededRand = Core.seeded(seed); }
+  return (seededRand as () => number)();
+};
 
 /** A new game state: saved, and whatever was picked, opened or half-counted on screen is let go. The end of a game
  *  gets its confetti and its fanfare here, whatever ended it. */
@@ -294,7 +301,7 @@ export function initEvents(): void {
     else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
     else if (a === 'talk') { ui.talk = !ui.talk; if (ui.talk) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
     else if (a === 'tself') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
-    else if (a === 'tswear') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.swear(g, me), 'Você jurou pela sua mão.'); }
+    else if (a === 'tswear') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.swear(g, me), 'Você garantiu sua história. Se aparecer contradição, sua reputação despenca.'); }
     else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
     else if (a === 'tavoid' || a === 'tinv') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, a === 'tavoid' ? 'avoid' : 'inv', i), 'Pedido feito à mesa.'); }
     else if (a === 'twhy') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askWhy(g, me, i)); ui.diary = true; render(); }
@@ -302,7 +309,7 @@ export function initEvents(): void {
     else if (a === 'tblocgo' && ui.blocSel?.length) { const me = g.players.findIndex(p => !p.ai), sel = ui.blocSel; ui.blocSel = []; ui.talk = false; const next = Core.formBloc(g, me, sel); play(next, (() => { const b = Core.blocOf(next, me); return b && b.yes.length ? `${b.yes.length} topou o bloco.` : 'Ninguém topou o bloco.'; })()); }
     else if (a === 'selfclaim') { const me = g.players.findIndex(p => !p.ai); play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
     else if (a === 'pleato') { ui.pleaTo = ui.pleaTo === i ? null : i; render(); }
-    else if (a === 'plea' && ui.pleaTo !== null && ui.pleaTo !== undefined) { const me = g.players.findIndex(p => !p.ai), to = ui.pleaTo; ui.pleaTo = null; play(Core.plea(g, me, to, d.v === '1'), `Você pediu o voto de ${g.players[to].name}.`); }
+    else if (a === 'plea' && ui.pleaTo !== null && ui.pleaTo !== undefined) { const me = g.players.findIndex(p => !p.ai), to = ui.pleaTo; ui.pleaTo = null; play(Core.plea(g, me, to, d.v === '1'), `Você pediu a ${g.players[to].name} para ${d.v === '1' ? 'aprovar' : 'barrar'} o governo.`); }
     else if (a === 'dopen') openDebate(i);
     else if (a === 'dclose') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }
     else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' && t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.'); }
