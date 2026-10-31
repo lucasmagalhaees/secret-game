@@ -165,10 +165,7 @@ export function socialMemory(v: View, seat: number): { accusations: number; defe
   v.hist.forEach((e, at) => {
     // an accusation made firmly, or with a proof, that the record does not back costs the accuser (D39)
     if (e.k === 'talk' && e.by === seat && e.say === 'acc' && (e.tone === 'firm' || e.tone === 'proof') && !e.hit && !backed(v.hist, 0, at, e.about, true)) result.contradictions++;
-    // D66: an oath on a government whose story did not add up, or a seat sworn for that an investigation was said to show
-    // as the other side: the stake is lost
-    if (e.k === 'swear' && e.by === seat) { const gv = v.hist[e.at]; if (gv && (gv.k === 'gov' || gv.k === 'veto') && gv.pc !== undefined && gv.cc !== undefined && gv.pc >= 0 && gv.cc >= 0 && (gv.cc > gv.pc || gv.cc < gv.pc - 1)) result.contradictions += 3; }
-    if (e.k === 'inv' && e.said === 'F' && (e.target === seat && v.hist.slice(0, at).some(x => x.k === 'swear' && x.by === seat))) result.contradictions += 3;
+    // D66: a seat vouched for that an investigation was said to show as the other side: the stake is lost
     if (e.k === 'inv' && e.said === 'F' && e.target !== seat && v.hist.slice(0, at).some(x => x.k === 'talk' && x.by === seat && x.say === 'trust' && x.about === e.target)) result.contradictions++;
     if (e.k === 'gov' && e.law === 'F') { const vt = v.hist[at - 1], bl = [...v.hist.slice(0, at)].reverse().find((x): x is Extract<Seen, { k: 'bloc' }> => x.k === 'bloc'); if (bl && vt && vt.k === 'vote' && vt.ja.includes(seat) && (bl.by === seat || bl.yes.includes(seat)) && v.hist.slice(v.hist.lastIndexOf(bl), at).filter(x => x.k === 'gov' || x.k === 'veto' || x.k === 'chaos' || x.k === 'rej').length < 3) result.contradictions++; }
     // D65: said it was liberal, and an investigation was said to show the other side: a lie the table remembers
@@ -334,8 +331,6 @@ export function believe(v: View, outside = false): Beliefs {
   const ws = (viable.length ? viable : generated).map(roles => {
     let socialLog = 0;
     for (let seat = 0; seat < v.n; seat++) if (!mine(seat)) socialLog += Math.min(3, social[seat].reversals) * Math.log(fasc(roles[seat]) ? 1.3 : 0.85);
-    // D69: an oath on one's own story is a costly signal: worth a little, as long as nothing has broken it
-    for (const e of v.hist) if (e.k === 'swear' && !mine(e.by) && social[e.by].contradictions === 0) socialLog += Math.log(fasc(roles[e.by]) ? 0.85 : 1);
     let logW = socialLog, L = 0, F = 0, knownD: number | null = null;
     const weight = (p: number): void => { logW += Math.log(p); };
     const gone = new Set<number>(), knowsTeam = (j: number): boolean => roles[j] === 'fascista' || (roles[j] === 'hitler' && v.n <= HITLER_KNOWS_UPTO);

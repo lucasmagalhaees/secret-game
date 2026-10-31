@@ -1049,8 +1049,7 @@ export function plea(g: Game, me: number, to: number, ja: boolean): Game {
 /* ---------- D66: more ways to talk to the table ----------
    Requests to whoever presides (pick me, do not pick someone, investigate someone) last until the next government and
    weigh by how much that player trusts whoever asks. Asking an app player why it voted as it did gets a public answer
-   (what it said it believed of that government, never its private reckoning). Swearing by one's own government stakes
-   the reputation on that story. A bloc asks up to three app players to vote with you for three rounds: those who trust
+   (what it said it believed of that government, never its private reckoning). A bloc asks up to three app players to vote with you for three rounds: those who trust
    you join; a law of the hidden side passed by a government the bloc elected costs every member. */
 const lastGov = (g: Game): number => lastIndex(g, ['gov', 'veto', 'chaos']);
 export const canAsk = (g: Game, me: number, what: 'pick' | 'avoid' | 'inv', who: number): boolean =>
@@ -1074,15 +1073,6 @@ export function askWhy(g: Game, me: number, about: number): Game {
   const r = Math.round(100 * (1 - (1 - pub.pF[v.pres]) * (1 - pub.pF[v.chanc])));
   const say = ja ? `Votei ${W.ja} porque achei esse governo mais limpo que a média: uns ${r}% de chance de ter alguém do lado escondido.` : `Votei ${W.nein} porque achei arriscado: uns ${r}% de chance de ter alguém do lado escondido.`;
   return { ...g, hist: [...g.hist, { k: 'why', by: me, about, say }], log: [...g.log, `${g.players[me].name}: "${g.players[about].name}, por que votou ${ja ? W.ja : W.nein}?"`, `${g.players[about].name}: "${say}"`] };
-}
-export const canSwear = (g: Game, me: number): number => {
-  const at = lastGov(g), e = g.hist[at];
-  return at >= 0 && e && (e.k === 'gov' || e.k === 'veto') && (e.pres === me || e.chanc === me) && !g.hist.some(x => x.k === 'swear' && x.by === me && x.at === at) ? at : -1;
-};
-export function swear(g: Game, me: number): Game {
-  const at = canSwear(g, me);
-  if (at < 0) return g;
-  return { ...g, hist: [...g.hist, { k: 'swear', by: me, at }], log: [...g.log, `${g.players[me].name}: "Garanto o que eu disse sobre as cartas desse governo. Se eu estiver mentindo, podem me cobrar."`] };
 }
 export const BLOC_ROUNDS = 3;
 export const blocOf = (g: Game, me: number): Extract<Event, { k: 'bloc' }> | null => {

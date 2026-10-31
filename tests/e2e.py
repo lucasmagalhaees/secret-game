@@ -327,21 +327,19 @@ with sync_playwright() as p:
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
     assert pg.locator('#notes .persona').count() == 0 and pg.locator('#notes [data-act=denounce]').count() + pg.locator('#notes [data-act=court]').count() == 12, 'a claim for each side of each one'
     # D39: accusing opens the court: a proof from the record (if any), a tone, then the accusation
-    # D65/D66: talking to the table, from its own panel: say you are liberal, ask whoever presides to pick you
-    pg.click('#talktoggle'); assert pg.locator('#talk.open').count() == 1 and overflow() == 0
-    pg.click('#selfclaim'); assert 'Eu sou liberal' in G()['log'][-1]
-    pg.click('#talktoggle'); assert pg.locator('#selfclaim').count() == 0
-    pg.click('#talktoggle')
-    if pg.locator('#talk [data-act=twhy]').count(): pg.locator('#talk [data-act=twhy]').first.click(); assert G()['hist'][-1]['k'] == 'why'
-    else: pg.click('#talktoggle')
-    if pg.locator('#talk.open').count(): pg.click('#talktoggle')
-    pg.click('#talktoggle')
-    if pg.locator('#talk [data-act=tbloc]').count():
-        pg.locator('#talk [data-act=tbloc]').first.click(); pg.locator('#talk [data-act=tbloc]').nth(1).click(); pg.click('#blocgo')
+    # D70: "I am liberal" floats over the game; asking why and the bloc live at the end of the notebook
+    assert pg.locator('#talktoggle').count() == 0, 'no Mesa button: two-item bar'
+    pg.locator('#selfclaim').dispatch_event('click'); assert 'Eu sou liberal' in G()['log'][-1] and pg.locator('#selfclaim').count() == 0
+    if not pg.locator('#drawer').is_visible(): pg.click('#notestoggle')
+    if pg.locator('#drawer #talk [data-act=twhy]').count(): pg.locator('#drawer #talk [data-act=twhy]').first.click(); assert G()['hist'][-1]['k'] == 'why'
+    if pg.locator('#diary.open').count(): pg.click('#diary .diary-close')
+    if not pg.locator('#drawer').is_visible(): pg.click('#notestoggle')
+    if pg.locator('#drawer #talk [data-act=tbloc]').count() >= 2:
+        pg.locator('#drawer #talk [data-act=tbloc]').first.click(); pg.locator('#drawer #talk [data-act=tbloc]').nth(1).click(); pg.click('#blocgo')
         assert G()['hist'][-1]['k'] == 'bloc' and len(G()['hist'][-1]['with']) == 2
-    elif pg.locator('#talk.open').count(): pg.click('#talktoggle')
     if pg.locator('#diary.open').count(): pg.click('#diary .diary-close')
     # D67: while an app player presides and chooses, the person asks it right there, in its turn
+    if pg.locator('#drawer').is_visible(): pg.click('#notestoggle')
     kept67 = pg.evaluate('JSON.stringify(window.__APP.S.game)'); think67 = pg.evaluate('window.__APP.ui.think')
     pg.evaluate("(() => { const A = window.__APP, g = A.S.game, me = g.players.findIndex(p => !p.ai), p = g.players.findIndex((x, i) => x.ai && x.alive && i !== me); A.ui.think = 600000; g.pres = p; g.chanc = null; g.phase = 'nominate'; g.hist.push({ k: 'gov', pres: p, chanc: me, law: 'L', pc: 1, cc: 0 }); })()")
     pg.click('[data-act=help]'); pg.click('[data-act=help]')

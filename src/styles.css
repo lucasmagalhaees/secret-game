@@ -986,16 +986,16 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .plea small{display:block;margin-top:6px;opacity:.8}
 
 /* D66: the "talk to the table" panel */
-.drawer.talk .tsec{margin-top:12px;padding-top:10px;border-top:2px dashed var(--line)}
-.drawer.talk .tsec>b{display:block;font:800 13px/1 var(--display);text-transform:uppercase;letter-spacing:.08em}
-.drawer.talk .tsec>small{display:block;margin:4px 0 8px;font-size:13px;opacity:.8}
-.drawer.talk .sub{display:block;margin:8px 0 4px;font-weight:700;font-size:13px}
-.drawer.talk .tbtn{display:block;width:100%;min-height:44px;margin:6px 0;padding:8px 12px;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--fg);box-shadow:3px 3px 0 var(--line);font:700 15px/1.2 var(--font)}
-.drawer.talk .tbtn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
-.drawer.talk .tbtn:disabled{opacity:.5}
-.drawer.talk .chips{display:flex;flex-wrap:wrap;gap:6px}
-.drawer.talk .chips button{min-height:40px;padding:6px 10px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 14px/1 var(--font)}
-.drawer.talk .chips button.on{background:var(--fg);color:var(--surface)}
+.talk .tsec{margin-top:12px;padding-top:10px;border-top:2px dashed var(--line)}
+.talk .tsec>b{display:block;font:800 13px/1 var(--display);text-transform:uppercase;letter-spacing:.08em}
+.talk .tsec>small{display:block;margin:4px 0 8px;font-size:13px;opacity:.8}
+.talk .sub{display:block;margin:8px 0 4px;font-weight:700;font-size:13px}
+.talk .tbtn{display:block;width:100%;min-height:44px;margin:6px 0;padding:8px 12px;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--fg);box-shadow:3px 3px 0 var(--line);font:700 15px/1.2 var(--font)}
+.talk .tbtn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
+.talk .tbtn:disabled{opacity:.5}
+.talk .chips{display:flex;flex-wrap:wrap;gap:6px}
+.talk .chips button{min-height:40px;padding:6px 10px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 14px/1 var(--font)}
+.talk .chips button.on{background:var(--fg);color:var(--surface)}
 
 /* D67: asking the app player who presides, right in its turn */
 .asknow{margin-top:12px;padding-top:10px;border-top:2px dashed var(--line)}
@@ -1005,5 +1005,26 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .asknow .chips{display:flex;flex-wrap:wrap;gap:6px}
 .asknow .chips button{min-height:40px;padding:6px 10px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 14px/1 var(--font)}
 .asknow-done{margin-top:10px;font-style:italic;opacity:.85}
-.drawer.talk .tbtn small{display:block;margin-top:4px;font:400 13px/1.35 var(--font);opacity:.85}
+.talk .tbtn small{display:block;margin-top:4px;font:400 13px/1.35 var(--font);opacity:.85}
 .plea>small{display:block;margin:-2px 0 8px;font-size:13px;opacity:.85}
+
+/* D70: "I am liberal" floats over the game, above the bar at the bottom */
+.fab-lib{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(150px + env(safe-area-inset-bottom));z-index:40;min-height:48px;padding:10px 16px;border:3px solid var(--line);border-radius:999px;background:var(--lib);color:var(--on-party);font:800 15px/1 var(--display);letter-spacing:.04em;box-shadow:4px 4px 0 var(--shadow)}
+.fab-lib:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--shadow)}
+@media (min-width:760px){.fab-lib{right:calc(50% - 360px + 14px)}}
+
+/* D70: what the investigator says: the card of the side it named turns over */
+.claim-fx{background:#0b0907;z-index:70;animation:invScene 2.8s ease both}
+.cf-card{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;color:#f3e8d0}
+.cf-card small{font:800 13px/1 var(--display);text-transform:uppercase;letter-spacing:.1em}
+.cf-name{font:900 clamp(26px,8vw,38px)/1.1 var(--display)}
+.cf-flip{position:relative;width:min(56vw,220px);aspect-ratio:3/4;perspective:800px}
+.cf-back,.cf-front{position:absolute;inset:0;border:4px solid #15110e;backface-visibility:hidden;box-shadow:8px 8px 0 #000}
+.cf-back{background:repeating-linear-gradient(45deg,#3a2f26 0 10px,#2b231c 10px 20px);animation:cfBack .6s .5s ease-in both}
+.cf-front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transform:rotateY(180deg);animation:cfFront .6s .5s ease-out both}
+.cf-front.L{background:var(--lib-bg);color:var(--lib)}.cf-front.F{background:var(--fas-bg);color:var(--fas)}
+.cf-front svg{width:78%;height:auto}
+.cf-front span{font:900 20px/1 var(--display);text-transform:uppercase;letter-spacing:.1em}
+.cf-card em{font-size:13px;opacity:.75}
+@keyframes cfBack{to{transform:rotateY(-180deg)}}
+@keyframes cfFront{to{transform:rotateY(0)}}
