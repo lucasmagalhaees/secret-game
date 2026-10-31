@@ -945,6 +945,11 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     if ((proof && proofEarly(before, proof)) || (!proof && govs < 2)) out.push({ id: 'rush', label: `Desmoraliza ${nm(t.by)}: queimou a largada`, text: `Isso foi no ${govs <= 1 ? 'primeiro governo' : 'começo do jogo'}: ninguém sabe de nada ainda. ${nm(t.by)} acusou antes da hora, e quem acusa cedo assim quer é confundir a mesa.`, power: 0.75 });
     const libs = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === who || e.chanc === who)).length;
     if (libs) out.push({ id: 'record', label: 'Lembra o seu histórico', text: `Estive em ${libs} governo${libs > 1 ? 's' : ''} que aprovou lei liberal.`, power: 0.25 + 0.15 * Math.min(libs, 2) });
+    // D61: a weak accusation (only a vote, or no proof that holds) opens the accuser to a hard counterattack
+    const weakAcc = !proof || (!proof.hit && (proof.kind === 'vote' || proof.kind === 'exec' || proof.kind === 'inv'));
+    if (weakAcc) out.push({ id: 'counter', label: `Contra-ataca ${nm(t.by)}`, text: proof?.kind === 'vote' ? `Por um voto? Metade da mesa votou igual. ${nm(t.by)} quer um culpado, não a verdade.` : `Acusar sem prova é o que faz quem tem o que esconder, ${nm(t.by)}.`, power: 0.65 });
+    const vouched = g.hist.slice(0, at).filter(e => e.k === 'talk' && e.say === 'trust' && e.about === who && e.by !== who).map(e => (e as Talk).by);
+    if (vouched.length) out.push({ id: 'vouch', label: 'Lembra quem confia em você', text: `${nm(vouched[vouched.length - 1])} já disse que confia em mim.`, power: 0.3 });
     const back = evidence(before, t.by), strong = back.find(x => x.hit) ?? back[0];
     if (strong) out.push({ id: 'turn', label: `Vira contra ${nm(t.by)}`, text: `E você? ${strong.text}.`, power: strong.hit ? 0.5 : 0.3 });
     if (!proof || !proof.hit) out.push({ id: 'noproof', label: 'Cobra uma prova', text: `${nm(t.by)} não tem prova nenhuma, só desconfiança.`, power: 0.4 });
@@ -954,8 +959,12 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     for (const x of evidence(before, t.about)) if (x.at !== t.proof && x.hit && out.length < 3) out.push({ id: `ev${x.at}`, label: x.kind === 'count' ? 'Faz a conta' : 'Traz outra prova', text: `${x.text}.`, power: 0.5 });
     const last = (t.deb || [])[(t.deb || []).length - 1];
     out.push({ id: 'weak', label: 'Diz que a explicação não cola', text: 'Essa explicação não cola.', power: last && last.power < 0.3 ? 0.4 : 0.15 });
+    const re = t.re || [], agree = re.filter(r => r[1] === 0).length, disagree = re.filter(r => r[1] === 2).length;
+    if (agree > disagree) out.push({ id: 'table', label: 'Chama a mesa', text: `${agree} aqui concordaram comigo. Não sou só eu.`, power: 0.35 });
+    const noms = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'F' && e.pres === t.about).length;
+    if (noms) out.push({ id: 'pick', label: 'Aponta quem ele escolheu', text: `Quando foi presidente, escolheu um chanceler e saiu lei ${W.f}.`, power: 0.4 });
     const votes = evidence(before, t.about).filter(x => x.kind === 'vote').length;
-    if (votes) out.push({ id: 'votes', label: 'Lembra os votos', text: `Votou a favor de ${votes} governo${votes > 1 ? 's' : ''} que aprovou lei ${W.f}.`, power: 0.25 });
+    if (votes) out.push({ id: 'votes', label: 'Lembra os votos', text: `Votou a favor de ${votes} governo${votes > 1 ? 's' : ''} que aprovou lei ${W.f}.`, power: votes >= 2 ? 0.4 : 0.2 });
     out.push({ id: 'drop', label: 'Recua', text: 'Pode ser que eu tenha me enganado.', power: 0 });
   }
   const seen = new Set<string>();
@@ -997,6 +1006,8 @@ export function debateVerdict(g: Game, at: number, rand: () => number): Game {
     verdict.push([j, x > 0.12 ? 1 : x < -0.12 ? 0 : 2]);
   });
   const yes = verdict.filter(v => v[1] === 1).length, no = verdict.filter(v => v[1] === 0).length, stands = yes > no;
-  const hist = [...g.hist]; hist[at] = { ...t, verdict, def: 'debate', ok: !stands, hit: stands || t.hit };
-  return { ...g, hist, log: [...g.log, `Veredito da mesa: ${yes} acham que a acusação procede, ${no} que não, ${verdict.length - yes - no} não sabem.`] };
+  // D61: a weak case that fell turns against the accuser: it loses the table's trust (and with it, votes later)
+  const best = Math.max(0, ...(t.deb || []).filter(l => l.who === t.by).map(l => l.power)), backfire = !stands && best < 0.4;
+  const hist = [...g.hist]; hist[at] = { ...t, verdict, def: 'debate', ok: !stands, hit: stands || t.hit, ...(backfire ? { backfire: true } : {}) };
+  return { ...g, hist, log: [...g.log, `Veredito da mesa: ${yes} acham que a acusação procede, ${no} que não, ${verdict.length - yes - no} não sabem.`, ...(backfire ? [`A acusação de ${g.players[t.by].name} era fraca e virou contra quem acusou: perdeu a confiança da mesa.`] : [])] };
 }

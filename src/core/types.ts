@@ -67,7 +67,7 @@ export type Event =
 /** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
  *  ('trust'), or keeps quiet ('quiet', about -1). The players run by the app do not weigh it: it is for the people. */
 /** `re`: how the players run by the app took it, when a person said it (D26): seat and answer (REACT). */
-export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; stage?: 'campaign'; re?: [number, number][]; tone?: 'soft' | 'firm' | 'proof'; proof?: number; hit?: boolean; def?: Defense; ok?: boolean; deb?: DebLine[]; verdict?: [number, number][] };
+export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; stage?: 'campaign'; re?: [number, number][]; tone?: 'soft' | 'firm' | 'proof'; proof?: number; hit?: boolean; def?: Defense; ok?: boolean; deb?: DebLine[]; verdict?: [number, number][]; backfire?: boolean };
 /** A line of a debate (D57): who spoke, the argument it chose, what it said and how strong it was by the record. */
 export type DebLine = { who: number; id: string; text: string; power: number };
 /** How the one accused answered (D40): the deck came like that, it was a chancellor test, the accuser lies, or silence. */

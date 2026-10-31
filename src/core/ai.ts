@@ -151,6 +151,8 @@ export function socialMemory(v: View, seat: number): { accusations: number; defe
   v.hist.forEach((e, at) => {
     // an accusation made firmly, or with a proof, that the record does not back costs the accuser (D39)
     if (e.k === 'talk' && e.by === seat && e.say === 'acc' && (e.tone === 'firm' || e.tone === 'proof') && !e.hit && !backed(v.hist, 0, at, e.about, true)) result.contradictions++;
+    // a weak accusation that fell in a debate turned against the accuser (D61): it costs it the table's trust
+    if (e.k === 'talk' && e.by === seat && e.backfire) { result.contradictions += 2; result.reversals++; }
     if (e.k === 'gov' || e.k === 'veto') {
       opinions.delete(e.pres); opinions.delete(e.chanc);
       if ((e.pres === seat || e.chanc === seat) && e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && (e.cc > e.pc || e.cc < e.pc - 1)) result.contradictions++;
