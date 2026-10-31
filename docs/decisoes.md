@@ -516,3 +516,9 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** o presidente com faixa ficou legal; animação para o chanceler.
 - **Decisão:** na faixa da mesa, o presidente da vez sempre usa uma faixa (dourada na eleição especial), que entra deslizando quando a presidência muda; o chanceler eleito ganha uma medalha com a balança, que cai e quica quando é eleito. Só o que a mesa toda já sabe; nada se mexe com "reduzir movimento" nem ao reabrir a partida.
+
+## D51. O lado escondido joga limpo antes da zona do líder (2026-10-31)
+
+- **Pedido:** numa partida, a pessoa (Stalin, presidente) passou uma comunista e uma liberal para um aliado chanceler limpar a barra dos dois; a IA aprovou a comunista e disse que recebeu duas, pondo a culpa no Stalin. O primeiro plano do lado escondido tem que ser eleger o líder chanceler depois da 3ª lei: antes disso, não se queimar e aproveitar toda chance de parecer liberal, deixando as leis do lado escondido para os liberais aprovarem e serem acusados.
+- **Decisão:** antes da 3ª lei do lado escondido, o fascista com escolha deixa passar a liberal com chance por nível (`EARLY_CLEAN`: 30%, 50%, 70% e 80%), como presidente ou chanceler, com aliado ou não; com o líder de presidente passando uma de cada, o chanceler aliado que planeja aprova a liberal. O chanceler nunca põe a culpa num presidente aliado: confirma a história dele ou, se o presidente é o líder, fica com a culpa.
+- **Não medido ainda:** o equilíbrio de D10 (liberais perto de metade) com `scripts/ai_bench.mjs`.
