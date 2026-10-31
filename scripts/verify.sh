@@ -53,6 +53,8 @@ run docs     python3 tests/docs_check.py
 run core     node tests/core.mjs
 run unit     python3 tests/unit.py
 run contract python3 tests/contract.py
+run guard    python3 tests/guard.py
+run affected python3 scripts/affected.py
 run prod     python3 scripts/check_production.py --selftest
 if [ "$full" -eq 1 ]; then
   run e2e-dark  python3 tests/e2e.py dark

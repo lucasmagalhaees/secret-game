@@ -16,6 +16,7 @@ try:
     with sync_playwright() as p:
         browser = getattr(p, engine).launch()
         context = browser.new_context(viewport={'width': 393, 'height': 852}, device_scale_factor=3, is_mobile=True, has_touch=True, reduced_motion='reduce', color_scheme='dark')
+        context.add_init_script('window.__SEED = 7')   # D68
         page = context.new_page(); errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         if engine == 'chromium': cov.start(page)

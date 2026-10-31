@@ -615,3 +615,12 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** com três botões, a barra de baixo cortou o Diário. Os pedidos a quem preside deviam aparecer na hora: quando o presidente da IA vai indicar, uma janelinha para pedir a indicação; tirar o botão do Diário; ver o que faz sentido ficar no painel Mesa.
 - **Decisão:** a barra fica com Anotações e Mesa; o Diário abre pela linha da última fala, logo acima. Quando uma IA preside e está escolhendo o chanceler, o cartão dela mostra "Peça antes que X escolha": "Me indica" e "Não indicar" com os nomes; quando ela vai investigar, "Sugira quem investigar". Ela espera um pouco para dar tempo (4 s no normal, 6 s na lenta, 2,5 s na rápida) enquanto a pessoa não pediu nada desde o último governo. O pedir voto continua na própria votação. No painel Mesa ficam só as coisas que não têm hora: dizer que é liberal, jurar pela mão, perguntar por que alguém votou assim e o bloco.
+
+## D68. Guardas para os testes (2026-10-31)
+
+- **Pedido:** o CI do #62 quebrou na cobertura e no e2e escuro, embora tudo tivesse passado aqui. Um guardrail para que cada mudança já venha com teste, e um jeito de achar sozinho quais testes de tela uma mudança afeta.
+- **Causa:** os testes de tela jogavam partidas com sorteio de verdade (`Math.random`): cada rodada seguia outro caminho, e com ele a cobertura (94,6% no CI, 95,2% aqui) e os pontos em que uma IA acusava no meio do teste.
+- **Decisão:**
+  - **Sorteio fixo nos testes:** o app usa `window.__SEED` (ou `ui.seed`) quando existe; o `e2e.py` e o `iphone.py` fixam a semente, e a mesma partida roda aqui e no CI. O jogo de verdade continua com `Math.random`.
+  - **`tests/guard.py`**, no `verify.sh --quick` (segundos, e no hook de parada): todo nome do `Core` tem que aparecer num teste como `Core.<nome>`, e todo botão (`data-act`) tem que ser tocado por algum teste de tela. O que já não tinha teste ficou numa lista de partida (`tests/guard_baseline.json`) que só diminui; nada novo entra sem teste.
+  - **`scripts/affected.py`**, no `verify.sh` (só informa): lê o diff contra a `main`, indexa as marcas que os testes de tela usam (ids, `data-act`, classes, animações) e lista cada linha de teste que usa uma marca que a mudança tirou ou mexeu, para o teste ser ajustado no mesmo commit. Um índice exato de seletores em vez de busca por semelhança: um teste de tela só quebra por uma marca.

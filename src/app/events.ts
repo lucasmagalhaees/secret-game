@@ -10,7 +10,14 @@ import { applyUpdate, checkNow } from './update';
 /* ================= events =================
    One listener for every tap, by data-act; one for what is typed. Chance comes from Math.random here: the core only
    ever gets it as a function. */
-const rand = (): number => Math.random();
+// tests may fix the chance (ui.seed), so a run plays the same game every time, here and in CI (D68)
+let seededFrom: number | undefined, seededRand: (() => number) | undefined;
+const rand = (): number => {
+  const seed = ui.seed ?? (globalThis as { __SEED?: number }).__SEED;
+  if (seed === undefined) return Math.random();
+  if (seededFrom !== seed) { seededFrom = seed; seededRand = Core.seeded(seed); }
+  return (seededRand as () => number)();
+};
 
 /** A new game state: saved, and whatever was picked, opened or half-counted on screen is let go. The end of a game
  *  gets its confetti and its fanfare here, whatever ended it. */
