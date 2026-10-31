@@ -213,7 +213,10 @@ export function evidence(g: Game, about: number): Proof[] {
     if (e.k === 'exec' && e.by === about) out.push({ at, kind: 'exec', hit: false, title: `Eliminação · ${n}º governo`, text: `Eliminou ${nm(e.target)}, que não era o ${words(g.pack).boss}` });
   });
   // D54: how many laws of the hidden side came out of the governments it sat in; two or more hold
-  const govF = g.hist.map((e, i) => (e.k === 'gov' && e.law === 'F' && (e.pres === about || e.chanc === about) ? i : -1)).filter(i => i >= 0);
+  // D76: a government where it had no choice (2 got as chancellor, 3 drawn as president, the stories adding up) does
+  // not count against it
+  const noChoice = (e: Event): boolean => e.k === 'gov' && !clashOf(e) && (e.chanc === about ? e.cc === 2 : e.pc === 3);
+  const govF = g.hist.map((e, i) => (e.k === 'gov' && e.law === 'F' && (e.pres === about || e.chanc === about) && !noChoice(e) ? i : -1)).filter(i => i >= 0);
   if (govF.length >= 2) out.push({ at: 100000 + govF[govF.length - 1], kind: 'count', hit: true, title: 'Na conta', text: `Esteve em ${govF.length} governos que aprovaram lei ${f}` });
   out.sort((a, b) => (a.at % 100000) - (b.at % 100000) || a.at - b.at);
   return out.reverse();
@@ -893,7 +896,8 @@ export function botStep(g: Game, rand: () => number): Game | null {
  *  an accusation it had made, or that it was the one it suspected most. A hidden-side player gives a reason the same way:
  *  the reason is public, never its private reckoning. */
 export function execReason(g: Game, by: number, t: number): string {
-  const p = evidence(g, t), hit = p.find(x => x.hit) ?? p[0];
+  // D76: not a reason it shares (a vote for a government it sat in or voted for too)
+  const p = evidence(g, t).filter(x => { if (x.kind !== 'vote') return true; const v = g.hist[x.at]; return !(v && v.k === 'vote' && (v.ja.includes(by) || v.pres === by || v.chanc === by)); }), hit = p.find(x => x.hit) ?? p[0];
   if (hit) return hit.text.replace(/^./, c => c.toLowerCase());
   if (g.hist.some(e => e.k === 'talk' && e.by === by && e.about === t && e.say === 'acc')) return 'eu já tinha dito que não confiava';
   return 'era de quem eu mais desconfiava';
@@ -975,6 +979,11 @@ export function debateArgs(g: Game, at: number): DebArg[] {
       if (pres && gov.k === 'gov' && gov.law === 'F' && gov.pc === 3 && !clashOf(gov)) out.push({ id: 'nochoice', label: 'Não tive escolha: tirei três', text: `Tirei 3 ${W.fs} e o chanceler confirma: não havia liberal para passar.`, power: 0.7 });
       if (clashOf(gov)) out.push({ id: 'blame', label: `Aponta a história de ${nm(pres ? gov.chanc : gov.pres)}`, text: `As histórias não batem: quem mente é ${nm(pres ? gov.chanc : gov.pres)}.`, power: 0.45 });
       if (gov.k === 'gov' && gov.law === 'F' && !clashOf(gov)) out.push({ id: 'deck', label: 'Diz que foi o baralho', text: 'O baralho veio assim, não tive escolha.', power: 0.35 });
+    }
+    // D76: whatever the proof, a government where the accused had no choice speaks for it
+    if (!isGov || (gov && gov.k === 'gov' && gov.law !== 'F')) {
+      const nc = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'F' && !clashOf(e) && ((e.chanc === who && e.cc === 2) || (e.pres === who && e.pc === 3)));
+      if (nc.length) out.push({ id: 'nochoice', label: 'Nas minhas leis, não tive escolha', text: `Nas leis ${W.fs} que passaram por mim, eu não tive escolha: ${nc.map(e => (e as Gov).chanc === who ? `recebi 2 de ${nm((e as Gov).pres)}` : 'tirei 3').join('; ')}. Está na ata.`, power: 0.75 });
     }
     // D60: an accusation built on the first governments jumped the gun: the accused can take its credibility apart
     const govs = g.hist.slice(0, at).filter(e => e.k === 'gov').length;

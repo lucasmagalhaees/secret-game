@@ -241,6 +241,12 @@ export default function cases(Core) {
     const dz = view({ level: 'dificil', laws: { L: 1, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 5, chanc: 2, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }] });
     eq('D75: from the 3rd law on, a liberal votes Nein on a chancellor who sat in two governments that passed hidden-side laws', [Core.decide(dz, () => 0.5), Core.ZONE_DIRTY], [0, 2]);
   }
+  { // D76: the last exported game: two laws "against" the person, one where it had no choice; no count proof, and the defence knows it
+    const lg = ai7({ hist: [{ k: 'gov', pres: 6, chanc: 0, law: 'F', pc: 3, cc: 2 }, { k: 'gov', pres: 0, chanc: 4, law: 'F', cc: 2 }, { k: 'talk', by: 2, about: 0, say: 'acc', tone: 'firm' }] });
+    eq('D76: a government with no choice does not count; the accused can say so whatever the proof', [Core.evidence({ ...lg, hist: lg.hist.slice(0, 2) }, 0).some(x => x.kind === 'count'), Core.debateArgs(lg, 2).some(x => x.id === 'nochoice')], [false, true]);
+    const eg = ai7({ hist: [{ k: 'vote', pres: 1, chanc: 5, ja: [1, 3, 5] }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }] });
+    eq('D76: the one eliminating does not give as a reason a vote it shared', Core.execReason(eg, 1, 3).includes('votou'), false);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);

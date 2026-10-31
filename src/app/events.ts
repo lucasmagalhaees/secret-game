@@ -125,7 +125,7 @@ function afterBot(before: Game, next: Game): void {
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
   const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
-  if (gone >= 0) { const ex = [...next.hist].reverse().find(e => e.k === 'exec'); flash(next.players[gone].name, next.players[gone].role === 'hitler', ex?.k === 'exec' ? ex.why : ''); sound('shot'); buzz(220); }
+  if (gone >= 0) { const ex = [...next.hist].reverse().find(e => e.k === 'exec'); flash(next.players[gone].name, next.players[gone].role === 'hitler', ex?.k === 'exec' ? ex.why : ''); }
   // D70: what an app player says of another is not flashed at the foot (too quick to read): it stays in the Diary
   const talked = next.hist.length > before.hist.length && next.hist[next.hist.length - 1].k === 'talk';
   const line = next.log.length > before.log.length && !talked ? next.log[next.log.length - 1] : '';
@@ -382,7 +382,7 @@ export function initEvents(): void {
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) {
       const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick);
-      flash(t, g.players[ui.pick].role === 'hitler'); sound('shot'); buzz(220);
+      flash(t, g.players[ui.pick].role === 'hitler');   // D76: no shot sound: it gave the end away before the screen
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }
     else if (a === 'again') start();

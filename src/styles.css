@@ -1075,3 +1075,10 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .flash .fate.boss{animation-delay:4.9s}
 .fate.boss .birds i{animation-delay:calc(5s + var(--n) * .12s)}
 @media (prefers-reduced-motion:reduce){.tear-boss{display:none}}
+#players .names li{flex-wrap:wrap}
+#players .names li .who{flex:1 1 9em}   /* D76: a long mark or the meter never squeezes the name to one letter per line */
+/* D76: the notebook rows, even: the name on top, the two sides sharing the width, the buttons centred in each */
+.note-row .sides{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin:0}
+.drawer .note-row .side{min-width:0;padding:6px 4px;align-items:center}
+.drawer .note-row .side>span{justify-content:center;gap:8px}
+.note-row .who{font-size:16px}
