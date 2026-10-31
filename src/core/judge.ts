@@ -8,7 +8,7 @@
 import { backed, earlyGov, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
 import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
 import { words } from './words';
-import type { Ask, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
+import type { Ask, DebLine, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
 
 export const hasAi = (g: Game): boolean => g.players.some(p => p.ai);
 const isAi = (g: Game, i: number): boolean => !!g.players[i]?.ai;
@@ -117,7 +117,7 @@ export function defend(g: Game, me: number, kind: Defense): Game {
   const ok = kind === 'deck' ? isGov && !clash && gov.k === 'gov' && gov.law === 'F'
     : kind === 'test' ? isGov && gov.pres === me && gov.pc === 1 && gov.k === 'gov' && gov.law === 'L'
     : kind === 'lie' ? !t.hit : false;
-  const words_: Record<Defense, string> = { deck: 'O baralho veio assim, não tive escolha.', test: 'Foi teste do chanceler, e eu contei.', lie: `${g.players[t.by].name} está mentindo.`, quiet: '…' };
+  const words_: Record<Defense, string> = { deck: 'O baralho veio assim, não tive escolha.', test: 'Foi teste do chanceler, e eu contei.', lie: `${g.players[t.by].name} está mentindo.`, quiet: '…', debate: '' };
   const hist = [...g.hist]; hist[at] = { ...t, def: kind, ok };
   return { ...g, hist, log: [...g.log, `${g.players[me].name}: "${words_[kind]}"`, ...(ok ? [] : kind === 'quiet' ? [] : ['A mesa não comprou a defesa.'])] };
 }
@@ -895,4 +895,95 @@ export function achievements(g: Game, me: number): string[] {
 export function reputation(g: Game, seat: number): 1 | 2 | 3 {
   const m = socialMemory(viewOf(g, seat, 'vote', [1, 0]), seat), bad = m.contradictions + 0.5 * m.reversals;
   return bad < 1 ? 3 : bad < 2 ? 2 : 1;
+}
+
+/* ---------- D57: the debate ----------
+   An accusation that involves the person (playing alone with the app) turns into a short debate: the accused answers,
+   the accuser replies, the accused has the last word, and the app players who watched give their verdict. Every
+   argument is built from what the whole table saw, and its strength is worked out from the record; how well it lands
+   also depends on the speaker's way with words (ELOQ, by personality, known to the table). */
+export const ELOQ: Record<Persona, number> = { blefador: 3, centrado: 3, certinho: 2, critico: 2, desconfiado: 2, cetico: 2, caotico: 1 };
+export const eloq = (g: Game, i: number): number => (g.players[i]?.ai ? ELOQ[g.players[i].persona || 'centrado'] : 2);
+export interface DebArg { id: string; label: string; text: string; power: number }
+/** Who speaks next in the debate on the accusation at `at`, or -1 when the three answers are in. */
+export function debateNext(g: Game, at: number): number {
+  const t = g.hist[at];
+  if (!t || t.k !== 'talk' || t.say !== 'acc') return -1;
+  const n = (t.deb || []).length;
+  return n >= 3 ? -1 : n % 2 === 0 ? t.about : t.by;
+}
+const clashOf = (e: Event | undefined): boolean => !!e && (e.k === 'gov' || e.k === 'veto') && e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
+/** The arguments the speaker can make now, strongest first. */
+export function debateArgs(g: Game, at: number): DebArg[] {
+  const t = g.hist[at] as Talk, who = debateNext(g, at);
+  if (who < 0) return [];
+  const W = words(g.pack), nm = (i: number): string => g.players[i]?.name ?? '?', before = { ...g, hist: g.hist.slice(0, at) };
+  const proof = t.proof !== undefined ? evidence(before, t.about).find(x => x.at === t.proof) : undefined;
+  const gov = proof && proof.at < 100000 ? g.hist[proof.at] : undefined, isGov = !!gov && (gov.k === 'gov' || gov.k === 'veto');
+  const out: DebArg[] = [];
+  const said = (t.deb || []).map(l => l.id);
+  if (who === t.about) {
+    if (isGov && (gov.pres === who || gov.chanc === who)) {
+      const pres = gov.pres === who, n = pres ? gov.pc : gov.cc;
+      if (n !== undefined && n >= 0) out.push({ id: 'hand', label: 'Mostra a sua mão', text: `${pres ? 'Tirei' : 'Recebi'} ${n} ${n === 1 ? W.f : W.fs}, foi o que eu disse e mantenho.`, power: clashOf(gov) ? 0.2 : 0.55 });
+      if (clashOf(gov)) out.push({ id: 'blame', label: `Aponta a história de ${nm(pres ? gov.chanc : gov.pres)}`, text: `As histórias não batem: quem mente é ${nm(pres ? gov.chanc : gov.pres)}.`, power: 0.45 });
+      if (gov.k === 'gov' && gov.law === 'F' && !clashOf(gov)) out.push({ id: 'deck', label: 'Diz que foi o baralho', text: 'O baralho veio assim, não tive escolha.', power: 0.35 });
+      if (earlyGov(g.hist as Seen[], proof!.at)) out.push({ id: 'early', label: 'Lembra que foi no começo', text: 'Isso foi no começo do jogo, não prova nada.', power: 0.45 });
+    }
+    const libs = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === who || e.chanc === who)).length;
+    if (libs) out.push({ id: 'record', label: 'Lembra o seu histórico', text: `Estive em ${libs} governo${libs > 1 ? 's' : ''} que aprovou lei liberal.`, power: 0.25 + 0.15 * Math.min(libs, 2) });
+    const back = evidence(before, t.by), strong = back.find(x => x.hit) ?? back[0];
+    if (strong) out.push({ id: 'turn', label: `Vira contra ${nm(t.by)}`, text: `E você? ${strong.text}.`, power: strong.hit ? 0.5 : 0.3 });
+    if (!proof || !proof.hit) out.push({ id: 'noproof', label: 'Cobra uma prova', text: `${nm(t.by)} não tem prova nenhuma, só desconfiança.`, power: 0.4 });
+    out.push({ id: 'quiet', label: 'Fica calado', text: '…', power: 0 });
+  } else {
+    if (proof) out.push({ id: 'press', label: 'Insiste na prova', text: `${proof.text}. Isso não se explica.`, power: proof.hit ? 0.55 : 0.3 });
+    for (const x of evidence(before, t.about)) if (x.at !== t.proof && x.hit && out.length < 3) out.push({ id: `ev${x.at}`, label: x.kind === 'count' ? 'Faz a conta' : 'Traz outra prova', text: `${x.text}.`, power: 0.5 });
+    const last = (t.deb || [])[(t.deb || []).length - 1];
+    out.push({ id: 'weak', label: 'Diz que a explicação não cola', text: 'Essa explicação não cola.', power: last && last.power < 0.3 ? 0.4 : 0.15 });
+    const votes = evidence(before, t.about).filter(x => x.kind === 'vote').length;
+    if (votes) out.push({ id: 'votes', label: 'Lembra os votos', text: `Votou a favor de ${votes} governo${votes > 1 ? 's' : ''} que aprovou lei ${W.f}.`, power: 0.25 });
+    out.push({ id: 'drop', label: 'Recua', text: 'Pode ser que eu tenha me enganado.', power: 0 });
+  }
+  const seen = new Set<string>();
+  return out.filter(a => !said.includes(a.id) || a.id === 'quiet' || a.id === 'drop').filter(a => !seen.has(a.id) && seen.add(a.id)).sort((a, b) => b.power - a.power);
+}
+/** The speaker makes an argument; an unknown one is not a move. */
+export function debateSay(g: Game, at: number, id: string): Game {
+  const who = debateNext(g, at), arg = debateArgs(g, at).find(a => a.id === id);
+  if (who < 0 || !arg) return g;
+  const t = g.hist[at] as Talk, line: DebLine = { who, id, text: arg.text, power: arg.power };
+  const hist = [...g.hist]; hist[at] = { ...t, deb: [...(t.deb || []), line] };
+  return { ...g, hist, log: [...g.log, `${g.players[who].name}: "${arg.text}"`] };
+}
+/** An app player picks its argument: the better its way with words, the more often it finds the strongest one. */
+export function debateBot(g: Game, at: number, rand: () => number): Game {
+  const who = debateNext(g, at);
+  if (who < 0 || !g.players[who].ai) return g;
+  const args = debateArgs(g, at).filter(a => a.id !== 'quiet' && a.id !== 'drop'), e = eloq(g, who);
+  if (!args.length) return debateSay(g, at, who === (g.hist[at] as Talk).about ? 'quiet' : 'drop');
+  const k = e >= 3 ? 0 : e === 2 ? (rand() < 0.8 ? 0 : 1) : Math.floor(rand() * args.length);
+  return debateSay(g, at, args[Math.min(k, args.length - 1)].id);
+}
+/** The verdict: each app player who watched says whether the accusation stands (1), falls (0, not sure: 2). Weighed:
+ *  the strength of each side's arguments times its way with words, what that player already believed, its temper; the
+ *  hidden side covers its own and leans on the others. The accusation that stands holds; the one that falls is taken
+ *  back, as a defence that holds (D40). */
+export function debateVerdict(g: Game, at: number, rand: () => number): Game {
+  const t = g.hist[at] as Talk;
+  if (!t || t.k !== 'talk' || debateNext(g, at) >= 0 || t.verdict) return g;
+  const sum = (who: number): number => (t.deb || []).filter(l => l.who === who).reduce((a, l) => a + l.power, 0) * (0.6 + 0.2 * eloq(g, who));
+  const base = (t.hit ? 0.25 : 0) + sum(t.by) - sum(t.about);
+  const verdict: [number, number][] = [];
+  g.players.forEach((p, j) => {
+    if (!p.ai || !p.alive || j === t.by || j === t.about) return;
+    const hidden = partyOf(p.role) === 'F', ally = hidden && partyOf(g.players[t.about].role) === 'F', foe = hidden && !ally;
+    let x = base + (rand() - 0.5) * 0.4 + 0.15 * (p.mood ?? 0);
+    if (!hidden) x += (believe(viewOf(g, j, 'vote', [1, 0]), true).pF[t.about] - 0.5) * 0.6;
+    if (ally) x -= 0.5; if (foe) x += 0.25;
+    verdict.push([j, x > 0.12 ? 1 : x < -0.12 ? 0 : 2]);
+  });
+  const yes = verdict.filter(v => v[1] === 1).length, no = verdict.filter(v => v[1] === 0).length, stands = yes > no;
+  const hist = [...g.hist]; hist[at] = { ...t, verdict, def: 'debate', ok: !stands, hit: stands || t.hit };
+  return { ...g, hist, log: [...g.log, `Veredito da mesa: ${yes} acham que a acusação procede, ${no} que não, ${verdict.length - yes - no} não sabem.`] };
 }

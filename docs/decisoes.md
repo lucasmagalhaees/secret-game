@@ -547,3 +547,13 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** no fim, além de jogar de novo com a mesma mesa e voltar ao início, um botão que faz o mesmo que "Jogar agora", mas com menos chance de repetir o papel e o continente da partida anterior.
 - **Decisão:** "▶ Mais uma" monta uma partida rápida (D35). O continente e o papel da pessoa da partida anterior só se repetem `REPEAT_KEEP` (15%) das vezes (`freshPick`; os papéis são sorteados de novo até 4 vezes). As IAs não sabem de nada disso.
+
+## D57. O debate: acusação, réplica, tréplica e veredito (2026-10-31)
+
+- **Pedido:** o menu de acusação e defesa estava travado; mais variedade nas respostas, IA que se defende melhor, réplica e tréplica como num debate, IAs com mais lábia que outras, e as IAs avaliando no fim. Em páginas de caderno folheadas, sem rolar: 3 páginas.
+- **Decisão:** jogando sozinho com a IA, toda acusação que envolve a pessoa vira um debate em 3 páginas que se folheiam de lado: 1 a acusação e a primeira resposta do acusado; 2 a réplica de quem acusou e a tréplica do acusado; 3 o veredito da mesa. A cada vez quem fala escolhe entre argumentos montados da ata, cada um com a força que a ata dá (mostrar a mão, apontar a história do outro, o baralho, "foi no começo", o histórico, virar a acusação, cobrar prova, insistir, outra prova, a conta, os votos, recuar, ficar calado). A lábia (`ELOQ`) vem da personalidade, que a mesa conhece: blefador e centrado 3, caótico 1, as outras 2; quem tem mais lábia acha o melhor argumento mais vezes e pesa mais. No veredito, cada IA viva de fora diz se a acusação procede, não procede ou não sabe, pela força dos argumentos, pela lábia, pelo que já achava e pelo temperamento; o lado escondido protege os seus. Se procede, a acusação pesa como prova; se não, cai como uma defesa que colou (D40). O jogo espera enquanto o debate dura.
+
+## D58. A arma na eliminação e o detetive na investigação (2026-10-31)
+
+- **Pedido:** uma arma atirando na eliminação; na investigação, a silhueta de um detetive de sobretudo e chapéu, com a lupa, tirando o nome de um envelope.
+- **Decisão:** na eliminação, um revólver entra pela lateral, mira, dispara (clarão), recua e então o vidro trinca e aparece o nome. Na investigação, a silhueta do detetive passa a lupa e um papel com o nome de quem é investigado sai do envelope; o partido continua em segredo. Com "reduzir movimento", nada se mexe.

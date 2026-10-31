@@ -67,9 +67,11 @@ export type Event =
 /** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
  *  ('trust'), or keeps quiet ('quiet', about -1). The players run by the app do not weigh it: it is for the people. */
 /** `re`: how the players run by the app took it, when a person said it (D26): seat and answer (REACT). */
-export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; stage?: 'campaign'; re?: [number, number][]; tone?: 'soft' | 'firm' | 'proof'; proof?: number; hit?: boolean; def?: Defense; ok?: boolean };
+export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; stage?: 'campaign'; re?: [number, number][]; tone?: 'soft' | 'firm' | 'proof'; proof?: number; hit?: boolean; def?: Defense; ok?: boolean; deb?: DebLine[]; verdict?: [number, number][] };
+/** A line of a debate (D57): who spoke, the argument it chose, what it said and how strong it was by the record. */
+export type DebLine = { who: number; id: string; text: string; power: number };
 /** How the one accused answered (D40): the deck came like that, it was a chancellor test, the accuser lies, or silence. */
-export type Defense = 'deck' | 'test' | 'lie' | 'quiet';
+export type Defense = 'deck' | 'test' | 'lie' | 'quiet' | 'debate';
 /** An elected government: the law it made (or a veto, with no law). `drew` are the 3 laws the president drew and `got`
  *  the 2 the chancellor got: secret at the time. `pc` and `cc` are what the president and the chancellor told the table
  *  afterwards, as the number of fascist laws (-1: they kept quiet). A 'vote' event exists only where the phone took
