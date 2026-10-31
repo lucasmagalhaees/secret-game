@@ -565,9 +565,9 @@ with sync_playwright() as p:
     mp.click('#phase [data-act=investigate][data-i="2"]')
     assert mp.locator('#power-effect.investigate.go').is_visible() and mp.locator('#party').count() == 0
     # D58: the detective with the magnifier pulls the name out of the envelope
-    assert mp.locator('#power-effect .sleuth').count() == 1 and mp.evaluate("getComputedStyle(document.querySelector('#power-effect .slip')).animationName") == 'slipOut'
+    assert mp.locator('#power-effect .hand').count() == 1 and mp.evaluate("getComputedStyle(document.querySelector('#power-effect .slip')).animationName") == 'slipUp'
     assert 'fascista' not in mp.text_content('#power-effect').lower() and 'liberal' not in mp.text_content('#power-effect').lower()
-    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .detective')).opacity) > .9")
+    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect')).opacity) > .9")
     mp.screenshot(path=str(SHOTS / f'power-investigate-{THEME}.png'))
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'execute'; g.target = null; localStorage.setItem('secrethitler.v1', JSON.stringify(window.__APP.S)); }""")
     cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "execute"')

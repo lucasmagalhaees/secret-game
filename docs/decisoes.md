@@ -587,3 +587,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** quando uma animação toca, os botões têm que congelar, senão tudo dá bug. E o chiado de rádio ainda tocava (o D50 não tinha chegado à `main`).
 - **Decisão:** cada efeito sobre a tela (eliminação, investigação, caos, veto, eleição especial, lei voando) congela os toques e as IAs até acabar (`ui.frozen`); só os botões do debate continuam valendo. Com "reduzir movimento", nada se mexe e nada congela. O D50 entrou junto.
+
+## D64. A investigação na tela toda (2026-10-31)
+
+- **Pedido:** a animação do detetive ficou ruim; melhor uma mão tirando o nome do envelope, com a lupa, ocupando a tela toda como a eliminação.
+- **Decisão:** sai o detetive (D58). A tela escurece, um envelope grande abre, uma mão de luva puxa o papel com o nome do investigado e uma lupa dourada passa sobre ele; tudo some em uns 3 s, com os toques congelados (D63). Só o nome aparece: o partido continua em segredo.
