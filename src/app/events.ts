@@ -139,15 +139,19 @@ function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): 
 }
 /** Quick game (D35): 7 seats, the person and 6 app players at the hard level, no assistance, a theme and a continent
  *  drawn at random (Brazil only once unlocked). The person keeps their name; the app players get names of the scene. */
-function quickGame(): void {
+/** A quick game (D35); after a game, "Mais uma" (D56) plays another one avoiding the role and the continent of the last. */
+function quickGame(prev?: Game | null): void {
   const me = S.names.find((_, i) => !S.ai?.[i]) || 'Você';
-  const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = regions[Math.floor(rand() * regions.length)];
+  const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = Core.freshPick(regions, prev?.region || (prev ? 'mundo' : undefined), rand);
+  const lastRole = prev ? prev.players.find(p => !p.ai)?.role : undefined;
   const pack = Core.PACKS[Math.floor(rand() * Core.PACKS.length)];
   let names = [me];
   while (names.length < 7) names = [...names, Core.botName(names, rand, pack, region)];
   // the table set up by hand stays as it was: the quick game is built apart from it
   clearFlash();
-  const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
+  let r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
+  // the same role as last game comes back only now and then (D56): draw the roles again a few times
+  for (let k = 0; lastRole && r.ok && r.game.players[0].role === lastRole && k < 4 && rand() >= Core.REPEAT_KEEP; k++) r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
   if (!r.ok) return;
   const next = { ...S }; delete next.notes; delete next.noteDetails; delete next.assist; setS(next); saveS();
   ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play(r.game, 'Partida rápida. Veja seu papel em segredo.');
@@ -231,6 +235,7 @@ export function initEvents(): void {
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
     else if (a === 'quickgame') quickGame();
+    else if (a === 'nextgame') quickGame(S.game);
     else if (a === 'gallery') { ui.gallery = !ui.gallery; render(); scrollTo(0, 0); }   // every drawing (D25)
     else if (a === 'exportgames') void exportGames();
     else if (a === 'share' && g) { const w = Core.words(g.pack, g.region); void shareResult(g, g.players.findIndex(p => !p.ai), { boss: w.boss, f: w.f, theme: w.theme }); }

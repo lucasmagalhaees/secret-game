@@ -76,6 +76,12 @@ export function botName(names: string[], rand?: () => number, pack: Pack = 'fasc
   return free.length ? free[rand ? Math.floor(rand() * free.length) : 0] : `IA ${names.length + 1}`;
 }
 
+/** D56: a draw that avoids the last pick: the same one comes back only REPEAT_KEEP of the time. */
+export const REPEAT_KEEP = 0.15;
+export function freshPick<T>(items: T[], last: T | undefined, rand: () => number): T {
+  const pool = last !== undefined && items.length > 1 && rand() >= REPEAT_KEEP ? items.filter(x => x !== last) : items;
+  return pool[Math.floor(rand() * pool.length)];
+}
 /** A small seeded generator (mulberry32): numbers in [0, 1). */
 export function seeded(seed: number): () => number {
   let a = seed >>> 0;

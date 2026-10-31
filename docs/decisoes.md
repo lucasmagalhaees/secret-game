@@ -542,3 +542,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** ao se defender, ver as próprias jogadas que servem de defesa: qual jogada está sendo acusada, se era presidente ou chanceler, que cartas recebeu, o que passou ou aprovou e o que disse que recebeu.
 - **Decisão:** a tela da acusação mostra "Suas jogadas" acima das respostas: primeiro a jogada apontada pela prova (destacada), depois as que falam a favor (governos que aprovaram lei liberal, investigações e o que disse delas), até 4. As mãos são da própria pessoa e só aparecem na tela dela, jogando sozinha com a IA.
+
+## D56. "Mais uma" no fim da partida (2026-10-31)
+
+- **Pedido:** no fim, além de jogar de novo com a mesma mesa e voltar ao início, um botão que faz o mesmo que "Jogar agora", mas com menos chance de repetir o papel e o continente da partida anterior.
+- **Decisão:** "▶ Mais uma" monta uma partida rápida (D35). O continente e o papel da pessoa da partida anterior só se repetem `REPEAT_KEEP` (15%) das vezes (`freshPick`; os papéis são sorteados de novo até 4 vezes). As IAs não sabem de nada disso.
