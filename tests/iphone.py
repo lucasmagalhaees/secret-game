@@ -43,9 +43,16 @@ try:
         assert page.locator('#heard').is_visible(), 'a button click must repaint even while Safari keeps the editor focused'
         assert page.locator('#notes [data-act=court][data-i="1"]').count() == 0
         # D42: an app player accuses the person: the accusation screen, with the answers on it, and the result there too
-        page.evaluate("(() => { const A = window.__APP, g = A.S.game, me = g.players.findIndex(p => !p.ai), by = g.players.findIndex((p, i) => p.ai && p.alive && i !== me); A.S.game = { ...g, hist: [...g.hist, { k: 'talk', by, about: me, say: 'acc' }], log: [...g.log, g.players[by].name + ': \"Explica isso.\"'] }; })()")
+        page.evaluate("(() => { const A = window.__APP, g = A.S.game, me = g.players.findIndex(p => !p.ai), by = g.players.findIndex((p, i) => p.ai && p.alive && i !== me); A.S.game = { ...g, hist: [...g.hist, { k: 'gov', pres: me, chanc: by, law: 'L', drew: ['F','L','L'], got: ['L','L'], pc: 1, cc: 0 }, { k: 'talk', by, about: me, say: 'acc' }], log: [...g.log, g.players[by].name + ': \"Explica isso.\"'] }; })()")
         page.locator('[data-act=help]').first.dispatch_event('click')
         assert page.locator('#defense').count() == 1, 'the answer card, when the screen is not open'
+        # D57: the card opens the debate, with the person's own plays on the first page
+        page.locator('#dopen').dispatch_event('click'); page.wait_for_selector('#debate')
+        assert page.locator('#debate .myplays li').count() >= 1
+        for _ in range(80):
+            if page.locator('#debate [data-act=dclose]').count(): page.locator('#debate [data-act=dclose]').dispatch_event('click'); break
+            if page.locator('#debate [data-act=darg]').count(): page.locator('#debate [data-act=darg]').first.dispatch_event('click')
+            else: page.wait_for_timeout(100)
         assert 'Lucas' in page.inner_text('#speech-peek') and 'Truman' in page.inner_text('#speech-peek')
         page.click('#speech-peek')
         assert page.locator('#diary').is_visible() and not page.locator('#drawer').is_visible()

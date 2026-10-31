@@ -294,6 +294,7 @@ export function initEvents(): void {
     else if (a === 'selfclaim') { const me = g.players.findIndex(p => !p.ai); play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
     else if (a === 'pleato') { ui.pleaTo = ui.pleaTo === i ? null : i; render(); }
     else if (a === 'plea' && ui.pleaTo !== null && ui.pleaTo !== undefined) { const me = g.players.findIndex(p => !p.ai), to = ui.pleaTo; ui.pleaTo = null; play(Core.plea(g, me, to, d.v === '1'), `Você pediu o voto de ${g.players[to].name}.`); }
+    else if (a === 'dopen') openDebate(i);
     else if (a === 'dclose') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }
     else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' && t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.'); }
     else if (a === 'court') { ui.court = i; ui.courtProof = null; ui.courtTone = undefined; render(); }

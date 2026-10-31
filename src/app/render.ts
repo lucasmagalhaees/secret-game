@@ -291,7 +291,7 @@ function vDefense(g: Game): string {
   const t = g.hist[at] as Extract<Game['hist'][number], { k: 'talk' }>;
   const plays = myPlays(g, me, t.proof !== undefined && t.proof !== null && t.proof < 100000 ? t.proof : -1);
   const opts: [string, string][] = [['deck', 'O baralho veio assim'], ['test', 'Foi teste do chanceler'], ['lie', `${g.players[t.by].name} está mentindo`], ['quiet', 'Ficar calado']];
-  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p>${plays}</section>`;
+  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><button class="btn block" data-act="dopen" data-i="${at}" id="dopen">Responder no debate</button><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p>${plays}</section>`;
 }
 const CLAIM: Record<string, [string, string[]]> = {
   pc: ['Você foi presidente. O que diz que tirou?', ['3 liberais', '1 {f} e 2 liberais', '2 {fs} e 1 liberal', '3 {fs}']],
