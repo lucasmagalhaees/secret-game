@@ -660,7 +660,7 @@ function vDock(g: Game): string {
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
 
   ];
-  return `${vDrawer(g)}${vFab(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${btns.join('')}</nav>${GAP}`;
+  return `${vDrawer(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${vFab(g)}${btns.join('')}</nav>${GAP}`;
 }
 /** D65/D66: talking to the table, in one panel, grouped by what each thing is for; only what can be done now shows. */
 function vTalk(g: Game): string {
@@ -678,7 +678,9 @@ function vTalk(g: Game): string {
 /** D70: "I am liberal", a button that floats over the game, out of the scroll, while the person may say it. */
 function vFab(g: Game): string {
   const me = solo(g);
-  return me >= 0 && Core.canSelfClaim(g, me) ? '<button class="fab-lib" data-act="tself" id="selfclaim" aria-label="Dizer à mesa: eu sou liberal">📣 Sou liberal</button>' : '';
+  if (me < 0 || !g.players[me].alive || g.phase === 'over') return '';
+  const can = Core.canSelfClaim(g, me);
+  return `<button class="dock-btn lib" data-act="tself" id="selfclaim"${can ? '' : ' disabled'} aria-label="Dizer à mesa: eu sou liberal">📣 ${can ? 'Sou liberal' : 'Já disse'}</button>`;
 }
 /** The personalities of the app players (D26), as the table knows them: a name and a line. */
 export const PERSONA_W: Record<Persona, [string, string]> = {
