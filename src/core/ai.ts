@@ -112,10 +112,12 @@ function requests(v: View, b: Beliefs, what: 'pick' | 'avoid' | 'inv' | 'kill'):
  *  that passed a law of the hidden side (a public fact), unless an investigation said it is liberal. */
 export const ZONE_DIRTY = 2;
 const dirtyCount = (v: View, i: number): number => v.hist.filter(e => e.k === 'gov' && e.law === 'F' && (e.pres === i || e.chanc === i)).length;
+/** D80: two who governed together and a law of the hidden side came out: one cannot clear the other by investigating. */
+const together = (v: View, a: number, b: number): boolean => v.hist.some(e => e.k === 'gov' && e.law === 'F' && ((e.pres === a && e.chanc === b) || (e.pres === b && e.chanc === a)));
 const dirtyIn = (v: View, i: number): boolean => {
   // an investigation that said "liberal" clears it only if the investigator is not dirty itself: in the exported games
   // the hidden side covered its allies in 14 of its investigations
-  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || dirtyCount(v, e.by) < ZONE_DIRTY))) return false;
+  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || (dirtyCount(v, e.by) < ZONE_DIRTY && !together(v, e.by, i))))) return false;
   return dirtyCount(v, i) >= ZONE_DIRTY;
 };
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };

@@ -684,3 +684,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** ainda havia lugares sem o papel conhecido ao lado do nome; e, do lado do nome, um "KD" como no Call of Duty: quantas leis fascistas cada um aprovou como presidente e como chanceler.
 - **Decisão:** a etiqueta do D78 passa também para a lista de jogadores, a faixa da mesa, o caderno, os botões de escolher jogador (chanceler, investigar, eliminar, eleição especial), o resumo e o bloco. Ao lado do nome, nesses mesmos lugares, `1P·0C` na cor do lado escondido: leis fascistas (comunistas) aprovadas como presidente e como chanceler, contadas só do que a mesa toda viu; some enquanto for zero.
+
+## D80. Acusar o chanceler para quem você passou as leis (2026-10-31)
+
+- **Pedido:** na última partida exportada, a pessoa (presidente) passou 1 liberal e 1 fascista; o chanceler aprovou a fascista, disse que recebeu 2, e a acusação dela caiu e ainda virou contra ela. A réplica oferecida era "Governou com Lucas e saiu lei fascista", sem sentido na boca da própria pessoa.
+- **Decisão:** quando quem acusa foi o presidente que deu as duas leis ao acusado e o que ele diz ter recebido não bate com o que recebeu, a defesa não tem o xeque-mate "não tive escolha" (é palavra contra palavra) e quem acusa ganha o argumento "Eu te passei 1 fascista e 1 liberal…" no lugar de "Insiste na prova"; essa acusação não vira contra quem acusou. Junto: uma investigação não limpa quem governou com o investigador num governo que aprovou lei fascista (o aliado limpava o Hitler); "liberais" no plural; nome no meio da frase não perde a maiúscula.
