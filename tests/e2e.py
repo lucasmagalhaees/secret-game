@@ -326,6 +326,24 @@ with sync_playwright() as p:
     # D26: telling the table from the notebook; each app player reacts, by its personality, which the table knows
     assert pg.locator('#notes .persona').count() == 0 and pg.locator('#notes [data-act=denounce]').count() + pg.locator('#notes [data-act=court]').count() == 12, 'a claim for each side of each one'
     # D39: accusing opens the court: a proof from the record (if any), a tone, then the accusation
+    # D65/D66: talking to the table, from its own panel: say you are liberal, ask whoever presides to pick you
+    pg.click('#talktoggle'); assert pg.locator('#talk.open').count() == 1 and overflow() == 0
+    pg.click('#selfclaim'); assert 'Eu sou liberal' in G()['log'][-1]
+    pg.click('#talktoggle'); assert pg.locator('#selfclaim').count() == 0
+    if pg.locator('#askpick').count(): pg.click('#askpick'); assert 'me indica' in G()['log'][-1]
+    else: pg.click('#talktoggle')
+    for act in ('tavoid', 'tinv', 'twhy'):   # D66: the other requests, each from a chip of the panel
+        pg.click('#talktoggle')
+        if pg.locator(f'#talk [data-act={act}]').count(): pg.locator(f'#talk [data-act={act}]').first.click(); assert G()['hist'][-1]['k'] in ('ask', 'why')
+        else: pg.click('#talktoggle')
+    if pg.locator('#talk.open').count(): pg.click('#talktoggle')
+    pg.click('#talktoggle')
+    if pg.locator('#talk [data-act=tbloc]').count():
+        pg.locator('#talk [data-act=tbloc]').first.click(); pg.locator('#talk [data-act=tbloc]').nth(1).click(); pg.click('#blocgo')
+        assert G()['hist'][-1]['k'] == 'bloc' and len(G()['hist'][-1]['with']) == 2
+    elif pg.locator('#talk.open').count(): pg.click('#talktoggle')
+    if pg.locator('#diary.open').count(): pg.click('#diarytoggle')
+    if not pg.locator('#notes').is_visible(): pg.click('#notestoggle')
     pg.locator(f'#notes [data-act=court][data-i="{first}"]').click(); assert pg.locator('#court').is_visible() and overflow() == 0, 'the court opens'
     shot(f's5-tribunal-{THEME}.png'); pg.click('#accuse'); assert pg.locator('#court').count() == 0
     if pg.locator('#contra').count(): pg.click('#contra')
@@ -403,6 +421,9 @@ with sync_playwright() as p:
         for sel in ORDER:
             if pg.locator(sel).count():
                 if sel == '[data-act=myvote]':
+                    if 'plea' not in seen and pg.locator('#plea [data-act=pleato]').count():   # D65: ask an app player for its vote
+                        seen.add('plea'); pg.locator('#plea [data-act=pleato]').first.click(); pg.locator('#plea [data-act=plea][data-v="1"]').click()
+                        assert 'vota' in G()['log'][-1] and G()['hist'][-1]['k'] == 'plea'
                     seen.add('vote')
                     assert pg.locator('#phase [data-act=myvote]').count() == 2
                     assert min(vote_contrast()) >= 4.5, 'the human vote is readable at the point of interaction'

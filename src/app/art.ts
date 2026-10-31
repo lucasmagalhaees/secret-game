@@ -267,7 +267,6 @@ const HEADS: Record<string, (s: Side) => string> = {
     <path d="M52 56 C56 52 70 52 74 56 C72 68 66 74 63 74 C60 74 54 68 52 56Z" fill="#e8cfae" ${o(1.6)}/>
     <ellipse cx="63" cy="60" rx="5" ry="3.6" fill="${K}"/><path d="M63 64 V68 M58 70 C61 71 66 71 69 69" fill="none" ${o(1.8)}/>
     ${look(s, '#f6e36b', 42, 11, '#b87a4a')}`,
-  leao: s => cat(s, '#e2b05a', '#b8843a', { ears: ' ', behind: `<polygon points="63,10 71,20 83,15 85,27 98,29 93,40 103,48 93,56 98,67 85,69 83,81 71,76 63,86 55,76 43,81 41,69 28,67 33,56 23,48 33,40 28,29 41,27 43,15 55,20" fill="#9a5424" ${o()}/><circle cx="63" cy="48" r="30" fill="#b86a2c"/>` }),
   tigre: s => cat(s, '#ec8a2e', '#b7601a', { marks: `<path d="M40 50 C44 60 52 66 63 66 C74 66 82 60 86 50 C82 58 74 62 63 62 C52 62 44 58 40 50Z" fill="${W}" opacity=".9"/><path d="M63 22 L60 30 L63 34 L66 30Z M52 24 L54 33 M74 24 L72 33 M36 40 L48 44 L38 46 M36 50 L48 51 L37 55 M90 40 L78 44 L88 46 M90 50 L78 51 L89 55" fill="${K}" stroke="${K}" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>` }),
   lince: s => cat(s, '#c9a477', '#9b7a52', { ears: `<path d="M30 38 L24 10 L48 26Z M96 38 L102 10 L78 26Z" fill="#c9a477" ${o()}/><path d="M28 18 L27 24 L36 26Z M98 18 L99 24 L90 26Z" fill="#9b7a52"/><path d="M24 10 L20 -2 M102 10 L106 -2" stroke="${K}" stroke-width="3.4" stroke-linecap="round"/>`, marks: `<path d="M36 50 L26 62 L40 58 L34 68 L48 62 M90 50 L100 62 L86 58 L92 68 L78 62" fill="#ede0c8" ${o(1.6)}/>${spots([[48, 34, 1.6], [56, 30, 1.4], [72, 30, 1.4], [79, 34, 1.6]], '#6b4a2c')}` }),
   diabo: s => `<circle cx="38" cy="26" r="10" fill="#1f1b19" ${o()}/><circle cx="38" cy="26" r="5" fill="#d96a6a"/><circle cx="88" cy="26" r="10" fill="#1f1b19" ${o()}/><circle cx="88" cy="26" r="5" fill="#d96a6a"/>
@@ -388,11 +387,6 @@ const LEADERS: Record<string, () => string> = {
     <path d="M52 34 L58 38 M68 34 L62 38" stroke="${K}" stroke-width="3" stroke-linecap="round"/>
     <path d="M52 54 C48 62 50 70 54 72 C56 66 56 60 56 56Z M68 54 C72 62 70 70 66 72 C64 66 64 60 64 56Z" fill="#1f1b19" ${o(1.4)}/>
     <path d="M56 56 C58 64 62 64 64 56 C62 58 58 58 56 56Z" fill="#5a1414" ${o(1.2)}/>${shout}`,
-  morcego: () => `<path d="M40 42 L20 0 L56 30Z M80 42 L100 0 L64 30Z" fill="#4b3f45" ${o()}/><path d="M38 32 L26 10 L50 30Z M82 32 L94 10 L70 30Z" fill="#c98a8a"/>
-    <path d="M36 46 C36 30 46 22 60 22 C74 22 84 30 84 46 C84 62 74 70 60 70 C46 70 36 62 36 46Z" fill="#4b3f45" ${o()}/>
-    <path d="M54 46 L60 38 L66 46 L64 52 L56 52Z" fill="#7a5a62" ${o(1.4)}/>
-    <path d="M46 56 C50 68 70 68 74 56 C68 60 52 60 46 56Z" fill="#5a1414" ${o(1.6)}/><path d="M50 57 l2.4 6 l2.4 -5.4 M65 57 l2.4 6 l2.4 -5.4" fill="${W}" ${o(1)}/>
-    ${angry(40, 11, '#e8442e')}${shout}`,
   rato: () => `<circle cx="34" cy="24" r="13" fill="#8a8580" ${o()}/><circle cx="34" cy="24" r="7" fill="#d99a9a"/><circle cx="86" cy="24" r="13" fill="#8a8580" ${o()}/><circle cx="86" cy="24" r="7" fill="#d99a9a"/>
     <path d="M38 40 C38 28 48 22 60 22 C72 22 82 28 82 40 C82 52 74 60 68 66 L60 76 L52 66 C46 60 38 52 38 40Z" fill="#8a8580" ${o()}/>
     <ellipse cx="60" cy="74" rx="4.6" ry="3.6" fill="${PINK}" ${o(1.4)}/>
@@ -426,15 +420,6 @@ const LEADERS: Record<string, () => string> = {
     <path d="M42 34 C46 28 56 30 56 38 C56 46 48 50 44 46 Z M78 34 C74 28 64 30 64 38 C64 46 72 50 76 46 Z" fill="#e8d6a8" ${o(1.2)}/>
     <ellipse cx="60" cy="54" rx="15" ry="11" fill="#e8d6a8" ${o(1.8)}/><ellipse cx="60" cy="47" rx="5.6" ry="4" fill="${K}"/>
     ${stache(57)}<path d="M54 63 C58 65 62 65 66 63" fill="none" ${o(2)}/>${pipe(66, 62)}${angry(39, 10, W)}`,
-  bufalo: () => `<path d="M40 26 C20 22 8 34 12 50 C16 40 24 36 34 38Z M80 26 C100 22 112 34 108 50 C104 40 96 36 86 38Z" fill="#cfc6b2" ${o()}/>
-    <path d="M34 28 C44 20 76 20 86 28 C80 32 40 32 34 28Z" fill="#b8ae98" ${o(1.6)}/>
-    <path d="M36 44 C36 30 46 24 60 24 C74 24 84 30 84 44 C84 62 76 74 60 74 C44 74 36 62 36 44Z" fill="#3a3330" ${o()}/>
-    <ellipse cx="60" cy="60" rx="14" ry="10" fill="#5a504a" ${o(1.8)}/><ellipse cx="54" cy="60" rx="2.4" ry="3.2" fill="${K}"/><ellipse cx="66" cy="60" rx="2.4" ry="3.2" fill="${K}"/>
-    ${stache(66)}${pipe(66, 70)}${angry(42, 11, W)}`,
-  iaque: () => `<path d="M38 28 C24 24 20 10 30 4 C30 14 36 18 44 22Z M82 28 C96 24 100 10 90 4 C90 14 84 18 76 22Z" fill="#e9e1cc" ${o()}/>
-    <path d="M30 40 C28 24 42 18 60 18 C78 18 92 24 90 40 L94 70 L84 64 L80 76 L70 68 L60 80 L50 68 L40 76 L36 64 L26 70Z" fill="#4a3428" ${o()}/>
-    <ellipse cx="60" cy="56" rx="13" ry="10" fill="#8a6a54" ${o(1.8)}/><ellipse cx="55" cy="56" rx="2.2" ry="3" fill="${K}"/><ellipse cx="65" cy="56" rx="2.2" ry="3" fill="${K}"/>
-    ${stache(63, '#e9e1cc')}${pipe(66, 66)}${angry(40, 11, W)}`,
   morsa: () => `<path d="M30 46 C28 26 42 18 60 18 C78 18 92 26 90 46 C88 62 76 70 60 70 C44 70 32 62 30 46Z" fill="#9a6a4a" ${o()}/>
     <path d="M38 52 C40 42 52 40 60 46 C68 40 80 42 82 52 C80 62 68 64 60 58 C52 64 40 62 38 52Z" fill="#c69a74" ${o(1.8)}/>
     ${spots([[46, 50, 1], [50, 54, 1], [44, 56, 1], [74, 50, 1], [70, 54, 1], [76, 56, 1]], K)}

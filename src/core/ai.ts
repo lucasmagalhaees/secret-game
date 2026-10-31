@@ -96,6 +96,18 @@ export const DECISIVE_SLIP = 0.1;
 export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.6, extremo: 0.65 };
 /** D62: how much the votes already cast weigh on a liberal's vote, by how much it trusts each voter (the sceptic less). */
 export const CASCADE_W = 0.15;
+/** D65: how much a plea for its vote moves a liberal, times how much it trusts whoever asks. */
+export const PLEA_W = 0.2;
+/** D66: how much a request to whoever presides (pick me, do not pick someone, investigate someone) moves it, times how
+ *  much it trusts whoever asked. Requests last until the next government. */
+export const REQ_W = 0.25;
+function requests(v: View, b: Beliefs, what: 'pick' | 'avoid' | 'inv'): (i: number) => number {
+  let from = 0;
+  for (let i = v.hist.length - 1; i >= 0; i--) { const e = v.hist[i]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') { from = i + 1; break; } }
+  const asks = v.hist.slice(from).filter((e): e is Extract<Seen, { k: 'ask' }> => e.k === 'ask' && e.what === what && e.by !== v.me);
+  const m = v.persona === 'cetico' ? 0.4 : 1;
+  return i => asks.filter(e => e.who === i).reduce((a, e) => a + REQ_W * m * (1 - b.pF[e.by]), 0);
+}
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
@@ -153,6 +165,14 @@ export function socialMemory(v: View, seat: number): { accusations: number; defe
   v.hist.forEach((e, at) => {
     // an accusation made firmly, or with a proof, that the record does not back costs the accuser (D39)
     if (e.k === 'talk' && e.by === seat && e.say === 'acc' && (e.tone === 'firm' || e.tone === 'proof') && !e.hit && !backed(v.hist, 0, at, e.about, true)) result.contradictions++;
+    // D66: an oath on a government whose story did not add up, or a seat sworn for that an investigation was said to show
+    // as the other side: the stake is lost
+    if (e.k === 'swear' && e.by === seat) { const gv = v.hist[e.at]; if (gv && (gv.k === 'gov' || gv.k === 'veto') && gv.pc !== undefined && gv.cc !== undefined && gv.pc >= 0 && gv.cc >= 0 && (gv.cc > gv.pc || gv.cc < gv.pc - 1)) result.contradictions += 3; }
+    if (e.k === 'inv' && e.said === 'F' && (e.target === seat && v.hist.slice(0, at).some(x => x.k === 'swear' && x.by === seat))) result.contradictions += 3;
+    if (e.k === 'inv' && e.said === 'F' && e.target !== seat && v.hist.slice(0, at).some(x => x.k === 'talk' && x.by === seat && x.say === 'trust' && x.about === e.target)) result.contradictions++;
+    if (e.k === 'gov' && e.law === 'F') { const vt = v.hist[at - 1], bl = [...v.hist.slice(0, at)].reverse().find((x): x is Extract<Seen, { k: 'bloc' }> => x.k === 'bloc'); if (bl && vt && vt.k === 'vote' && vt.ja.includes(seat) && (bl.by === seat || bl.yes.includes(seat)) && v.hist.slice(v.hist.lastIndexOf(bl), at).filter(x => x.k === 'gov' || x.k === 'veto' || x.k === 'chaos' || x.k === 'rej').length < 3) result.contradictions++; }
+    // D65: said it was liberal, and an investigation was said to show the other side: a lie the table remembers
+    if (e.k === 'inv' && e.target === seat && e.said === 'F' && v.hist.slice(0, at).some(x => x.k === 'self' && x.by === seat)) result.contradictions += 2;
     // a weak accusation that fell in a debate turned against the accuser (D61): it costs it the table's trust
     if (e.k === 'talk' && e.by === seat && e.backfire) { result.contradictions += 2; result.reversals++; }
     if (e.k === 'gov' || e.k === 'veto') {
@@ -453,7 +473,8 @@ function liberalJa(v: View, b: Beliefs): boolean {
   // never below zero: even the most wary one accepts a government no riskier than any other pair (D22)
   // D62: the votes heard before its turn: a Ja from someone it trusts makes it easier, a Nein harder
   const heard = (v.cast || []).filter(([j]) => j !== v.me), lean = heard.length ? heard.reduce((a, [j, ja]) => a + (1 - b.pF[j]) * (ja ? 1 : -1), 0) / heard.length : 0;
-  const pull = CASCADE_W * (v.persona === 'cetico' ? 0.4 : v.persona === 'certinho' ? 1.2 : 1) * lean;
+  const pull = CASCADE_W * (v.persona === 'cetico' ? 0.4 : v.persona === 'certinho' ? 1.2 : 1) * lean
+    + (v.pleas || []).reduce((a, [j, ja]) => a + PLEA_W * (1 - b.pF[j]) * (ja ? 1 : -1), 0) * (v.persona === 'cetico' ? 0.4 : 1);   // D65
   const slack = Math.max(0, 0.05 + MOOD * v.mood) + pull + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
   rows(b, gov.filter(i => i !== v.me));
   if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) {
@@ -690,14 +711,16 @@ function liberal(v: View, rand: () => number): number {
       const rejection = (0.2 + (v.tracker === TRACKER_MAX - 1 ? 0.25 : 0)) * (1 - plan.approval) * (1 + 0.3 * b.pF[plan.next]);
       return govRisk + leaderLoss + chaos + rejection - learning;
     };
-    rows(b, o, score);
+    const pick = requests(v, b, 'pick'), avoid = requests(v, b, 'avoid'), base = score;
+    const scored = (i: number): number => base(i) - pick(i) + avoid(i);   // D66: what the table asked of whoever presides
+    rows(b, o, scored);
     why(strategic
       ? `Comparou governos completos: risco de ter alguém do lado escondido, ${zone ? 'risco imediato de eleger o {boss}' : 'informação que uma nova rodada pode revelar'}${v.tracker === TRACKER_MAX - 1 ? ' e perigo de chegar ao caos' : ''}. Considerou a maioria dos votos e a próxima presidência. Escolheu o menor risco estratégico.`
       : `Indicou quem parece mais limpo: menor chance de ser do lado escondido${zone ? ', contando em dobro a chance de ser o {boss} (já há 3 leis {fs})' : ''}.`);
-    return best(o, score, rand);
+    return best(o, scored, rand);
   }
   if (v.ask === 'investigate') {
-    const score = (i: number): number => -(b.pF[i] * (1 - b.pF[i])) - b.pF[i] / 100;
+    const asked = requests(v, b, 'inv'), score = (i: number): number => -(b.pF[i] * (1 - b.pF[i])) - b.pF[i] / 100 - asked(i);   // D66
     rows(b, o, i => b.pF[i] * (1 - b.pF[i]));
     why('Investigou de quem tinha mais dúvida: a chance mais perto de 50%, onde ver o partido ensina mais (investigar quem já parece limpo ou culpado quase não muda o que ela sabe). No empate, pende para o mais suspeito.');
     return best(o, score, rand);
