@@ -796,7 +796,7 @@ const passes = (d: number): number[] => [...new Set([Math.min(2, d), Math.max(0,
 /** A fascist who knows its team (and Hitler at a small table): plays for it, and looks like a liberal when it can. */
 function fascist(v: View, rand: () => number, allies: number[], hitler: number): number {
   const o = v.options, k = knob(v), isAlly = (i: number): boolean => allies.includes(i);
-  const early = v.laws.F < HITLER_ZONE, clean = (): boolean => early && rand() < Math.max(k.trust, EARLY_CLEAN[v.level]);
+  const early = v.laws.F < HITLER_ZONE, clean = (): boolean => rand() < k.trust && early, fresh = (): boolean => early && EARLY_CLEAN[v.level] > 0 && rand() < EARLY_CLEAN[v.level];
   const groom = k.plan && early && hitler >= 0 && v.alive[hitler];
   if (v.ask === 'pc' || v.ask === 'cc' || v.ask === 'inv' || v.ask === 'peek') return fascistTalk(v, rand, isAlly);
   if (v.ask === 'pdiscard') {
@@ -804,10 +804,10 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     if (L < 0) { why('Só tinha {fs}: qualquer uma.'); return 0; }
     if (groom && v.chanc === hitler) { why(`O chanceler é o {boss}: passou uma liberal para ele aprovar e parecer limpo antes da ${HITLER_ZONE}ª lei {f}.`); return F; }   // Hitler gets a liberal law to pass
     if (isAlly(v.chanc as number)) {
-      if (clean()) { why(`O chanceler é aliado: passou uma liberal para os dois ficarem limpos antes da ${HITLER_ZONE}ª lei {f}.`); return F; }
+      if (fresh()) { why(`O chanceler é aliado: passou uma liberal para os dois ficarem limpos antes da ${HITLER_ZONE}ª lei {f}.`); return F; }
       why('O chanceler é aliado: jogou fora a liberal e passou {fs}.'); return L;
     }
-    if (clean()) { why(`Antes da ${HITLER_ZONE}ª lei {f}, o plano é parecer liberal: passou uma liberal.`); return F; }
+    if (fresh()) { why(`Antes da ${HITLER_ZONE}ª lei {f}, o plano é parecer liberal: passou uma liberal.`); return F; }
     if (k.image) {                                                           // the chancellor is a liberal: what will the table think?
       const d = nF(v.hand), ms = passes(d);
       const m = ms[weigh(v, ms.map(m => { const law: Law = m === 2 ? 'F' : 'L'; return { law, pc: presStory(d, m, law), cc: m }; }), hitler)];
@@ -823,13 +823,13 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
     if (nF(v.hand) === 2) { why('Recebeu 2 {fs}: aprovou uma.'); return 0; }
     if (groom && v.me === hitler) { why(`É o {boss}: aprovou a liberal para parecer limpo antes da ${HITLER_ZONE}ª lei {f}.`); return v.hand.indexOf('F'); }   // Hitler stays clean until it pays
     if (isAlly(v.pres) && v.pres === hitler && k.plan && early) { why(`O presidente é o {boss} e passou uma de cada: aprovou a liberal para limpar a barra dele antes da ${HITLER_ZONE}ª lei {f}.`); return v.hand.indexOf('F'); }
-    if (clean()) { why(`Antes da ${HITLER_ZONE}ª lei {f}, o plano é parecer liberal: aprovou a liberal.`); return v.hand.indexOf('F'); }
+    if (fresh()) { why(`Antes da ${HITLER_ZONE}ª lei {f}, o plano é parecer liberal: aprovou a liberal.`); return v.hand.indexOf('F'); }
     if (k.image && !isAlly(v.pres)) {                                        // a liberal president passed one of each
       const ways: { law: Law; pc?: number; cc: number }[] = [{ law: 'F', cc: 2 }, { law: 'L', cc: 1 }];
       return weigh(v, ways, hitler) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
     }
     if (isAlly(v.pres) && v.pres === hitler && k.image) return weigh(v, [{ law: 'F', pc: 1, cc: 1 }, { law: 'L', pc: 1, cc: 1 }], hitler) === 0 ? v.hand.indexOf('L') : v.hand.indexOf('F');
-    why('Aprovou a {f}.'); return v.hand.indexOf('L');
+    const c = !isAlly(v.pres) && clean(); why(c ? 'Aprovou a liberal para parecer limpa.' : 'Aprovou a {f}.'); return c ? v.hand.indexOf('F') : v.hand.indexOf('L');
   }
   if (v.ask === 'veto') { why(nF(v.hand) === 0 ? 'Sabe que passou 2 liberais: aceitou o veto, para não sair liberal.' : 'Passou {fs}: recusou o veto, para sair lei {f}.'); return nF(v.hand) === 0 ? 1 : 0; }
   const pub = believe(v, true);
