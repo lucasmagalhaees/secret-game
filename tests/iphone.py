@@ -36,6 +36,10 @@ try:
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         page.locator('[data-act=court][data-i="1"]').dispatch_event('click'); page.locator('#accuse').dispatch_event('click')
         if page.locator('#contra').count(): page.locator('#contra').dispatch_event('click')
+        for _ in range(80):   # D57: the debate, answered with the first argument each time, then closed
+            if page.locator('#debate [data-act=dclose]').count(): page.locator('#debate [data-act=dclose]').dispatch_event('click'); break
+            if page.locator('#debate [data-act=darg]').count(): page.locator('#debate [data-act=darg]').first.dispatch_event('click')
+            else: page.wait_for_timeout(100)
         assert page.locator('#heard').is_visible(), 'a button click must repaint even while Safari keeps the editor focused'
         assert page.locator('#notes [data-act=court][data-i="1"]').count() == 0
         # D42: an app player accuses the person: the accusation screen, with the answers on it, and the result there too

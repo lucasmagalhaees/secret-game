@@ -285,8 +285,9 @@ function vDefense(g: Game): string {
   const me = solo(g), at = me >= 0 && g.players[me].alive ? Core.pendingAccusation(g, me) : -1;
   if (at < 0 || document.getElementById('contra')) return '';
   const t = g.hist[at] as Extract<Game['hist'][number], { k: 'talk' }>;
+  const plays = myPlays(g, me, t.proof !== undefined && t.proof !== null && t.proof < 100000 ? t.proof : -1);
   const opts: [string, string][] = [['deck', 'O baralho veio assim'], ['test', 'Foi teste do chanceler'], ['lie', `${g.players[t.by].name} está mentindo`], ['quiet', 'Ficar calado']];
-  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p></section>`;
+  return `<section class="card defense" id="defense"><span class="label">Você foi acusado</span><p><b>${name(g, t.by)}</b> ${t.hit ? 'apontou uma prova contra você' : t.tone === 'proof' ? 'diz ter uma prova contra você' : 'desconfia de você'}. Como você responde?</p><div class="pick">${opts.map(([k, l]) => `<button class="btn ghost" data-act="defend" data-v="${k}">${esc(l)}</button>`).join('')}</div><p class="hint">A mesa confere a resposta com a ata: defesa que bate tira o peso da acusação.</p>${plays}</section>`;
 }
 const CLAIM: Record<string, [string, string[]]> = {
   pc: ['Você foi presidente. O que diz que tirou?', ['3 liberais', '1 {f} e 2 liberais', '2 {fs} e 1 liberal', '3 {fs}']],
@@ -787,7 +788,7 @@ function vPhase(g: Game): string {
       return `<section class="card" id="phase"><span class="label">Poder: eliminar</span><p class="big"><b>${pres}</b>, quem sai do jogo?</p>${pickList(g, i => Core.canTarget(g, i), 'pickp')}<button class="btn block danger" data-act="execute"${ui.pick === null ? ' disabled' : ''}>${ui.pick === null ? 'Escolha alguém' : `Eliminar ${name(g, ui.pick)}`}</button></section>`;
     default:
       return `<section class="card win ${g.winner}" id="phase"><span class="label">Fim de jogo</span><div class="cheer">${portrait(g.winner === 'L' ? 'liberal' : 'hitler', P, R)}</div><p class="big"><b>${g.winner === 'L' ? 'Os liberais venceram!' : 'Os {fs} venceram!'}</b></p><p>${esc(g.why)}</p>
-        <button class="btn block" data-act="again">Jogar de novo com a mesma mesa</button><button class="btn ghost block" data-act="table">Voltar ao início</button></section>`;
+        <button class="btn block" data-act="nextgame" id="nextgame">▶ Mais uma</button><button class="btn block" data-act="again">Jogar de novo com a mesma mesa</button><button class="btn ghost block" data-act="table">Voltar ao início</button></section>`;
   }
 }
 
@@ -831,10 +832,10 @@ export function clearFlash(): void { const f = part('flash'); f.hidden = true; f
 export function flash(who = '', wasBoss = false, why = ''): void {
   const f = part('flash');
   // a shot (D45): the muzzle flashes, the screen cracks from where it hit, then the name and the stamp
-  f.innerHTML = who ? `<div class="muzzle"></div><svg class="crack" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M230 300 L305 299 L378 277 L454 290 L528 275 M230 300 L326 320 L417 358 L517 362 L613 385 M230 300 L314 384 L394 472 L450 580 L494 695 M230 300 L238 390 L285 473 L261 571 L320 652 M230 300 L225 372 L202 443 L221 518 L190 588 M230 300 L171 367 L128 446 L77 519 L16 585 M230 300 L146 339 L57 368 L-26 410 L-105 459 M230 300 L120 297 L10 277 L-100 269 L-205 222 M230 300 L162 250 L78 231 L9 180 L-50 117 M230 300 L155 239 L100 157 L40 81 L-37 19 M230 300 L224 215 L215 130 L206 45 L188 -39 M230 300 L270 180 L320 64 L313 -70 L415 -171 M230 300 L322 209 L390 96 L477 0 L586 -76 M230 300 L304 241 L377 180 L448 117 L558 109 M270 304 L264 321 L252 334 L235 340 L217 338 L202 329 L192 314 L190 296 L196 279 L208 266 L225 260 L243 262 L258 271 L268 286 L270 304 M325 309 L311 350 L282 380 L242 394 L200 390 L164 368 L141 332 L135 291 L149 250 L178 220 L218 206 L260 210 L296 232 L319 268 L325 309"/><circle cx="230" cy="300" r="9"/></svg><div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span><span class="exec-card ${wasBoss ? 'boss' : ''}">${wasBoss ? `Era o ${W.boss}!` : `Não era o ${W.boss}`}</span>${why ? `<p class="exec-why">“${esc(why)}”</p>` : ''}</div>` : '';
+  f.innerHTML = who ? `<svg class="gun" viewBox="0 0 220 120" aria-hidden="true"><path d="M8 30 h150 l10 -8 h22 v22 h-30 v10 h-60 l-6 18 h-20 l-8 44 h-40 l12 -50 h-30 z" fill="#1a1714" stroke="#f3e8d0" stroke-width="3" stroke-linejoin="round"/><circle cx="96" cy="52" r="9" fill="none" stroke="#f3e8d0" stroke-width="3"/><path class="bang" d="M196 33 l18 -14 -4 14 10 4 -12 6 12 10 -18 -4" fill="#ffd678" stroke="#fff" stroke-width="2"/></svg><div class="muzzle"></div><svg class="crack" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M230 300 L305 299 L378 277 L454 290 L528 275 M230 300 L326 320 L417 358 L517 362 L613 385 M230 300 L314 384 L394 472 L450 580 L494 695 M230 300 L238 390 L285 473 L261 571 L320 652 M230 300 L225 372 L202 443 L221 518 L190 588 M230 300 L171 367 L128 446 L77 519 L16 585 M230 300 L146 339 L57 368 L-26 410 L-105 459 M230 300 L120 297 L10 277 L-100 269 L-205 222 M230 300 L162 250 L78 231 L9 180 L-50 117 M230 300 L155 239 L100 157 L40 81 L-37 19 M230 300 L224 215 L215 130 L206 45 L188 -39 M230 300 L270 180 L320 64 L313 -70 L415 -171 M230 300 L322 209 L390 96 L477 0 L586 -76 M230 300 L304 241 L377 180 L448 117 L558 109 M270 304 L264 321 L252 334 L235 340 L217 338 L202 329 L192 314 L190 296 L196 279 L208 266 L225 260 L243 262 L258 271 L268 286 L270 304 M325 309 L311 350 L282 380 L242 394 L200 390 L164 368 L141 332 L135 291 L149 250 L178 220 L218 206 L260 210 L296 232 L319 268 L325 309"/><circle cx="230" cy="300" r="9"/></svg><div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span>${why ? `<p class="exec-why">“${esc(why)}”</p>` : ''}</div>${wasBoss ? `<div class="fate boss"><div class="rays"></div><div class="birds">${'<i></i>'.repeat(7)}</div><b class="exec-card boss">Era o ${W.boss}!</b><span>Os liberais chegam ao poder</span></div>` : `<div class="fate on"><i class="sweep"></i><b class="exec-card">Não era o ${W.boss}</b><span>O jogo continua</span></div>`}` : '';
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   if (who) { const v = part('view'); v.classList.remove('shake'); void v.offsetWidth; v.classList.add('shake'); }   // the page under it shakes, not the body: a moved body would carry the fixed screens with it
-  setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 3700 : 900);
+  setTimeout(() => { f.hidden = true; f.innerHTML = ''; }, who ? 5400 : 900);
 }
 /** A law has just been enacted: who made it, over the screen for a moment (D11). The text comes from the code and the
  *  names go through esc(). */
@@ -850,10 +851,16 @@ export function decree(g: Game, e: Gov | Extract<Event, { k: 'chaos' }>): void {
 let powerTimer: ReturnType<typeof setTimeout> | undefined;
 export function powerEffect(g: Game, target: number, kind: 'investigate' | 'execute'): void {
   const d = part('power-effect');
-  const mark = kind === 'investigate'
-    ? '<circle cx="17" cy="17" r="10"/><path d="m25 25 10 10"/>'
-    : '<g class="weapon"><path d="M5 9h29v9H19l-2 17H7l4-18H5z" fill="currentColor" stroke-width="1"/><path d="M20 19v6h-5" stroke-width="2"/></g><path class="muzzle" d="m35 8 5-3-1 7 3 3-5 1 3 5-6-3" stroke="#ffd678" stroke-width="2"/><path class="smoke" d="M35 8c-8-5 8-7 0-12" stroke-width="2"/>';
-  d.innerHTML = `<div class="power-card"><svg class="power-mark" viewBox="0 0 42 42" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">${mark}</svg><div><small>${kind === 'investigate' ? 'Investigando' : 'Eliminado da mesa'}</small><b>${name(g, target)}</b></div></div>`;
+  const mark = '<g class="weapon"><path d="M5 9h29v9H19l-2 17H7l4-18H5z" fill="currentColor" stroke-width="1"/><path d="M20 19v6h-5" stroke-width="2"/></g><path class="muzzle" d="m35 8 5-3-1 7 3 3-5 1 3 5-6-3" stroke="#ffd678" stroke-width="2"/><path class="smoke" d="M35 8c-8-5 8-7 0-12" stroke-width="2"/>';
+  if (kind === 'investigate') {
+    // D58: a detective in a trench coat and a hat, with a magnifier, pulls the name out of an envelope (only the name: the party stays secret)
+    d.innerHTML = `<div class="detective"><svg class="sleuth" viewBox="0 0 120 160" aria-hidden="true"><path d="M30 44 h60 l14 6 -14 4 h-60 l-14 -4z M40 44 l6 -26 h28 l6 26z" fill="#15110e"/><path d="M42 18 h36" stroke="#8a2b1a" stroke-width="5"/><circle cx="60" cy="64" r="15" fill="#15110e"/><path d="M28 158 l6 -66 q26 -14 52 0 l6 66z" fill="#15110e"/><path d="M48 80 l12 22 12 -22" fill="none" stroke="#f3e8d0" stroke-width="2"/><path d="M66 70 q10 4 14 0 v-6 h6 v8 q-2 6 -8 6 q-8 0 -12 -4z" fill="#15110e"/><path class="puff" d="M84 54 q-6 -6 0 -12 q6 -6 0 -12" fill="none" stroke="#8a8378" stroke-width="3" stroke-linecap="round"/><path class="arm" d="M86 96 l18 -20" stroke="#15110e" stroke-width="10" stroke-linecap="round"/><g class="lens"><circle cx="108" cy="64" r="12" fill="rgba(255,255,255,.35)" stroke="#15110e" stroke-width="5"/><path d="M100 72 l-6 7" stroke="#15110e" stroke-width="6" stroke-linecap="round"/></g></svg><div class="envelope"><div class="slip"><small>Investigando</small><b>${name(g, target)}</b></div><div class="env-body"></div><div class="env-flap"></div></div></div>`;
+    d.className = 'power-effect investigate'; d.hidden = false;
+    void d.offsetWidth; d.classList.add('go');
+    clearTimeout(powerTimer); powerTimer = setTimeout(() => { d.hidden = true; }, 3000);
+    return;
+  }
+  d.innerHTML = `<div class="power-card"><svg class="power-mark" viewBox="0 0 42 42" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">${mark}</svg><div><small>Eliminado da mesa</small><b>${name(g, target)}</b></div></div>`;
   d.className = `power-effect ${kind}`; d.hidden = false;
   void d.offsetWidth; d.classList.add('go');
   clearTimeout(powerTimer); powerTimer = setTimeout(() => { d.hidden = true; }, 1600);
@@ -904,13 +911,34 @@ export function contradiction(g: Game, at: number): void {
   if (!accused) { el.addEventListener('click', close); setTimeout(close, 9000); }
 }
 /** The answers to an accusation (D42), only those the record could back, each saying when it holds. */
+/** D55: the person's own plays, to defend with: the play the accusation points at (what it got, what it passed or
+ *  enacted, what it said it got) and the plays that speak for it (liberal laws it made, investigations it told). Only
+ *  the accused sees this on its own screen: the hands are its own. */
+function myPlays(g: Game, me: number, at: number): string {
+  const mini = (ls?: Law[]): string => (ls || []).map(l => `<i class="mini ${l}">${l === 'L' ? 'L' : W.F[0]}</i>`).join('');
+  const said = (n: number | undefined, of: number): string => n === undefined ? 'não disse nada' : n < 0 ? 'ficou calado' : `disse ${n} ${n === 1 ? W.f : W.fs} de ${of}`;
+  const gov = (e: Game['hist'][number], i: number): string => {
+    if (e.k !== 'gov' && e.k !== 'veto') return '';
+    const pres = e.pres === me, other = name(g, pres ? e.chanc : e.pres), out = e.k === 'veto' ? 'veto' : e.law === 'L' ? 'saiu liberal' : `saiu ${W.f}`;
+    const got = pres ? `tirou ${mini(e.drew)} · passou ${mini(e.got)}` : `recebeu ${mini(e.got)}`;
+    return `<li${i === at ? ' class="hit"' : ''}><b>${pres ? 'Presidente' : 'Chanceler'} com ${other}</b> · ${out}<small>Você ${got} · ${said(pres ? e.pc : e.cc, pres ? 3 : 2)}</small></li>`;
+  };
+  const target = at >= 0 ? g.hist[at] : undefined, rows: string[] = [];
+  if (target && (target.k === 'gov' || target.k === 'veto') && (target.pres === me || target.chanc === me)) rows.push(gov(target, at));
+  g.hist.forEach((e, i) => {
+    if (i === at || rows.length >= 4) return;
+    if ((e.k === 'gov' && e.law === 'L') && (e.pres === me || e.chanc === me)) rows.push(gov(e, i));
+    if (e.k === 'inv' && e.by === me) rows.push(`<li><b>Investigou ${name(g, e.target)}</b><small>Viu ${e.party === 'L' ? 'liberal' : W.f} · ${e.said === undefined ? 'não disse nada' : e.said === '-' ? 'ficou calado' : `disse ${e.said === 'L' ? 'liberal' : W.f}`}</small></li>`);
+  });
+  return rows.length ? `<div class="myplays"><b>Suas jogadas</b><ol>${rows.join('')}</ol></div>` : '';
+}
 function defenseBox(g: Game, t: Extract<Game['hist'][number], { k: 'talk' }>, p: ReturnType<typeof Core.evidence>[number] | undefined): string {
   const me = t.about, gov = p ? g.hist[p.at] : undefined, isGov = !!gov && (gov.k === 'gov' || gov.k === 'veto');
   const opts: [string, string, string][] = [];
   if (isGov && gov.k === 'gov' && gov.law === 'F') opts.push(['deck', 'O baralho veio assim', 'Cola se as histórias do governo batem.']);
   if (isGov && gov.pres === me) opts.push(['test', 'Foi teste do chanceler', 'Cola se você passou uma de cada e saiu liberal.']);
   opts.push(['lie', `${g.players[t.by].name} está mentindo`, 'Cola se a prova dele não se sustenta na ata.'], ['quiet', 'Ficar calado', 'Nunca cola, mas não piora.']);
-  return `<div class="defend" id="defend"><b>Sua resposta</b>${opts.map(([k, l, h]) => `<button data-act="defend" data-v="${k}"><span>${esc(l)}</span><small>${h}</small></button>`).join('')}</div>`;
+  return `${myPlays(g, me, p && p.at < 100000 ? p.at : -1)}<div class="defend" id="defend"><b>Sua resposta</b>${opts.map(([k, l, h]) => `<button data-act="defend" data-v="${k}"><span>${esc(l)}</span><small>${h}</small></button>`).join('')}</div>`;
 }
 /** How the answer went, on the same screen (D42), then a button to go back to the game. */
 export function defenseResult(ok: boolean, kind: string): void {
@@ -944,4 +972,35 @@ export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boole
   const shown = 450 + alive.length * gap + 1100;
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 450); }, shown);
   return shown;
+}
+
+/* D57: the debate on pages of a notebook, turned sideways: 1 the accusation and the first answer, 2 the reply and the
+   last word, 3 the table's verdict. The page where it is the person's turn offers its arguments. */
+export function debateSheet(g: Game, at: number): void {
+  const t = g.hist[at];
+  if (!t || t.k !== 'talk') return;
+  const me = solo(g), who = Core.debateNext(g, at), lines = t.deb || [];
+  const stars = (i: number): string => g.players[i]?.ai ? ` <span class="lab">${'★'.repeat(Core.eloq(g, i))}${'☆'.repeat(3 - Core.eloq(g, i))} lábia</span>` : '';
+  const who_ = (i: number): string => `${esc(g.players[i].name)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
+  const proof = t.proof !== undefined ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about).find(x => x.at === t.proof) : undefined;
+  const say = (i: number, text: string, tag: string): string => `<div class="dsay ${i === t.by ? 'acc' : 'def'}"><b>${who_(i)} · ${tag}${stars(i)}</b><p>“${esc(text)}”</p></div>`;
+  const line = (k: number, tag: string): string => lines[k] ? say(lines[k].who, lines[k].text, tag) : '';
+  const args = (): string => who === me ? `<div class="dargs"><b>${lines.length === 0 ? 'Sua defesa' : lines.length === 1 ? 'Sua réplica' : 'Sua tréplica'}</b>${Core.debateArgs(g, at).map(a => `<button data-act="darg" data-v="${esc(a.id)}"><span>${esc(a.label)}</span><i class="pw ${a.power >= 0.45 ? 'f' : a.power >= 0.25 ? 'm' : 'w'}">${a.power >= 0.45 ? 'forte' : a.power >= 0.25 ? 'média' : a.power > 0 ? 'fraca' : '—'}</i><small>“${esc(a.text)}”</small></button>`).join('')}</div>` : who >= 0 ? `<p class="dwait">${esc(g.players[who].name)} está pensando no que dizer…</p>` : '';
+  const accLine = `${proof ? proof.text + '. ' : ''}${esc(g.players[t.about].name)}, explica isso.`;
+  const p1 = `${say(t.by, accLine, t.hit ? 'acusação · Contradição!' : 'acusação')}${t.about === me ? myPlays(g, me, proof && proof.at < 100000 ? proof.at : -1) : ''}${line(0, t.about === me ? 'sua defesa' : 'defesa')}${lines.length === 0 ? args() : ''}`;
+  const p2 = lines.length < 1 ? '<p class="dwait">A réplica vem depois da defesa.</p>' : `${line(1, 'réplica')}${lines.length === 1 ? args() : ''}${line(2, 'tréplica')}${lines.length === 2 ? args() : ''}`;
+  const v = t.verdict || [], yes = v.filter(x => x[1] === 1).length, no = v.filter(x => x[1] === 0).length;
+  const mark = ['✖ não procede', '✔ procede', '? não sabe'];
+  const p3 = t.verdict ? `<ul class="dvotes">${v.map(([j, a]) => `<li class="v${a}"><b>${esc(g.players[j].name)}</b><span>${mark[a]}</span></li>`).join('')}</ul><div class="dres ${yes > no ? 'acc' : 'def'}"><b>Resultado</b><p>${yes} de ${v.length} acham que a acusação procede. ${yes > no ? `A acusação contra ${esc(g.players[t.about].name)} pesa.` : `${esc(g.players[t.about].name)} se defendeu: a acusação perdeu o peso.`}</p></div><button class="btn block" data-act="dclose">Voltar ao jogo</button>` : '<p class="dwait">O veredito sai depois da tréplica.</p>';
+  const page = (n: number, title: string, body: string): string => `<section class="dpage"><div class="dcard"><header><span>${n}/3</span><b>${title}</b></header>${body}</div></section>`;
+  const cur = t.verdict ? 2 : lines.length >= 1 ? 1 : 0;
+  let el = document.getElementById('debate');
+  const keep = el ? (el.querySelector('.dpages') as HTMLElement | null)?.scrollLeft ?? 0 : 0;
+  if (!el) { el = document.createElement('div'); el.id = 'debate'; el.className = 'debate'; document.body.appendChild(el); }
+  el.innerHTML = themed(`<div class="dpages">${page(1, 'Acusação', p1)}${page(2, 'Réplica e tréplica', p2)}${page(3, 'Veredito da mesa', p3)}</div><div class="ddots">${[0, 1, 2].map(k => `<i class="${k === cur ? 'on' : ''}"></i>`).join('')}</div>`, W as unknown as Record<string, string>);
+  const pages = el.querySelector('.dpages') as HTMLElement, dots = [...el.querySelectorAll('.ddots i')];
+  pages.scrollLeft = keep;
+  const want = cur * pages.clientWidth;
+  if (Math.abs(pages.scrollLeft - want) > 4) pages.scrollTo({ left: want, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  pages.onscroll = () => { const k = Math.round(pages.scrollLeft / Math.max(1, pages.clientWidth)); dots.forEach((d, j) => d.classList.toggle('on', j === k)); };
 }

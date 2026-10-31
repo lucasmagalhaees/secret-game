@@ -316,6 +316,14 @@ with sync_playwright() as p:
     pg.locator(f'#notes [data-act=court][data-i="{first}"]').click(); assert pg.locator('#court').is_visible() and overflow() == 0, 'the court opens'
     shot(f's5-tribunal-{THEME}.png'); pg.click('#accuse'); assert pg.locator('#court').count() == 0
     if pg.locator('#contra').count(): pg.click('#contra')
+    # D57: the accusation turns into a debate on three pages; the person answers, then the table gives its verdict
+    pg.wait_for_selector('#debate'); assert pg.locator('#debate .dpage').count() == 3 and overflow() == 0
+    for _ in range(80):
+        if pg.locator('#debate [data-act=dclose]').count(): break
+        if pg.locator('#debate [data-act=darg]').count(): pg.locator('#debate [data-act=darg]').first.click()
+        else: pg.wait_for_timeout(100)
+    assert pg.locator('#debate .dvotes li').count() >= 1, 'the verdict of the table'
+    shot(f's5-debate-{THEME}.png'); pg.click('#debate [data-act=dclose]'); assert pg.locator('#debate').count() == 0
     name = G()['players'][int(first)]['name']
     assert f'Lu: "{name} é fascista."' in G()['log'] and pg.locator('#heard li').count() == 6 and pg.locator(f'#notes [data-act=court][data-i="{first}"]').count() == 0, 'claimed: five answer in their own words, the one claimed answers back, once a round'
     assert pg.locator('#heard .claim-impact').is_visible() and len(txt('#heard .claim-impact')) > 10
@@ -353,7 +361,7 @@ with sync_playwright() as p:
     pg.evaluate('window.__APP.ui.think = 0')
     pg.click('[data-act=help]'); assert 'IA no nível extremo' in txt('#helptext'); pg.click('[data-act=help]')
     me, seen, reloaded = 6, set(), False
-    ORDER = ['[data-act=open]', '[data-act=hiderole]', '[data-act=say]', '#phase [data-act=nominate]', '[data-act=myvote]', '[data-act=pdiscard]:not([disabled])', '[data-act=cdiscard]:not([disabled])', '#phase [data-act=pick]', '[data-act=veto]', '#phase [data-act=investigate]', '#phase [data-act=special]', '[data-act=execute]:not([disabled])', '#phase [data-act=pickp]', '[data-act=endpower]']
+    ORDER = ['#debate [data-act=darg]', '#debate [data-act=dclose]', '[data-act=open]', '[data-act=hiderole]', '[data-act=say]', '#phase [data-act=nominate]', '[data-act=myvote]', '[data-act=pdiscard]:not([disabled])', '[data-act=cdiscard]:not([disabled])', '#phase [data-act=pick]', '[data-act=veto]', '#phase [data-act=investigate]', '#phase [data-act=special]', '[data-act=execute]:not([disabled])', '#phase [data-act=pickp]', '[data-act=endpower]']
     for step in range(900):
         g = G()
         if g['phase'] == 'over': break
@@ -538,9 +546,10 @@ with sync_playwright() as p:
     cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "investigate"')
     mp.click('#phase [data-act=investigate][data-i="2"]')
     assert mp.locator('#power-effect.investigate.go').is_visible() and mp.locator('#party').count() == 0
-    assert mp.evaluate("getComputedStyle(document.querySelector('#power-effect .power-mark')).animationName") == 'searchName'
+    # D58: the detective with the magnifier pulls the name out of the envelope
+    assert mp.locator('#power-effect .sleuth').count() == 1 and mp.evaluate("getComputedStyle(document.querySelector('#power-effect .slip')).animationName") == 'slipOut'
     assert 'fascista' not in mp.text_content('#power-effect').lower() and 'liberal' not in mp.text_content('#power-effect').lower()
-    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .power-card')).opacity) > .9")
+    mp.wait_for_function("Number(getComputedStyle(document.querySelector('#power-effect .detective')).opacity) > .9")
     mp.screenshot(path=str(SHOTS / f'power-investigate-{THEME}.png'))
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'execute'; g.target = null; localStorage.setItem('secrethitler.v1', JSON.stringify(window.__APP.S)); }""")
     cov.reload(mp); mp.wait_for_function('window.__APP && window.__APP.S.game.phase === "execute"')

@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound, unlockAudio } from './fx';
-import { ballot, beat, blurField, bossWin, contradiction, defenseResult, confetti, decree, clearFlash, flash, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, bossWin, debateSheet, defenseResult, confetti, decree, clearFlash, flash, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -40,10 +40,27 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
    next. Anything that happens meanwhile (a tap, an undo, a new game) changes S.game, and the step that was waiting is
    dropped. Seeing their own role takes no time. */
 let botTimer: ReturnType<typeof setTimeout> | undefined;
+/** D57: a debate on the accusation at `at`, on its own pages over the game, which waits. */
+function openDebate(at: number): void {
+  const g = S.game;
+  if (!g || g.players.filter(p => !p.ai).length !== 1) return;
+  ui.debate = at; clearTimeout(botTimer); runDebate();
+}
+let debateTimer: ReturnType<typeof setTimeout> | undefined;
+function runDebate(): void {
+  const g = S.game, at = ui.debate;
+  clearTimeout(debateTimer);
+  if (!g || at === null || at === undefined) return;
+  debateSheet(g, at);
+  const who = Core.debateNext(g, at), t = g.hist[at];
+  const step = (next: Game): void => { if (S.game !== g || ui.debate !== at) return; setS({ ...S, game: next }); saveS(); runDebate(); };
+  if (who >= 0 && g.players[who].ai) debateTimer = setTimeout(() => step(Core.debateBot(g, at, rand)), Math.min(1200, Math.max(300, ui.think ?? 900)));
+  else if (who < 0 && t && t.k === 'talk' && !t.verdict) debateTimer = setTimeout(() => step(Core.debateVerdict(g, at, rand)), 500);
+}
 export function tick(): void {
   clearTimeout(botTimer);
   const g = S.game, t = g ? Core.botTurn(g) : null;
-  if (!g || !t) return;
+  if (!g || !t || (ui.debate !== null && ui.debate !== undefined)) return;   // the game waits while a debate is on (D57)
   botTimer = setTimeout(() => {
     if (S.game !== g) return;
     const next = Core.botStep(g, rand);
@@ -70,7 +87,7 @@ function botPlayed(before: Game, next: Game): void {
   const told = Core.botTurn(before)?.ask;
   // an app player pointed a proof at the person (D40): the same CONTRADIÇÃO! the person gets
   const said = next.hist[next.hist.length - 1], me = next.players.findIndex(p => !p.ai);
-  if (next.hist.length > before.hist.length && said?.k === 'talk' && said.say === 'acc' && said.about === me && next.players.filter(p => !p.ai).length === 1) { setTimeout(() => contradiction(next, next.hist.length - 1), 50); sound('stamp'); }
+  if (next.hist.length > before.hist.length && said?.k === 'talk' && said.say === 'acc' && said.about === me && next.players.filter(p => !p.ai).length === 1) { setTimeout(() => openDebate(next.hist.length - 1), 50); sound('stamp'); }
   hold = told === 'pc' || told === 'cc' || told === 'inv' || told === 'peek';
   const rest = (): void => afterBot(before, next);
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) { voted(before, next, rest); return; }
@@ -139,15 +156,19 @@ function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): 
 }
 /** Quick game (D35): 7 seats, the person and 6 app players at the hard level, no assistance, a theme and a continent
  *  drawn at random (Brazil only once unlocked). The person keeps their name; the app players get names of the scene. */
-function quickGame(): void {
+/** A quick game (D35); after a game, "Mais uma" (D56) plays another one avoiding the role and the continent of the last. */
+function quickGame(prev?: Game | null): void {
   const me = S.names.find((_, i) => !S.ai?.[i]) || 'Você';
-  const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = regions[Math.floor(rand() * regions.length)];
+  const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = Core.freshPick(regions, prev?.region || (prev ? 'mundo' : undefined), rand);
+  const lastRole = prev ? prev.players.find(p => !p.ai)?.role : undefined;
   const pack = Core.PACKS[Math.floor(rand() * Core.PACKS.length)];
   let names = [me];
   while (names.length < 7) names = [...names, Core.botName(names, rand, pack, region)];
   // the table set up by hand stays as it was: the quick game is built apart from it
   clearFlash();
-  const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
+  let r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
+  // the same role as last game comes back only now and then (D56): draw the roles again a few times
+  for (let k = 0; lastRole && r.ok && r.game.players[0].role === lastRole && k < 4 && rand() >= Core.REPEAT_KEEP; k++) r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'dificil', pack, region });
   if (!r.ok) return;
   const next = { ...S }; delete next.notes; delete next.noteDetails; delete next.assist; setS(next); saveS();
   ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play(r.game, 'Partida rápida. Veja seu papel em segredo.');
@@ -208,7 +229,7 @@ export function initEvents(): void {
     unlockAudio();                                                         // the radio hiss may start only after a tap (D46)
     // a tap outside the notebook closes it (D34), except on a wide screen, where it stays beside the game
     const tgt = e.target as HTMLElement;
-    if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote], #court, .court-back')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
+    if (S.notesOpen && innerWidth < 1400 && !tgt.closest('#drawer, #notestoggle, [data-act=seatnote], #court, .court-back, #debate')) { const next = { ...S }; delete next.notesOpen; setS(next); saveS(); render(); }
     const b = tgt.closest<HTMLElement>('[data-act]'); if (!b || ui.busy) return;
     // Safari may leave a textarea focused when tapping a button. Commit its text and allow the repaint.
     blurField();
@@ -231,6 +252,7 @@ export function initEvents(): void {
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
     else if (a === 'quickgame') quickGame();
+    else if (a === 'nextgame') quickGame(S.game);
     else if (a === 'gallery') { ui.gallery = !ui.gallery; render(); scrollTo(0, 0); }   // every drawing (D25)
     else if (a === 'exportgames') void exportGames();
     else if (a === 'share' && g) { const w = Core.words(g.pack, g.region); void shareResult(g, g.players.findIndex(p => !p.ai), { boss: w.boss, f: w.f, theme: w.theme }); }
@@ -255,6 +277,8 @@ export function initEvents(): void {
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'contraclose') document.getElementById('contra')?.remove();
+    else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
+    else if (a === 'dclose') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }
     else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next); defenseResult(!!(t && t.k === 'talk' && t.ok), d.v || 'quiet'); }
     else if (a === 'court') { ui.court = i; ui.courtProof = null; ui.courtTone = undefined; render(); }
     else if (a === 'courtclose') { ui.court = null; render(); }
@@ -265,8 +289,8 @@ export function initEvents(): void {
       const next = Core.accuse(g, me, t, tone, tone === 'proof' ? ui.courtProof ?? null : null, rand);
       ui.court = null; ui.undo = null; play(next, Core.accusationFeedback(next, next.hist.length - 1));
       const e = next.hist[next.hist.length - 1];
-      if (e && e.k === 'talk' && e.hit) { contradiction(next, next.hist.length - 1); sound('stamp'); buzz([60, 40, 120]); }
-      else if (e && e.k === 'talk' && e.re) reactions(e.re.map(r => r[1]));
+      if (e && e.k === 'talk' && e.re) reactions(e.re.map(r => r[1]));
+      if (e && e.k === 'talk' && e.say === 'acc') { if (e.hit) { sound('stamp'); buzz([60, 40, 120]); } openDebate(next.hist.length - 1); }
     }
     else if (a === 'denounce') { ui.undo = null; const me = g.players.findIndex(p => !p.ai), next = Core.denounce(g, me, i, d.v === 'trust', rand); play(next, Core.accusationFeedback(next, next.hist.length - 1)); const t = next.hist[next.hist.length - 1]; if (t && t.k === 'talk' && t.re) reactions(t.re.map(r => r[1])); }
     else if (a === 'undo' && ui.undo) { const back = ui.undo; ui.undo = null; ui.votes = {}; setS({ ...S, game: back }); saveS(); render(); toast('Desfeito.'); tick(); }

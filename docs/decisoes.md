@@ -532,3 +532,33 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** mostrar a justificativa de quem eliminou.
 - **Decisão:** a IA que elimina diz o porquê, com o que a mesa toda viu (`execReason`): a prova mais forte da ata, uma acusação que ela já tinha feito, ou que era de quem mais desconfiava. A frase entra no registro e aparece na tela da eliminação, embaixo do carimbo. O fascista dá o motivo do mesmo jeito: é público, não o que ela pensa de verdade.
+
+## D54. Acusar com investigação, eliminação e a conta das leis (2026-10-31)
+
+- **Pedido:** poder acusar com base no resultado de uma investigação, numa eliminação e em quantas leis do lado escondido os governos de alguém aprovaram. E a animação da eleição especial estava quebrada.
+- **Decisão:** o tribunal ganha três provas novas. "X investigou e disse que é {f}" e "Eliminou Y" são palavras e escolhas que a mesa viu, não fatos (o investigador pode mentir), então apoiam a acusação fraco. "Esteve em N governos que aprovaram lei {f}" vale como prova quando N é 2 ou mais. A faixa da eleição especial cabe na tela (antes saía cortada) e a faixa do presidente fica atrás do nome.
+
+## D55. Suas jogadas na hora de se defender (2026-10-31)
+
+- **Pedido:** ao se defender, ver as próprias jogadas que servem de defesa: qual jogada está sendo acusada, se era presidente ou chanceler, que cartas recebeu, o que passou ou aprovou e o que disse que recebeu.
+- **Decisão:** a tela da acusação mostra "Suas jogadas" acima das respostas: primeiro a jogada apontada pela prova (destacada), depois as que falam a favor (governos que aprovaram lei liberal, investigações e o que disse delas), até 4. As mãos são da própria pessoa e só aparecem na tela dela, jogando sozinha com a IA.
+
+## D56. "Mais uma" no fim da partida (2026-10-31)
+
+- **Pedido:** no fim, além de jogar de novo com a mesma mesa e voltar ao início, um botão que faz o mesmo que "Jogar agora", mas com menos chance de repetir o papel e o continente da partida anterior.
+- **Decisão:** "▶ Mais uma" monta uma partida rápida (D35). O continente e o papel da pessoa da partida anterior só se repetem `REPEAT_KEEP` (15%) das vezes (`freshPick`; os papéis são sorteados de novo até 4 vezes). As IAs não sabem de nada disso.
+
+## D57. O debate: acusação, réplica, tréplica e veredito (2026-10-31)
+
+- **Pedido:** o menu de acusação e defesa estava travado; mais variedade nas respostas, IA que se defende melhor, réplica e tréplica como num debate, IAs com mais lábia que outras, e as IAs avaliando no fim. Em páginas de caderno folheadas, sem rolar: 3 páginas.
+- **Decisão:** jogando sozinho com a IA, toda acusação que envolve a pessoa vira um debate em 3 páginas que se folheiam de lado: 1 a acusação e a primeira resposta do acusado; 2 a réplica de quem acusou e a tréplica do acusado; 3 o veredito da mesa. A cada vez quem fala escolhe entre argumentos montados da ata, cada um com a força que a ata dá (mostrar a mão, apontar a história do outro, o baralho, "foi no começo", o histórico, virar a acusação, cobrar prova, insistir, outra prova, a conta, os votos, recuar, ficar calado). A lábia (`ELOQ`) vem da personalidade, que a mesa conhece: blefador e centrado 3, caótico 1, as outras 2; quem tem mais lábia acha o melhor argumento mais vezes e pesa mais. No veredito, cada IA viva de fora diz se a acusação procede, não procede ou não sabe, pela força dos argumentos, pela lábia, pelo que já achava e pelo temperamento; o lado escondido protege os seus. Se procede, a acusação pesa como prova; se não, cai como uma defesa que colou (D40). O jogo espera enquanto o debate dura.
+
+## D58. A arma na eliminação e o detetive na investigação (2026-10-31)
+
+- **Pedido:** uma arma atirando na eliminação; na investigação, a silhueta de um detetive de sobretudo e chapéu, com a lupa, tirando o nome de um envelope.
+- **Decisão:** na eliminação, um revólver entra pela lateral, mira, dispara (clarão), recua e então o vidro trinca e aparece o nome. Na investigação, a silhueta do detetive passa a lupa e um papel com o nome de quem é investigado sai do envelope; o partido continua em segredo. Com "reduzir movimento", nada se mexe.
+
+## D59. O que vem depois do tiro, e o detetive que some (2026-10-31)
+
+- **Pedido:** depois da eliminação, a cena se esvai e fica só se era o Hitler ou não; se era, uma animação dos liberais chegando ao poder; se não, uma transição de que o jogo continua. Na investigação, o detetive à Sherlock Holmes (chapéu, sobretudo, cachimbo, envelope) se esvai no fim.
+- **Decisão:** o nome, o carimbo e a trinca somem e entra só o veredito: "Era o {boss}!" sobre um amanhecer azul com raios e pássaros subindo, "Os liberais chegam ao poder"; ou "Não era o {boss}", com uma faixa que atravessa a tela, "O jogo continua". O detetive ganha cachimbo com fumaça e se esvai no fim. Com "reduzir movimento", nada se mexe: o veredito aparece embaixo do nome.
