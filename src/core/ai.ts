@@ -101,12 +101,12 @@ export const PLEA_W = 0.2;
 /** D66: how much a request to whoever presides (pick me, do not pick someone, investigate someone) moves it, times how
  *  much it trusts whoever asked. Requests last until the next government. */
 export const REQ_W = 0.25;
-function requests(v: View, b: Beliefs, what: 'pick' | 'avoid' | 'inv'): (i: number) => number {
+function requests(v: View, b: Beliefs, what: 'pick' | 'avoid' | 'inv' | 'kill'): (i: number) => number {
   let from = 0;
   for (let i = v.hist.length - 1; i >= 0; i--) { const e = v.hist[i]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') { from = i + 1; break; } }
   const asks = v.hist.slice(from).filter((e): e is Extract<Seen, { k: 'ask' }> => e.k === 'ask' && e.what === what && e.by !== v.me);
   const m = v.persona === 'cetico' ? 0.4 : 1;
-  return i => asks.filter(e => e.who === i).reduce((a, e) => a + REQ_W * m * (1 - b.pF[e.by]), 0);
+  return i => asks.filter(e => e.who === i).reduce((a, e) => a + REQ_W * m * (1 - b.pF[e.by]) * (e.power !== undefined ? 0.5 + e.power * 2 : 1), 0);
 }
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
@@ -744,7 +744,8 @@ function liberal(v: View, rand: () => number): number {
   const executionScore = (i: number): number => leaderWeight * b.pH[i] + 0.3 * b.pF[i];
   rows(b, o, executionScore);
   why(`Eliminou quem oferece maior chance de derrotar o {boss}, ponderando o risco de ser do lado escondido${leaderWeight > 1 ? ' e a urgência do fim da partida' : ''}.`);
-  return best(o, i => -executionScore(i), rand);                                // execute
+  const kill = requests(v, b, 'kill');   // D73: who the table asked it to eliminate, and on what grounds
+  return best(o, i => -executionScore(i) - kill(i), rand);                                // execute
 }
 
 /** What a fascist says about its own hand, investigation or spying: the truth, unless it gives it away. */

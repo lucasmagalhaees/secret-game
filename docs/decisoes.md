@@ -644,3 +644,12 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** o "Sou liberal" fica melhor no rodapé, à esquerda, com Anotações à direita.
 - **Decisão:** sai o botão flutuante (D70); a barra de baixo tem "📣 Sou liberal" (azul) à esquerda e "Anotações" à direita. Depois de dizer, o botão fica apagado ("Já disse") até a próxima rodada, para a barra não mudar de lugar.
+
+## D73. Virar um voto, sugerir quem eliminar e provar que é liberal (2026-10-31)
+
+- **Pedido:** virar um voto depois que todos votaram, tocando no voto e escolhendo uma justificativa (e tirar os botões de pedir voto); sugerir a quem tem o poder quem eliminar; e o "Sou liberal" tem que provar e disparar algo. Prévias aprovadas antes (`m3`, `m4`). Sem a palavra "mesinha" no jogo.
+- **Decisão:**
+  - **Virar um voto:** jogando sozinho com a IA, os votos abrem como antes e, em vez do resultado, abre uma janela de 6 s ("Virar um voto"): os votos das IAs (fora presidente e chanceler) ficam tracejados; tocando num, sobem justificativas montadas da ata, cada uma com força (forte, média, fraca): o chanceler ou o presidente já governou e saiu lei do lado escondido, já há 3 leis do lado escondido, ainda dá para rejeitar; ou, ao contrário, mais uma rejeição traz o caos, o governo tem histórico limpo, vamos ver o que sai; e sempre "confia em mim". A IA vira pela força da justificativa e pelo quanto confia na pessoa (o cético menos, o certinho mais); o lado escondido só vira quando ajuda o seu lado. Uma tentativa por votação; só então o resultado aparece. Sai o "Convencer alguém" com botões no cartão da votação (D65, D69). Com "reduzir movimento" a votação conta direto, sem a janela.
+  - **Sugerir quem eliminar:** quando uma IA vai eliminar, o cartão dela mostra cada candidato com o motivo mais forte da ata e a força (`killReasons`); a sugestão pesa pela prova e pela confiança. A IA espera uns segundos para dar tempo (D67).
+  - **Sou liberal com prova:** o botão do rodapé abre "Provar que você é liberal", com o que a ata tem a favor (investigação que disse liberal, leis liberais aprovadas, lei do lado escondido jogada fora, gente que confia, ou só a palavra), cada um com força. Cada IA diz se acredita, não sabe ou duvida, pela prova, pelo que já achava e pelo lado dela; as reações sobem na tela e ficam no Diário.
+  - Um teste novo, `tests/social.py`, joga as três coisas com movimento ligado.

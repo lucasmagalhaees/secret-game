@@ -285,7 +285,13 @@ function vBot(g: Game, seat: number, ask: string): string {
  *  do not pick someone (nomination), investigate someone (investigation). The app player waits a moment for it. */
 function vAskNow(g: Game, seat: number, ask: string): string {
   const me = solo(g);
-  if (me < 0 || !g.players[me].alive || !g.players[seat]?.ai || (ask !== 'nominate' && ask !== 'investigate')) return '';
+  if (me < 0 || !g.players[me].alive || !g.players[seat]?.ai || (ask !== 'nominate' && ask !== 'investigate' && ask !== 'execute')) return '';
+  if (ask === 'execute') {   // D73: point at who you want out, with the reason the record gives, and how strong it is
+    const rows = Core.killReasons(g, me).filter(r => Core.canAsk(g, me, 'kill', r.who));
+    if (!rows.length) return g.hist.slice(-6).some(e => e.k === 'ask' && e.by === me) ? '<p class="asknow-done">Sugestão feita. Pesa pela prova e pelo quanto confiam em você.</p>' : '';
+    const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.2 ? '<i class="pw w">fraca</i>' : '<i class="pw w">—</i>';
+    return `<div class="asknow" id="asknow"><b>Aponte quem você quer fora, e por quê</b>${rows.map(r => `<button class="krow" data-act="tkill" data-i="${r.who}"><span><b>${esc(g.players[r.who].name)}</b><small>${esc(r.text)}</small></span>${pw(r.power)}</button>`).join('')}<small>${esc(g.players[seat].name)} decide em alguns segundos. Pesa pela prova e pelo quanto confia em você.</small></div>`;
+  }
   const others = g.players.map((_, i) => i).filter(i => i !== me && i !== seat && g.players[i].alive);
   const chip = (what: 'avoid' | 'inv', i: number): string => `<button data-act="${what === 'avoid' ? 'tavoid' : 'tinv'}" data-i="${i}">${esc(g.players[i].name)}</button>`;
   const done = g.hist.slice(-6).some(e => e.k === 'ask' && e.by === me);
@@ -660,7 +666,7 @@ function vDock(g: Game): string {
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
 
   ];
-  return `${vDrawer(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${vFab(g)}${btns.join('')}</nav>${GAP}`;
+  return `${vDrawer(g)}${vProofs(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${vFab(g)}${btns.join('')}</nav>${GAP}`;
 }
 /** D65/D66: talking to the table, in one panel, grouped by what each thing is for; only what can be done now shows. */
 function vTalk(g: Game): string {
@@ -680,7 +686,14 @@ function vFab(g: Game): string {
   const me = solo(g);
   if (me < 0 || !g.players[me].alive || g.phase === 'over') return '';
   const can = Core.canSelfClaim(g, me);
-  return `<button class="dock-btn lib" data-act="tself" id="selfclaim"${can ? '' : ' disabled'} aria-label="Dizer à mesa: eu sou liberal">📣 ${can ? 'Sou liberal' : 'Já disse'}</button>`;
+  return `<button class="dock-btn lib" data-act="tself" id="selfclaim"${can ? '' : ' disabled'} aria-expanded="${!!ui.proof}" aria-controls="proofs" aria-label="Dizer à mesa: eu sou liberal">📣 ${can ? 'Sou liberal' : 'Já disse'}</button>`;
+}
+/** D73: saying you are liberal means showing something: what the record has for you, each with its strength. */
+function vProofs(g: Game): string {
+  const me = solo(g);
+  if (!ui.proof || me < 0 || !Core.canSelfClaim(g, me)) return '';
+  const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.2 ? '<i class="pw m">média</i>' : '<i class="pw w">fraca</i>';
+  return `<aside class="drawer proofs open" id="proofs" aria-label="Provar que você é liberal"><div class="diary-head"><span class="label">Provar que você é liberal</span><button data-act="tself" aria-label="Fechar" class="diary-close">✕</button></div><p class="hint">Escolha o que mostrar. Cada IA diz se acredita.</p>${Core.selfProofs(g, me).map(x => `<button class="krow" data-act="tproof" data-v="${x.id}"><span><b>${esc(x.label)}</b><small>“${esc(x.text)}”</small></span>${pw(x.power)}</button>`).join('')}</aside>`;
 }
 /** The personalities of the app players (D26), as the table knows them: a name and a line. */
 export const PERSONA_W: Record<Persona, [string, string]> = {
@@ -843,17 +856,9 @@ function vPhase(g: Game): string {
 function vVoteAi(g: Game): string {
   const people = Core.humansAlive(g), one = people.length === 1;
   const row = (i: number): string => `<div class="voter"${one ? '' : ` id="voter-${i}"`}>${one ? '' : `<b>${name(g, i)}</b>`}<div class="pick"><button class="btn vote L${ui.votes[i] === true ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="1" aria-pressed="${ui.votes[i] === true}"><span class="vw">${ui.votes[i] === true ? '✓ ' : ''}{ja}</span></button><button class="btn vote F${ui.votes[i] === false ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="0" aria-pressed="${ui.votes[i] === false}">${ui.votes[i] === false ? '✓ ' : ''}{nein}</button></div></div>`;
-  return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${name(g, g.pres)}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">${one ? 'Seu voto' : 'Cada pessoa toca no próprio voto'}; as IAs votam junto. Mais {ja} que {nein} elege; empate rejeita.</p>${people.map(row).join('')}${one ? '' : `<button class="btn block" data-act="countvotes"${people.every(i => typeof ui.votes[i] === 'boolean') ? '' : ' disabled'}>Abrir os votos</button>`}${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}${one ? vPlea(g, people[0]) : ''}</section>`;
+  return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${name(g, g.pres)}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">${one ? 'Seu voto' : 'Cada pessoa toca no próprio voto'}; as IAs votam junto. Mais {ja} que {nein} elege; empate rejeita.</p>${people.map(row).join('')}${one ? '' : `<button class="btn block" data-act="countvotes"${people.every(i => typeof ui.votes[i] === 'boolean') ? '' : ' disabled'}>Abrir os votos</button>`}${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}</section>`;
 }
 
-/** D65: ask an app player for its vote on this government: pick who, then Ja or Nein (once each per vote). */
-function vPlea(g: Game, me: number): string {
-  const can = g.players.map((_, i) => i).filter(i => Core.canPlea(g, me, i));
-  if (!can.length) return '';
-  const to = ui.pleaTo !== undefined && ui.pleaTo !== null && can.includes(ui.pleaTo) ? ui.pleaTo : null, Wv = Core.words(g.pack, g.region);
-  const Wn = (ja: boolean): string => `${ja ? Wv.ja : Wv.nein} (${ja ? 'aprovar' : 'barrar'} este governo)`;
-  return `<div class="plea" id="plea"><b>Convencer alguém</b><small>Peça a uma IA que vote como você quer. Ela segue o pedido conforme confia em você.</small><div class="plea-who">${can.map(i => `<button class="${i === to ? 'on' : ''}" data-act="pleato" data-i="${i}" aria-pressed="${i === to}">${esc(g.players[i].name)}</button>`).join('')}</div>${to !== null ? `<div class="plea-go"><button class="btn vote L" data-act="plea" data-v="1">Pedir ${esc(Wn(true))}</button><button class="btn vote F" data-act="plea" data-v="0">Pedir ${esc(Wn(false))}</button></div>` : '<small>Toque num nome para escolher a quem pedir.</small>'}</div>`;
-}
 /* ---------- settings ---------- */
 /** The finished games kept on this device (D23), and the button that exports them. */
 function vHistory(): string {
@@ -944,7 +949,7 @@ export function blurField(): void { const a = document.activeElement as HTMLElem
 /** The votes at a little table (D44): every seat in its place around a green table, each vote turning over in turn,
  *  the count adding up in the middle, then ELEITO! or REJEITADO! (the table goes red when the hidden leader was just
  *  elected chancellor in the danger zone). It closes by itself and never takes a tap. With less motion asked, only the stamp shows. */
-export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boolean, step: number): number {
+export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boolean, step: number, hold = false): number {
   const alive = g.players.map((p, i) => (p.alive ? i : -1)).filter(i => i >= 0), n = g.players.length, me = solo(g);
   const order = [...alive.slice(alive.indexOf(e.pres)), ...alive.slice(0, alive.indexOf(e.pres))];
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches, gap = step;
@@ -955,7 +960,7 @@ export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boole
     return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${450 + k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div><b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
   }).join('');
   const el = document.createElement('div');
-  el.className = `ballot${danger ? ' danger' : ''}`; el.id = 'ballot'; el.style.setProperty('--danger-at', `${450 + alive.length * gap + 200}ms`);
+  el.className = `ballot${danger && !hold ? ' danger' : ''}${hold ? ' hold' : ''}`; el.id = 'ballot'; el.style.setProperty('--danger-at', `${450 + alive.length * gap + 200}ms`);
   el.innerHTML = themed(`<p class="b-q"><b>${name(g, e.pres)}</b> presidente + <b>${name(g, e.chanc)}</b> chanceler</p><div class="b-table"><div class="b-felt"></div>${seats}<div class="b-center"><b class="b-score"><span class="g">0</span> × <span class="r">0</span></b><b class="b-stamp ${elected ? 'L' : 'F'}" style="animation-delay:${450 + alive.length * gap + 200}ms">${elected ? 'Eleito!' : 'Rejeitado!'}</b></div></div>`, W as unknown as Record<string, string>);
   document.getElementById('ballot')?.remove();
   document.body.appendChild(el);
@@ -964,8 +969,8 @@ export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boole
   order.forEach((i, k) => setTimeout(() => { if (e.ja.includes(i)) y++; else no++; if (g1) g1.textContent = String(y); if (r1) r1.textContent = String(no); }, 450 + k * gap + 250));
   // the table comes in, the cards turn, the stamp lands and stays a moment, then the table leaves (D45)
   const shown = 450 + alive.length * gap + 1100;
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 450); }, shown);
-  return shown;
+  if (!hold) setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 450); }, shown);
+  return hold ? 450 + alive.length * gap + 300 : shown;
 }
 
 /** D55: the person's own plays, to defend with: the play the accusation points at (what it got, what it passed or
@@ -1019,3 +1024,35 @@ export function debateSheet(g: Game, at: number): void {
   if (Math.abs(pages.scrollLeft - want) > 4) pages.scrollTo({ left: want, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   pages.onscroll = () => { const k = Math.round(pages.scrollLeft / Math.max(1, pages.clientWidth)); dots.forEach((d, j) => d.classList.toggle('on', j === k)); };
 }
+
+/* D73: turning a vote. After the votes open, a short window: the votes of the app players can be tapped, and a sheet
+   offers what to say, each reason with its strength. One try per vote. */
+export function swayOpen(g: Game, cast: [number, boolean][], ms: number): void {
+  const el = document.getElementById('ballot');
+  if (!el) return;
+  const me = solo(g), alive = g.players.map((p, i) => (p.alive ? i : -1)).filter(i => i >= 0);
+  el.classList.add('sway-on');
+  el.querySelectorAll<HTMLElement>('.b-seat').forEach((s, k) => {
+    const i = alive[k];
+    if (i === undefined || i === me || !g.players[i].ai || i === g.pres || i === g.chanc) return;   // the government votes for itself
+    s.dataset.act = 'swayto'; s.dataset.i = String(i); s.classList.add('tap'); s.setAttribute('role', 'button'); s.setAttribute('aria-label', `Tentar virar o voto de ${g.players[i].name}`);
+  });
+  el.insertAdjacentHTML('beforeend', `<div class="sway" id="sway"><b>Virar um voto</b><div class="sway-bar"><i style="animation-duration:${ms}ms"></i></div><small>Toque no voto de uma IA para tentar convencer. Um por votação.</small><div id="swayopts"></div></div>`);
+  void cast;
+}
+export function swayReasonsShow(g: Game, to: number, reasons: { id: string; label: string; text: string; power: number }[]): void {
+  const box = document.getElementById('swayopts'), el = document.getElementById('ballot');
+  if (!box || !el) return;
+  el.querySelectorAll('.b-seat').forEach(s => s.classList.toggle('picked', (s as HTMLElement).dataset.i === String(to)));
+  const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.25 ? '<i class="pw m">média</i>' : '<i class="pw w">fraca</i>';
+  box.innerHTML = `<p class="sway-to">Convencer <b>${esc(g.players[to].name)}</b>:</p>${reasons.map(r => `<button class="krow" data-act="swaysay" data-v="${r.id}"><span><b>${esc(r.label)}</b><small>“${esc(r.text)}”</small></span>${pw(r.power)}</button>`).join('')}`;
+}
+export function swayResult(g: Game, to: number, flipped: boolean): void {
+  const box = document.getElementById('swayopts'), el = document.getElementById('ballot');
+  if (!box || !el) return;
+  const seat = el.querySelector<HTMLElement>(`.b-seat[data-i="${to}"] .b-card`);
+  if (seat && flipped) { const ja = seat.classList.contains('ja'); seat.classList.toggle('ja', !ja); seat.classList.toggle('nein', ja); const sp = seat.querySelector('span'); if (sp) sp.textContent = ja ? W.nein : W.ja; seat.classList.add('flipped'); const g1 = el.querySelector('.b-score .g'), r1 = el.querySelector('.b-score .r'); if (g1) g1.textContent = String(el.querySelectorAll('.b-card.ja').length); if (r1) r1.textContent = String(el.querySelectorAll('.b-card.nein').length); }
+  el.querySelectorAll('.b-seat').forEach(s => { s.removeAttribute('data-act'); s.classList.remove('tap'); });
+  box.innerHTML = `<p class="sway-res ${flipped ? 'ok' : 'no'}">${flipped ? `✔ ${esc(g.players[to].name)} virou o voto.` : `✖ ${esc(g.players[to].name)} manteve o voto.`}</p>`;
+}
+export function swayClose(): void { const el = document.getElementById('ballot'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 450); } }

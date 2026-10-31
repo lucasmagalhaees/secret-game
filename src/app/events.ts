@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { ballot, beat, blurField, bossWin, claimFx, freeze, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
+import { ballot, beat, blurField, bossWin, claimFx, freeze, swayOpen, swayReasonsShow, swayResult, swayClose, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -88,7 +88,7 @@ const askHold = (g: Game, seat: number, ask: string): number => {
   const me = g.players.findIndex(p => !p.ai);
   if (me < 0 || g.players.filter(p => !p.ai).length !== 1 || !g.players[me].alive || !g.players[seat]?.ai) return 0;
   const asked = (() => { for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') return false; if (e.k === 'ask' && e.by === me) return true; } return false; })();
-  const open = !asked && (ask === 'nominate' || ask === 'investigate');
+  const open = !asked && (ask === 'nominate' || ask === 'investigate' || ask === 'execute');
   return open ? ASK_HOLD[S.speed || 'normal'] : 0;
 };
 const ASK_HOLD = { lenta: 6000, normal: 4000, rapida: 2500 } as const;
@@ -96,13 +96,13 @@ const ASK_HOLD = { lenta: 6000, normal: 4000, rapida: 2500 } as const;
 let hold = false;
 const takeHold = (): number => { const h = hold; hold = false; return h ? CLAIM_HOLD[S.speed || 'normal'] : 0; };
 /** What everyone notices when a vote is counted: the stamp, and the vibration when it elects. */
-function voted(before: Game, next: Game, then: () => void = () => {}): void {
+function voted(before: Game, next: Game, then: () => void = () => {}, shown = false): void {
   const e = [...next.hist].reverse().find(x => x.k === 'vote');
   const elected = !!e && e.k === 'vote' && e.ja.length * 2 > before.players.filter(p => p.alive).length;
   const land = (): void => { stamp(elected ? 'Eleito!' : 'Rejeitado!', elected ? 'L' : 'F'); sound('stamp'); if (elected) buzz([40, 60, 40]); then(); };
   // the votes open one by one at a little table first (D44): nothing (sound, stamp, the end of the game) gives the
   // result away before the last card turns (D45); taps wait meanwhile
-  const wait = e && e.k === 'vote' ? ballot(next, e, elected, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3))) : 0;
+  const wait = e && e.k === 'vote' && !shown ? ballot(next, e, elected, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3))) : 0;
   if (!wait) { land(); return; }
   ui.busy = true;
   setTimeout(() => { ui.busy = false; land(); }, wait);
@@ -138,10 +138,32 @@ function myVote(i: number, yes: boolean): void {
   if (people.length === 1) count(g);
   else render();
 }
+/** D73: the vote in progress while the person may still turn one: the votes, what was said, the deadline. */
+let swaying: { g: Game; base: Game; cast: [number, boolean][]; said: string[]; to: number | null; done: boolean; timer?: ReturnType<typeof setTimeout> } | null = null;
+const SWAY_MS = 6000;
 function count(g: Game): void {
+  const solo1 = Core.humansAlive(g).length === 1 && Core.hasAi(g) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const t = solo1 ? Core.tallyVotes(g, ui.votes, rand) : null;
+  if (t) {
+    const alive = g.players.filter(p => p.alive).length, e = { k: 'vote' as const, pres: g.pres, chanc: g.chanc as number, ja: t.cast.filter(c => c[1]).map(c => c[0]) };
+    const wait = ballot(g, e, e.ja.length * 2 > alive, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3)), true);
+    ui.busy = true;
+    swaying = { g: t.g, base: g, cast: t.cast, said: [], to: null, done: false };
+    setTimeout(() => { if (!swaying) return; ui.busy = false; swayOpen(g, t.cast, SWAY_MS); swaying.timer = setTimeout(swayEnd, SWAY_MS); }, wait);
+    return;
+  }
   const next = Core.castVotes(g, ui.votes, rand);
   if (next === g) return;
   voted(g, next, () => { gavelIf(g, next); choose(g, next, next.phase === 'over' ? lawMsg(g, next) || next.why : next.log[next.log.length - 1]); });
+}
+/** The window to turn a vote closes: the votes count as they stand. */
+function swayEnd(): void {
+  const s = swaying;
+  if (!s) return;
+  swaying = null; clearTimeout(s.timer);
+  const next = Core.commitVotes(s.g, s.cast, rand, s.said);
+  swayClose();
+  voted(s.base, next, () => { gavelIf(s.base, next); choose(s.base, next, next.phase === 'over' ? lawMsg(s.base, next) || next.why : next.log[next.log.length - 1]); }, true);
 }
 /** A public choice that can be taken back with "Desfazer" until something else happens. */
 const choose = (before: Game, next: Game, msg?: string): void => play(next, msg, before);
@@ -300,13 +322,17 @@ export function initEvents(): void {
     else if (a === 'diary') { ui.diary = !ui.diary; if (ui.diary) { ui.talk = false; delete S.notesOpen; saveS(); } render(); const diary = $('#diary'); if (ui.diary && diary) diary.scrollTop = diary.scrollHeight; }
     else if (a === 'logfilter') { ui.logFilter = d.v === 'talk' || d.v === 'gov' ? d.v : 'all'; render(); }
     else if (a === 'seatnote') { ui.diary = false; const next = { ...S, notesOpen: true as const }; setS(next); saveS(); render(); document.getElementById(`note-row-${i}`)?.scrollIntoView({ block: 'center' }); }
-    else if (a === 'notesopen') { ui.diary = false; ui.talk = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
+    else if (a === 'notesopen') { ui.diary = false; ui.talk = false; ui.proof = false; const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'contraclose') document.getElementById('contra')?.remove();
     else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
-    else if (a === 'tself') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.selfClaim(g, me), 'Você disse à mesa que é liberal.'); }
+    else if (a === 'tself') { ui.proof = !ui.proof; if (ui.proof) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
+    else if (a === 'tproof') { const me = g.players.findIndex(p => !p.ai), next = Core.selfClaimProof(g, me, d.v || ''); ui.proof = false; const e = next.hist[next.hist.length - 1]; const re = e && e.k === 'self' ? e.re || [] : []; play(next, `Você disse que é liberal: ${re.filter(r => r[1] === 0).length} acreditam, ${re.filter(r => r[1] === 2).length} duvidam.`); reactions(re.map(r => r[1])); }
     else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
+    else if (a === 'swayto' && swaying && !swaying.done) { const s = swaying; s.to = i; const me = s.g.players.findIndex(p => !p.ai); swayReasonsShow(s.g, i, Core.swayReasons(s.g, me, i, s.cast)); clearTimeout(s.timer); s.timer = setTimeout(swayEnd, SWAY_MS); }
+    else if (a === 'swaysay' && swaying && !swaying.done && swaying.to !== null) { const s = swaying, me = s.g.players.findIndex(p => !p.ai), r = Core.sway(s.g, me, s.to as number, s.cast, d.v || '', rand); s.cast = r.cast; s.said = r.said; s.done = true; swayResult(s.g, s.to as number, r.flipped); clearTimeout(s.timer); s.timer = setTimeout(swayEnd, 1600); }
+    else if (a === 'tkill') { const me = g.players.findIndex(p => !p.ai); play(Core.askTable(g, me, 'kill', i), `Você sugeriu eliminar ${g.players[i].name}.`); }
     else if (a === 'tavoid' || a === 'tinv') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, a === 'tavoid' ? 'avoid' : 'inv', i), 'Pedido feito à mesa.'); }
     else if (a === 'twhy') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askWhy(g, me, i)); ui.diary = true; render(); }
     else if (a === 'tbloc') { const sel = ui.blocSel || []; ui.blocSel = sel.includes(i) ? sel.filter(x => x !== i) : sel.length < 3 ? [...sel, i] : sel; render(); }

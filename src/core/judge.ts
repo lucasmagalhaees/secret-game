@@ -6,7 +6,7 @@
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
 import { backed, earlyGov, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
-import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, vote } from './game';
+import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, TRACKER_MAX, vote } from './game';
 import { words } from './words';
 import type { Ask, DebLine, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
 
@@ -761,9 +761,14 @@ export function notesScore(g: Game, me: number): { right: number[]; wrong: numbe
 /** Everyone alive votes: the people with `votes` (seat → Ja!), the players run by the app by themselves. The votes are
  *  recorded for all to see, and more Ja! than Nein! elects. Missing a person's vote, nothing happens. */
 export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => number): Game {
-  if (g.phase !== 'vote' || g.chanc === null) return g;
+  const t = tallyVotes(g, votes, rand);
+  return t ? commitVotes(t.g, t.cast, rand) : g;
+}
+/** D73: the votes of the table, in turn, before they count: the person may still try to turn one (`sway`). */
+export function tallyVotes(g: Game, votes: Record<number, boolean>, rand: () => number): { g: Game; cast: [number, boolean][] } | null {
+  if (g.phase !== 'vote' || g.chanc === null) return null;
   const alive = seats(g, i => g.players[i].alive);
-  if (alive.some(i => !isAi(g, i) && typeof votes[i] !== 'boolean')) return g;
+  if (alive.some(i => !isAi(g, i) && typeof votes[i] !== 'boolean')) return null;
   const ts: Trace[] = [];
   // D62: the table votes in turn, from the seat after the president around: each one hears the votes before it, as at
   // a real table, and may follow those it trusts (a person's vote included)
@@ -776,9 +781,16 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
     for (const p of g.players.map((_, j) => j)) { const bl = !isAi(g, p) ? blocOf(g, p) : null; if (bl && bl.yes.includes(i) && typeof votes[p] === 'boolean') asked.push([p, votes[p]], [p, votes[p]]); }
     const r = ask(g, i, 'vote', [1, 0], rand, [...cast], asked); ts.push(r.t); cast.push([i, r.a === 1]);
   }
+  return { g: traced(g, ts), cast };
+}
+/** The votes count: the record of the vote, and the government elected or not. `said` are lines of talk at the table
+ *  (a vote someone tried to turn) that go in the log before the count. */
+export function commitVotes(g: Game, cast: [number, boolean][], rand: () => number, said: string[] = []): Game {
+  if (g.phase !== 'vote' || g.chanc === null) return g;
+  const alive = seats(g, i => g.players[i].alive);
   const ja = alive.filter(i => cast.some(([j, v]) => j === i && v));
   const nein = alive.filter(i => !ja.includes(i)), list = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ') || 'ninguém';
-  const n: Game = { ...traced(g, ts), log: [...g.log, `Votos. ${words(g.pack, g.region).ja}: ${list(ja)}. ${words(g.pack, g.region).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
+  const n: Game = { ...g, log: [...g.log, ...said, `Votos. ${words(g.pack, g.region).ja}: ${list(ja)}. ${words(g.pack, g.region).nein}: ${list(nein)}.`], hist: [...g.hist, { k: 'vote', pres: g.pres, chanc: g.chanc, ja }] };
   return vote(n, ja.length > nein.length, rand);
 }
 
@@ -1052,13 +1064,14 @@ export function plea(g: Game, me: number, to: number, ja: boolean): Game {
    (what it said it believed of that government, never its private reckoning). A bloc asks up to three app players to vote with you for three rounds: those who trust
    you join; a law of the hidden side passed by a government the bloc elected costs every member. */
 const lastGov = (g: Game): number => lastIndex(g, ['gov', 'veto', 'chaos']);
-export const canAsk = (g: Game, me: number, what: 'pick' | 'avoid' | 'inv', who: number): boolean =>
+export const canAsk = (g: Game, me: number, what: 'pick' | 'avoid' | 'inv' | 'kill', who: number): boolean =>
   g.phase !== 'over' && g.phase !== 'reveal' && !!g.players[me]?.alive && !!g.players[who]?.alive && (what === 'pick' ? who === me : who !== me) &&
   !g.hist.slice(lastGov(g) + 1).some(e => e.k === 'ask' && e.by === me && e.what === what);
-export function askTable(g: Game, me: number, what: 'pick' | 'avoid' | 'inv', who: number): Game {
+export function askTable(g: Game, me: number, what: 'pick' | 'avoid' | 'inv' | 'kill', who: number): Game {
   if (!canAsk(g, me, what, who)) return g;
-  const n = g.players[who].name, line = what === 'pick' ? 'Quem for presidente: me indica para chanceler.' : what === 'avoid' ? `Quem for presidente: não indica ${n}.` : `Quem tiver o poder de investigar: investiga ${n}.`;
-  return { ...g, hist: [...g.hist, { k: 'ask', by: me, what, who }], log: [...g.log, `${g.players[me].name}: "${line}"`] };
+  const n = g.players[who].name, why = what === 'kill' ? killReasons(g, me).find(r => r.who === who) : undefined;
+  const line = what === 'pick' ? 'Quem for presidente: me indica para chanceler.' : what === 'avoid' ? `Quem for presidente: não indica ${n}.` : what === 'kill' ? `Elimina ${n}. ${why?.text || ''}`.trim() : `Quem tiver o poder de investigar: investiga ${n}.`;
+  return { ...g, hist: [...g.hist, { k: 'ask', by: me, what, who, ...(why ? { power: why.power } : {}) }], log: [...g.log, `${g.players[me].name}: "${line}"`] };
 }
 /** The last vote this seat cast that can be asked about, as an index in the history. */
 const lastVote = (g: Game): number => lastIndex(g, ['vote']);
@@ -1092,4 +1105,78 @@ export function formBloc(g: Game, me: number, who: number[]): Game {
   });
   const nm = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ');
   return { ...g, hist: [...g.hist, { k: 'bloc', by: me, with: pick, yes }], log: [...g.log, `${g.players[me].name}: "${nm(pick)}: vamos votar juntos nas próximas rodadas?"`, yes.length ? `${nm(yes)} topou.` : 'Ninguém topou.', ...(pick.length > yes.length ? [`${nm(pick.filter(i => !yes.includes(i)))} preferiu não.`] : [])] };
+}
+
+/* ---------- D73: turning a vote, asking for an elimination, proving one is liberal ---------- */
+export interface Reason { id: string; label: string; text: string; power: number }
+/** What the person can say to turn `to`'s vote: built from what the whole table saw, each with its strength. */
+export function swayReasons(g: Game, me: number, to: number, cast: [number, boolean][]): Reason[] {
+  const v = cast.find(([j]) => j === to);
+  if (!v || to === me || !g.players[to]?.ai || g.chanc === null) return [];
+  const W = words(g.pack, g.region), nm = (i: number): string => g.players[i].name, pres = g.pres, chanc = g.chanc;
+  const dirty = (i: number): boolean => g.hist.some(e => e.k === 'gov' && e.law === 'F' && (e.pres === i || e.chanc === i));
+  const clean = (i: number): boolean => g.hist.some(e => e.k === 'gov' && e.law === 'L' && (e.pres === i || e.chanc === i));
+  const out: Reason[] = [];
+  if (v[1]) {   // it voted Ja: talk it into Nein
+    for (const i of [chanc, pres]) if (dirty(i)) out.push({ id: `dirty${i}`, label: `${nm(i)} já governou e saiu lei ${W.f}`, text: `${nm(i)} esteve num governo que aprovou lei ${W.f}. Não dá para confiar.`, power: 0.5 });
+    if (g.laws.F >= HITLER_ZONE) out.push({ id: 'zone', label: `Já há ${HITLER_ZONE} leis ${W.fs}`, text: `Já há ${HITLER_ZONE} leis ${W.fs}: se ${nm(chanc)} for o ${W.boss}, perdemos agora.`, power: 0.45 });
+    if (g.tracker < TRACKER_MAX - 1) out.push({ id: 'wait', label: 'Ainda dá para rejeitar', text: 'Ainda dá para rejeitar sem cair no caos. Melhor esperar um governo mais limpo.', power: 0.25 });
+  } else {      // it voted Nein: talk it into Ja
+    if (g.tracker === TRACKER_MAX - 1) out.push({ id: 'chaos', label: 'Mais uma rejeição traz o caos', text: 'Se rejeitar de novo, o caos aprova a lei do topo às cegas.', power: 0.5 });
+    if (clean(chanc) || clean(pres)) out.push({ id: 'clean', label: 'Esse governo tem histórico limpo', text: `${clean(chanc) ? nm(chanc) : nm(pres)} já esteve num governo que aprovou lei liberal.`, power: 0.4 });
+    out.push({ id: 'info', label: 'Vamos ver o que sai', text: 'Elege e a gente vê o que sai: a lei mostra quem é quem.', power: 0.25 });
+  }
+  out.push({ id: 'trust', label: 'Confia em mim', text: 'Confia em mim nessa.', power: 0.2 });
+  return out.sort((a, b) => b.power - a.power);
+}
+/** The person tries to turn `to`'s vote with a reason. The app player turns by the strength of the reason times how much
+ *  it trusts the person; the hidden side turns only when it suits its own side. Returns the new votes, whether it
+ *  turned, and what was said. */
+export function sway(g: Game, me: number, to: number, cast: [number, boolean][], id: string, rand: () => number): { cast: [number, boolean][]; flipped: boolean; said: string[] } {
+  const r = swayReasons(g, me, to, cast).find(x => x.id === id), v = cast.find(([j]) => j === to);
+  if (!r || !v) return { cast, flipped: false, said: [] };
+  const p = g.players[to], trust = 1 - believe(viewOf(g, to, 'vote', [1, 0]), true).pF[me];
+  let chance = r.power * (0.4 + trust) * (p.persona === 'cetico' ? 0.5 : p.persona === 'certinho' ? 1.2 : 1);
+  if (partyOf(p.role) === 'F') { const ally = (i: number): boolean => partyOf(g.players[i].role) === 'F'; const govAlly = ally(g.pres) || ally(g.chanc as number); chance = v[1] === govAlly ? 0.05 : chance * 1.3; }
+  const flipped = rand() < Math.min(0.9, chance);
+  const nm = (i: number): string => g.players[i].name;
+  return { cast: flipped ? cast.map(([j, x]) => [j, j === to ? !x : x] as [number, boolean]) : cast, flipped, said: [`${nm(me)}: "${nm(to)}, ${r.text.charAt(0).toLowerCase()}${r.text.slice(1)}"`, `${nm(to)}: "${flipped ? 'Tá bom, mudo meu voto.' : 'Não, mantenho meu voto.'}"`] };
+}
+/** What the person can show when it says it is liberal: what the record has for it, each with its strength. */
+export function selfProofs(g: Game, me: number): Reason[] {
+  const W = words(g.pack), out: Reason[] = [];
+  const libs = g.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === me || e.chanc === me)).length;
+  if (libs) out.push({ id: 'laws', label: `Aprovei ${libs} lei${libs > 1 ? 's' : ''} liberal${libs > 1 ? 'is' : ''}`, text: `Estive em ${libs} governo${libs > 1 ? 's' : ''} que aprovou lei liberal.`, power: Math.min(0.6, 0.3 + 0.15 * libs) });
+  const inv = g.hist.filter(e => e.k === 'inv' && e.target === me && e.said === 'L');
+  if (inv.length) out.push({ id: 'inv', label: `${g.players[(inv[0] as { by: number }).by].name} me investigou`, text: `${g.players[(inv[0] as { by: number }).by].name} me investigou e disse que sou liberal.`, power: 0.55 });
+  const tossed = g.hist.filter(e => e.k === 'gov' && e.pres === me && e.pc !== undefined && e.pc >= 2 && e.law === 'L').length;
+  if (tossed) out.push({ id: 'toss', label: `Joguei ${W.f} fora`, text: `Tirei ${W.fs} e mesmo assim saiu liberal: joguei ${W.f} fora.`, power: 0.45 });
+  const vouch = g.hist.filter(e => e.k === 'talk' && e.say === 'trust' && e.about === me && e.by !== me).length;
+  if (vouch) out.push({ id: 'vouch', label: 'Tem gente que confia em mim', text: `${vouch} já disse${vouch > 1 ? 'ram' : ''} que confia em mim.`, power: 0.25 });
+  out.push({ id: 'word', label: 'Só a minha palavra', text: 'Não tenho prova, só a minha palavra.', power: 0.05 });
+  return out.sort((a, b) => b.power - a.power);
+}
+
+/** D73: who the person could ask the app player presiding to eliminate, each with the strongest reason the record has. */
+export function killReasons(g: Game, me: number): { who: number; text: string; power: number }[] {
+  return g.players.map((p, i) => i).filter(i => i !== me && i !== g.pres && g.players[i].alive).map(i => {
+    const ev = evidence(g, i).filter(x => !proofEarly(g, x)), top = ev.find(x => x.hit) ?? ev[0];
+    return { who: i, text: top ? `${top.text}.` : 'Nada na ata contra ele.', power: top ? (top.hit ? 0.5 : 0.2) : 0 };
+  }).sort((a, b) => b.power - a.power);
+}
+/** The person says it is liberal and shows a proof: each app player says whether it believes (0), is not sure (1) or
+ *  doubts (2), by what it thought of the person, the strength of the proof and its side. Once a round. */
+export function selfClaimProof(g: Game, me: number, id: string): Game {
+  if (!canSelfClaim(g, me)) return g;
+  const pr = selfProofs(g, me).find(x => x.id === id);
+  if (!pr) return g;
+  const re: [number, number][] = [];
+  g.players.forEach((p, j) => {
+    if (!p.ai || !p.alive || j === me) return;
+    const hidden = partyOf(p.role) === 'F', ally = hidden && partyOf(g.players[me].role) === 'F';
+    const x = hidden ? (ally ? 0.6 : 0.1 + pr.power * 0.4) : (1 - believe(viewOf(g, j, 'vote', [1, 0]), true).pF[me]) - 0.5 + pr.power * 0.6 + 0.1 * (p.mood ?? 0);
+    re.push([j, x > 0.3 ? 0 : x < 0.05 ? 2 : 1]);
+  });
+  const say = ['acredito', 'sei não', 'duvido'];
+  return { ...g, hist: [...g.hist, { k: 'self', by: me, proof: id, power: pr.power, re }], log: [...g.log, `${g.players[me].name}: "Eu sou liberal. ${pr.text}"`, ...re.map(([j, a]) => `${g.players[j].name}: "${say[a].charAt(0).toUpperCase()}${say[a].slice(1)}."`)] };
 }
