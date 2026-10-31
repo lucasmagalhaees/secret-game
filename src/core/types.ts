@@ -61,7 +61,7 @@ export type Event =
   | { k: 'inv'; by: number; target: number; party: Party; said?: Party | '-' }
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
-  | { k: 'exec'; by: number; target: number; role: Role }
+  | { k: 'exec'; by: number; target: number; role: Role; why?: string }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;
 /** What a player run by the app says about another between rounds (D13): it suspects them ('acc'), trusts them
@@ -155,7 +155,7 @@ export type Seen =
   | { k: 'inv'; by: number; target: number; party?: Party; said?: Party | '-' }
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
-  | { k: 'exec'; by: number; target: number }
+  | { k: 'exec'; by: number; target: number; why?: string }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
   | Talk;
 

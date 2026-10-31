@@ -522,3 +522,14 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 - **Pedido:** numa partida, a pessoa (Stalin, presidente) passou uma comunista e uma liberal para um aliado chanceler limpar a barra dos dois; a IA aprovou a comunista e disse que recebeu duas, pondo a culpa no Stalin. O primeiro plano do lado escondido tem que ser eleger o líder chanceler depois da 3ª lei: antes disso, não se queimar e aproveitar toda chance de parecer liberal, deixando as leis do lado escondido para os liberais aprovarem e serem acusados.
 - **Decisão:** antes da 3ª lei do lado escondido, o fascista com escolha deixa passar a liberal com chance por nível (`EARLY_CLEAN`: 30%, 50%, 70% e 80%), como presidente ou chanceler, com aliado ou não; com o líder de presidente passando uma de cada, o chanceler aliado que planeja aprova a liberal. O chanceler nunca põe a culpa num presidente aliado: confirma a história dele ou, se o presidente não disse nada (esqueceu ou ficou calado), fica com a culpa, seja o presidente o líder ou outro aliado.
 - **Não medido ainda:** o equilíbrio de D10 (liberais perto de metade) com `scripts/ai_bench.mjs`.
+
+## D52. Critério com o começo do jogo e rigor na zona do líder (2026-10-31)
+
+- **Pedido:** no começo o lado escondido quer parecer liberal e incriminar liberais, então acusação baseada no primeiro governo, nos primeiros governos ou na primeira lei do lado escondido tem que perder força. E depois da 3ª lei, o jeito mais fácil de o lado escondido vencer é o líder chanceler: o liberal tem que vetar quem não tem boa certeza de ser liberal.
+- **Decisão:** os primeiros `EARLY_GOVS` (2) governos e o governo da primeira lei do lado escondido não apoiam acusação nem defesa (`backed`) e, no tribunal, viram prova fraca, com a marca "no começo do jogo: prova fraca". Uma história que não fecha continua valendo em qualquer momento. Da 3ª lei do lado escondido em diante, o liberal da IA vota Nein se a chance de o chanceler ser do lado escondido passa de `ZONE_SURE` (fácil sem limite, médio 45%, difícil 30%, extremo 25%).
+- **Não medido ainda:** o equilíbrio de D10.
+
+## D53. Por que alguém foi eliminado (2026-10-31)
+
+- **Pedido:** mostrar a justificativa de quem eliminou.
+- **Decisão:** a IA que elimina diz o porquê, com o que a mesa toda viu (`execReason`): a prova mais forte da ata, uma acusação que ela já tinha feito, ou que era de quem mais desconfiava. A frase entra no registro e aparece na tela da eliminação, embaixo do carimbo. O fascista dá o motivo do mesmo jeito: é público, não o que ela pensa de verdade.

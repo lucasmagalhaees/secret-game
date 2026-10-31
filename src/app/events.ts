@@ -80,7 +80,7 @@ function afterBot(before: Game, next: Game): void {
   if (next.phase === 'chancellor' && before.phase === 'president') sound('paper');
   gavelIf(before, next);
   const gone = next.players.findIndex((p, i) => !p.alive && before.players[i].alive);
-  if (gone >= 0) { flash(next.players[gone].name, next.players[gone].role === 'hitler'); sound('shot'); buzz(220); }
+  if (gone >= 0) { const ex = [...next.hist].reverse().find(e => e.k === 'exec'); flash(next.players[gone].name, next.players[gone].role === 'hitler', ex?.k === 'exec' ? ex.why : ''); sound('shot'); buzz(220); }
   const line = next.log.length > before.log.length ? next.log[next.log.length - 1] : '';
   // the votes and what a government said are already on screen, at the top: no note at the foot for them
   play(next, next.phase === 'over' ? lawMsg(before, next) || next.why : line && !line.startsWith('Votos.') && !hold ? line : undefined);

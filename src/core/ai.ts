@@ -91,6 +91,9 @@ export const HITLER_BURNT = 0.35;
 export const DECISIVE_SLIP = 0.1;
 /** D51: before the danger zone the hidden side's first plan is to stay clean, so the leader can be elected chancellor
  *  later: how often a fascist with the choice lets the liberal law through, per level (a burnt fascist is voted down). */
+/** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
+ *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
+export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.45, dificil: 0.3, extremo: 0.25 };
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0.3, medio: 0.5, dificil: 0.7, extremo: 0.8 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
@@ -110,11 +113,22 @@ export const TALK_W = 0.3;
 export const TALK_LIE = 0.6, SLIP_TALK = 0.1;
 /** Whether what `by`'s talk says about `about` is backed by the record from `from` to `upto` (D26). */
 export function backed(hist: Seen[], from: number, upto: number, about: number, acc: boolean): boolean {
-  return hist.slice(from, upto).some(e => {
+  return hist.slice(from, upto).some((e, k) => {
     if (e.k !== 'gov' || (e.pres !== about && e.chanc !== about)) return false;
     const clash = e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
-    return acc ? e.law === 'F' || clash : e.law === 'L' && !clash;
+    // D52: an early law proves little either way (the hidden side plays clean early, and smears a liberal); only a story
+    // that does not add up still holds then
+    const early = earlyGov(hist, from + k);
+    return acc ? (e.law === 'F' && !early) || clash : e.law === 'L' && !clash && !early;
   });
+}
+/** D52: governments this early (the first EARLY_GOVS, or the one that made the first fascist law) prove little. */
+export const EARLY_GOVS = 2;
+export function earlyGov(hist: Seen[], at: number): boolean {
+  let govs = 0, F = 0;
+  for (let i = 0; i < at; i++) { const e = hist[i]; if (e.k === 'gov') { govs++; if (e.law === 'F') F++; } else if (e.k === 'chaos' && e.law === 'F') F++; }
+  const e = hist[at];
+  return govs < EARLY_GOVS || (e?.k === 'gov' && e.law === 'F' && F === 0);
 }
 
 /** How many times this speaker made the same claim since the last new fact involving its target. */
@@ -437,6 +451,10 @@ function liberalJa(v: View, b: Beliefs): boolean {
   rows(b, gov.filter(i => i !== v.me));
   if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) {
     why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);
+    return false;
+  }
+  if (v.laws.F >= HITLER_ZONE && gov[1] !== v.me && b.pF[gov[1]] > ZONE_SURE[v.level]) {
+    why(`Já há ${HITLER_ZONE} leis {fs}: daqui em diante só vota Ja! num chanceler de quem tem boa certeza. ${P(gov[1])} tem ${pc(b.pF[gov[1]])} de chance de ser do lado escondido, acima do que o nível aceita (${pc(ZONE_SURE[v.level])}): {nein}`);
     return false;
   }
   const r = risk(b, gov.filter(i => i !== v.me)), ok = r <= base + slack;
