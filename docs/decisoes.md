@@ -506,3 +506,13 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** o e2e claro só dava problema (passava de 10 min e caía por tempo).
 - **Decisão:** sai do CI e do `verify.sh`; fica só o e2e no tema escuro. O teste continua no código e roda à mão com `python3 tests/e2e.py light`. O contraste dos votos no tema claro deixa de ser medido a cada PR.
+
+## D48. Tabuleiro, cartas e registro mais legíveis (2026-10-30)
+
+- **Pedido:** melhorias de interface.
+- **Decisão:** cada casa vazia do tabuleiro mostra o ícone e o nome curto do que libera (investiga, espia, eleição, elimina, vitória), e a próxima casa de cada trilha fica marcada; na mão de leis, as que ficam sobem quando uma é escolhida para o lixo, e no celular as cartas ocupam a largura; o registro vira jornal, uma seção por rodada com a indicação como manchete, a mais nova primeiro.
+
+## D49. Faixa do presidente e medalha do chanceler (2026-10-30)
+
+- **Pedido:** o presidente com faixa ficou legal; animação para o chanceler.
+- **Decisão:** na faixa da mesa, o presidente da vez sempre usa uma faixa (dourada na eleição especial), que entra deslizando quando a presidência muda; o chanceler eleito ganha uma medalha com a balança, que cai e quica quando é eleito. Só o que a mesa toda já sabe; nada se mexe com "reduzir movimento" nem ao reabrir a partida.

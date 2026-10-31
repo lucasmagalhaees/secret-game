@@ -214,7 +214,7 @@ with sync_playwright() as p:
     pg.click('#tab-jogo'); assert pg.locator('#summary').count() == 1 and pg.locator('#players').count() == 0
     assert 'Ana investigou Caio: era fascista' in ' '.join(txt('#summary').split()), txt('#summary')
     assert 'eliminou' in txt('#summary') and 'rejeitados' in txt('#summary') and 'Caos' in txt('#summary') and 'vetaram' in txt('#summary'), txt('#summary')
-    pg.click('#tab-log'); assert pg.locator('#log li').count() > 10; pg.click('#tab-res')
+    pg.click('#tab-log'); assert pg.locator('#log li').count() > 10 and pg.locator('#log .round h4').count() > 2 and 'Rodada' in txt('#log .round h4'); pg.click('#tab-res')
     # D19: the good and bad plays of each person, only with the assistance on
     assert pg.locator('.card.review').count() == 0 and pg.locator('#reviewon').count() == 1, 'assistance off: a button, not the review'
     pg.click('#reviewon'); assert pg.locator('.card.review').count() == 7 and pg.locator('.plays li').count() > 0, 'one review per person at the table'
@@ -260,7 +260,7 @@ with sync_playwright() as p:
     for i in range(5):
         if i: pg.click('[data-act=open]')
         pg.click('[data-act=hiderole]')
-    assert 'espiar' in txt('#board') and 'partido' not in txt('#board') and 'eleição' not in txt('#board'), txt('#board')
+    assert 'espia' in txt('#board') and 'investiga' not in txt('#board') and 'eleição' not in txt('#board'), txt('#board')
     pg.evaluate('''() => { const g = window.__APP.S.game; g.pres = 3; g.laws = { L: 0, F: 2 }; }''')
     pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'peek'
@@ -552,7 +552,7 @@ with sync_playwright() as p:
     # the enacted law flies to its slot and lands with a thud
     mp.evaluate("""() => { const g = window.__APP.S.game; g.phase = 'nominate'; delete g.winner; g.players.forEach(p => { p.alive = true; }); g.laws.F += 1; g.hist.push({ k: 'chaos', law: 'F' }, { k: 'veto', pres: 0, chanc: 1 }, { k: 'special', by: 0, target: g.pres }); (document.querySelector('[data-act=help]') || document.querySelector('[data-act=endtab]')).click(); }""")
     assert mp.locator('.fxl.chaos').count() == 1 and mp.locator('.fxl.veto-fx .tear').count() == 2 and mp.locator('.fxl.ribbon').count() == 1 and mp.locator('.fly .law').count() == 1
-    assert mp.evaluate("getComputedStyle(document.querySelector('.fxl')).pointerEvents") == 'none' and mp.locator('#seats .seat.sash').count() == 1
+    assert mp.evaluate("getComputedStyle(document.querySelector('.fxl')).pointerEvents") == 'none' and mp.locator('#seats .seat.pres-sash.sash').count() == 1
     mp.wait_for_selector('#board .slot.lit.thud', state='attached', timeout=3000)
     mp.screenshot(path=str(SHOTS / f'fx-{THEME}.png'))
     cov.stop(mp, f'e2e-motion-{THEME}')
