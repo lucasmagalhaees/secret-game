@@ -103,12 +103,19 @@ export function talk(g: Game, by: number, a: number): Game {
   const ev = kind === 'acc' ? evidence(g, about).filter(x => !proofEarly(g, x)) : [];
   const since = lastIndex(g, ['vote', 'rej', 'gov', 'veto', 'chaos', 'inv', 'peek', 'special', 'exec']);
   const made = kind === 'acc' ? g.hist.slice(since + 1).find(e => e.k === 'talk' && e.say === 'acc' && e.about === about && e.by !== by) as Talk | undefined : undefined;
-  const fresh = ev.filter(x => !made || x.at !== made.proof), strong = fresh.find(x => x.hit), weak = fresh[0];
+  // D77: one reason backs one accusation: a proof already used against this player (by anyone) is spent
+  const spent = usedProofs(g, about), fresh = ev.filter(x => !spent.has(x.at) && (!made || x.at !== made.proof)), strong = fresh.find(x => x.hit), weak = fresh[0];
   const bluff = !strong && !!weak && g.players[by].role !== 'liberal' && g.players[about].role === 'liberal';
   const court = strong ? { tone: 'proof' as const, proof: strong.at, hit: true } : bluff ? { tone: 'proof' as const, proof: weak.at } : {};
-  const echo = made && !strong && !bluff ? `${g.players[made.by].name} já disse, e eu também não confio em ${g.players[about].name}.` : '';
+  // D77: without a new reason, an app player does not accuse someone already accused: it keeps quiet instead
+  if (kind === 'acc' && !strong && !bluff && g.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === about)) return { ...g, hist: [...g.hist, { k: 'talk', by, about: -1, say: 'quiet', ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}) }] };
+  const echo = '';
   const line = quiet ? [] : [`${g.players[by].name}: "${strong || bluff ? `${(strong || weak).text}. ${g.players[about].name}, explica isso.` : echo || npcStatement(g, by, about, kind === 'trust')}"`];
   return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}), ...court }] };
+}
+/** D77: the proofs already used in an accusation against `about`, by anyone: each reason backs one accusation only. */
+export function usedProofs(g: Game, about: number): Set<number> {
+  return new Set(g.hist.flatMap(e => (e.k === 'talk' && e.say === 'acc' && e.about === about && e.proof !== undefined ? [e.proof] : [])));
 }
 /** The accusation against `me` still waiting for an answer this round (D40), if any: its index in the history. */
 export function pendingAccusation(g: Game, me: number): number {
@@ -224,7 +231,7 @@ export function evidence(g: Game, about: number): Proof[] {
 /** An accusation with a tone and maybe a proof (D39): the claim is made as usual, and it carries how firmly it was made
  *  and whether the proof holds; the accused, when the proof holds, stammers. */
 export function accuse(g: Game, by: number, about: number, tone: 'soft' | 'firm' | 'proof', proof: number | null, rand: () => number): Game {
-  const p = proof === null ? undefined : evidence(g, about).find(x => x.at === proof), hit = tone === 'proof' && !!p?.hit;
+  const p = proof === null || usedProofs(g, about).has(proof) ? undefined : evidence(g, about).find(x => x.at === proof), hit = tone === 'proof' && !!p?.hit;   // D77: a spent reason is no proof
   const tagged = (x: Game): Game => {
     const i = x.hist.length - 1, e = x.hist[i];
     if (!e || e.k !== 'talk') return x;

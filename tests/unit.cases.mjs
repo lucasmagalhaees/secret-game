@@ -247,6 +247,11 @@ export default function cases(Core) {
     const eg = ai7({ hist: [{ k: 'vote', pres: 1, chanc: 5, ja: [1, 3, 5] }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }] });
     eq('D76: the one eliminating does not give as a reason a vote it shared', Core.execReason(eg, 1, 3).includes('votou'), false);
   }
+  { // D77: one reason backs one accusation
+    const ug = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'gov', pres: 1, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 4, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 5, chanc: 3, law: 'F', pc: 2, cc: 2 }, { k: 'talk', by: 6, about: 3, say: 'acc', tone: 'proof', proof: 2, hit: true }] });
+    const u2 = Core.accuse(ug, 0, 3, 'proof', 2, Core.seeded(1)), t2 = u2.hist.at(-1);
+    eq('D77: a proof already used against a player is spent: a second accusation cannot use it', [Core.usedProofs(ug, 3).has(2), t2.proof === undefined || t2.hit !== true], [true, true]);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);

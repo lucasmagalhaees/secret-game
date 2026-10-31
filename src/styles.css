@@ -1082,3 +1082,10 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .drawer .note-row .side{min-width:0;padding:6px 4px;align-items:center}
 .drawer .note-row .side>span{justify-content:center;gap:8px}
 .note-row .who{font-size:16px}
+.court .ev.spent{opacity:.5;text-decoration:line-through;cursor:default}   /* D77: a reason already used */
+
+/* D78: a seat whose side the person knows for sure, wherever its name shows */
+.kn{font-weight:800;white-space:nowrap}
+.kn.F{color:var(--fas)}.kn.L{color:var(--lib)}
+.kn-tag{font-style:normal;font:800 9px/1 var(--display);text-transform:uppercase;letter-spacing:.06em;margin-left:4px;padding:2px 4px;border:1.5px solid currentColor;border-radius:3px;vertical-align:2px}
+.ballot .kn,.flash .kn,.claim-fx .kn,.debate .kn{filter:brightness(1.4)}
