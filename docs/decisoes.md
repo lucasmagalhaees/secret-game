@@ -592,3 +592,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** a animação do detetive ficou ruim; melhor uma mão tirando o nome do envelope, com a lupa, ocupando a tela toda como a eliminação.
 - **Decisão:** sai o detetive (D58). A tela escurece, um envelope grande abre, uma mão de luva puxa o papel com o nome do investigado e uma lupa dourada passa sobre ele; tudo some em uns 3 s, com os toques congelados (D63). Só o nome aparece: o partido continua em segredo.
+
+## D65. Dizer o próprio lado e pedir voto (2026-10-31)
+
+- **Pedido:** poder fazer o "self claim" e tentar virar um voto na mesa de propósito.
+- **Decisão:** jogando sozinho com a IA, as anotações têm "📣 Dizer à mesa: Eu sou liberal", uma vez por rodada. Custa nada e diz pouco (todo mundo diz), mas se depois uma investigação disser o contrário, conta como duas contradições para quem disse. Na votação, "Pedir voto": escolhe uma IA e pede Ja! ou Nein! (uma vez por IA em cada votação). O pedido pesa no voto dela pelo quanto ela confia em quem pediu (`PLEA_W`, 0,2 vezes 1 − chance de ser do lado escondido; o cético pesa menos). O fascista da IA vota pelo próprio plano.

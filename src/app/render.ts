@@ -342,7 +342,7 @@ function vSummary(g: Game): string {
       case 'gov': return `<li class="gov ${e.law}">${n(e.pres)} + ${n(e.chanc)} aprovaram lei ${pl(e.law as Law)}${hands(e)}</li>`;
       case 'rej': return `<li class="rej">${n(e.pres)} + ${n(e.chanc)} rejeitados</li>`;
       case 'veto': return `<li class="rej">${n(e.pres)} + ${n(e.chanc)} vetaram as duas leis${hands(e)}</li>`;
-      case 'vote': case 'talk': return '';
+      case 'vote': case 'talk': case 'self': case 'plea': return '';
       case 'chaos': return `<li class="gov ${e.law}">Caos: entrou lei ${pl(e.law)}</li>`;
       case 'inv': return `<li class="inv">${n(e.by)} investigou ${n(e.target)}: era ${pl(e.party)}${e.said && e.said !== '-' ? `<small class="hands">disse ${e.said === 'L' ? 'liberal' : W.f}${e.said !== e.party ? ' — mentiu' : ''}</small>` : ''}</li>`;
       case 'peek': return `<li>${n(e.by)} espiou as próximas 3 leis${e.saw ? `<small class="hands">viu ${cards(e.saw)}${e.said !== undefined && e.said >= 0 ? ` (disse ${e.said}F)` : ''}</small>` : ''}</li>`;
@@ -682,7 +682,8 @@ function vDrawer(g: Game): string {
   const last = [...g.hist].reverse().find((e): e is Extract<Game['hist'][number], { k: 'talk' }> => e.k === 'talk' && e.by === me);
   const at = last ? g.hist.lastIndexOf(last) : -1, icon = ['yes', 'meh', 'no'];
   const heard = last ? `<div class="heard" id="heard"><small>Você disse: "${esc(g.players[last.about].name)} é ${last.say === 'trust' ? 'liberal' : W.f}"</small><p class="claim-impact" role="status">${esc(Core.accusationFeedback(g, at))}</p><ul>${(last.re || []).map(([i, a]) => `<li class="${icon[a]}"><b>${esc(g.players[i].name)}</b>: "${esc(Core.reply(g, i, a, at))}"</li>`).join('')}${g.players[last.about].ai ? `<li class="${last.say === 'acc' ? 'no' : 'yes'}"><b>${esc(g.players[last.about].name)}</b>: "${esc(Core.answer(g, last.about, last.say === 'acc', at))}"</li>` : ''}</ul></div>` : '';
-  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span><p class="hint">🗒️ anota o que você acha (só você vê). 📣 diz à mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
+  const self = Core.canSelfClaim(g, me) ? `<button class="btn ghost block" data-act="selfclaim" id="selfclaim">📣 Dizer à mesa: "Eu sou liberal"</button>` : g.hist.some(e => e.k === 'self' && e.by === me) ? '<p class="hint" id="selfsaid">Você já disse que é liberal nesta rodada.</p>' : '';
+  return `<aside class="drawer${open ? ' open' : ''}" id="drawer" aria-label="Suas anotações"><span class="label">Suas anotações</span>${self}<p class="hint">🗒️ anota o que você acha (só você vê). 📣 diz à mesa, até blefe.</p><ul class="names noted" id="notes">${rows}</ul>
     ${heard}</aside>`;
 }
 /** A reason, with the names of the seats in it. */
@@ -726,7 +727,7 @@ function logRounds(g: Game): string {
 
 /** How far the game has gone, counting what changes a phase and not what is said beside it (a claim, a talk): the
  *  screen of a phase stays put, and a secret stays open, while the app players speak (D21). */
-export const beat = (g: Game): number => g.hist.filter(e => e.k !== 'talk').length;
+export const beat = (g: Game): number => g.hist.filter(e => e.k !== 'talk' && e.k !== 'self' && e.k !== 'plea').length;
 /** The key of the secret a phase shows, and who may see it; null for a phase with nothing secret. The game moves on
  *  every round, so the same phase in another round has another key and starts closed. */
 export function gateKey(g: Game): { key: string; who: number } | null {
@@ -800,9 +801,16 @@ function vPhase(g: Game): string {
 function vVoteAi(g: Game): string {
   const people = Core.humansAlive(g), one = people.length === 1;
   const row = (i: number): string => `<div class="voter"${one ? '' : ` id="voter-${i}"`}>${one ? '' : `<b>${name(g, i)}</b>`}<div class="pick"><button class="btn vote L${ui.votes[i] === true ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="1" aria-pressed="${ui.votes[i] === true}"><span class="vw">${ui.votes[i] === true ? '✓ ' : ''}{ja}</span></button><button class="btn vote F${ui.votes[i] === false ? ' on' : ''}" data-act="myvote" data-i="${i}" data-v="0" aria-pressed="${ui.votes[i] === false}">${ui.votes[i] === false ? '✓ ' : ''}{nein}</button></div></div>`;
-  return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${name(g, g.pres)}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">${one ? 'Seu voto' : 'Cada pessoa toca no próprio voto'}; as IAs votam junto. Mais {ja} que {nein} elege; empate rejeita.</p>${people.map(row).join('')}${one ? '' : `<button class="btn block" data-act="countvotes"${people.every(i => typeof ui.votes[i] === 'boolean') ? '' : ' disabled'}>Abrir os votos</button>`}${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}</section>`;
+  return `<section class="card" id="phase"><span class="label">Votação</span><p class="big"><b>${name(g, g.pres)}</b> presidente + <b>${name(g, g.chanc as number)}</b> chanceler?</p><p class="hint">${one ? 'Seu voto' : 'Cada pessoa toca no próprio voto'}; as IAs votam junto. Mais {ja} que {nein} elege; empate rejeita.</p>${people.map(row).join('')}${one ? '' : `<button class="btn block" data-act="countvotes"${people.every(i => typeof ui.votes[i] === 'boolean') ? '' : ' disabled'}>Abrir os votos</button>`}${g.tracker ? `<p class="hint">Já ${g.tracker === 1 ? 'foi 1 governo rejeitado' : `foram ${g.tracker} governos rejeitados`} seguido${g.tracker === 1 ? '' : 's'}. No ${Core.TRACKER_MAX}º, a lei do topo entra sozinha.</p>` : ''}${one ? vPlea(g, people[0]) : ''}</section>`;
 }
 
+/** D65: ask an app player for its vote on this government: pick who, then Ja or Nein (once each per vote). */
+function vPlea(g: Game, me: number): string {
+  const can = g.players.map((_, i) => i).filter(i => Core.canPlea(g, me, i));
+  if (!can.length) return '';
+  const to = ui.pleaTo !== undefined && ui.pleaTo !== null && can.includes(ui.pleaTo) ? ui.pleaTo : null, Wv = Core.words(g.pack, g.region);
+  return `<div class="plea" id="plea"><b>Pedir voto</b><div class="plea-who">${can.map(i => `<button class="${i === to ? 'on' : ''}" data-act="pleato" data-i="${i}" aria-pressed="${i === to}">${esc(g.players[i].name)}</button>`).join('')}</div>${to !== null ? `<div class="plea-go"><button class="btn vote L" data-act="plea" data-v="1">${esc(g.players[to].name)}, vota ${Wv.ja}</button><button class="btn vote F" data-act="plea" data-v="0">${esc(g.players[to].name)}, vota ${Wv.nein}</button></div>` : '<small>Escolha a quem pedir. Pesa pelo quanto confiam em você.</small>'}</div>`;
+}
 /* ---------- settings ---------- */
 /** The finished games kept on this device (D23), and the button that exports them. */
 function vHistory(): string {

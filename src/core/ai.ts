@@ -96,6 +96,8 @@ export const DECISIVE_SLIP = 0.1;
 export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.6, extremo: 0.65 };
 /** D62: how much the votes already cast weigh on a liberal's vote, by how much it trusts each voter (the sceptic less). */
 export const CASCADE_W = 0.15;
+/** D65: how much a plea for its vote moves a liberal, times how much it trusts whoever asks. */
+export const PLEA_W = 0.2;
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
@@ -153,6 +155,8 @@ export function socialMemory(v: View, seat: number): { accusations: number; defe
   v.hist.forEach((e, at) => {
     // an accusation made firmly, or with a proof, that the record does not back costs the accuser (D39)
     if (e.k === 'talk' && e.by === seat && e.say === 'acc' && (e.tone === 'firm' || e.tone === 'proof') && !e.hit && !backed(v.hist, 0, at, e.about, true)) result.contradictions++;
+    // D65: said it was liberal, and an investigation was said to show the other side: a lie the table remembers
+    if (e.k === 'inv' && e.target === seat && e.said === 'F' && v.hist.slice(0, at).some(x => x.k === 'self' && x.by === seat)) result.contradictions += 2;
     // a weak accusation that fell in a debate turned against the accuser (D61): it costs it the table's trust
     if (e.k === 'talk' && e.by === seat && e.backfire) { result.contradictions += 2; result.reversals++; }
     if (e.k === 'gov' || e.k === 'veto') {
@@ -453,7 +457,8 @@ function liberalJa(v: View, b: Beliefs): boolean {
   // never below zero: even the most wary one accepts a government no riskier than any other pair (D22)
   // D62: the votes heard before its turn: a Ja from someone it trusts makes it easier, a Nein harder
   const heard = (v.cast || []).filter(([j]) => j !== v.me), lean = heard.length ? heard.reduce((a, [j, ja]) => a + (1 - b.pF[j]) * (ja ? 1 : -1), 0) / heard.length : 0;
-  const pull = CASCADE_W * (v.persona === 'cetico' ? 0.4 : v.persona === 'certinho' ? 1.2 : 1) * lean;
+  const pull = CASCADE_W * (v.persona === 'cetico' ? 0.4 : v.persona === 'certinho' ? 1.2 : 1) * lean
+    + (v.pleas || []).reduce((a, [j, ja]) => a + PLEA_W * (1 - b.pF[j]) * (ja ? 1 : -1), 0) * (v.persona === 'cetico' ? 0.4 : 1);   // D65
   const slack = Math.max(0, 0.05 + MOOD * v.mood) + pull + (v.tracker === TRACKER_MAX - 1 ? 0.2 : 0);
   rows(b, gov.filter(i => i !== v.me));
   if (v.laws.F >= HITLER_ZONE && b.pH[gov[1]] > k.wary) {

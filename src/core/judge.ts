@@ -765,7 +765,8 @@ export function castVotes(g: Game, votes: Record<number, boolean>, rand: () => n
   const cast: [number, boolean][] = [];
   for (const i of order.length === alive.length ? order : alive) {
     if (!isAi(g, i)) { cast.push([i, votes[i]]); continue; }
-    const r = ask(g, i, 'vote', [1, 0], rand, [...cast]); ts.push(r.t); cast.push([i, r.a === 1]);
+    const asked = g.hist.slice(sinceRound(g) + 1).flatMap(e => (e.k === 'plea' && e.about === i ? [[e.by, e.ja] as [number, boolean]] : []));
+    const r = ask(g, i, 'vote', [1, 0], rand, [...cast], asked); ts.push(r.t); cast.push([i, r.a === 1]);
   }
   const ja = alive.filter(i => cast.some(([j, v]) => j === i && v));
   const nein = alive.filter(i => !ja.includes(i)), list = (xs: number[]): string => xs.map(i => g.players[i].name).join(', ') || 'ninguém';
@@ -800,8 +801,8 @@ export function viewOf(g: Game, me: number, q: Ask, options: number[]): View {
 }
 /** Asks one seat one question, through its view; an answer outside the options is taken as the first option. Comes
  *  back with the answer and the record of it, with the reason the seat gave (D16). */
-function ask(g: Game, seat: number, q: Ask, options: number[], rand: () => number, cast?: [number, boolean][]): { a: number; t: Trace } {
-  const v = { ...viewOf(g, seat, q, options), ...(cast && cast.length ? { cast } : {}) }, d = decideWhy(v, rand), a = options.includes(d.a) ? d.a : options[0];
+function ask(g: Game, seat: number, q: Ask, options: number[], rand: () => number, cast?: [number, boolean][], pleas?: [number, boolean][]): { a: number; t: Trace } {
+  const v = { ...viewOf(g, seat, q, options), ...(cast && cast.length ? { cast } : {}), ...(pleas && pleas.length ? { pleas } : {}) }, d = decideWhy(v, rand), a = options.includes(d.a) ? d.a : options[0];
   return { a, t: { seat, ask: q, a, at: g.hist.length, ...(v.hand.length ? { hand: v.hand } : {}), why: d.why } };
 }
 /** The game with these decisions added to the record of them. */
@@ -1018,4 +1019,21 @@ export function debateVerdict(g: Game, at: number, rand: () => number): Game {
   const best = Math.max(0, ...(t.deb || []).filter(l => l.who === t.by).map(l => l.power)), backfire = !stands && best < 0.4;
   const hist = [...g.hist]; hist[at] = { ...t, verdict, def: 'debate', ok: !stands, hit: stands || t.hit, ...(backfire ? { backfire: true } : {}) };
   return { ...g, hist, log: [...g.log, `Veredito da mesa: ${yes} acham que a acusação procede, ${no} que não, ${verdict.length - yes - no} não sabem.`, ...(backfire ? [`A acusação de ${g.players[t.by].name} era fraca e virou contra quem acusou: perdeu a confiança da mesa.`] : [])] };
+}
+
+/* ---------- D65: claiming one's own side, and asking for a vote ----------
+   The person may say out loud that it is liberal (once a round), and in a vote ask an app player to vote Ja or Nein
+   (once each, per vote). A self-claim costs nothing and says little (everyone says it); it costs dearly if an
+   investigation says otherwise. A plea moves the app player by how much it trusts whoever asks. */
+const sinceRound = (g: Game): number => lastIndex(g, ['vote', 'rej', 'gov', 'veto', 'chaos', 'inv', 'peek', 'special', 'exec']);
+export const canSelfClaim = (g: Game, me: number): boolean => g.phase !== 'over' && g.phase !== 'reveal' && !!g.players[me]?.alive && !g.hist.slice(sinceRound(g) + 1).some(e => e.k === 'self' && e.by === me);
+export function selfClaim(g: Game, me: number): Game {
+  if (!canSelfClaim(g, me)) return g;
+  return { ...g, hist: [...g.hist, { k: 'self', by: me }], log: [...g.log, `${g.players[me].name}: "Eu sou liberal."`] };
+}
+export const canPlea = (g: Game, me: number, to: number): boolean => g.phase === 'vote' && to !== me && !!g.players[to]?.ai && g.players[to].alive && !!g.players[me]?.alive && !g.hist.slice(sinceRound(g) + 1).some(e => e.k === 'plea' && e.by === me && e.about === to);
+export function plea(g: Game, me: number, to: number, ja: boolean): Game {
+  if (!canPlea(g, me, to)) return g;
+  const W = words(g.pack, g.region);
+  return { ...g, hist: [...g.hist, { k: 'plea', by: me, about: to, ja }], log: [...g.log, `${g.players[me].name}: "${g.players[to].name}, vota ${ja ? W.ja : W.nein} nesse governo."`] };
 }
