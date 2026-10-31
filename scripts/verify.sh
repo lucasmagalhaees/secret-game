@@ -59,6 +59,7 @@ run prod     python3 scripts/check_production.py --selftest
 if [ "$full" -eq 1 ]; then
   run e2e-dark  python3 tests/e2e.py dark
   run iphone    python3 tests/iphone.py chromium
+  run social    python3 tests/social.py
   run pwa       python3 tests/pwa.py
   run coverage  python3 tests/cov.py --min-functions 95 --min-chars 90
 fi

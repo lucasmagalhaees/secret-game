@@ -63,11 +63,11 @@ export type Event =
   | { k: 'special'; by: number; target: number }
   | { k: 'exec'; by: number; target: number; role: Role; why?: string }
   /** D65: someone says its own side out loud; someone asks another for its vote on this government. */
-  | { k: 'self'; by: number }
+  | { k: 'self'; by: number; proof?: string; power?: number; re?: [number, number][] }
   | { k: 'plea'; by: number; about: number; ja: boolean }
   /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app
    *  player about its last vote, a voting bloc. */
-  | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv'; who: number }
+  | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv' | 'kill'; who: number; power?: number }
   | { k: 'why'; by: number; about: number; say: string }
   | { k: 'bloc'; by: number; with: number[]; yes: number[] }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }
@@ -166,11 +166,11 @@ export type Seen =
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
   | { k: 'exec'; by: number; target: number; why?: string }
-  | { k: 'self'; by: number }
+  | { k: 'self'; by: number; proof?: string; power?: number; re?: [number, number][] }
   | { k: 'plea'; by: number; about: number; ja: boolean }
   /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app
    *  player about its last vote, a voting bloc. */
-  | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv'; who: number }
+  | { k: 'ask'; by: number; what: 'pick' | 'avoid' | 'inv' | 'kill'; who: number; power?: number }
   | { k: 'why'; by: number; about: number; say: string }
   | { k: 'bloc'; by: number; with: number[]; yes: number[] }
   | { k: 'vote'; pres: number; chanc: number; ja: number[] }

@@ -223,6 +223,16 @@ export default function cases(Core) {
     const nb = view({ level: 'medio', me: 6, known: [null, null, null, null, null, null, 'liberal'], pres: 6, chanc: null, ask: 'nominate', options: [0, 1, 2, 3, 4, 5], hist: [{ k: 'ask', by: 2, what: 'pick', who: 2 }, { k: 'ask', by: 1, what: 'avoid', who: 0 }] });
     eq('D66: a liberal presiding weighs what it was asked: the one who asked to be picked moves up', Core.decideWhy(nb, hi).why.rows.length > 0, true);
   }
+  { // D73: turning a vote, pointing at who to eliminate, proving one is liberal
+    const vg = ai7({ phase: 'vote', pres: 3, chanc: 4, hist: [{ k: 'gov', pres: 1, chanc: 4, law: 'F', pc: 2, cc: 1 }] });
+    const t = Core.tallyVotes(vg, { 0: false }, Core.seeded(3)), jaSeat = t.cast.find(([j, v]) => v && j !== 3 && j !== 4 && j !== 0);
+    const rs = jaSeat ? Core.swayReasons(t.g, 0, jaSeat[0], t.cast) : [], sw = jaSeat ? Core.sway(t.g, 0, jaSeat[0], t.cast, rs[0].id, () => 0) : null;
+    const done = Core.commitVotes(t.g, sw ? sw.cast : t.cast, Core.seeded(3), sw ? sw.said : []);
+    eq('D73: the votes before they count; a reason to turn one, strongest first; it may turn; then they count', [t.cast.length, rs.length > 1 && rs.every((r, i) => !i || rs[i - 1].power >= r.power), sw ? typeof sw.flipped : 'boolean', done.hist.some(e => e.k === 'vote'), Core.castVotes(ai7({ phase: 'nominate' }), {}, Core.seeded(1)).phase], [7, true, 'boolean', true, 'nominate']);
+    const kr = Core.killReasons(vg, 0), sp = Core.selfProofs(ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 0, chanc: 5, law: 'L', pc: 1, cc: 0 }] }), 0);
+    const sc = Core.selfClaimProof(ai7({ phase: 'nominate', hist: [{ k: 'gov', pres: 0, chanc: 5, law: 'L', pc: 1, cc: 0 }] }), 0, 'laws');
+    eq('D73: who to eliminate, with the reason; what one can show to say it is liberal; each app player says whether it believes', [kr[0].who === 4 || kr[0].power >= kr[kr.length - 1].power, sp[0].id, sc.hist.at(-1).re.length, Core.canSelfClaim(sc, 0)], [true, 'laws', 6, false]);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);
