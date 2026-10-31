@@ -562,3 +562,18 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** depois da eliminação, a cena se esvai e fica só se era o Hitler ou não; se era, uma animação dos liberais chegando ao poder; se não, uma transição de que o jogo continua. Na investigação, o detetive à Sherlock Holmes (chapéu, sobretudo, cachimbo, envelope) se esvai no fim.
 - **Decisão:** o nome, o carimbo e a trinca somem e entra só o veredito: "Era o {boss}!" sobre um amanhecer azul com raios e pássaros subindo, "Os liberais chegam ao poder"; ou "Não era o {boss}", com uma faixa que atravessa a tela, "O jogo continua". O detetive ganha cachimbo com fumaça e se esvai no fim. Com "reduzir movimento", nada se mexe: o veredito aparece embaixo do nome.
+
+## D60. Acusação antes da hora (2026-10-31)
+
+- **Pedido:** uma IA acusou a pessoa no primeiro governo por ter votado num governo que aprovou lei comunista, outra repetiu a mesma acusação, e a pessoa não teve como responder. Na primeira rodada ninguém sabe quem é quem: dá para acusar, mas o acusado tem que poder desmoralizar quem queimou a largada, e as IAs não devem repetir a acusação dos outros.
+- **Decisão:** a IA não usa como prova o que veio dos primeiros governos (`proofEarly`; uma história que não fecha continua valendo sempre). Se outro já acusou o mesmo jogador na rodada, a IA não repete a prova: só diz que concorda. Toda acusação contra a pessoa feita num passo abre o debate, mesmo com duas falas no mesmo passo. No debate, contra uma acusação do começo, o acusado tem "Desmoraliza: queimou a largada", o argumento mais forte (0,75), que derruba a acusação e conta contra a credibilidade de quem acusou.
+
+## D61. Acusação fraca vira contra quem acusa (2026-10-31)
+
+- **Pedido:** acusar por um voto pode, mas com moderação; acusação fraca tem que abrir para um contra-ataque forte e custar reputação, e reputação perdida pesa nas decisões da mesa sobre quem acusou (presidente, chanceler). Mais variedade e equilíbrio nas respostas, para a pessoa e para as IAs.
+- **Decisão:** contra uma acusação fraca (só um voto, uma eliminação, uma investigação, ou sem prova que se sustente), o acusado tem "Contra-ataca" (0,65). Um voto só pesa pouco como argumento (0,2; dois ou mais, 0,4). Quem acusa ganhou "Chama a mesa" (quando a maioria concordou) e "Aponta quem ele escolheu" (lei do lado escondido com ele de presidente); o acusado, "Lembra quem confia em você". Se a acusação cai e o melhor argumento de quem acusou foi fraco (menos de 0,4), ela vira contra quem acusou (`backfire`): conta como duas contradições e uma virada na memória social das IAs, o que baixa a reputação (reputômetro) e faz as IAs desconfiarem mais dele nos votos e indicações.
+
+## D62. Votos em cascata (2026-10-31)
+
+- **Pedido:** numa mesa real, o voto de um influencia o do outro: ninguém vota ao mesmo tempo, e quem confia em alguém tende a segui-lo. A pessoa escolheu a cascata completa, com o voto dela incluído (substitui o "as IAs votam sem ver o voto de ninguém" do D45).
+- **Decisão:** a mesa vota em ordem, a partir de quem senta depois do presidente. Cada IA ouve os votos de quem votou antes (`View.cast`) e pesa cada um pelo quanto confia em quem votou: Ja! de quem ela confia alarga o que ela aceita, Nein! estreita (`CASCADE_W`, 0,15, vezes a confiança 1 − chance de ser do lado escondido; o cético pesa menos, o certinho mais). O fascista vota pelo próprio plano, como antes. Equilíbrio (`BENCH_DIAG=1 node scripts/ai_bench.mjs 300`): liberais 46%, 55%, 57% e 56% (fácil→extremo; antes 49%, 54%, 58% e 58%).

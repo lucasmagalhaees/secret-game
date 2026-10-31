@@ -24,6 +24,19 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport=dict(width=393, height=852), device_scale_factor=2, color_scheme=THEME, locale='pt-BR', timezone_id='America/Sao_Paulo', has_touch=True, is_mobile=True, reduced_motion='reduce')
     ctx.route('**/*', lambda r: r.abort() if r.request.url.startswith('http') else r.continue_())
     pg = ctx.new_page(); errs = []
+    # D57/D60: an app player may accuse the person at any step, and the debate covers the screen until it is answered;
+    # a scripted click answers it first (with the first argument each time) and closes it
+    _click = pg.click
+    def _settle():
+        for _ in range(80):
+            if not pg.locator('#debate').count(): return
+            if pg.locator('#debate [data-act=dclose]').count(): _click('#debate [data-act=dclose]'); return
+            if pg.locator('#debate [data-act=darg]').count(): _click('#debate [data-act=darg] >> nth=0')
+            else: pg.wait_for_timeout(100)
+    def _safe_click(sel, **kw):
+        if '#debate' not in sel: _settle()
+        return _click(sel, **kw)
+    pg.click = _safe_click
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
     cov.start(pg)
