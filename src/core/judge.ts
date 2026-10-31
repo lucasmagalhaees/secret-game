@@ -92,10 +92,16 @@ export function talk(g: Game, by: number, a: number): Game {
   const quiet = a === QUIET, about = quiet ? -1 : a >> 1, kind: Talk['say'] = quiet ? 'quiet' : a % 2 ? 'trust' : 'acc';
   // the app players take the court too (D40): an accusation with a proof that holds is made as one; a fascist who has
   // only a weak hint against a liberal may wave it as a proof all the same (a bluff that costs it if the table looks)
-  const ev = kind === 'acc' ? evidence(g, about) : [], strong = ev.find(x => x.hit), weak = ev[0];
+  // D60: a proof from the first governments says nothing yet: an app player does not wave one; and it does not repeat
+  // an accusation someone already made this round with the same proof: it backs it in a word instead
+  const ev = kind === 'acc' ? evidence(g, about).filter(x => !proofEarly(g, x)) : [];
+  const since = lastIndex(g, ['vote', 'rej', 'gov', 'veto', 'chaos', 'inv', 'peek', 'special', 'exec']);
+  const made = kind === 'acc' ? g.hist.slice(since + 1).find(e => e.k === 'talk' && e.say === 'acc' && e.about === about && e.by !== by) as Talk | undefined : undefined;
+  const fresh = ev.filter(x => !made || x.at !== made.proof), strong = fresh.find(x => x.hit), weak = fresh[0];
   const bluff = !strong && !!weak && g.players[by].role !== 'liberal' && g.players[about].role === 'liberal';
   const court = strong ? { tone: 'proof' as const, proof: strong.at, hit: true } : bluff ? { tone: 'proof' as const, proof: weak.at } : {};
-  const line = quiet ? [] : [`${g.players[by].name}: "${strong || bluff ? `${(strong || weak).text}. ${g.players[about].name}, explica isso.` : npcStatement(g, by, about, kind === 'trust')}"`];
+  const echo = made && !strong && !bluff ? `${g.players[made.by].name} já disse, e eu também não confio em ${g.players[about].name}.` : '';
+  const line = quiet ? [] : [`${g.players[by].name}: "${strong || bluff ? `${(strong || weak).text}. ${g.players[about].name}, explica isso.` : echo || npcStatement(g, by, about, kind === 'trust')}"`];
   return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}), ...court }] };
 }
 /** The accusation against `me` still waiting for an answer this round (D40), if any: its index in the history. */
@@ -174,6 +180,11 @@ export function denounce(g: Game, by: number, about: number, trust: boolean, ran
  *  government it sat in whose story did not add up, or that passed a law of the hidden side, holds ("hit"); a Ja!
  *  vote for such a government is a weaker hint and does not hold by itself. Newest first. */
 export interface Proof { at: number; kind: 'clash' | 'law' | 'vote' | 'inv' | 'exec' | 'count'; hit: boolean; title: string; text: string; pc?: number; cc?: number; law?: Law }
+/** D60: whether a proof comes from the first governments (or the first law of the hidden side), when nobody knows anything yet. */
+export function proofEarly(g: Game, x: Proof): boolean {
+  if (x.at >= 100000 || x.kind === 'clash') return false;   // a story that does not add up holds at any time (D52)
+  return earlyGov(g.hist as Seen[], x.kind === 'vote' ? x.at + 1 : x.at);
+}
 export function evidence(g: Game, about: number): Proof[] {
   const out: Proof[] = [], f = words(g.pack).f, nm = (i: number): string => g.players[i]?.name ?? '?';
   let n = 0;
@@ -928,8 +939,10 @@ export function debateArgs(g: Game, at: number): DebArg[] {
       if (n !== undefined && n >= 0) out.push({ id: 'hand', label: 'Mostra a sua mão', text: `${pres ? 'Tirei' : 'Recebi'} ${n} ${n === 1 ? W.f : W.fs}, foi o que eu disse e mantenho.`, power: clashOf(gov) ? 0.2 : 0.55 });
       if (clashOf(gov)) out.push({ id: 'blame', label: `Aponta a história de ${nm(pres ? gov.chanc : gov.pres)}`, text: `As histórias não batem: quem mente é ${nm(pres ? gov.chanc : gov.pres)}.`, power: 0.45 });
       if (gov.k === 'gov' && gov.law === 'F' && !clashOf(gov)) out.push({ id: 'deck', label: 'Diz que foi o baralho', text: 'O baralho veio assim, não tive escolha.', power: 0.35 });
-      if (earlyGov(g.hist as Seen[], proof!.at)) out.push({ id: 'early', label: 'Lembra que foi no começo', text: 'Isso foi no começo do jogo, não prova nada.', power: 0.45 });
     }
+    // D60: an accusation built on the first governments jumped the gun: the accused can take its credibility apart
+    const govs = g.hist.slice(0, at).filter(e => e.k === 'gov').length;
+    if ((proof && proofEarly(before, proof)) || (!proof && govs < 2)) out.push({ id: 'rush', label: `Desmoraliza ${nm(t.by)}: queimou a largada`, text: `Isso foi no ${govs <= 1 ? 'primeiro governo' : 'começo do jogo'}: ninguém sabe de nada ainda. ${nm(t.by)} acusou antes da hora, e quem acusa cedo assim quer é confundir a mesa.`, power: 0.75 });
     const libs = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === who || e.chanc === who)).length;
     if (libs) out.push({ id: 'record', label: 'Lembra o seu histórico', text: `Estive em ${libs} governo${libs > 1 ? 's' : ''} que aprovou lei liberal.`, power: 0.25 + 0.15 * Math.min(libs, 2) });
     const back = evidence(before, t.by), strong = back.find(x => x.hit) ?? back[0];

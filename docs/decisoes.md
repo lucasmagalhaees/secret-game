@@ -562,3 +562,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** depois da eliminação, a cena se esvai e fica só se era o Hitler ou não; se era, uma animação dos liberais chegando ao poder; se não, uma transição de que o jogo continua. Na investigação, o detetive à Sherlock Holmes (chapéu, sobretudo, cachimbo, envelope) se esvai no fim.
 - **Decisão:** o nome, o carimbo e a trinca somem e entra só o veredito: "Era o {boss}!" sobre um amanhecer azul com raios e pássaros subindo, "Os liberais chegam ao poder"; ou "Não era o {boss}", com uma faixa que atravessa a tela, "O jogo continua". O detetive ganha cachimbo com fumaça e se esvai no fim. Com "reduzir movimento", nada se mexe: o veredito aparece embaixo do nome.
+
+## D60. Acusação antes da hora (2026-10-31)
+
+- **Pedido:** uma IA acusou a pessoa no primeiro governo por ter votado num governo que aprovou lei comunista, outra repetiu a mesma acusação, e a pessoa não teve como responder. Na primeira rodada ninguém sabe quem é quem: dá para acusar, mas o acusado tem que poder desmoralizar quem queimou a largada, e as IAs não devem repetir a acusação dos outros.
+- **Decisão:** a IA não usa como prova o que veio dos primeiros governos (`proofEarly`; uma história que não fecha continua valendo sempre). Se outro já acusou o mesmo jogador na rodada, a IA não repete a prova: só diz que concorda. Toda acusação contra a pessoa feita num passo abre o debate, mesmo com duas falas no mesmo passo. No debate, contra uma acusação do começo, o acusado tem "Desmoraliza: queimou a largada", o argumento mais forte (0,75), que derruba a acusação e conta contra a credibilidade de quem acusou.

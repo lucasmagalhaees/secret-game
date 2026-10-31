@@ -192,6 +192,11 @@ export default function cases(Core) {
     eq('D57: debate: the accused speaks first, then the accuser, then the accused; then every app player who watched gives a verdict and the accusation is settled', [Core.debateNext(dg, at), a1.some(x => x.id === 'blame'), a1.every((x, i) => i === 0 || a1[i - 1].power >= x.power), Core.debateNext(g1, at), Core.debateNext(g2, at), Core.debateNext(g3, at), t4.deb.length, t4.verdict.length, t4.def, typeof t4.ok, Core.debateSay(g3, at, 'quiet') === g3], [0, true, true, 5, 0, -1, 3, 5, 'debate', 'boolean', true]);
     eq('D57: a better way with words: the bluffer finds the strongest argument, the chaotic one does not always', [Core.ELOQ.blefador > Core.ELOQ.caotico, Core.eloq(dg, 0)], [true, 2]);
   }
+  { // D60: an accusation built on the first government jumped the gun
+    const rg = ai7({ hist: [{ k: 'vote', pres: 1, chanc: 2, ja: [0, 1, 2, 3] }, { k: 'gov', pres: 1, chanc: 2, law: 'F', pc: 2, cc: 1 }, { k: 'talk', by: 4, about: 0, say: 'acc', tone: 'proof', proof: 0 }] });
+    const pv = Core.evidence({ ...rg, hist: rg.hist.slice(0, 2) }, 0)[0], ra = Core.debateArgs(rg, 2);
+    eq('D60: a proof from the first government is early; the accused can take the accuser apart for jumping the gun, the strongest answer', [pv.kind, Core.proofEarly(rg, pv), ra[0].id, ra[0].power > 0.6], ['vote', true, 'rush', true]);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);

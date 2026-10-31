@@ -86,8 +86,9 @@ function voted(before: Game, next: Game, then: () => void = () => {}): void {
 function botPlayed(before: Game, next: Game): void {
   const told = Core.botTurn(before)?.ask;
   // an app player pointed a proof at the person (D40): the same CONTRADIÇÃO! the person gets
-  const said = next.hist[next.hist.length - 1], me = next.players.findIndex(p => !p.ai);
-  if (next.hist.length > before.hist.length && said?.k === 'talk' && said.say === 'acc' && said.about === me && next.players.filter(p => !p.ai).length === 1) { setTimeout(() => openDebate(next.hist.length - 1), 50); sound('stamp'); }
+  // D60: any accusation against the person in this step opens the debate (a step may hold two lines of talk)
+  const me = next.players.findIndex(p => !p.ai), hit = next.players.filter(p => !p.ai).length === 1 ? next.hist.findIndex((e, k) => k >= before.hist.length && e.k === 'talk' && e.say === 'acc' && e.about === me) : -1;
+  if (hit >= 0) { setTimeout(() => openDebate(hit), 50); sound('stamp'); }
   hold = told === 'pc' || told === 'cc' || told === 'inv' || told === 'peek';
   const rest = (): void => afterBot(before, next);
   if (next.hist.length > before.hist.length && next.hist.slice(before.hist.length).some(e => e.k === 'vote')) { voted(before, next, rest); return; }
