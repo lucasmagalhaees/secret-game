@@ -214,7 +214,7 @@ with sync_playwright() as p:
     pg.click('#tab-jogo'); assert pg.locator('#summary').count() == 1 and pg.locator('#players').count() == 0
     assert 'Ana investigou Caio: era fascista' in ' '.join(txt('#summary').split()), txt('#summary')
     assert 'eliminou' in txt('#summary') and 'rejeitados' in txt('#summary') and 'Caos' in txt('#summary') and 'vetaram' in txt('#summary'), txt('#summary')
-    pg.click('#tab-log'); assert pg.locator('#log li').count() > 10; pg.click('#tab-res')
+    pg.click('#tab-log'); assert pg.locator('#log li').count() > 10 and pg.locator('#log .round h4').count() > 2 and 'Rodada' in txt('#log .round h4'); pg.click('#tab-res')
     # D19: the good and bad plays of each person, only with the assistance on
     assert pg.locator('.card.review').count() == 0 and pg.locator('#reviewon').count() == 1, 'assistance off: a button, not the review'
     pg.click('#reviewon'); assert pg.locator('.card.review').count() == 7 and pg.locator('.plays li').count() > 0, 'one review per person at the table'
@@ -260,7 +260,7 @@ with sync_playwright() as p:
     for i in range(5):
         if i: pg.click('[data-act=open]')
         pg.click('[data-act=hiderole]')
-    assert 'espiar' in txt('#board') and 'partido' not in txt('#board') and 'eleição' not in txt('#board'), txt('#board')
+    assert 'espia' in txt('#board') and 'investiga' not in txt('#board') and 'eleição' not in txt('#board'), txt('#board')
     pg.evaluate('''() => { const g = window.__APP.S.game; g.pres = 3; g.laws = { L: 0, F: 2 }; }''')
     pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'peek'

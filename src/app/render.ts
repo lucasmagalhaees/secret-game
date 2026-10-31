@@ -120,7 +120,9 @@ export function bossWin(g: Game): void {
 let P: Pack = 'fascismo', R: Region = 'mundo', W = Core.words();
 const role = (r: Role): string => (r === 'liberal' ? 'Liberal' : r === 'hitler' ? W.boss : W.F);
 const party = (p: Law): string => (p === 'L' ? 'Liberal' : W.F);
-const POWER_LABEL: Record<string, string> = { investigate: 'partido', peek: 'espiar', special: 'eleição', execute: 'eliminar' };
+const POWER_LABEL: Record<string, string> = { investigate: 'investiga', peek: 'espia', special: 'eleição', execute: 'elimina' };
+/** The icon of each power on the board (D48). */
+const POWER_ICON: Record<string, string> = { investigate: '🔍', peek: '👁', special: '🗳', execute: '✖', win: '★' };
 const name = (g: Game, i: number): string => esc(g.players[i].name);
 const AI_TAG = '<small class="ai">IA</small>';
 /** What each level does, in a line (D10). */
@@ -357,8 +359,10 @@ function vBoard(g: Game): string {
   landed = fresh.F >= 0 ? 'F' : fresh.L >= 0 ? 'L' : null;
   seenLaws = { ...g.laws };
   const slots = (p: Law): string => Array.from({ length: Core.WIN[p] }, (_, i) => {
-    const filled = g.laws[p] > i, tag = i + 1 === Core.WIN[p] ? 'vitória' : p === 'F' ? POWER_LABEL[Core.powerAt(g, i + 1) || ''] || '' : '';
-    return `<div class="slot ${p}${filled ? ' on' : ''}${fresh[p] === i ? ' new' : ''}">${filled ? seal(p, P) : ''}<small>${tag}</small></div>`;
+    const pw = i + 1 === Core.WIN[p] ? 'win' : p === 'F' ? Core.powerAt(g, i + 1) || '' : '';
+    const filled = g.laws[p] > i, tag = pw === 'win' ? 'vitória' : POWER_LABEL[pw] || '', next = !filled && g.laws[p] === i && g.phase !== 'over';
+    // an empty slot shows the icon of what it unlocks; the next slot of each track is marked (D48)
+    return `<div class="slot ${p}${filled ? ' on' : ''}${next ? ' next' : ''}${fresh[p] === i ? ' new' : ''}">${filled ? seal(p, P) : pw ? `<i class="pw" aria-hidden="true">${POWER_ICON[pw]}</i>` : ''}<small>${tag}</small></div>`;
   }).join('');
   const dots = Array.from({ length: Core.TRACKER_MAX }, (_, i) => `<i class="${g.tracker > i ? 'on' : ''}"></i>`).join('');
   const last = g.hist[g.hist.length - 1], chaosNow = g.hist.length > seenHist && last?.k === 'chaos';
@@ -697,7 +701,16 @@ function vAta(g: Game): string {
 const logKeep = (l: string): boolean => ui.logFilter === 'talk' ? /: "/.test(l) : ui.logFilter === 'gov' ? !/: "/.test(l) : true;
 const logTabs = (): string => `<div class="segm log-tabs" role="group" aria-label="Filtrar o registro">${([['all', 'Tudo'], ['talk', 'Falas'], ['gov', 'Jogadas']] as const).map(([k, t]) => `<button class="${(ui.logFilter || 'all') === k ? 'on' : ''}" data-act="logfilter" data-v="${k}" aria-pressed="${(ui.logFilter || 'all') === k}">${t}</button>`).join('')}</div>`;
 function vLog(g: Game): string {
-  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}${logTabs()}<ol class="log">${[...g.log].reverse().filter(logKeep).map(l => `<li>${esc(l)}</li>`).join('')}</ol></details>`;
+  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}${logTabs()}${logRounds(g)}</details>`;
+}
+/** The record as a newspaper (D48): one block per round, newest first, headed by the nomination that opened it. */
+function logRounds(g: Game): string {
+  const rounds: { head: string; lines: string[] }[] = [{ head: 'Antes da primeira rodada', lines: [] }];
+  for (const l of g.log) {
+    if (/ indicou .+ para chanceler\.$/.test(l)) rounds.push({ head: `Rodada ${rounds.length} · ${l.replace(/\.$/, '')}`, lines: [l] });
+    else rounds[rounds.length - 1].lines.push(l);
+  }
+  return rounds.filter(r => r.lines.some(logKeep)).reverse().map(r => `<section class="round"><h4>${esc(r.head)}</h4><ol class="log">${[...r.lines].reverse().filter(logKeep).map(l => `<li>${esc(l)}</li>`).join('')}</ol></section>`).join('');
 }
 
 /** How far the game has gone, counting what changes a phase and not what is said beside it (a claim, a talk): the

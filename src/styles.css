@@ -861,3 +861,13 @@ button.law:hover,button.law:focus-visible{translate:0 -4px}
 .btn{transition:transform .06s,box-shadow .06s}
 .seats{overflow-x:clip}
 @media (prefers-reduced-motion:reduce){.fxl{display:none}#phase.enter[data-head]::before{display:none}html[data-look="poster"] body::after{display:none}button.law:hover,button.law:focus-visible{translate:none}}
+
+/* D48: the board says what each slot unlocks and which one comes next; the hand lifts the laws that stay; the record reads as a newspaper */
+.slot .pw{font-style:normal;font-size:18px;line-height:1;opacity:.75}
+.slot.next{border-style:solid;border-width:3px;opacity:1;box-shadow:inset 0 0 0 3px color-mix(in srgb,currentColor 18%,transparent)}
+.hand:has(button.law.on) button.law:not(.on){translate:0 -10px;box-shadow:6px 8px 0 var(--shadow)}
+button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s}
+@media (max-width:480px){.hand{gap:8px}.law{max-width:none;min-height:150px}.law .sym{width:58px;height:58px}}
+#log .round{margin-top:12px;border-top:3px double var(--line);padding-top:6px}
+#log .round h4{margin:0 0 4px;font:800 13px/1.2 var(--display);text-transform:uppercase;letter-spacing:.06em}
+@media (prefers-reduced-motion:reduce){button.law{transition:none}}
