@@ -200,7 +200,8 @@ export function evidence(g: Game, about: number): Proof[] {
       const pres = e.pres === about, clash = e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1);
       const lawF = e.k === 'gov' && e.law === 'F', said = pres ? e.pc : e.cc;
       if (clash) out.push({ at, kind: 'clash', hit: true, title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: pres ? `Disse que tirou ${said} ${f}${said === 1 ? '' : 's'}, e o chanceler disse outra coisa` : `Disse que recebeu ${said} ${f}${said === 1 ? '' : 's'}, e não bate com o presidente`, pc: e.pc, cc: e.cc, law: e.k === 'gov' ? e.law : undefined });
-      else if (lawF) out.push({ at, kind: 'law', hit: !earlyGov(g.hist as Seen[], at), title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}${earlyGov(g.hist as Seen[], at) ? ' (no começo do jogo: prova fraca)' : ''}`, pc: e.pc, cc: e.cc, law: 'F' });
+      // D75: who said it had no choice (3 drawn, 2 got), with the stories adding up, is no proof
+      else if (lawF) out.push({ at, kind: 'law', hit: !earlyGov(g.hist as Seen[], at) && !(pres ? said === 3 : said === 2), title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}${earlyGov(g.hist as Seen[], at) ? ' (no começo do jogo: prova fraca)' : ''}`, pc: e.pc, cc: e.cc, law: 'F' });
     }
     if (e.k === 'vote' && e.ja.includes(about) && e.pres !== about && e.chanc !== about) {
       const next = g.hist[at + 1];
@@ -966,6 +967,12 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     if (isGov && (gov.pres === who || gov.chanc === who)) {
       const pres = gov.pres === who, n = pres ? gov.pc : gov.cc;
       if (n !== undefined && n >= 0) out.push({ id: 'hand', label: 'Mostra a sua mão', text: `${pres ? 'Tirei' : 'Recebi'} ${n} ${n === 1 ? W.f : W.fs}, foi o que eu disse e mantenho.`, power: clashOf(gov) ? 0.2 : 0.55 });
+      // D75: the chancellor who got two of the hidden side had no choice, and the record shows it: checkmate; and if the
+      // president's story does not add up, the chancellor turns it on the president
+      if (!pres && gov.k === 'gov' && gov.law === 'F' && gov.cc === 2) out.push(clashOf(gov)
+        ? { id: 'turnpres', label: `Vira a banca: o presidente ${nm(gov.pres)} mente`, text: `Recebi 2 ${W.fs}, está na ata. ${nm(gov.pres)} disse que tirou ${gov.pc}: quem escolheu passar ${W.fs} foi ele.`, power: 0.8 }
+        : { id: 'nochoice', label: 'Não tive escolha: recebi duas', text: `Recebi 2 ${W.fs}: não tinha o que fazer. ${gov.pc === 3 ? `O presidente ${nm(gov.pres)} confirma que tirou 3.` : `Quem escolheu foi o presidente ${nm(gov.pres)}.`}`, power: 0.75 });
+      if (pres && gov.k === 'gov' && gov.law === 'F' && gov.pc === 3 && !clashOf(gov)) out.push({ id: 'nochoice', label: 'Não tive escolha: tirei três', text: `Tirei 3 ${W.fs} e o chanceler confirma: não havia liberal para passar.`, power: 0.7 });
       if (clashOf(gov)) out.push({ id: 'blame', label: `Aponta a história de ${nm(pres ? gov.chanc : gov.pres)}`, text: `As histórias não batem: quem mente é ${nm(pres ? gov.chanc : gov.pres)}.`, power: 0.45 });
       if (gov.k === 'gov' && gov.law === 'F' && !clashOf(gov)) out.push({ id: 'deck', label: 'Diz que foi o baralho', text: 'O baralho veio assim, não tive escolha.', power: 0.35 });
     }
