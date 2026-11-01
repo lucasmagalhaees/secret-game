@@ -174,11 +174,38 @@ const law = (l: Law, k?: number): string => {
 
 /* ---------- before the game: the table ---------- */
 /** Play again at once (D34): with a table that is ready, one big button with the last setup, before anything else. */
+/** D89: the tutorial's tips, each when its moment comes, in order; the first one not read yet shows (and holds the
+ *  app players until it is read). Only the rules and what the whole table sees: never a secret. */
+export function tutTip(g: Game | null): { key: string; text: string } | null {
+  if (!g || !g.tut) return null;
+  const me = g.players.findIndex(p => !p.ai), seen = new Set(g.tut), last = [...g.hist].reverse().find(e => e.k === 'gov' || e.k === 'chaos');
+  const mine = g.hist.filter((e): e is Gov => e.k === 'gov' && (e.pres === me || e.chanc === me)).pop();
+  const tips: [string, boolean, string][] = [
+    ['role', g.phase === 'reveal', 'Cada um vê o próprio papel em segredo. Aqui você vai ser liberal. Os liberais são maioria e ganham com 5 leis liberais, ou eliminando o {boss}. Os {fs} são poucos, se conhecem e ganham com 6 leis {fs}, ou elegendo o {boss} chanceler depois da 3ª lei {f}.'],
+    ['nominate-ai', g.phase === 'nominate' && g.pres !== me, 'Cada rodada tem um presidente, e a vez passa em ordem. O presidente indica um chanceler. Repare em quem indica quem: um {f} costuma puxar um aliado.'],
+    ['nominate-me', g.phase === 'nominate' && g.pres === me, 'Agora o presidente é você. Indique um chanceler. Quem já aprovou lei liberal tende a ser mais confiável; o último governo eleito não pode voltar como chanceler.'],
+    ['vote', g.phase === 'vote', 'Todos votam {ja} ou {nein} no governo. Mais {ja} que {nein}: eleito. Três governos rejeitados seguidos, e o caos aprova a lei do topo do baralho.'],
+    ['president-me', g.phase === 'president' && g.pres === me, 'Você tirou 3 leis do baralho. Toque numa para descartar: as outras 2 vão para o chanceler. Se tem liberal, passe a liberal adiante.'],
+    ['chancellor-me', g.phase === 'chancellor' && g.chanc === me, 'Você recebeu 2 leis do presidente. A que você não descartar é aprovada.'],
+    ['claim', !!mine && (mine.pres === me ? mine.pc === undefined : mine.cc === undefined), 'Agora conte à mesa o que você teve na mão. Dá para mentir, mas liberal diz a verdade: é comparando as histórias que a mesa descobre quem mente.'],
+    ['lawF', !!last && (last.k === 'gov' || last.k === 'chaos') && last.law === 'F' && g.laws.F >= 1, 'Saiu uma lei {f}. Nem sempre é culpa de alguém: o baralho tem 11 {fs} e só 6 liberais. Mas compare o que o presidente e o chanceler disseram: se as histórias não batem, alguém mentiu.'],
+    ['notes', g.laws.F + g.laws.L >= 2 && g.phase !== 'over', 'Abra as Anotações e marque quem você acha liberal ou {f}. O 📣 diz à mesa, e acusar com uma prova da ata pesa bem mais que só desconfiar.'],
+    ['power', ['investigate', 'peek', 'special', 'execute'].includes(g.phase), 'Algumas leis {fs} dão um poder ao presidente: investigar o partido de alguém, ver as próximas leis, escolher o próximo presidente ou eliminar alguém. Quem investiga conta à mesa o que viu, e pode mentir.'],
+    ['zone', g.laws.F >= 3 && g.phase !== 'over', 'Cuidado: já são 3 leis {fs}. Se o {boss} for eleito chanceler agora, os {fs} ganham na hora. Vote {nein} em chanceler de quem você desconfia.'],
+    ['over', g.phase === 'over', 'Fim do tutorial! Agora você sabe o básico. Em "Jogar agora" a partida é de verdade, contra a IA no difícil.']
+  ];
+  const t = tips.find(([k, on]) => on && !seen.has(k));
+  return t ? { key: t[0], text: t[2] } : null;
+}
+function vTut(g: Game): string {
+  const t = tutTip(g);
+  return t ? `<section class="card tut" id="tut"><span class="label">📘 Tutorial</span><p>${t.text}</p><button class="btn block" data-act="tutok" data-v="${t.key}">Entendi</button></section>` : '';
+}
 function vQuick(): string {
   // "Jogar agora" is the quick game (D35): 7 seats, you and 6 app players at the hard level, no assistance, theme and
   // continent drawn at random; the table below stays for setting up a game by hand
   if (S.game) return '';
-  return `<section class="card quick" id="quick"><button class="btn block big" data-act="quickgame" id="quickgame">▶ Jogar agora</button><p class="hint">Partida rápida: 7 lugares, você e 6 IAs no difícil, sem assistência, tema e continente sorteados.</p></section>`;
+  return `<section class="card quick" id="quick"><button class="btn block big" data-act="quickgame" id="quickgame">▶ Jogar agora</button><p class="hint">Partida rápida: 7 lugares, você e 6 IAs no difícil, sem assistência, tema e continente sorteados.</p><button class="btn ghost block" data-act="tutorial" id="tutorial">📘 Nunca jogou? Tutorial</button></section>`;
 }
 /** Your game at a glance, at the top of the result (D34): won or lost, with what role, and how the notebook did. */
 function vYours(g: Game): string {
@@ -289,9 +316,9 @@ function vGame(g: Game): string {
     const tabs: [EndTab, string][] = [['res', 'Resultado'], ['jogo', 'Resumo'], ['log', 'Registro']];
     const bar = `<div class="segm endtabs" role="tablist" aria-label="Fim de jogo">${tabs.map(([k, l]) => `<button role="tab" id="tab-${k}" class="${ui.endTab === k ? 'on' : ''}" data-act="endtab" data-v="${k}" aria-selected="${ui.endTab === k}">${l}</button>`).join('')}</div>`;
     const body = ui.endTab === 'jogo' ? vSummary(g) + vAta(g) : ui.endTab === 'log' ? vLog(g) : vYours(g) + vHighlights(g) + vThoughts(g) + vNotesScore(g) + vReview(g) + vPlayers(g) + vBoard(g);
-    return card + bar + body + vDock(g);
+    return vTut(g) + card + bar + body + vDock(g);
   }
-  return vUndo() + vStatus(g) + vSeats(g) + vMeters(g) + vSaid(g) + vHelp(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
+  return vUndo() + vStatus(g) + vSeats(g) + vMeters(g) + vSaid(g) + vHelp(g) + vTut(g) + card + vClaims(g) + vCoach(g) + vWatching(g) + vPlayers(g) + vBoard(g) + vAta(g) + vLog(g) + `<section class="card"><button class="btn ghost block" data-act="end">${ui.confirmEnd ? 'Toque de novo para encerrar o jogo' : 'Encerrar jogo'}</button></section>` + vDock(g);
 }
 /** The headline of each phase, printed on the page that turns in (D46). */
 const HEAD: Record<string, string> = { reveal: 'Papéis', nominate: 'Nova rodada', vote: 'Votação', president: 'Sessão legislativa', chancellor: 'Sessão legislativa', veto: 'Veto', investigate: 'Poder', peek: 'Poder', special: 'Poder', execute: 'Poder', over: 'Fim de jogo', bot: 'Vez da IA' };

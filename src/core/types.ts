@@ -123,6 +123,8 @@ export interface Game {
   region?: Region;
   /** Every decision of the players run by the app, with its reason (D16). */
   trace?: Trace[];
+  /** D89: a tutorial game: the tips the person already read (present, even empty, means tutorial). */
+  tut?: string[];
   /** The notebook of the one person at the table (D12), as it was when the game ended (D28): seat → the party marked. */
   notes?: Record<string, Law>;
   noteDetails?: Record<string, NoteDetail>;
