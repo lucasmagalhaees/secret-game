@@ -1098,3 +1098,18 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 
 /* D82: defence combo */
 .darg-row{display:flex;gap:6px;align-items:stretch}.darg-row>button[data-act=darg]{flex:1}.dplus{min-width:44px;font-size:20px;font-weight:800;border:2px solid currentColor;background:transparent;color:inherit}.darg-row.on .dplus{background:var(--lib);color:var(--on-party)}.darg-row.on>button[data-act=darg]{outline:2px solid var(--lib)}
+
+/* D84: player sheet, law line, court hints, debate force, verdict drop */
+.name-btn{all:unset;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.sheet h2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sheet-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.sheet-stats span{border:2px solid var(--line);padding:6px;text-align:center;font-size:12px}.sheet-stats b{display:block;font-size:22px}
+.sheet-list{list-style:none;padding:0;margin:4px 0 10px;display:grid;gap:4px}.sheet-list li{border-left:4px solid var(--line);padding:2px 8px;font-size:14px}.sheet-list li.F{border-color:var(--fas)}.sheet-list li.L{border-color:var(--lib)}
+.lawline{list-style:none;display:flex;gap:6px;overflow-x:auto;padding:4px 0;margin:8px 0}.lawline li{flex:0 0 auto;border:2px solid var(--line);border-top:6px solid var(--line);font-size:12px}.lawline li.F{border-top-color:var(--fas)}.lawline li.L{border-top-color:var(--lib)}
+.lawline li>*{padding:4px 6px;display:block}.lawline button{all:unset;cursor:pointer;display:block;padding:4px 6px}.lawline b{display:block}
+.ev-more>.more{margin:8px 0}
+.ev-counter{display:block;font-size:12px;font-style:normal;opacity:.75;margin-top:2px}
+.dforce{display:grid;gap:4px;margin:6px 0 10px}.dforce>span{display:grid;grid-template-columns:7em 1fr;align-items:center;gap:6px;font-size:12px}.dforce b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dforce i{height:8px;border:1px solid var(--line);background:linear-gradient(90deg,var(--c) var(--w),transparent var(--w))}.dforce .acc{--c:var(--fas)}.dforce .def{--c:var(--lib)}.dforce small{font-size:12px;opacity:.85}
+.dvotes li small{display:block;font-size:11px;opacity:.75}
+@media (prefers-reduced-motion:no-preference){.dvotes li{animation:vdrop .35s both;animation-delay:calc(var(--k) * .25s)}}
+@keyframes vdrop{from{opacity:0;transform:translateY(-12px) scale(.9)}to{opacity:1;transform:none}}
