@@ -350,6 +350,8 @@ export function initEvents(): void {
     else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' && t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.'); }
     else if (a === 'court') { ui.court = i; ui.courtProof = []; ui.courtTone = undefined; render(); }
     else if (a === 'courtclose') { ui.court = null; render(); }
+    else if (a === 'sheet') { ui.sheet = i; render(); }   // D84: a player's sheet
+    else if (a === 'sheetclose') { ui.sheet = null; render(); }
     else if (a === 'courtproof') { const p = ui.courtProof || []; ui.courtProof = p.includes(i) ? p.filter(x => x !== i) : [...p, i]; ui.courtTone = ui.courtProof.length ? 'proof' : 'firm'; render(); }   // D81: tap several to combo
     else if (a === 'courttone') { ui.courtTone = d.v === 'soft' || d.v === 'proof' ? d.v : 'firm'; render(); }
     else if (a === 'accuse' && ui.court !== null && ui.court !== undefined) {

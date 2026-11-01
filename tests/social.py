@@ -56,7 +56,13 @@ with sync_playwright() as p:
     pg.wait_for_selector('#debate [data-act=dcombo]', timeout=15000)
     for k in range(2): pg.locator('#debate [data-act=dcombo]').nth(k).dispatch_event('click')
     pg.locator('[data-act=dall]').dispatch_event('click'); pg.wait_for_function("(() => { const t = window.__APP.S.game.hist.filter(e => e.k === 'talk').at(-1); return (t.deb || []).some(l => l.id.includes('+')); })()")
+    pg.wait_for_timeout(300); pg.screenshot(path=str(ROOT / 'tests/shots/social-debate-force.png'))
+    # a player's sheet (D84): a tap on a name in the players list
+    pg.evaluate("document.getElementById('debate')?.remove(); window.__APP.ui.debate = null; window.__APP.ui.frozen = 0")
+    pg.locator('#players [data-act=sheet]').nth(1).dispatch_event('click'); pg.wait_for_selector('#sheet')
+    assert pg.locator('#sheet .sheet-stats span').count() == 3; pg.screenshot(path=str(ROOT / 'tests/shots/social-sheet.png'))
+    pg.locator('#sheet [data-act=sheetclose]').dispatch_event('click'); assert pg.locator('#sheet').count() == 0
     cov.stop(pg, 'social')
     assert not errs, errs
     b.close()
-print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo')
+print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo, ficha do jogador')
