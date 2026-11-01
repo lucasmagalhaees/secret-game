@@ -715,3 +715,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** envelope da investigação com pouco contraste, a animação demorada e repetida, textos vazando dos botões no celular, e o som ainda entregando a morte do Hitler.
 - **Decisão:** o nome no envelope sai escuro sobre o papel (sem o clarão das telas escuras); a investigação dura 2,4 s, e 1,4 s depois da primeira da partida; nome com etiqueta quebra a linha dentro do botão em vez de vazar, e a linha das leis quebra em vez de sair da tela; a fanfarra, o confete e a tela do fim esperam a tela da eliminação terminar.
+
+## D86. Os símbolos das leis desenhados (2026-11-01)
+
+- **Pedido:** "a arte nas leis está feia"; trocar a caveira por foice e martelo ou pelo SS; tirar os nomes dos poderes no tabuleiro.
+- **Decisão:** os símbolos deixam de ser emoji (no iPhone, caveira brilhante e balança colorida, fora do estilo) e passam a ser desenhos SVG chapados na cor da carta, com raios de pôster atrás do selo: balança para liberal, fasces (o feixe de varas com machado, de onde vem a palavra fascismo) para fascista e foice e martelo para comunista. O SS (os dois raios) foi pedido e ficou de fora: é símbolo de ódio, proibido em vários países, e o fasces diz o mesmo sem isso. No tabuleiro, as casas mostram só o ícone do poder (sem "investiga", "elimina", "vitória" escritos); a palavra fica no toque longo e no leitor de tela.

@@ -274,7 +274,8 @@ with sync_playwright() as p:
     for i in range(5):
         if i: pg.click('[data-act=open]')
         pg.click('[data-act=hiderole]')
-    assert 'espia' in txt('#board') and 'investiga' not in txt('#board') and 'eleição' not in txt('#board'), txt('#board')
+    tags = pg.evaluate("[...document.querySelectorAll('#board .slot[aria-label]')].map(e => e.getAttribute('aria-label')).join(' ')")   # D86: the power is an icon; its word is the label
+    assert 'espia' in tags and 'investiga' not in tags and 'eleição' not in tags, tags
     pg.evaluate('''() => { const g = window.__APP.S.game; g.pres = 3; g.laws = { L: 0, F: 2 }; }''')
     pg.evaluate(f'localStorage.setItem("{KEY}", JSON.stringify(window.__APP.S))'); cov.reload(pg); wait()
     stack('FFLFFL'); govern(4, 'F'); assert G()['phase'] == 'peek'

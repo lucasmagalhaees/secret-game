@@ -1097,7 +1097,7 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .combo{border:2px solid var(--fas);padding:6px 8px;margin:8px 0;display:grid;gap:4px}.combo b{color:var(--fas);text-transform:uppercase;letter-spacing:.06em;font-size:.8em}.combo-bar{height:8px;border:1px solid var(--fg, currentColor);display:block}.combo-bar i{display:block;height:100%;background:var(--fas)}.combo small{font-size:.8em;opacity:.85}
 
 /* D82: defence combo */
-.darg-row{display:flex;gap:6px;align-items:stretch}.darg-row>button[data-act=darg]{flex:1}.dplus{min-width:44px;font-size:20px;font-weight:800;border:2px solid currentColor;background:transparent;color:inherit}.darg-row.on .dplus{background:var(--lib);color:var(--on-party)}.darg-row.on>button[data-act=darg]{outline:2px solid var(--lib)}
+.darg-row{display:flex;gap:6px;align-items:stretch;margin:6px 0}.darg-row>button{margin:0}.darg-row>button[data-act=darg]{flex:1 1 auto;width:auto;min-width:0;overflow-wrap:anywhere}.dargs .dplus{flex:0 0 48px;width:48px;min-width:48px;padding:0;text-align:center;font-size:20px;font-weight:800}.dargs #dall{text-align:center}.darg-row.on .dplus{background:var(--lib);color:var(--on-party)}.darg-row.on>button[data-act=darg]{outline:2px solid var(--lib)}
 
 /* D84: player sheet, law line, court hints, debate force, verdict drop */
 .name-btn{all:unset;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
@@ -1123,3 +1123,11 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .pick .btn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 6px;min-width:0}
 .pick .kn,.names .kn,.seats .kn{white-space:normal}.kn-tag{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
 .lawline{flex-wrap:wrap;overflow-x:visible}
+/* D86: the law seals are drawn (no emoji); poster rays behind the seal, the colour of the card */
+svg.glyph{width:70%;height:70%;display:block}
+.law .sym{background:repeating-conic-gradient(from 0deg,color-mix(in srgb,currentColor 18%,transparent) 0 8deg,transparent 8deg 18deg)}
+.law .sym svg.glyph{width:74%;height:74%;filter:drop-shadow(2px 2px 0 color-mix(in srgb,var(--shadow) 60%,transparent))}
+.slot svg.glyph{width:62%;height:62%;margin:auto}
+.decree-card svg.glyph{width:40px;height:40px}
+.law{--halo:var(--fas-bg)}.slot{--halo:var(--fas)}.decree-card{--halo:var(--surface)}
+svg.glyph .sk{stroke:var(--halo)}svg.glyph .teeth{stroke:var(--halo)}
