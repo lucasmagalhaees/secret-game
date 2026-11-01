@@ -115,12 +115,12 @@ function sashOf(g: Game): number {
 }
 /** D70: an investigator told the table what it saw: the card of the side it named turns over, on the whole screen. It
  *  is only what was said (the investigator may lie), and the screen says so. */
-export function claimFx(g: Game, by: number, target: number, said: 'L' | 'F' | '-'): void {
+export function claimFx(g: Game, by: number, target: number, said: 'L' | 'F' | '-', quick = false): void {
   // D74: one piece: the envelope with the name on it opens and the card comes out of it and turns to the side the
   // investigator named (or stays face down if it said nothing). Only what was said: it may be a lie.
   const role: Role = said === 'L' ? 'liberal' : 'fascista';
   const face = said === '-' ? '<div class="cf-front q"><span>?</span><small>Ficou calado</small></div>' : `<div class="cf-front ${said}">${portrait(role, P, R)}<span>${said === 'L' ? 'Liberal' : esc(W.F)}</span></div>`;
-  layer(`claim-fx ${said === '-' ? 'q' : said}`, `<div class="cf-card"><small>${name(g, by)} investigou</small><div class="cf-env"><div class="cf-flip"><div class="cf-back"></div>${face}</div><div class="cf-body"><b>${name(g, target)}</b></div><div class="cf-flap"></div></div><em>${said === '-' ? 'Não disse o que viu.' : `${name(g, by)} diz que é ${said === 'L' ? 'liberal' : esc(W.f)}. Pode estar mentindo.`}</em></div>`, 3600);
+  layer(`claim-fx ${said === '-' ? 'q' : said}${quick ? ' quick' : ''}`, `<div class="cf-card"><small>${name(g, by)} investigou</small><div class="cf-env"><div class="cf-flip"><div class="cf-back"></div>${face}</div><div class="cf-body"><b>${name(g, target)}</b></div><div class="cf-flap"></div></div><em>${said === '-' ? 'Não disse o que viu.' : `${name(g, by)} diz que é ${said === 'L' ? 'liberal' : esc(W.f)}. Pode estar mentindo.`}</em></div>`, quick ? 1400 : 2400);
 }
 /** The hidden leader was elected chancellor in the danger zone and the game is over: red screen and the leader yelling.
  *  The game is over: every role is open by then. */

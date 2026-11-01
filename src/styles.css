@@ -1113,6 +1113,16 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .dvotes li small{display:block;font-size:11px;opacity:.75}
 @media (prefers-reduced-motion:no-preference){.dvotes li{animation:vdrop .35s both;animation-delay:calc(var(--k) * .25s)}}
 @keyframes vdrop{from{opacity:0;transform:translateY(-12px) scale(.9)}to{opacity:1;transform:none}}
+/* D85: the investigation is shorter (2.4 s, then 1.4 s after the first); the name on the envelope reads dark on the paper */
+.claim-fx{animation-duration:2.4s}
+.claim-fx .cf-flap{animation-delay:.15s}.claim-fx .cf-flip{animation-duration:.5s;animation-delay:.3s}.claim-fx .cf-back,.claim-fx .cf-front{animation-duration:.4s;animation-delay:.8s}
+.claim-fx.quick{animation-duration:1.4s}.claim-fx.quick .cf-flap{animation-duration:.01s;animation-delay:0s}.claim-fx.quick .cf-flip{animation-duration:.25s;animation-delay:0s}.claim-fx.quick .cf-back,.claim-fx.quick .cf-front{animation-duration:.25s;animation-delay:.3s}
+.claim-fx .cf-body .kn{filter:none}.cf-body .kn.F{color:#9e2414}.cf-body .kn.L{color:#1d4a74}.cf-body .kn-tag{font-size:11px}
+.claim-fx .cf-card>small .kn,.claim-fx .cf-card>small{color:#f3e8d0}
+/* D85: names with a tag never spill out of a button or a row on a phone */
+.pick .btn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 6px;min-width:0}
+.pick .kn,.names .kn,.seats .kn{white-space:normal}.kn-tag{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.lawline{flex-wrap:wrap;overflow-x:visible}
 /* D86: the law seals are drawn (no emoji); poster rays behind the seal, the colour of the card */
 svg.glyph{width:70%;height:70%;display:block}
 .law .sym{background:repeating-conic-gradient(from 0deg,color-mix(in srgb,currentColor 18%,transparent) 0 8deg,transparent 8deg 18deg)}
