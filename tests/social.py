@@ -52,7 +52,11 @@ with sync_playwright() as p:
     assert pg.locator('#combo').count() == 1 and 'tudo' in pg.locator('#accuse').inner_text().lower(); pg.screenshot(path=str(ROOT / 'tests/shots/social-combo.png'))
     pg.locator('#accuse').click(); h = [e for e in G()['hist'] if e['k'] == 'talk'][-1]; assert len(h.get('proofs', [])) == 2, h
 
+    # the reply as a combo (D82): mark two arguments with +, answer with all of them
+    pg.wait_for_selector('#debate [data-act=dcombo]', timeout=15000)
+    for k in range(2): pg.locator('#debate [data-act=dcombo]').nth(k).dispatch_event('click')
+    pg.locator('[data-act=dall]').dispatch_event('click'); pg.wait_for_function("(() => { const t = window.__APP.S.game.hist.filter(e => e.k === 'talk').at(-1); return (t.deb || []).some(l => l.id.includes('+')); })()")
     cov.stop(pg, 'social')
     assert not errs, errs
     b.close()
-print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação em combo')
+print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo')

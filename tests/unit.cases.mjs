@@ -269,6 +269,17 @@ export default function cases(Core) {
     const bv = view({ level: 'dificil', laws: { L: 1, F: 2 }, pres: 2, chanc: 3, ask: 'vote', options: [1, 0], hist: up });
     eq('D81: upheld combo, one law short of the zone: a liberal votes Nein on that chancellor', Core.decide(bv, () => 0.5), 0);
   }
+  { // D82: defence combo, the investigator's record, three drawn as believable as the deck
+    const H = [{ k: 'gov', pres: 2, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 5, chanc: 4, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 1, chanc: 2, law: 'L', pc: 1, cc: 0 }, { k: 'inv', by: 2, target: 5, party: 'F', said: 'L' }];
+    const dg = ai7({ phase: 'nominate', pres: 0, hist: [...H, { k: 'talk', by: 0, about: 5, say: 'acc', tone: 'proof', proof: 0 }] }), at = 4;
+    const def = Core.debateArgs(dg, at), ids = def.filter(a => a.id !== 'quiet').slice(0, 2).map(a => a.id), c = Core.debateSay(dg, at, ids), line = c.hist[at].deb[0];
+    eq('D82: the accused answers with several arguments at once, stronger than either', [def.some(a => a.id === 'inv'), line.id === ids.join('+'), line.power > Math.max(...def.filter(a => ids.includes(a.id)).map(a => a.power))], [true, true, true]);
+    const acc = Core.debateArgs(c, at);
+    eq('D82: the accuser takes apart the investigation of one who governed with the accused', [acc.some(a => a.id === 'badinv'), Core.evidence({ ...dg, hist: H }, 5, 0).some(x => x.kind === 'inv' && x.hit)], [true, true]);
+    const zh = (libs) => view({ level: 'dificil', laws: { L: 2, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 5, chanc: 4, law: 'F', pc: 2, cc: 1 }, ...Array.from({ length: libs }, () => ({ k: 'gov', pres: 2, chanc: 6, law: 'L', pc: 1, cc: 0 })), { k: 'inv', by: 2, target: 5, said: 'L' }] });
+    eq('D82: an investigation clears a dirty chancellor only from one who passed two liberal laws', [Core.decide(zh(1), () => 0.5)], [0]);
+    eq('D82: three of the hidden side drawn: as likely as the deck makes it', [Core.threeOdds(dg, 0) > 0.2 && Core.threeOdds(dg, 0) < 0.3, Core.threeOdds({ ...dg, hist: Array(9).fill({ k: 'chaos', law: 'F' }) }, 9)], [true, 0]);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);

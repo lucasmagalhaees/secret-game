@@ -114,16 +114,19 @@ export const ZONE_DIRTY = 2;
 const dirtyCount = (v: View, i: number): number => v.hist.filter(e => e.k === 'gov' && e.law === 'F' && (e.pres === i || e.chanc === i)).length;
 /** D80: two who governed together and a law of the hidden side came out: one cannot clear the other by investigating. */
 const together = (v: View, a: number, b: number): boolean => v.hist.some(e => e.k === 'gov' && e.law === 'F' && ((e.pres === a && e.chanc === b) || (e.pres === b && e.chanc === a)));
+/** D82: an investigator is believed only with a record: at least this many liberal laws passed in its governments. */
+export const INV_CRED = 2;
+const credible = (v: View, by: number, i: number): boolean => v.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === by || e.chanc === by)).length >= INV_CRED && dirtyCount(v, by) < ZONE_DIRTY && !together(v, by, i);
 const dirtyIn = (v: View, i: number): boolean => {
   // an investigation that said "liberal" clears it only if the investigator is not dirty itself: in the exported games
   // the hidden side covered its allies in 14 of its investigations
-  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || (dirtyCount(v, e.by) < ZONE_DIRTY && !together(v, e.by, i))))) return false;
+  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || credible(v, e.by, i)))) return false;
   return dirtyCount(v, i) >= ZONE_DIRTY;
 };
 /** D81: a combo accusation that the table upheld: from one law short of the danger zone on, a liberal neither nominates
  *  nor votes Ja for that chancellor, unless an investigation by someone clean said it is liberal. */
 export const barred = (v: View, i: number): boolean => v.laws.F >= HITLER_ZONE - 1
-  && !v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || (dirtyCount(v, e.by) < ZONE_DIRTY && !together(v, e.by, i))))
+  && !v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || credible(v, e.by, i)))
   && v.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === i && (e.proofs?.length ?? 0) > 1 && !!e.verdict && e.verdict.filter(x => x[1] === 1).length > e.verdict.filter(x => x[1] === 0).length);
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a

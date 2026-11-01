@@ -328,7 +328,9 @@ export function initEvents(): void {
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'contraclose') document.getElementById('contra')?.remove();
-    else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
+    else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); ui.dpick = []; if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
+    else if (a === 'dcombo') { const p = ui.dpick || [], v = d.v || ''; ui.dpick = p.includes(v) ? p.filter(x => x !== v) : [...p, v]; runDebate(); }   // D82
+    else if (a === 'dall' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, ui.dpick || []); ui.dpick = []; if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
     else if (a === 'tself') { ui.proof = !ui.proof; if (ui.proof) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
     else if (a === 'tproof') { const me = g.players.findIndex(p => !p.ai), next = Core.selfClaimProof(g, me, d.v || ''); ui.proof = false; const e = next.hist[next.hist.length - 1]; const re = e && e.k === 'self' ? e.re || [] : []; play(next, `Você disse que é liberal: ${re.filter(r => r[1] === 0).length} acreditam, ${re.filter(r => r[1] === 2).length} duvidam.`); reactions(re.map(r => r[1])); }
     else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
