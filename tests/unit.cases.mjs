@@ -458,9 +458,11 @@ export default function cases(Core) {
 
   eq('themes: what the table says and the votes use the words of the theme', [Core.castVotes({ ...ai7({ phase: 'vote', chanc: 4 }), pack: 'comunismo' }, { 0: true }, Core.seeded(5)).log.find(l => l.startsWith('Votos.')).startsWith('Votos. Da!: Ana'), Core.say({ ...ai7({ phase: 'nominate', pres: 4, hist: [{ k: 'gov', pres: 0, chanc: 3, law: 'L', drew: deck('FFL'), got: deck('FL') }] }), pack: 'comunismo' }, 0, 'pc', 2).log.at(-1)], [true, 'Ana (presidente) disse que tirou 2 comunistas e 1 liberal.']);
   /* the app players talk between rounds; the trainer; what they thought (D13) */
-  const chat = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'rej', pres: 3, chanc: 4 }] });
+  const chat = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'gov', pres: 1, chanc: 2, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 1, law: 'L', pc: 1, cc: 0 }, { k: 'rej', pres: 3, chanc: 4 }] });
   const first = Core.talker(chat);
   eq('talk: once something happened, at the start of a round, an app player speaks; after an event or during a public voting campaign', [first !== null && chat.players[first].ai === true, Core.talker(ai7({ phase: 'nominate', hist: [] })), Core.talker({ ...chat, phase: 'vote', chanc: 4 }) !== null, Core.botTurn(chat).ask], [true, null, true, 'talk']);
+  { const early = ai7({ phase: 'nominate', pres: 0, hist: [{ k: 'rej', pres: 3, chanc: 4 }] }), w = Core.talker(early);
+    eq('D87: before two laws, an app player with no proof keeps quiet instead of accusing', Core.talk(early, w, 2 * 5).hist.at(-1).say, 'quiet'); }
   const t1 = Core.talk(chat, first, 2 * 5), t2 = Core.talk(t1, Core.talker(t1), Core.QUIET);
   eq('talk: what is said goes in the log and the history; quiet leaves no line; at most TALKS a round, each once', [t1.log.at(-1), t1.hist.at(-1), t2.hist.at(-1).say, t2.log.length === t1.log.length, Core.talker(t2), Core.TALKS], [`${chat.players[first].name}: "Desconfio de Fê."`, { k: 'talk', by: first, about: 5, say: 'acc' }, 'quiet', true, null, 2]);
   eq('talk: only the one whose turn it is, about someone else in the game', [Core.talk(chat, first === 1 ? 2 : 1, 10) === chat, Core.talk(chat, first, 2 * first) === chat, Core.talk(chat, first, 2 * 5 + 1).log.at(-1).includes('Confio em Fê')], [true, true, true]);

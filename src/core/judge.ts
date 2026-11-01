@@ -109,6 +109,10 @@ export function talk(g: Game, by: number, a: number): Game {
   const spent = usedProofs(g, about), fresh = ev.filter(x => !spent.has(x.at) && (!made || x.at !== made.proof)), strong = fresh.find(x => x.hit), weak = fresh[0];
   const bluff = !strong && !!weak && g.players[by].role !== 'liberal' && g.players[about].role === 'liberal';
   const court = strong ? { tone: 'proof' as const, proof: strong.at, hit: true } : bluff ? { tone: 'proof' as const, proof: weak.at } : {};
+  // D87: nothing to go on yet (fewer than two governments passed a law): an app player does not accuse without a proof
+  // that holds; the table found the first-round accusations artificial
+  const early = g.hist.filter(e => e.k === 'gov' || e.k === 'chaos').length < 2;
+  if (kind === 'acc' && !strong && early) return { ...g, hist: [...g.hist, { k: 'talk', by, about: -1, say: 'quiet', ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}) }] };
   // D77: without a new reason, an app player does not accuse someone already accused: it keeps quiet instead
   if (kind === 'acc' && !strong && !bluff && g.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === about)) return { ...g, hist: [...g.hist, { k: 'talk', by, about: -1, say: 'quiet', ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}) }] };
   const echo = '';
@@ -146,7 +150,7 @@ export function defend(g: Game, me: number, kind: Defense): Game {
 /** NPC statements use a public target and recorded context, never a private party or hand. */
 function npcStatement(g: Game, by: number, about: number, trust: boolean): string {
   const n = g.players[about].name, prior = g.hist.filter(e => e.k === 'talk' && e.by === by && e.say !== 'quiet');
-  if (g.phase === 'vote') return speech(trust ? [`Eu daria uma chance a ${n} nesse governo. Quem vem comigo?`, `Antes de rejeitar, considerem ${n}. Esse governo pode ajudar a mesa.`, `Estou defendendo ${n} nesta votação. Vamos comparar com as alternativas.`] : [`Não aprovem só por pressa. Ainda desconfio de ${n} nesse governo.`, `Quero que ${n} explique melhor antes de ganhar nosso voto.`, `Quem está pensando em aprovar, revisa o risco de colocar ${n} nesse governo.`], g, by, g.hist.length, 'talk');
+  if (g.phase === 'vote') return speech(trust ? [`Eu daria uma chance a ${n} nesse governo. Quem vem comigo?`, `Antes de rejeitar, considerem ${n}. Esse governo pode ajudar a mesa.`, `Estou com ${n} nessa.`, `${n} até aqui jogou limpo. Vou de ${words(g.pack, g.region).ja}`, `Melhor ${n} do que arriscar outra rodada.`, ...((g.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === about || e.chanc === about)).length) ? [`${n} já aprovou lei liberal. Tá valendo.`] : [])] : [`Não aprovem só por pressa. Ainda desconfio de ${n} nesse governo.`, `Quero que ${n} explique melhor antes de ganhar nosso voto.`, `Com ${n} aí eu não voto.`, `${n} no governo? Passo.`, `Tem coisa mal contada com ${n}.`], g, by, g.hist.length, 'talk');
   const vote = [...g.hist].reverse().find(e => e.k === 'vote');
   if (vote?.k === 'vote' && !trust && vote.ja.includes(about) && ![vote.pres, vote.chanc].includes(about)) return speech([`${n} apoiou aquele governo. Quero ouvir o motivo desse voto.`, `Guardei o voto de ${n} a favor. Isso ainda precisa de explicação.`, `Não é prova de papel, mas o voto de ${n} me chamou atenção.`], g, by, g.hist.length, 'talk');
   if (!prior.length) return `${trust ? 'Confio em' : 'Desconfio de'} ${n}.`;
@@ -228,7 +232,7 @@ export function evidence(g: Game, about: number, by?: number): Proof[] {
     // D54: what an investigation was said to show, and who someone eliminated. Both are words or choices the table saw,
     // not facts: the investigator may lie, the one who eliminated may have guessed. They back an accusation, weakly.
     // D82: a "liberal" from an investigator who sat in governments that passed laws of the hidden side, or with it
-    if (e.k === 'inv' && e.target === about && e.said === 'L' && e.by !== by) { const d = dirtyOf(g, e.by, at), both = sat(g, e.by, about, at); if (d || both) out.push({ at, kind: 'inv', hit: d >= 2 || both, title: `Investigação · ${nm(e.by)}`, text: `${nm(e.by)} disse que é liberal, mas esteve em ${d} governo${d === 1 ? '' : 's'} que aprovaram lei ${f}${both ? `, um deles com ele` : ''}` }); }
+    if (e.k === 'inv' && e.target === about && e.said === 'L' && e.by !== by) { const d = dirtyOf(g, e.by, at), both = sat(g, e.by, about, at); if (d || both) out.push({ at, kind: 'inv', hit: d >= 2 || both, title: `Investigação · ${nm(e.by)}`, text: `${nm(e.by)} disse que é liberal, mas esteve em ${d} governo${d === 1 ? ' que aprovou' : 's que aprovaram'} lei ${f}${both ? `, um deles com ele` : ''}` }); }
     if (e.k === 'inv' && e.target === about && e.said === 'F') out.push({ at, kind: 'inv', hit: false, title: `Investigação · ${nm(e.by)}`, text: `${nm(e.by)} investigou e disse que é ${f}` });
     if (e.k === 'exec' && e.by === about) out.push({ at, kind: 'exec', hit: false, title: `Eliminação · ${n}º governo`, text: `Eliminou ${nm(e.target)}, que não era o ${words(g.pack).boss}` });
   });
@@ -1055,7 +1059,7 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     const govs = g.hist.slice(0, at).filter(e => e.k === 'gov').length;
     if (!combo.some(x => x.hit) && ((proof && proofEarly(before, proof)) || (!proof && govs < 2))) out.push({ id: 'rush', label: `Desmoraliza ${nm(t.by)}: queimou a largada`, text: `Isso foi no ${govs <= 1 ? 'primeiro governo' : 'começo do jogo'}: ninguém sabe de nada ainda. ${nm(t.by)} acusou antes da hora, e quem acusa cedo assim quer é confundir a mesa.`, power: 0.75 });
     const libs = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === who || e.chanc === who)).length;
-    if (libs) out.push({ id: 'record', label: 'Lembra o seu histórico', text: `Estive em ${libs} governo${libs > 1 ? 's' : ''} que aprovou lei liberal.`, power: 0.25 + 0.15 * Math.min(libs, 2) });
+    if (libs) out.push({ id: 'record', label: 'Lembra o seu histórico', text: `Estive em ${libs} governo${libs > 1 ? 's que aprovaram' : ' que aprovou'} lei liberal.`, power: 0.25 + 0.15 * Math.min(libs, 2) });
     // D61: a weak accusation (only a vote, or no proof that holds) opens the accuser to a hard counterattack
     const weakAcc = !proof || (!proof.hit && (proof.kind === 'vote' || proof.kind === 'exec' || proof.kind === 'inv'));
     if (weakAcc) out.push({ id: 'counter', label: `Contra-ataca ${nm(t.by)}`, text: proof?.kind === 'vote' ? `Por um voto? Metade da mesa votou igual. ${nm(t.by)} quer um culpado, não a verdade.` : `Acusar sem prova é o que faz quem tem o que esconder, ${nm(t.by)}.`, power: 0.65 });
@@ -1078,7 +1082,7 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     for (const x of evidence(before, t.about)) if (x.at !== t.proof && !(t.proofs || []).includes(x.at) && !spentNow.has(x.at) && x.hit && out.length < 3)   // D83: not one already said, nor one spent (D77)
  out.push({ id: `ev${x.at}`, label: x.kind === 'count' ? 'Faz a conta' : 'Traz outra prova', text: `${x.text}.`, power: 0.5 });
     // D82: the investigation that cleared the accused is only as good as the investigator
-    for (const e of g.hist.slice(0, at)) if (e.k === 'inv' && e.target === t.about && e.said === 'L' && e.by !== t.by) { const n = dirtyOf(g, e.by, at), both = sat(g, e.by, t.about, at), libs = libsOf(g, e.by, at); if (n || both || libs < INV_CRED) out.push({ id: 'badinv', label: `Derruba a investigação de ${nm(e.by)}`, text: `Quem disse que ${nm(t.about)} é liberal foi ${nm(e.by)}, ${n || both ? `que esteve em ${n} governo${n === 1 ? '' : 's'} que aprovaram lei ${W.f}${both ? `, um deles com o próprio ${nm(t.about)}` : ''}` : `que ${libs ? 'só aprovou uma lei liberal' : 'nunca aprovou lei liberal'}`}. Essa investigação não vale nada.`, power: Math.min(0.85, (n || both ? 0.45 : 0.35) + 0.1 * Math.min(n, 3) + (both ? 0.15 : 0)) }); }
+    for (const e of g.hist.slice(0, at)) if (e.k === 'inv' && e.target === t.about && e.said === 'L' && e.by !== t.by) { const n = dirtyOf(g, e.by, at), both = sat(g, e.by, t.about, at), libs = libsOf(g, e.by, at); if (n || both || libs < INV_CRED) out.push({ id: 'badinv', label: `Derruba a investigação de ${nm(e.by)}`, text: `Quem disse que ${nm(t.about)} é liberal foi ${nm(e.by)}, ${n || both ? `que esteve em ${n} governo${n === 1 ? ' que aprovou' : 's que aprovaram'} lei ${W.f}${both ? `, um deles com o próprio ${nm(t.about)}` : ''}` : `que ${libs ? 'só aprovou uma lei liberal' : 'nunca aprovou lei liberal'}`}. Essa investigação não vale nada.`, power: Math.min(0.85, (n || both ? 0.45 : 0.35) + 0.1 * Math.min(n, 3) + (both ? 0.15 : 0)) }); }
     const last = (t.deb || [])[(t.deb || []).length - 1];
     out.push({ id: 'weak', label: 'Diz que a explicação não cola', text: 'Essa explicação não cola.', power: last && last.power < 0.3 ? 0.4 : 0.15 });
     const re = t.re || [], agree = re.filter(r => r[1] === 0).length, disagree = re.filter(r => r[1] === 2).length;
@@ -1086,7 +1090,7 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     const noms = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'F' && e.pres === t.about).length;
     if (noms) out.push({ id: 'pick', label: 'Aponta quem ele escolheu', text: `Quando foi presidente, escolheu um chanceler e saiu lei ${W.f}.`, power: 0.4 });
     const votes = evidence(before, t.about).filter(x => x.kind === 'vote').length;
-    if (votes) out.push({ id: 'votes', label: 'Lembra os votos', text: `Votou a favor de ${votes} governo${votes > 1 ? 's' : ''} que aprovou lei ${W.f}.`, power: votes >= 2 ? 0.4 : 0.2 });
+    if (votes) out.push({ id: 'votes', label: 'Lembra os votos', text: `Votou a favor de ${votes} governo${votes > 1 ? 's que aprovaram' : ' que aprovou'} lei ${W.f}.`, power: votes >= 2 ? 0.4 : 0.2 });
     out.push({ id: 'drop', label: 'Recua', text: 'Pode ser que eu tenha me enganado.', power: 0 });
   }
   if (combo.length && who === t.about) for (const a of out) a.power *= 0.7;
@@ -1244,7 +1248,7 @@ export function sway(g: Game, me: number, to: number, cast: [number, boolean][],
 export function selfProofs(g: Game, me: number): Reason[] {
   const W = words(g.pack), out: Reason[] = [];
   const libs = g.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === me || e.chanc === me)).length;
-  if (libs) out.push({ id: 'laws', label: `Aprovei ${libs} lei${libs > 1 ? 's' : ''} liberal${libs > 1 ? 'is' : ''}`, text: `Estive em ${libs} governo${libs > 1 ? 's' : ''} que aprovou lei liberal.`, power: Math.min(0.6, 0.3 + 0.15 * libs) });
+  if (libs) out.push({ id: 'laws', label: `Aprovei ${libs} lei${libs > 1 ? 's' : ''} liberal${libs > 1 ? 'is' : ''}`, text: `Estive em ${libs} governo${libs > 1 ? 's que aprovaram' : ' que aprovou'} lei liberal.`, power: Math.min(0.6, 0.3 + 0.15 * libs) });
   const inv = g.hist.filter(e => e.k === 'inv' && e.target === me && e.said === 'L');
   if (inv.length) out.push({ id: 'inv', label: `${g.players[(inv[0] as { by: number }).by].name} me investigou`, text: `${g.players[(inv[0] as { by: number }).by].name} me investigou e disse que sou liberal.`, power: 0.55 });
   const tossed = g.hist.filter(e => e.k === 'gov' && e.pres === me && e.pc !== undefined && e.pc >= 2 && e.law === 'L').length;
