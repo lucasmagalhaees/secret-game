@@ -114,12 +114,20 @@ export const ZONE_DIRTY = 2;
 const dirtyCount = (v: View, i: number): number => v.hist.filter(e => e.k === 'gov' && e.law === 'F' && (e.pres === i || e.chanc === i)).length;
 /** D80: two who governed together and a law of the hidden side came out: one cannot clear the other by investigating. */
 const together = (v: View, a: number, b: number): boolean => v.hist.some(e => e.k === 'gov' && e.law === 'F' && ((e.pres === a && e.chanc === b) || (e.pres === b && e.chanc === a)));
+/** D82: an investigator is believed only with a record: at least this many liberal laws passed in its governments. */
+export const INV_CRED = 2;
+const credible = (v: View, by: number, i: number): boolean => v.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === by || e.chanc === by)).length >= INV_CRED && dirtyCount(v, by) < ZONE_DIRTY && !together(v, by, i);
 const dirtyIn = (v: View, i: number): boolean => {
   // an investigation that said "liberal" clears it only if the investigator is not dirty itself: in the exported games
   // the hidden side covered its allies in 14 of its investigations
-  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || (dirtyCount(v, e.by) < ZONE_DIRTY && !together(v, e.by, i))))) return false;
+  if (v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || credible(v, e.by, i)))) return false;
   return dirtyCount(v, i) >= ZONE_DIRTY;
 };
+/** D81: a combo accusation that the table upheld: from one law short of the danger zone on, a liberal neither nominates
+ *  nor votes Ja for that chancellor, unless an investigation by someone clean said it is liberal. */
+export const barred = (v: View, i: number): boolean => v.laws.F >= HITLER_ZONE - 1
+  && !v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || credible(v, e.by, i)))
+  && v.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === i && (e.proofs?.length ?? 0) > 1 && !!e.verdict && e.verdict.filter(x => x[1] === 1).length > e.verdict.filter(x => x[1] === 0).length);
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
@@ -490,6 +498,10 @@ function liberalJa(v: View, b: Beliefs): boolean {
     why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);
     return false;
   }
+  if (gov[1] !== v.me && barred(v, gov[1])) {
+    why(`A mesa aceitou a acusação com várias provas contra ${P(gov[1])}, e a mesa está perto das ${HITLER_ZONE} leis {fs}: {nein}`);
+    return false;
+  }
   if (v.laws.F >= HITLER_ZONE && gov[1] !== v.me && dirtyIn(v, gov[1])) {
     why(`Já há ${HITLER_ZONE} leis {fs} e ${P(gov[1])} esteve em ${ZONE_DIRTY} ou mais governos que aprovaram lei {f}: não arrisca o {boss} chanceler. {nein}`);
     return false;
@@ -725,7 +737,7 @@ function liberal(v: View, rand: () => number): number {
       return govRisk + leaderLoss + chaos + rejection - learning;
     };
     const pick = requests(v, b, 'pick'), avoid = requests(v, b, 'avoid'), base = score;
-    const scored = (i: number): number => base(i) - pick(i) + avoid(i) + (zone && dirtyIn(v, i) ? 10 : 0);   // D66: what the table asked; D75: never a dirty chancellor in the zone
+    const scored = (i: number): number => base(i) - pick(i) + avoid(i) + ((zone && dirtyIn(v, i)) || barred(v, i) ? 10 : 0);   // D66: what the table asked; D75: never a dirty chancellor in the zone
     rows(b, o, scored);
     why(strategic
       ? `Comparou governos completos: risco de ter alguém do lado escondido, ${zone ? 'risco imediato de eleger o {boss}' : 'informação que uma nova rodada pode revelar'}${v.tracker === TRACKER_MAX - 1 ? ' e perigo de chegar ao caos' : ''}. Considerou a maioria dos votos e a próxima presidência. Escolheu o menor risco estratégico.`

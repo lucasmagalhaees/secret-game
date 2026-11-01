@@ -1092,3 +1092,9 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 
 /* D79: a seat's record, fascist laws as president·chancellor */
 .kd{font-style:normal;font-size:.68em;font-weight:800;margin-left:4px;padding:0 3px;border:1px solid var(--fas, #c4381f);color:var(--fas, #c4381f);border-radius:3px;white-space:nowrap;vertical-align:middle}
+
+/* D81: combo accusation */
+.combo{border:2px solid var(--fas);padding:6px 8px;margin:8px 0;display:grid;gap:4px}.combo b{color:var(--fas);text-transform:uppercase;letter-spacing:.06em;font-size:.8em}.combo-bar{height:8px;border:1px solid var(--fg, currentColor);display:block}.combo-bar i{display:block;height:100%;background:var(--fas)}.combo small{font-size:.8em;opacity:.85}
+
+/* D82: defence combo */
+.darg-row{display:flex;gap:6px;align-items:stretch}.darg-row>button[data-act=darg]{flex:1}.dplus{min-width:44px;font-size:20px;font-weight:800;border:2px solid currentColor;background:transparent;color:inherit}.darg-row.on .dplus{background:var(--lib);color:var(--on-party)}.darg-row.on>button[data-act=darg]{outline:2px solid var(--lib)}
