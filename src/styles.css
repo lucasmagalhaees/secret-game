@@ -860,7 +860,7 @@ html[data-look="poster"] body::after{content:"";position:fixed;inset:-50%;z-inde
 @keyframes grain{0%{transform:none}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}}
 /* 10. a new phase comes in like a newspaper page turning, with its headline */
 #phase.enter{animation:page .5s cubic-bezier(.3,.7,.3,1) both;transform-origin:left center;position:relative}
-#phase.enter[data-head]::before{content:attr(data-head);position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;
+#phase.enter[data-head]::before{content:attr(data-head);position:absolute;inset:0;z-index:3;display:grid;place-items:center;text-align:center;padding:0 12px 0 calc(12px + .08em);pointer-events:none;
   font:900 30px/1 var(--display);text-transform:uppercase;letter-spacing:.08em;color:var(--fg);background:var(--surface);border-bottom:3px double var(--line);animation:headline .6s ease-in both}
 @keyframes page{0%{transform:perspective(900px) rotateY(-70deg);opacity:0}100%{transform:none;opacity:1}}
 @keyframes headline{0%,45%{opacity:1}100%{opacity:0;visibility:hidden}}

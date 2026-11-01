@@ -22,6 +22,13 @@ const rand = (): number => {
 /** A new game state: saved, and whatever was picked, opened or half-counted on screen is let go. The end of a game
  *  gets its confetti and its fanfare here, whatever ended it. */
 function play(ended: Game, msg?: string, undo: Game | null = null): void {
+  // D87: an app player has just investigated: it tells the table at once, so the envelope plays now, before the game
+  // moves on to the next nomination (it used to arrive late and be cut off)
+  for (let k = 0, from = S.game?.hist.length ?? 0; k < 6; k++) {
+    const inv = ended.hist.slice(from).find(e => e.k === 'inv'), bt = Core.botTurn(ended);
+    if (!inv || inv.k !== 'inv' || inv.said !== undefined || !ended.players[inv.by]?.ai || !bt || !['pc', 'cc', 'inv', 'peek'].includes(bt.ask)) break;
+    const n2 = Core.botStep(ended, rand); if (!n2 || n2 === ended) break; ended = n2;
+  }
   // the notebook goes with the game when it ends (D28): scored at the end, and kept in the export
   const next = ended.phase === 'over' && S.game?.phase !== 'over' ? { ...ended, ...(S.notes ? { notes: S.notes } : {}), ...(S.noteDetails ? { noteDetails: S.noteDetails } : {}) } : ended;
   const before = S.game, changed = next !== before;
@@ -36,7 +43,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
     // envelope and the card together); passing the phone around, nobody tells, so the envelope plays now
     if (power && power.k === 'inv' && !Core.hasAi(next)) powerEffect(next, power.target, 'investigate');
     // D70: what an investigator told the table turns its card over on the screen
-    const told = next.hist.findIndex((e, k) => k < before.hist.length && e.k === 'inv' && (e.said === 'L' || e.said === 'F' || e.said === '-') && (before.hist[k] as { said?: string }).said === undefined);
+    const told = next.hist.findIndex((e, k) => e.k === 'inv' && (e.said === 'L' || e.said === 'F' || e.said === '-') && (k >= before.hist.length || (before.hist[k] as { said?: string }).said === undefined));
     const te = told >= 0 ? next.hist[told] : undefined;
     if (te && te.k === 'inv' && te.said) { const t = te, s = te.said, quick = next.hist.filter(e => e.k === 'inv' && e.said !== undefined).length > 1; freeze(frozenFor() + (quick ? 1400 : 2400)); setTimeout(() => claimFx(next, t.by, t.target, s, quick), Math.max(0, frozenFor())); }   // D85: shorter, and shorter still after the first
     // D66: an app player doubted what the person said: the debate opens, as for any accusation
