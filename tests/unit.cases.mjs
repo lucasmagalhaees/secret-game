@@ -237,7 +237,7 @@ export default function cases(Core) {
     const ng = ai7({ hist: [{ k: 'gov', pres: 1, chanc: 0, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 5, chanc: 0, law: 'F', pc: 3, cc: 2 }, { k: 'talk', by: 4, about: 0, say: 'acc', tone: 'proof', proof: 2 }] });
     const lied = ai7({ hist: [{ k: 'gov', pres: 1, chanc: 0, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 3, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 5, chanc: 0, law: 'F', pc: 1, cc: 2 }, { k: 'talk', by: 4, about: 0, say: 'acc', tone: 'proof', proof: 2 }] });
     const pz = Core.evidence({ ...ng, hist: ng.hist.slice(0, 3) }, 0).find(x => x.at === 2);
-    eq('D75: two of the hidden side in hand is no proof; the defence has its checkmate, or turns it on the lying president', [pz.hit, Core.debateArgs(ng, 3)[0].id, Core.debateArgs(lied, 3)[0].id, Core.debateArgs(lied, 3)[0].power >= 0.8], [false, 'nochoice', 'turnpres', true]);
+    eq('D75: two of the hidden side in hand is no proof; the defence has its checkmate, or turns it on the lying president', [pz?.hit ?? false, Core.debateArgs(ng, 3)[0].id, Core.debateArgs(lied, 3)[0].id, Core.debateArgs(lied, 3)[0].power >= 0.8], [false, 'nochoice', 'turnpres', true]);
     const dz = view({ level: 'dificil', laws: { L: 1, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 5, chanc: 2, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }] });
     eq('D75: from the 3rd law on, a liberal votes Nein on a chancellor who sat in two governments that passed hidden-side laws', [Core.decide(dz, () => 0.5), Core.ZONE_DIRTY], [0, 2]);
   }
@@ -279,6 +279,13 @@ export default function cases(Core) {
     const zh = (libs) => view({ level: 'dificil', laws: { L: 2, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 5, chanc: 4, law: 'F', pc: 2, cc: 1 }, ...Array.from({ length: libs }, () => ({ k: 'gov', pres: 2, chanc: 6, law: 'L', pc: 1, cc: 0 })), { k: 'inv', by: 2, target: 5, said: 'L' }] });
     eq('D82: an investigation clears a dirty chancellor only from one who passed two liberal laws', [Core.decide(zh(1), () => 0.5)], [0]);
     eq('D82: three of the hidden side drawn: as likely as the deck makes it', [Core.threeOdds(dg, 0) > 0.2 && Core.threeOdds(dg, 0) < 0.3, Core.threeOdds({ ...dg, hist: Array(9).fill({ k: 'chaos', law: 'F' }) }, 9)], [true, 0]);
+  }
+  { // D83: the verdict weighs each side's best line, not how many it said
+    const vg = ai7({ hist: [{ k: 'gov', pres: 1, chanc: 2, law: 'L', pc: 1, cc: 0 }, { k: 'talk', by: 0, about: 3, say: 'acc', tone: 'proof', deb: [{ who: 3, id: 'a', text: '', power: 0.5 }, { who: 0, id: 'b', text: '', power: 0.9 }, { who: 3, id: 'c', text: '', power: 0.45 }] }] });
+    const r = Core.debateVerdict(vg, 1, Core.seeded(3)).hist[1].verdict, yes = r.filter(x => x[1] === 1).length, no = r.filter(x => x[1] === 0).length;
+    const hint = { hit: false }, hit = { hit: true };
+    eq('D83: four hints are not a strong case; piling every answer on stays below .9', [Core.comboPower([hint, hint, hint, hint], 0) < Core.comboPower([hit], 0) + 0.15, Core.stack([0.75, 0.65, 0.6, 0.4]) <= 0.9, Core.stack([0.5, 0.4]) > 0.5], [true, true, true]);
+    eq('D83: one strong accusation against two middling answers: the accusation is not outweighed by sheer talk', yes >= no, true);
   }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
