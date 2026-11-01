@@ -48,6 +48,7 @@ with sync_playwright() as p:
     t3 = others[2]
     setup({'phase': 'nominate', 'pres': others[0], 'chanc': None, 'laws': {'L': 1, 'F': 2}, 'hist': [{'k': 'gov', 'pres': others[1], 'chanc': t3, 'law': 'F', 'pc': 2, 'cc': 1}, {'k': 'gov', 'pres': t3, 'chanc': others[3], 'law': 'F', 'pc': 2, 'cc': 1}]})
     pg.evaluate('window.__APP.ui.frozen = 0'); pg.locator(f'[data-act=court][data-i="{t3}"]').first.dispatch_event('click'); pg.wait_for_selector('#court')
+    if pg.locator('#court [data-act=evmore]').count(): pg.locator('#court [data-act=evmore]').click()   # D84: the hints fold away
     for k in range(2): pg.locator('#court [data-act=courtproof]').nth(k).click()
     assert pg.locator('#combo').count() == 1 and 'tudo' in pg.locator('#accuse').inner_text().lower(); pg.screenshot(path=str(ROOT / 'tests/shots/social-combo.png'))
     pg.locator('#accuse').click(); h = [e for e in G()['hist'] if e['k'] == 'talk'][-1]; assert len(h.get('proofs', [])) == 2, h
