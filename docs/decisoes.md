@@ -710,3 +710,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** mais UI/UX ("faz todas" das seis ideias).
 - **Decisão:** (1) no debate, uma barra com a força de cada lado (a melhor fala, a mesma conta do veredito, D83) e, na vez da pessoa, "para virar, precisa de uma fala acima de X"; (2) na tela de acusar, as provas que valem em cima, os indícios atrás de "Mais indícios" e, em cada prova, a resposta provável do acusado; (3) tocar no nome na lista de jogadores abre a ficha: KD, leis liberais e fascistas, Ja! em governo fascista, governos, investigações e acusações, só o que a mesa toda viu; (4) no tabuleiro, as leis em ordem com o par que as aprovou (tocar abre a ficha do presidente); (5) "O que aconteceu" fechado durante a partida; (6) no veredito, os votos caem um a um, com uma linha de motivo pelo voto (nunca pelo papel).
+
+## D86. Os símbolos das leis desenhados (2026-11-01)
+
+- **Pedido:** "a arte nas leis está feia"; trocar a caveira por foice e martelo ou pelo SS; tirar os nomes dos poderes no tabuleiro.
+- **Decisão:** os símbolos deixam de ser emoji (no iPhone, caveira brilhante e balança colorida, fora do estilo) e passam a ser desenhos SVG chapados na cor da carta, com raios de pôster atrás do selo: balança para liberal, fasces (o feixe de varas com machado, de onde vem a palavra fascismo) para fascista e foice e martelo para comunista. O SS (os dois raios) foi pedido e ficou de fora: é símbolo de ódio, proibido em vários países, e o fasces diz o mesmo sem isso. No tabuleiro, as casas mostram só o ícone do poder (sem "investiga", "elimina", "vitória" escritos); a palavra fica no toque longo e no leitor de tela.
