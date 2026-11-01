@@ -710,3 +710,8 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** mais UI/UX ("faz todas" das seis ideias).
 - **Decisão:** (1) no debate, uma barra com a força de cada lado (a melhor fala, a mesma conta do veredito, D83) e, na vez da pessoa, "para virar, precisa de uma fala acima de X"; (2) na tela de acusar, as provas que valem em cima, os indícios atrás de "Mais indícios" e, em cada prova, a resposta provável do acusado; (3) tocar no nome na lista de jogadores abre a ficha: KD, leis liberais e fascistas, Ja! em governo fascista, governos, investigações e acusações, só o que a mesa toda viu; (4) no tabuleiro, as leis em ordem com o par que as aprovou (tocar abre a ficha do presidente); (5) "O que aconteceu" fechado durante a partida; (6) no veredito, os votos caem um a um, com uma linha de motivo pelo voto (nunca pelo papel).
+
+## D85. No celular: nada vaza, o envelope se lê, e o fim espera a eliminação (2026-11-01)
+
+- **Pedido:** envelope da investigação com pouco contraste, a animação demorada e repetida, textos vazando dos botões no celular, e o som ainda entregando a morte do Hitler.
+- **Decisão:** o nome no envelope sai escuro sobre o papel (sem o clarão das telas escuras); a investigação dura 2,4 s, e 1,4 s depois da primeira da partida; nome com etiqueta quebra a linha dentro do botão em vez de vazar, e a linha das leis quebra em vez de sair da tela; a fanfarra, o confete e a tela do fim esperam a tela da eliminação terminar.

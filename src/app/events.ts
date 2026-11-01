@@ -38,7 +38,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
     // D70: what an investigator told the table turns its card over on the screen
     const told = next.hist.findIndex((e, k) => k < before.hist.length && e.k === 'inv' && (e.said === 'L' || e.said === 'F' || e.said === '-') && (before.hist[k] as { said?: string }).said === undefined);
     const te = told >= 0 ? next.hist[told] : undefined;
-    if (te && te.k === 'inv' && te.said) { const t = te, s = te.said; freeze(frozenFor() + 3600); setTimeout(() => claimFx(next, t.by, t.target, s), Math.max(0, frozenFor())); }
+    if (te && te.k === 'inv' && te.said) { const t = te, s = te.said, quick = next.hist.filter(e => e.k === 'inv' && e.said !== undefined).length > 1; freeze(frozenFor() + (quick ? 1400 : 2400)); setTimeout(() => claimFx(next, t.by, t.target, s, quick), Math.max(0, frozenFor())); }   // D85: shorter, and shorter still after the first
     // D66: an app player doubted what the person said: the debate opens, as for any accusation
     const me = next.players.findIndex(p => !p.ai), doubt = next.players.filter(p => !p.ai).length === 1 ? next.hist.findIndex((e, k) => k >= before.hist.length && e.k === 'talk' && e.say === 'acc' && e.about === me && e.by !== me) : -1;
     if (doubt >= 0 && ui.debate !== doubt) setTimeout(() => openDebate(doubt), 60);
@@ -46,7 +46,8 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   if (msg && changed && !spoke) toast(msg);
   if (changed && next.phase === 'over' && before?.phase !== 'over' && next.winner) {
     keep(next);                                                              // kept on the device for export (D23)
-    confetti(next.winner); bossWin(next); sound(next.winner === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]);
+    // D85: the end waits for the elimination screen: the fanfare told who it was before the card turned
+    setTimeout(() => setTimeout(() => { const w = next.winner as Law; confetti(w); bossWin(next); sound(w === 'L' ? 'win' : 'lose'); buzz([60, 80, 60, 80, 200]); }, Math.max(0, frozenFor())), 0);
   }
   tick();
 }
