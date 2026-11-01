@@ -6,7 +6,7 @@
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
 import { INV_CRED, backed, earlyGov, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
-import { WIN, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, TRACKER_MAX, vote } from './game';
+import { WIN, seeded, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, TRACKER_MAX, vote } from './game';
 import { words } from './words';
 import type { Ask, DebLine, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
 
@@ -117,7 +117,18 @@ export function talk(g: Game, by: number, a: number): Game {
   if (kind === 'acc' && !strong && !bluff && g.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === about)) return { ...g, hist: [...g.hist, { k: 'talk', by, about: -1, say: 'quiet', ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}) }] };
   const echo = '';
   const line = quiet ? [] : [`${g.players[by].name}: "${strong || bluff ? `${(strong || weak).text}. ${g.players[about].name}, explica isso.` : echo || npcStatement(g, by, about, kind === 'trust')}"`];
-  return { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}), ...court }] };
+  const said_: Game = { ...g, log: [...g.log, ...line], hist: [...g.hist, { k: 'talk', by, about, say: kind, ...(g.phase === 'vote' ? { stage: 'campaign' as const } : {}), ...court }] };
+  // D88: between two app players with a proof, the table settles it on the spot: the debate runs in the background and
+  // only the verdict is said (it used to stay open for ever)
+  if (kind !== 'acc' || !(strong || bluff) || !isAi(g, by) || !isAi(g, about)) return said_;
+  const at = said_.hist.length - 1, r = seeded(g.hist.length * 7919 + by * 31 + about);
+  let d = said_;
+  for (let k = 0; k < 3 && debateNext(d, at) >= 0; k++) d = debateBot(d, at, r);
+  d = debateVerdict(d, at, r);
+  const v = (d.hist[at] as Talk).verdict;
+  if (!v) return said_;
+  const yes = v.filter(x => x[1] === 1).length, no = v.filter(x => x[1] === 0).length;
+  return { ...d, log: [...said_.log, `A mesa ${yes > no ? `comprou a acusação de ${g.players[by].name}` : `não comprou a acusação de ${g.players[by].name}`} (${yes} a ${no}).`] };
 }
 /** D77: the proofs already used in an accusation against `about`, by anyone: each reason backs one accusation only. */
 export function usedProofs(g: Game, about: number): Set<number> {

@@ -25,8 +25,9 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   // D87: an app player has just investigated: it tells the table at once, so the envelope plays now, before the game
   // moves on to the next nomination (it used to arrive late and be cut off)
   for (let k = 0, from = S.game?.hist.length ?? 0; k < 6; k++) {
-    const inv = ended.hist.slice(from).find(e => e.k === 'inv'), bt = Core.botTurn(ended);
-    if (!inv || inv.k !== 'inv' || inv.said !== undefined || !ended.players[inv.by]?.ai || !bt || !['pc', 'cc', 'inv', 'peek'].includes(bt.ask)) break;
+    // D88: the same for a government: the president and the chancellor run by the app say what they held at once
+    const fresh = ended.hist.slice(from).some(e => e.k === 'inv' || e.k === 'gov' || e.k === 'veto' || e.k === 'peek'), bt = Core.botTurn(ended);
+    if (!fresh || !bt || !ended.players[bt.seat]?.ai || !['pc', 'cc', 'inv', 'peek'].includes(bt.ask)) break;
     const n2 = Core.botStep(ended, rand); if (!n2 || n2 === ended) break; ended = n2;
   }
   // the notebook goes with the game when it ends (D28): scored at the end, and kept in the export
@@ -99,9 +100,11 @@ const askHold = (g: Game, seat: number, ask: string): number => {
   if (me < 0 || g.players.filter(p => !p.ai).length !== 1 || !g.players[me].alive || !g.players[seat]?.ai) return 0;
   const asked = (() => { for (let i = g.hist.length - 1; i >= 0; i--) { const e = g.hist[i]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') return false; if (e.k === 'ask' && e.by === me) return true; } return false; })();
   const open = !asked && (ask === 'nominate' || ask === 'investigate' || ask === 'execute');
-  return open ? ASK_HOLD[S.speed || 'normal'] : 0;
+  const used = g.hist.some(e => e.k === 'ask' && e.by === me);   // D88: the full wait only for someone who asks
+  return open ? (used ? ASK_HOLD[S.speed || 'normal'] : ASK_SHORT[S.speed || 'normal']) : 0;
 };
 const ASK_HOLD = { lenta: 6000, normal: 4000, rapida: 2500 } as const;
+const ASK_SHORT = { lenta: 3000, normal: 1800, rapida: 1000 } as const;
 /** A claim was just told: the next step waits for it to be read (D21). Taken once. */
 let hold = false;
 const takeHold = (): number => { const h = hold; hold = false; return h ? CLAIM_HOLD[S.speed || 'normal'] : 0; };
@@ -159,7 +162,8 @@ function count(g: Game): void {
     const wait = ballot(g, e, e.ja.length * 2 > alive, Math.min(450, Math.max(180, (SPEEDS[S.speed || 'normal'] || 1200) / 3)), true);
     ui.busy = true;
     swaying = { g: t.g, base: g, cast: t.cast, said: [], to: null, done: false };
-    setTimeout(() => { if (!swaying) return; ui.busy = false; swayOpen(g, t.cast, SWAY_MS); swaying.timer = setTimeout(swayEnd, SWAY_MS); }, wait);
+    const close = alive - 2 < 2 * e.ja.length && 2 * e.ja.length <= alive + 2, ms = close ? SWAY_MS : 2500;   // D88: one vote can turn it, or the window is short
+    setTimeout(() => { if (!swaying) return; ui.busy = false; swayOpen(g, t.cast, ms); swaying.timer = setTimeout(swayEnd, ms); }, wait);
     return;
   }
   const next = Core.castVotes(g, ui.votes, rand);
@@ -354,6 +358,7 @@ export function initEvents(): void {
     else if (a === 'pleato') { ui.pleaTo = ui.pleaTo === i ? null : i; render(); }
     else if (a === 'plea' && ui.pleaTo !== null && ui.pleaTo !== undefined) { const me = g.players.findIndex(p => !p.ai), to = ui.pleaTo; ui.pleaTo = null; play(Core.plea(g, me, to, d.v === '1'), `Você pediu a ${g.players[to].name} para ${d.v === '1' ? 'aprovar' : 'barrar'} o governo.`); }
     else if (a === 'dopen') openDebate(i);
+    else if (a === 'dlater') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }   // D88: the accusation waits on its card
     else if (a === 'dclose') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }
     else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' && t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.'); }
     else if (a === 'court') { ui.court = i; ui.courtProof = []; ui.evMore = false; ui.courtTone = undefined; render(); }
