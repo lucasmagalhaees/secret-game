@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, Role } from '../core';
+import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, Role, Talk } from '../core';
 import type { EndTab } from './state';
 import { animalOf, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
@@ -420,7 +420,7 @@ function vBoard(g: Game): string {
     const pw = i + 1 === Core.WIN[p] ? 'win' : p === 'F' ? Core.powerAt(g, i + 1) || '' : '';
     const filled = g.laws[p] > i, tag = pw === 'win' ? 'vitória' : POWER_LABEL[pw] || '', next = !filled && g.laws[p] === i && g.phase !== 'over';
     // an empty slot shows the icon of what it unlocks; the next slot of each track is marked (D48)
-    return `<div class="slot ${p}${filled ? ' on' : ''}${next ? ' next' : ''}${fresh[p] === i ? ' new' : ''}">${filled ? seal(p, P) : pw ? `<i class="pw" aria-hidden="true">${POWER_ICON[pw]}</i>` : ''}<small>${tag}</small></div>`;
+    return `<div class="slot ${p}${filled ? ' on' : ''}${next ? ' next' : ''}${fresh[p] === i ? ' new' : ''}"${tag ? ` title="${tag}" aria-label="${tag}"` : ''}>${filled ? seal(p, P) : pw ? `<i class="pw" aria-hidden="true">${POWER_ICON[pw]}</i>` : ''}</div>`;   // D86: icons only, the word on a long press
   }).join('');
   const dots = Array.from({ length: Core.TRACKER_MAX }, (_, i) => `<i class="${g.tracker > i ? 'on' : ''}"></i>`).join('');
   const last = g.hist[g.hist.length - 1], chaosNow = g.hist.length > seenHist && last?.k === 'chaos';
@@ -428,7 +428,7 @@ function vBoard(g: Game): string {
   seenTracker = g.tracker; seenHist = g.hist.length;
   return `<section class="card" id="board"><span class="label">Leis liberais</span><div class="track" style="--n:${Core.WIN.L}">${slots('L')}</div>
     <span class="label">Leis {fs}</span><div class="track" style="--n:${Core.WIN.F}">${slots('F')}</div>
-    <div class="meta"><span>Rejeições seguidas <span class="dots${bump ? ' bump' : ''}" id="tracker">${dots}</span></span><span>Baralho: ${g.deck.length} · Lixo: ${g.discard.length}</span></div></section>`;
+    ${lawLine(g)}<div class="meta"><span>Rejeições seguidas <span class="dots${bump ? ' bump' : ''}" id="tracker">${dots}</span></span><span>Baralho: ${g.deck.length} · Lixo: ${g.discard.length}</span></div></section>`;
 }
 function vPlayers(g: Game): string {
   const dead = new Set(g.players.filter(p => !p.alive).map(p => p.name)), fresh = [...dead].filter(x => !seenDead.has(x));
@@ -442,7 +442,7 @@ function vPlayers(g: Game): string {
   return `<section class="card" id="players"><span class="label">Jogadores</span>${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}${unveil ? ' unveil' : ''}" style="--k:${order.indexOf(i)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
-    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${name(g, i)}${kd(g, i)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
+    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who"><button class="name-btn" data-act="sheet" data-i="${i}" aria-label="Ficha de ${esc(p.name)}">${name(g, i)}</button>${kd(g, i)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
   }).join('')}</ul></section>`;
 }
 /** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
@@ -690,7 +690,7 @@ function vDock(g: Game): string {
     kit ? `<button class="dock-btn notes${notes ? ' open' : ''}" data-act="notesopen" id="notestoggle" aria-expanded="${notes}" aria-controls="drawer"><span aria-hidden="true">${notes ? '✕' : '✎'}</span> Anotações${n ? ` · ${n}` : ''}</button>` : '',
 
   ];
-  return `${vDrawer(g)}${vProofs(g)}${vDiary(g, rows)}${vCourt(g)}<nav class="dock" aria-label="Painéis">${peek}${vFab(g)}${btns.join('')}</nav>${GAP}`;
+  return `${vDrawer(g)}${vProofs(g)}${vDiary(g, rows)}${vCourt(g)}${vSheet(g)}<nav class="dock" aria-label="Painéis">${peek}${vFab(g)}${btns.join('')}</nav>${GAP}`;
 }
 /** D65/D66: talking to the table, in one panel, grouped by what each thing is for; only what can be done now shows. */
 function vTalk(g: Game): string {
@@ -732,19 +732,49 @@ export const PERSONA_W: Record<Persona, [string, string]> = {
 /** The notebook as a side panel (D14): the bar at the bottom opens it over the game, and closes it again; on a wide
  *  screen it stays open beside the game. */
 /** The court (D39): accusing someone with a proof from the record and a tone, as a sheet over the game. */
+/** D84: one line on each verdict, from what the table saw (never a secret). */
+const WHY_V = ['a defesa convenceu', 'a prova pesou mais', 'ficou na dúvida'];
+/** D84: the answer an accused is likely to give to each kind of proof, shown before accusing. */
+const COUNTER: Record<string, string> = { clash: 'que quem mente é o outro do governo', law: 'que o baralho veio assim', vote: 'que metade da mesa votou igual', inv: 'que quem investigou mente', exec: 'que errou o palpite', count: 'as leis liberais que já aprovou' };
+/** D84: every law in order, with the pair that passed it; a tap opens the president's sheet. */
+function lawLine(g: Game): string {
+  const xs = g.hist.filter(e => (e.k === 'gov' && e.law) || e.k === 'chaos');
+  if (!xs.length) return '';
+  return `<ol class="lawline" id="lawline" aria-label="As leis em ordem">${xs.map((e, k) => e.k === 'chaos' ? `<li class="${e.law}"><b>${k + 1}ª</b><span>caos</span></li>` : e.k === 'gov' ? `<li class="${e.law}"><button data-act="sheet" data-i="${e.pres}"><b>${k + 1}ª</b><span>${esc(g.players[e.pres].name)} + ${esc(g.players[e.chanc].name)}</span></button></li>` : '').join('')}</ol>`;
+}
+/** D84: a player's sheet: everything the whole table saw of it, in one place. */
+function vSheet(g: Game): string {
+  const i = ui.sheet;
+  if (i === null || i === undefined || !g.players[i]) return '';
+  const nmj = (j: number): string => name(g, j);
+  const govs = g.hist.filter((e): e is Gov => (e.k === 'gov' || e.k === 'veto') && (e.pres === i || e.chanc === i));
+  const F = govs.filter(e => e.k === 'gov' && e.law === 'F'), L = govs.filter(e => e.k === 'gov' && e.law === 'L');
+  const votes = g.hist.map((e, k) => (e.k === 'vote' && e.ja.includes(i) && e.pres !== i && e.chanc !== i ? k : -1)).filter(k => k >= 0);
+  const jaF = votes.filter(k => { const n = g.hist[k + 1]; return n && n.k === 'gov' && n.law === 'F'; }).length;
+  const invs = g.hist.filter(e => e.k === 'inv' && (e.target === i || e.by === i)) as Extract<Event, { k: 'inv' }>[];
+  const accs = g.hist.filter(e => e.k === 'talk' && e.say === 'acc' && (e.about === i || e.by === i)) as Talk[];
+  const verdict = (t: Talk): string => !t.verdict ? '' : t.verdict.filter(x => x[1] === 1).length > t.verdict.filter(x => x[1] === 0).length ? ' · a mesa aceitou' : ' · a mesa não comprou';
+  const row = (e: Gov): string => `<li class="${e.k === 'veto' ? 'rej' : e.law}">${e.pres === i ? 'Presidente' : 'Chanceler'} com ${nmj(e.pres === i ? e.chanc : e.pres)} · ${e.k === 'veto' ? 'veto' : e.law === 'L' ? 'liberal' : W.f}</li>`;
+  return `<div class="court-back" data-act="sheetclose"></div><section class="court sheet" id="sheet" role="dialog" aria-label="Ficha de ${esc(g.players[i].name)}"><span class="label">Ficha</span><h2>${nmj(i)}${kd(g, i)}</h2>
+    <div class="sheet-stats"><span><b>${L.length}</b>leis liberais</span><span><b>${F.length}</b>leis {fs}</span><span><b>${jaF}</b>{ja} em governo {f}</span></div>
+    ${govs.length ? `<span class="label">Governos</span><ul class="sheet-list">${govs.map(row).join('')}</ul>` : '<p class="hint">Ainda não governou.</p>'}
+    ${invs.length ? `<span class="label">Investigações</span><ul class="sheet-list">${invs.map(e => `<li>${e.by === i ? `Investigou ${nmj(e.target)}` : `Investigado por ${nmj(e.by)}`}: ${e.said === 'L' ? 'disse liberal' : e.said === 'F' ? `disse ${W.f}` : 'não disse'}</li>`).join('')}</ul>` : ''}
+    ${accs.length ? `<span class="label">Acusações</span><ul class="sheet-list">${accs.map(t => `<li>${t.by === i ? `Acusou ${nmj(t.about)}` : `Acusado por ${nmj(t.by)}`}${verdict(t)}</li>`).join('')}</ul>` : ''}
+    <button class="btn block" data-act="sheetclose">Fechar</button></section>`;
+}
 function vCourt(g: Game): string {
   const t = ui.court, me = solo(g);
   if (t === null || t === undefined || me < 0 || !Core.canDenounce(g, me, t)) return '';
   const ev = Core.evidence(g, t, me), picks = (ui.courtProof || []).filter(x => ev.some(y => y.at === x)), pick = picks.length ? picks[0] : null, tone = ui.courtTone || (pick !== null ? 'proof' : 'firm');
   const cards = (f: number, of: number): string => Array.from({ length: of }, (_, k) => `<i class="lc ${k < of - f ? 'L' : 'F'}"></i>`).join('');
   const spent = Core.usedProofs(g, t);
-  const item = (x: ReturnType<typeof Core.evidence>[number]): string => spent.has(x.at) ? `<div class="ev spent"><small>${esc(x.title)} · já usada numa acusação</small><span>${esc(x.text)}</span></div>` : `<button class="ev${picks.includes(x.at) ? ' on' : ''}" aria-pressed="${picks.includes(x.at)}" data-act="courtproof" data-i="${x.at}"><small>${esc(x.title)}</small><span>${esc(x.text)}</span>${x.kind === 'clash' && x.pc !== undefined && x.cc !== undefined ? `<span class="ev-cards">${cards(x.pc, 3)} → ${cards(x.cc, 2)}${x.law ? ` → <i class="lc ${x.law}"></i>` : ''}</span>` : ''}${x.hit ? `<b class="ev-hit">${x.kind === 'clash' ? 'A conta não fecha' : 'Saiu lei {f}'}</b>` : ''}</button>`;
+  const item = (x: ReturnType<typeof Core.evidence>[number]): string => spent.has(x.at) ? `<div class="ev spent"><small>${esc(x.title)} · já usada numa acusação</small><span>${esc(x.text)}</span></div>` : `<button class="ev${picks.includes(x.at) ? ' on' : ''}" aria-pressed="${picks.includes(x.at)}" data-act="courtproof" data-i="${x.at}"><small>${esc(x.title)}</small><span>${esc(x.text)}</span><em class="ev-counter">Ele deve responder: ${COUNTER[x.kind]}</em>${x.kind === 'clash' && x.pc !== undefined && x.cc !== undefined ? `<span class="ev-cards">${cards(x.pc, 3)} → ${cards(x.cc, 2)}${x.law ? ` → <i class="lc ${x.law}"></i>` : ''}</span>` : ''}${x.hit ? `<b class="ev-hit">${x.kind === 'clash' ? 'A conta não fecha' : 'Saiu lei {f}'}</b>` : ''}</button>`;
   // D81: two or more proofs make a combo, sharper the nearer the table is to the danger zone
   const chosen = ev.filter(x => picks.includes(x.at)), sharp = Core.sharpness(g), power = chosen.length ? Core.comboPower(chosen, sharp) : 0;
   const meter = chosen.length > 1 ? `<div class="combo" id="combo"><b>Combo · ${chosen.length} provas</b><span class="combo-bar"><i style="width:${Math.round(power * 100)}%"></i></span><small>${sharp >= 1 ? `Mesa no perigo (${g.laws.F} leis {fs}): acusação no máximo` : sharp > 0 ? `${g.laws.F} ${g.laws.F === 1 ? 'lei {f}' : 'leis {fs}'} na mesa: quanto mais perto da ${Core.HITLER_ZONE}ª, mais afiada` : 'Mesa ainda calma: a acusação pesa menos'}. Se a mesa aceitar, ninguém vota nele para chanceler perto da ${Core.HITLER_ZONE}ª lei {f}.</small></div>` : '';
   const tones: ['soft' | 'firm' | 'proof', string][] = [['soft', 'Desconfio'], ['firm', 'Acuso'], ['proof', 'Tenho prova']];
   return `<div class="court-back" data-act="courtclose"></div><section class="court" id="court" role="dialog" aria-label="Acusar ${esc(g.players[t].name)}"><span class="label">📣 Acusar ${name(g, t)}</span>
-    <h2>Qual é a prova?</h2><p class="hint">${ev.length ? 'Toque no que está na ata contra ele. Junte várias para um combo.' : 'A ata não tem nada contra ele ainda. Dá para acusar mesmo assim.'}</p>${ev.map(item).join('')}${meter}
+    <h2>Qual é a prova?</h2><p class="hint">${ev.length ? 'Toque no que está na ata contra ele. Junte várias para um combo.' : 'A ata não tem nada contra ele ainda. Dá para acusar mesmo assim.'}</p>${ev.filter(x => x.hit).map(item).join('')}${(() => { const hints = ev.filter(x => !x.hit); const open = ui.evMore || hints.some(x => picks.includes(x.at)) || !ev.some(x => x.hit); return hints.length ? `<div class="ev-more">${open ? '' : `<button class="more" data-act="evmore">Mais indícios (${hints.length}) · pesam pouco</button>`}${open ? hints.map(item).join('') : ''}</div>` : ''; })()}${meter}
     <div class="tones">${tones.map(([k, l]) => `<button class="${tone === k ? 'on' : ''}" data-act="courttone" data-v="${k}"${k === 'proof' && pick === null ? ' disabled' : ''}>${l}</button>`).join('')}</div>
     <button class="btn block go" data-act="accuse" id="accuse">${chosen.length > 1 ? 'Acusar com tudo' : 'Acusar'}</button><button class="more" data-act="courtclose">Cancelar</button></section>`;
 }
@@ -796,7 +826,7 @@ function vAta(g: Game): string {
 const logKeep = (l: string): boolean => ui.logFilter === 'talk' ? /: "/.test(l) : ui.logFilter === 'gov' ? !/: "/.test(l) : true;
 const logTabs = (): string => `<div class="segm log-tabs" role="group" aria-label="Filtrar o registro">${([['all', 'Tudo'], ['talk', 'Falas'], ['gov', 'Jogadas']] as const).map(([k, t]) => `<button class="${(ui.logFilter || 'all') === k ? 'on' : ''}" data-act="logfilter" data-v="${k}" aria-pressed="${(ui.logFilter || 'all') === k}">${t}</button>`).join('')}</div>`;
 function vLog(g: Game): string {
-  return `<details class="card" id="log"${g.phase === 'over' || Core.hasAi(g) ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}${logTabs()}${logRounds(g)}</details>`;
+  return `<details class="card" id="log"${g.phase === 'over' ? ' open' : ''}><summary class="label">O que aconteceu (${g.log.length})</summary>${S.assist ? '' : '<button class="btn ghost block" data-act="assist" data-v="on" id="showata">Mostrar ata com quem aprovou cada lei</button>'}${logTabs()}${logRounds(g)}</details>`;
 }
 /** The record as a newspaper (D48): one block per round, newest first, headed by the nomination that opened it. */
 function logRounds(g: Game): string {
@@ -1040,10 +1070,13 @@ export function debateSheet(g: Game, at: number): void {
   const combo = t.proofs && t.proofs.length > 1 ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about, t.by).filter(x => (t.proofs as number[]).includes(x.at)) : [];
   const accLine = combo.length ? `${Core.comboText({ ...g, hist: g.hist.slice(0, at) }, combo)} ${name(g, t.about)}, explica isso.` : `${proof ? proof.text + '. ' : ''}${name(g, t.about)}, explica isso.`;
   const p1 = `${say(t.by, accLine, t.hit ? 'acusação · Contradição!' : 'acusação')}${t.about === me ? myPlays(g, me, proof && proof.at < 100000 ? proof.at : -1) : ''}${line(0, t.about === me ? 'sua defesa' : 'defesa')}${lines.length === 0 ? args() : ''}`;
-  const p2 = lines.length < 1 ? '<p class="dwait">A réplica vem depois da defesa.</p>' : `${line(1, 'réplica')}${lines.length === 1 ? args() : ''}${line(2, 'tréplica')}${lines.length === 2 ? args() : ''}`;
+  // D84: the strength of each side so far (its best line), and on the person's turn what it takes to turn the debate
+  const best = (j: number): number => Math.max(0, ...lines.filter(l => l.who === j).map(l => l.power));
+  const force = lines.length ? `<div class="dforce" id="dforce"><span class="acc" style="--w:${Math.round(best(t.by) * 100)}%"><b>${name(g, t.by)}</b><i></i></span><span class="def" style="--w:${Math.round(best(t.about) * 100)}%"><b>${name(g, t.about)}</b><i></i></span>${who === me && who >= 0 ? `<small>Para virar, precisa de uma fala acima de ${Math.round(best(who === t.by ? t.about : t.by) * 100)}.</small>` : ''}</div>` : '';
+  const p2 = lines.length < 1 ? '<p class="dwait">A réplica vem depois da defesa.</p>' : `${force}${line(1, 'réplica')}${lines.length === 1 ? args() : ''}${line(2, 'tréplica')}${lines.length === 2 ? args() : ''}`;
   const v = t.verdict || [], yes = v.filter(x => x[1] === 1).length, no = v.filter(x => x[1] === 0).length;
   const mark = ['✖ não procede', '✔ procede', '? não sabe'];
-  const p3 = t.verdict ? `<ul class="dvotes">${v.map(([j, a]) => `<li class="v${a}"><b>${name(g, j)}</b><span>${mark[a]}</span></li>`).join('')}</ul><div class="dres ${yes > no ? 'acc' : 'def'}"><b>Resultado</b><p>${yes} de ${v.length} acham que a acusação procede. ${yes > no ? `A acusação contra ${name(g, t.about)} pesa.` : `${name(g, t.about)} se defendeu: a acusação perdeu o peso.`}${t.backfire ? ` <b>A acusação era fraca e virou contra ${name(g, t.by)}, que perdeu reputação na mesa.</b>` : ''}</p></div><button class="btn block" data-act="dclose">Voltar ao jogo</button>` : '<p class="dwait">O veredito sai depois da tréplica.</p>';
+  const p3 = t.verdict ? `<ul class="dvotes">${v.map(([j, a], k) => `<li class="v${a}" style="--k:${k}"><b>${name(g, j)}</b><span>${mark[a]}</span><small>${WHY_V[a]}</small></li>`).join('')}</ul><div class="dres ${yes > no ? 'acc' : 'def'}"><b>Resultado</b><p>${yes} de ${v.length} acham que a acusação procede. ${yes > no ? `A acusação contra ${name(g, t.about)} pesa.` : `${name(g, t.about)} se defendeu: a acusação perdeu o peso.`}${t.backfire ? ` <b>A acusação era fraca e virou contra ${name(g, t.by)}, que perdeu reputação na mesa.</b>` : ''}</p></div><button class="btn block" data-act="dclose">Voltar ao jogo</button>` : '<p class="dwait">O veredito sai depois da tréplica.</p>';
   const page = (n: number, title: string, body: string): string => `<section class="dpage"><div class="dcard"><header><span>${n}/3</span><b>${title}</b></header>${body}</div></section>`;
   const cur = t.verdict ? 2 : lines.length >= 1 ? 1 : 0;
   let el = document.getElementById('debate');

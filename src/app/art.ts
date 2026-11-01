@@ -459,6 +459,12 @@ export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mun
   return svg(r === 'liberal' ? bird() : pack === 'comunismo' ? (r === 'hitler' ? bear() : wolf()) : r === 'hitler' ? cobra() : gator(), 'art');
 };
 
-/** The seal of a party on law cards and on the board: a symbol, not a character (the scales; the skull, or the star in
+/** The seal of a party on law cards and on the board: a symbol, not a character (the scales; the fasces, or the hammer and sickle in
  *  the communist theme). */
-export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<span class="glyph" aria-hidden="true">${p === 'L' ? '⚖' : pack === 'comunismo' ? '★' : '☠'}</span>`;
+// D86: drawn, not emoji: the phone's emoji (a glossy skull, a coloured scale) clashed with the poster
+const SEALS: Record<'L' | 'F' | 'C', string> = {
+  L: '<path d="M32 9v40M18 15h28" stroke-width="4"/><circle cx="32" cy="10" r="3.5" fill="currentColor" stroke="none"/><path d="M18 15 10 33M18 15l8 18M46 15l-8 18M46 15l8 18" stroke-width="2.2"/><path d="M8 33h20c0 6-4.5 9-10 9s-10-3-10-9zM36 33h20c0 6-4.5 9-10 9s-10-3-10-9z" fill="currentColor" stroke-width="2"/><path d="M22 55h20l-3-6H25z" fill="currentColor" stroke-width="2"/>',
+  F: '<path class="sk" fill="currentColor" stroke-width="3" d="M38 8c11 0 19 6 21 16-8-3-14-3-21 0z"/><path d="M22 12h20v40H22z" fill="currentColor" stroke-width="2.5"/><path d="M27 12v40M32 12v40M37 12v40" stroke="var(--halo)" stroke-width="1.8"/><path class="sk" d="M19 20h26M19 44h26" stroke-width="7" stroke-linecap="round"/><path d="M19 20h26M19 44h26" stroke-width="4.5" stroke-linecap="round"/><path d="M29 6h6v6h-6z" fill="currentColor" stroke-width="2"/><path d="M26 52h12l3 7H23z" fill="currentColor" stroke-width="2"/>',
+  C: '<path fill="currentColor" stroke-width="1.5" d="M15.4 41A21 21 0 1 1 52.6 41L48.4 35A14 14 0 1 0 24 34z"/><path d="M18 39 9 52" stroke-width="6" stroke-linecap="round"/><path class="sk" d="M51 53 23 25" stroke-width="6.5" stroke-linecap="round"/><path d="M51 53 23 25" stroke-width="5" stroke-linecap="round"/><g transform="rotate(-45 21 23)"><rect class="sk" x="9" y="18" width="24" height="10" fill="currentColor" stroke-width="2.5"/></g>'
+};
+export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="glyph seal-${p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F'}" viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">${SEALS[p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F']}</svg>`;

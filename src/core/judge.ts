@@ -218,7 +218,8 @@ export function evidence(g: Game, about: number, by?: number): Proof[] {
       if (handedBy(e, by, about)) out.push({ at, kind: 'clash', hit: true, title: `${n}º governo · você presidente`, text: handedText(g, e), cc: e.cc, law: 'F' });
       else if (clash) out.push({ at, kind: 'clash', hit: true, title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: pres ? `Disse que tirou ${said} ${f}${said === 1 ? '' : 's'}, e o chanceler disse outra coisa` : `Disse que recebeu ${said} ${f}${said === 1 ? '' : 's'}, e não bate com o presidente`, pc: e.pc, cc: e.cc, law: e.k === 'gov' ? e.law : undefined });
       // D75: who said it had no choice (3 drawn, 2 got), with the stories adding up, is no proof
-      else if (lawF) out.push({ at, kind: 'law', hit: !earlyGov(g.hist as Seen[], at) && !(pres ? said === 3 : said === 2), title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}${earlyGov(g.hist as Seen[], at) ? ' (no começo do jogo: prova fraca)' : ''}`, pc: e.pc, cc: e.cc, law: 'F' });
+      // D83: a government where it had no choice, and the stories add up, is not offered as a proof at all
+      else if (lawF && !(pres ? said === 3 : said === 2)) out.push({ at, kind: 'law', hit: !earlyGov(g.hist as Seen[], at), title: `${n}º governo · ${pres ? 'presidente' : 'chanceler'}`, text: `Governou com ${nm(pres ? e.chanc : e.pres)} e saiu lei ${f}${earlyGov(g.hist as Seen[], at) ? ' (no começo do jogo: prova fraca)' : ''}`, pc: e.pc, cc: e.cc, law: 'F' });
     }
     if (e.k === 'vote' && e.ja.includes(about) && e.pres !== about && e.chanc !== about) {
       const next = g.hist[at + 1];
@@ -246,8 +247,14 @@ export function sharpness(g: Game): number { return Math.min(1, (g.laws.F || 0) 
 /** D81: the strength of a combo of proofs: each adds what the others left (a proof that holds .45, a hint .2), and the
  *  table's danger sharpens it, up to half again. */
 export function comboPower(ps: Proof[], sharp: number): number {
-  const raw = 1 - ps.reduce((a, x) => a * (1 - (x.hit ? 0.45 : 0.2)), 1);
-  return Math.min(0.95, raw * (1 + 0.5 * sharp));
+  return Math.min(0.9, stack(ps.map(x => (x.hit ? 0.45 : 0.2))) * (1 + 0.5 * sharp));
+}
+/** D83: several arguments together: the strongest counts whole, each other a quarter; never above .9. Many weak hints
+ *  do not add up to a strong case, and piling every answer on does not make an unbeatable defence. */
+export function stack(ps: number[]): number {
+  if (!ps.length) return 0;
+  const top = Math.max(...ps);
+  return Math.min(0.9, top + 0.25 * (ps.reduce((a, x) => a + x, 0) - top));
 }
 /** D81: the accusation that throws everything at once, said aloud: the proofs and what the table's danger makes of them. */
 export function comboText(g: Game, ps: Proof[]): string {
@@ -1029,7 +1036,7 @@ export function debateArgs(g: Game, at: number): DebArg[] {
   if (who === t.about) {
     if (isGov && (gov.pres === who || gov.chanc === who)) {
       const pres = gov.pres === who, n = pres ? gov.pc : gov.cc;
-      if (n !== undefined && n >= 0) out.push({ id: 'hand', label: 'Mostra a sua mão', text: `${pres ? 'Tirei' : 'Recebi'} ${n} ${n === 1 ? W.f : W.fs}, foi o que eu disse e mantenho.`, power: clash ? 0.2 : 0.55 });
+      if (n !== undefined && n >= 0) out.push({ id: 'hand', label: 'Mostra a sua mão', text: `${pres ? 'Tirei' : 'Recebi'} ${n} ${n === 1 ? W.f : W.fs}, foi o que eu disse e mantenho.`, power: clash ? 0.2 : 0.4 });   // D83: repeating the claim is not an explanation
       // D75: the chancellor who got two of the hidden side had no choice, and the record shows it: checkmate; and if the
       // president's story does not add up, the chancellor turns it on the president
       if (!pres && gov.k === 'gov' && gov.law === 'F' && gov.cc === 2) out.push(clash
@@ -1042,7 +1049,7 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     // D76: whatever the proof, a government where the accused had no choice speaks for it
     if (!isGov || (gov && gov.k === 'gov' && gov.law !== 'F')) {
       const nc = g.hist.slice(0, at).filter(e => e.k === 'gov' && e.law === 'F' && !clashOf(e) && ((e.chanc === who && e.cc === 2) || (e.pres === who && e.pc === 3)));
-      if (nc.length) out.push({ id: 'nochoice', label: 'Nas minhas leis, não tive escolha', text: `Nas leis ${W.fs} que passaram por mim, eu não tive escolha: ${nc.map(e => (e as Gov).chanc === who ? `recebi 2 de ${nm((e as Gov).pres)}` : 'tirei 3').join('; ')}. Está na ata.`, power: 0.75 });
+      if (nc.length) out.push({ id: 'nochoice', label: 'Nas minhas leis, não tive escolha', text: `Nas leis ${W.fs} que passaram por mim, eu não tive escolha: ${nc.map(e => (e as Gov).chanc === who ? `recebi 2 de ${nm((e as Gov).pres)}` : 'tirei 3').join('; ')}. Está na ata.`, power: proof?.kind === 'count' ? 0.35 : 0.75 });   // D83: against a count it answers only part of it
     }
     // D60: an accusation built on the first governments jumped the gun: the accused can take its credibility apart
     const govs = g.hist.slice(0, at).filter(e => e.k === 'gov').length;
@@ -1067,7 +1074,9 @@ export function debateArgs(g: Game, at: number): DebArg[] {
     if (combo.length) out.push({ id: 'combo', label: `Joga tudo de uma vez (${combo.length} provas)`, text: comboText(before, combo), power: comboPower(combo, t.sharp ?? 0) });
     else if (handed && gov) out.push({ id: 'myhand', label: 'Diz o que você passou', text: `${handedText(g, gov)}.`, power: 0.75 });
     else if (proof) out.push({ id: 'press', label: 'Insiste na prova', text: `${proof.text}. Isso não se explica.`, power: proof.hit ? 0.55 : 0.3 });
-    for (const x of evidence(before, t.about)) if (x.at !== t.proof && x.hit && out.length < 3) out.push({ id: `ev${x.at}`, label: x.kind === 'count' ? 'Faz a conta' : 'Traz outra prova', text: `${x.text}.`, power: 0.5 });
+    const spentNow = usedProofs(before, t.about);
+    for (const x of evidence(before, t.about)) if (x.at !== t.proof && !(t.proofs || []).includes(x.at) && !spentNow.has(x.at) && x.hit && out.length < 3)   // D83: not one already said, nor one spent (D77)
+ out.push({ id: `ev${x.at}`, label: x.kind === 'count' ? 'Faz a conta' : 'Traz outra prova', text: `${x.text}.`, power: 0.5 });
     // D82: the investigation that cleared the accused is only as good as the investigator
     for (const e of g.hist.slice(0, at)) if (e.k === 'inv' && e.target === t.about && e.said === 'L' && e.by !== t.by) { const n = dirtyOf(g, e.by, at), both = sat(g, e.by, t.about, at), libs = libsOf(g, e.by, at); if (n || both || libs < INV_CRED) out.push({ id: 'badinv', label: `Derruba a investigação de ${nm(e.by)}`, text: `Quem disse que ${nm(t.about)} é liberal foi ${nm(e.by)}, ${n || both ? `que esteve em ${n} governo${n === 1 ? '' : 's'} que aprovaram lei ${W.f}${both ? `, um deles com o próprio ${nm(t.about)}` : ''}` : `que ${libs ? 'só aprovou uma lei liberal' : 'nunca aprovou lei liberal'}`}. Essa investigação não vale nada.`, power: Math.min(0.85, (n || both ? 0.45 : 0.35) + 0.1 * Math.min(n, 3) + (both ? 0.15 : 0)) }); }
     const last = (t.deb || [])[(t.deb || []).length - 1];
@@ -1090,7 +1099,7 @@ export function debateSay(g: Game, at: number, id: string | string[]): Game {
   // D82: several arguments at once, a combo: each adds what the others left; keeping quiet or backing down goes alone
   const picked = ids.map(x => all.find(a => a.id === x)).filter((a): a is DebArg => !!a && (ids.length === 1 || (a.id !== 'quiet' && a.id !== 'drop')));
   if (who < 0 || !picked.length || picked.length !== ids.length) return g;
-  const arg = picked.length === 1 ? picked[0] : { id: picked.map(a => a.id).join('+'), label: '', text: picked.map(a => a.text).join(' '), power: Math.min(0.95, 1 - picked.reduce((m, a) => m * (1 - a.power), 1)) };
+  const arg = picked.length === 1 ? picked[0] : { id: picked.map(a => a.id).join('+'), label: '', text: picked.map(a => a.text).join(' '), power: stack(picked.map(a => a.power)) };
   const t = g.hist[at] as Talk, line: DebLine = { who, id: arg.id, text: arg.text, power: arg.power };
   const hist = [...g.hist]; hist[at] = { ...t, deb: [...(t.deb || []), line] };
   return { ...g, hist, log: [...g.log, `${g.players[who].name}: "${arg.text}"`] };
@@ -1111,7 +1120,8 @@ export function debateBot(g: Game, at: number, rand: () => number): Game {
 export function debateVerdict(g: Game, at: number, rand: () => number): Game {
   const t = g.hist[at] as Talk;
   if (!t || t.k !== 'talk' || debateNext(g, at) >= 0 || t.verdict) return g;
-  const sum = (who: number): number => (t.deb || []).filter(l => l.who === who).reduce((a, l) => a + l.power, 0) * (0.6 + 0.2 * eloq(g, who));
+  // D83: each side by its best line, not by how many times it spoke: the accused speaks twice, the accuser once
+  const sum = (who: number): number => Math.max(0, ...(t.deb || []).filter(l => l.who === who).map(l => l.power)) * (0.6 + 0.2 * eloq(g, who));
   const base = (t.hit ? 0.25 : 0) + sum(t.by) - sum(t.about);
   const verdict: [number, number][] = [];
   g.players.forEach((p, j) => {

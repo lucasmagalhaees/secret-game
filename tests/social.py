@@ -48,6 +48,7 @@ with sync_playwright() as p:
     t3 = others[2]
     setup({'phase': 'nominate', 'pres': others[0], 'chanc': None, 'laws': {'L': 1, 'F': 2}, 'hist': [{'k': 'gov', 'pres': others[1], 'chanc': t3, 'law': 'F', 'pc': 2, 'cc': 1}, {'k': 'gov', 'pres': t3, 'chanc': others[3], 'law': 'F', 'pc': 2, 'cc': 1}]})
     pg.evaluate('window.__APP.ui.frozen = 0'); pg.locator(f'[data-act=court][data-i="{t3}"]').first.dispatch_event('click'); pg.wait_for_selector('#court')
+    if pg.locator('#court [data-act=evmore]').count(): pg.locator('#court [data-act=evmore]').click()   # D84: the hints fold away
     for k in range(2): pg.locator('#court [data-act=courtproof]').nth(k).click()
     assert pg.locator('#combo').count() == 1 and 'tudo' in pg.locator('#accuse').inner_text().lower(); pg.screenshot(path=str(ROOT / 'tests/shots/social-combo.png'))
     pg.locator('#accuse').click(); h = [e for e in G()['hist'] if e['k'] == 'talk'][-1]; assert len(h.get('proofs', [])) == 2, h
@@ -56,7 +57,13 @@ with sync_playwright() as p:
     pg.wait_for_selector('#debate [data-act=dcombo]', timeout=15000)
     for k in range(2): pg.locator('#debate [data-act=dcombo]').nth(k).dispatch_event('click')
     pg.locator('[data-act=dall]').dispatch_event('click'); pg.wait_for_function("(() => { const t = window.__APP.S.game.hist.filter(e => e.k === 'talk').at(-1); return (t.deb || []).some(l => l.id.includes('+')); })()")
+    pg.wait_for_timeout(300); pg.screenshot(path=str(ROOT / 'tests/shots/social-debate-force.png'))
+    # a player's sheet (D84): a tap on a name in the players list
+    pg.evaluate("document.getElementById('debate')?.remove(); window.__APP.ui.debate = null; window.__APP.ui.frozen = 0")
+    pg.locator('#players [data-act=sheet]').nth(1).dispatch_event('click'); pg.wait_for_selector('#sheet')
+    assert pg.locator('#sheet .sheet-stats span').count() == 3; pg.screenshot(path=str(ROOT / 'tests/shots/social-sheet.png'))
+    pg.locator('#sheet [data-act=sheetclose]').dispatch_event('click'); assert pg.locator('#sheet').count() == 0
     cov.stop(pg, 'social')
     assert not errs, errs
     b.close()
-print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo')
+print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo, ficha do jogador')
