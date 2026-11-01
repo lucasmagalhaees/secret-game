@@ -33,8 +33,8 @@ export interface Knobs { noise: number; memory: number; lie: number; count: bool
 export const AI: Record<Level, Knobs> = {
   facil: { noise: 0.3, slip: 0.1, memory: 5, lie: 0.1, count: false, act: 0.4, trust: 0, wary: 0.5, plan: false, image: 0, test: 0 },
   medio: { noise: 0.1, slip: 0.1, memory: 6, lie: 0.3, count: false, act: 0.6, trust: 0.1, wary: 0.3, plan: false, image: 0, test: 0 },
-  dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.35, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1, test: 0.3 },
-  extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.4, count: true, act: 0.95, trust: 0.15, wary: 0.25, plan: true, image: 1, test: 0.3 }
+  dificil: { noise: 0.03, slip: 0.03, memory: 99, lie: 0.32, count: false, act: 0.9, trust: 0.15, wary: 0.2, plan: true, image: 1, test: 0.3 },
+  extremo: { noise: 0.02, slip: 0.02, memory: 99, lie: 0.34, count: true, act: 0.95, trust: 0.15, wary: 0.25, plan: true, image: 1, test: 0.3 }
 };
 /** What each personality (D26) changes, on top of the level:
  *  - mood: where its temper sits (-1 wary, 1 trusting), the drawn temper moving it a little (temper);
@@ -93,7 +93,7 @@ export const DECISIVE_SLIP = 0.1;
  *  later: how often a fascist with the choice lets the liberal law through, per level (a burnt fascist is voted down). */
 /** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
  *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
-export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.6, extremo: 0.65 };
+export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.75, extremo: 0.8 };
 /** D62: how much the votes already cast weigh on a liberal's vote, by how much it trusts each voter (the sceptic less). */
 export const CASCADE_W = 0.15;
 /** D65: how much a plea for its vote moves a liberal, times how much it trusts whoever asks. */
@@ -128,7 +128,7 @@ const dirtyIn = (v: View, i: number): boolean => {
 export const barred = (v: View, i: number): boolean => v.laws.F >= HITLER_ZONE - 1
   && !v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || credible(v, e.by, i)))
   && v.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === i && (e.proofs?.length ?? 0) > 1 && !!e.verdict && e.verdict.filter(x => x[1] === 1).length > e.verdict.filter(x => x[1] === 0).length);
-export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.25, extremo: 0.15 };
+export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.3, extremo: 0.25 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
 export const ALLY_PICK = 1.5;

@@ -1131,3 +1131,6 @@ svg.glyph{width:70%;height:70%;display:block}
 .decree-card svg.glyph{width:40px;height:40px}
 .law{--halo:var(--fas-bg)}.slot{--halo:var(--fas)}.decree-card{--halo:var(--surface)}
 svg.glyph .sk{stroke:var(--halo)}svg.glyph .teeth{stroke:var(--halo)}
+.flash.tap{pointer-events:auto;cursor:pointer}
+/* D88: the short notices sit above the dock, not on its buttons */
+body:has(.dock-gap) .toast{bottom:calc(var(--dock) + 8px + env(safe-area-inset-bottom))}
