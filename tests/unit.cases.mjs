@@ -259,6 +259,16 @@ export default function cases(Core) {
     const inv = view({ level: 'dificil', laws: { L: 1, F: 3 }, pres: 3, chanc: 5, ask: 'vote', options: [1, 0], hist: [{ k: 'gov', pres: 2, chanc: 5, law: 'F', pc: 3, cc: 2 }, { k: 'gov', pres: 1, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'inv', by: 2, target: 5, said: 'L' }] });
     eq('D80: one who governed with the chancellor when a hidden-side law came out cannot clear it by investigating', Core.decide(inv, () => 0.5), 0);
   }
+  { // D81: a combo of proofs, sharper near the danger zone; upheld, nobody votes that chancellor
+    const H = [{ k: 'gov', pres: 1, chanc: 3, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 3, chanc: 5, law: 'F', pc: 2, cc: 1 }, { k: 'gov', pres: 2, chanc: 4, law: 'L', pc: 1, cc: 0 }];
+    const cg = ai7({ phase: 'nominate', pres: 0, laws: { L: 1, F: 2 }, hist: H }), ev = Core.evidence(cg, 3), ats = ev.map(x => x.at);
+    const c1 = Core.accuse(cg, 0, 3, 'proof', ats, Core.seeded(2)), t = c1.hist.at(-1);
+    eq('D81: several proofs make one combo accusation, all of them spent', [t.proofs.length >= 2, Core.usedProofs(c1, 3).size >= 2, Core.debateArgs({ ...c1, hist: [...c1.hist.slice(0, -1), { ...t, deb: [{ who: 3, id: 'quiet', text: '…', power: 0 }] }] }, c1.hist.length - 1)[0].id], [true, true, 'combo']);
+    eq('D81: nearer the danger zone, sharper; more proofs, stronger', [Core.comboPower(ev, 1) > Core.comboPower(ev, 0), Core.comboPower(ev, 0) > Core.comboPower(ev.slice(0, 1), 0), Core.sharpness(cg) > 0, Core.comboText(cg, ev).includes('Falta uma lei')], [true, true, true, true]);
+    const up = [...H, { k: 'talk', by: 0, about: 3, say: 'acc', tone: 'proof', proof: 1, proofs: [1, 0], verdict: [[2, 1], [4, 1], [5, 0]] }];
+    const bv = view({ level: 'dificil', laws: { L: 1, F: 2 }, pres: 2, chanc: 3, ask: 'vote', options: [1, 0], hist: up });
+    eq('D81: upheld combo, one law short of the zone: a liberal votes Nein on that chancellor', Core.decide(bv, () => 0.5), 0);
+  }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
   eq('D51: with the leader as president handing one of each before the danger zone, a planning fascist chancellor makes the liberal law; asked what it got, it backs the president or takes the blame', [allyHand({ ask: 'cdiscard', options: [0, 1], hand: deck('FL') }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(3)] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov()] }), allyHand({ ask: 'cc', options: [0, 1, 2, -1], hist: [allyGov(-1)] }), Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 2, chanc: 1, ask: 'cc', options: [0, 1, 2, -1], hist: [{ ...allyGov(), pres: 2 }] }), hi)], [0, 2, 1, 1, 1]);

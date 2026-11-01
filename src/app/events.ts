@@ -346,13 +346,13 @@ export function initEvents(): void {
     else if (a === 'dopen') openDebate(i);
     else if (a === 'dclose') { ui.debate = null; document.getElementById('debate')?.remove(); render(); tick(); }
     else if (a === 'defend') { const me = g.players.findIndex(p => !p.ai), next = Core.defend(g, me, (['deck', 'test', 'lie', 'quiet'].includes(d.v || '') ? d.v : 'quiet') as 'deck' | 'test' | 'lie' | 'quiet'); const t = next.hist.find((e, k) => k < next.hist.length && e.k === 'talk' && e.def && !(g.hist[k] as { def?: string }).def); play(next, t && t.k === 'talk' && t.ok ? 'A defesa colou.' : 'A mesa não comprou a defesa.'); }
-    else if (a === 'court') { ui.court = i; ui.courtProof = null; ui.courtTone = undefined; render(); }
+    else if (a === 'court') { ui.court = i; ui.courtProof = []; ui.courtTone = undefined; render(); }
     else if (a === 'courtclose') { ui.court = null; render(); }
-    else if (a === 'courtproof') { ui.courtProof = ui.courtProof === i ? null : i; ui.courtTone = ui.courtProof === null ? 'firm' : 'proof'; render(); }
+    else if (a === 'courtproof') { const p = ui.courtProof || []; ui.courtProof = p.includes(i) ? p.filter(x => x !== i) : [...p, i]; ui.courtTone = ui.courtProof.length ? 'proof' : 'firm'; render(); }   // D81: tap several to combo
     else if (a === 'courttone') { ui.courtTone = d.v === 'soft' || d.v === 'proof' ? d.v : 'firm'; render(); }
     else if (a === 'accuse' && ui.court !== null && ui.court !== undefined) {
-      const me = g.players.findIndex(p => !p.ai), t = ui.court, tone = ui.courtTone || (ui.courtProof !== null && ui.courtProof !== undefined ? 'proof' : 'firm');
-      const next = Core.accuse(g, me, t, tone, tone === 'proof' ? ui.courtProof ?? null : null, rand);
+      const me = g.players.findIndex(p => !p.ai), t = ui.court, picks = ui.courtProof || [], tone = ui.courtTone || (picks.length ? 'proof' : 'firm');
+      const next = Core.accuse(g, me, t, tone, tone === 'proof' && picks.length ? picks : null, rand);
       ui.court = null; ui.undo = null; play(next, Core.accusationFeedback(next, next.hist.length - 1));
       const e = next.hist[next.hist.length - 1];
       if (e && e.k === 'talk' && e.re) reactions(e.re.map(r => r[1]));
