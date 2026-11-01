@@ -1134,3 +1134,4 @@ svg.glyph .sk{stroke:var(--halo)}svg.glyph .teeth{stroke:var(--halo)}
 .flash.tap{pointer-events:auto;cursor:pointer}
 /* D88: the short notices sit above the dock, not on its buttons */
 body:has(.dock-gap) .toast{bottom:calc(var(--dock) + 8px + env(safe-area-inset-bottom))}
+.tut{border-color:var(--lib);background:color-mix(in srgb,var(--lib) 12%,var(--surface))}.tut p{margin:0;font-size:16px;line-height:1.45}

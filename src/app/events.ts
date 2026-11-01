@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { ballot, beat, blurField, bossWin, claimFx, freeze, swayOpen, swayReasonsShow, swayResult, swayClose, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
+import { tutTip, ballot, beat, blurField, bossWin, claimFx, freeze, swayOpen, swayReasonsShow, swayResult, swayClose, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
@@ -88,11 +88,12 @@ export function tick(): void {
   const g = S.game, t = g ? Core.botTurn(g) : null;
   if (!g || !t || (ui.debate !== null && ui.debate !== undefined)) return;   // the game waits while a debate is on (D57)
   if (frozenFor() > 0) { botTimer = setTimeout(tick, frozenFor() + 50); return; }   // and while an animation plays (D63)
+  if (tutTip(g)) return;   // D89: and while a tutorial tip waits to be read
   botTimer = setTimeout(() => {
     if (S.game !== g) return;
     const next = Core.botStep(g, rand);
     if (next) botPlayed(g, next);
-  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal'] + takeHold() + askHold(g, t.seat, t.ask));
+  }, t.ask === 'reveal' ? 0 : ui.think ?? SPEEDS[S.speed || 'normal'] + takeHold() + askHold(g, t.seat, t.ask) + (g.tut ? 1200 : 0));   // D89: the tutorial goes slower
 }
 /** D67: an app player who presides waits a moment before it nominates or investigates, while the person may still ask. */
 const askHold = (g: Game, seat: number, ask: string): number => {
@@ -221,6 +222,17 @@ function setPack(pack: Pack | undefined, region: Region = S.region || 'mundo'): 
 /** Quick game (D35): 7 seats, the person and 6 app players at the hard level, no assistance, a theme and a continent
  *  drawn at random (Brazil only once unlocked). The person keeps their name; the app players get names of the scene. */
 /** A quick game (D35); after a game, "Mais uma" (D56) plays another one avoiding the role and the continent of the last. */
+/** D89: the tutorial: you, liberal, and 6 app players at the easy level, the original theme, slower; tips at each step. */
+function tutorial(): void {
+  const me = S.names.find((_, i) => !S.ai?.[i]) || 'Você';
+  let names = [me];
+  while (names.length < 7) names = [...names, Core.botName(names, rand, 'fascismo', 'mundo')];
+  clearFlash();
+  const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'facil', train: 'liberal', pack: 'fascismo', region: 'mundo' });
+  if (!r.ok) return;
+  const next = { ...S }; delete next.notes; delete next.noteDetails; setS(next); saveS();
+  ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play({ ...r.game, tut: [] }, 'Tutorial: siga as dicas.');
+}
 function quickGame(prev?: Game | null): void {
   const me = S.names.find((_, i) => !S.ai?.[i]) || 'Você';
   const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = Core.freshPick(regions, prev?.region || (prev ? 'mundo' : undefined), rand);
@@ -315,6 +327,8 @@ export function initEvents(): void {
     else if (a === 'assist') { const next = { ...S }; if (d.v === 'on') next.assist = true; else delete next.assist; setS(next); saveS(); render(); }
     else if (a === 'start') start();
     else if (a === 'quickgame') quickGame();
+    else if (a === 'tutorial') tutorial();
+    else if (a === 'tutok' && g && g.tut) { const k = d.v || ''; setS({ ...S, game: { ...g, tut: [...g.tut, k] } }); saveS(); render(); tick(); }   // D89
     else if (a === 'nextgame') quickGame(S.game);
     else if (a === 'gallery') { ui.gallery = !ui.gallery; render(); scrollTo(0, 0); }   // every drawing (D25)
     else if (a === 'exportgames') void exportGames();

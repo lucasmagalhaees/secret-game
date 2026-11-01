@@ -16,6 +16,10 @@ with sync_playwright() as p:
     cov.start(pg)
     pg.goto((ROOT / 'dist/index.html').as_uri()); pg.wait_for_function('window.__APP')
     G = lambda: pg.evaluate('window.__APP.S.game')
+    # the tutorial (D89): a game with tips, the first one on the roles; reading it moves to the next
+    pg.click('[data-act=tutorial]'); pg.wait_for_selector('#tut'); assert G()['tut'] == [] and G()['players'][0]['role'] == 'liberal'
+    pg.locator('#tut [data-act=tutok]').click(); assert G()['tut'] == ['role']; pg.screenshot(path=str(ROOT / 'tests/shots/social-tutorial.png'))
+    pg.evaluate('window.__APP.S.game = null; localStorage.clear()'); cov.reload(pg); pg.wait_for_function('window.__APP')
     pg.click('[data-act=quickgame]'); pg.wait_for_timeout(200)
     setup = lambda extra: pg.evaluate("(x) => { const A = window.__APP, g = A.S.game; A.ui.think = 600000; g.reveal = g.players.length; for (const p of g.players) p.alive = true; Object.assign(g, x); document.querySelector('[data-act]').click(); }", extra)
     me = [i for i, q in enumerate(G()['players']) if not q.get('ai')][0]
@@ -70,4 +74,4 @@ with sync_playwright() as p:
     cov.stop(pg, 'social')
     assert not errs, errs
     b.close()
-print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo, ficha do jogador, responder depois')
+print('social ok: sou liberal com prova, sugerir eliminação com motivo, virar um voto, acusação e réplica em combo, ficha do jogador, responder depois, tutorial')
