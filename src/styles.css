@@ -1113,3 +1113,11 @@ button.law{transition:translate .15s,transform .15s,opacity .15s,box-shadow .15s
 .dvotes li small{display:block;font-size:11px;opacity:.75}
 @media (prefers-reduced-motion:no-preference){.dvotes li{animation:vdrop .35s both;animation-delay:calc(var(--k) * .25s)}}
 @keyframes vdrop{from{opacity:0;transform:translateY(-12px) scale(.9)}to{opacity:1;transform:none}}
+/* D86: the law seals are drawn (no emoji); poster rays behind the seal, the colour of the card */
+svg.glyph{width:70%;height:70%;display:block}
+.law .sym{background:repeating-conic-gradient(from 0deg,color-mix(in srgb,currentColor 18%,transparent) 0 8deg,transparent 8deg 18deg)}
+.law .sym svg.glyph{width:74%;height:74%;filter:drop-shadow(2px 2px 0 color-mix(in srgb,var(--shadow) 60%,transparent))}
+.slot svg.glyph{width:62%;height:62%;margin:auto}
+.decree-card svg.glyph{width:40px;height:40px}
+.law{--halo:var(--fas-bg)}.slot{--halo:var(--fas)}.decree-card{--halo:var(--surface)}
+svg.glyph .sk{stroke:var(--halo)}svg.glyph .teeth{stroke:var(--halo)}
