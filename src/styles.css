@@ -1148,3 +1148,5 @@ body:has(.dock-gap) .toast{bottom:calc(var(--dock) + 8px + env(safe-area-inset-b
 .b-seat .av{margin:0 auto 2px;display:block}
 .dsay>b{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .seat i.av{padding:0;background:none;border:0;font-size:0;letter-spacing:0}
+.sway-paused .sway-bar i{animation-play-state:paused;opacity:.4}
+.dargs button{touch-action:manipulation}

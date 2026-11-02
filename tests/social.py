@@ -45,6 +45,7 @@ with sync_playwright() as p:
     pg.wait_for_selector('#sway', timeout=8000); pg.screenshot(path=str(ROOT / 'tests/shots/social-sway.png'))
     assert pg.locator('#sway [data-act=swayskip]').count() == 1, 'the window can be skipped (D74)'
     pg.locator('#ballot .b-seat.tap').first.dispatch_event('click'); pg.wait_for_selector('#swayopts [data-act=swaysay]'); pg.screenshot(path=str(ROOT / 'tests/shots/social-sway-reasons.png'))
+    assert pg.locator('#ballot.sway-paused').count() == 1, 'the clock stops once a vote is picked (D93)'
     pg.locator('#swayopts [data-act=swaysay]').first.dispatch_event('click'); pg.wait_for_selector('.sway-res')
     pg.wait_for_function("!document.getElementById('ballot')", timeout=8000)
     log = G()['log']; assert any('mudo meu voto' in l or 'mantenho meu voto' in l for l in log[-6:]) and any(l.startswith('Votos.') for l in log[-6:]), log[-6:]

@@ -115,6 +115,7 @@ function sashOf(g: Game): number {
 }
 /** D70: an investigator told the table what it saw: the card of the side it named turns over, on the whole screen. It
  *  is only what was said (the investigator may lie), and the screen says so. */
+let lastDebate = '';
 export function claimFx(g: Game, by: number, target: number, said: 'L' | 'F' | '-', quick = false): void {
   // D74: one piece: the envelope with the name on it opens and the card comes out of it and turns to the side the
   // investigator named (or stays face down if it said nothing). Only what was said: it may be a lie.
@@ -1125,7 +1126,11 @@ export function debateSheet(g: Game, at: number): void {
   let el = document.getElementById('debate');
   const keep = el ? (el.querySelector('.dpages') as HTMLElement | null)?.scrollLeft ?? 0 : 0;
   if (!el) { el = document.createElement('div'); el.id = 'debate'; el.className = 'debate'; document.body.appendChild(el); }
-  el.innerHTML = themed(`<div class="dpages">${page(1, 'Acusação', p1)}${page(2, 'Réplica e tréplica', p2)}${page(3, 'Veredito da mesa', p3)}</div><div class="ddots">${[0, 1, 2].map(k => `<i class="${k === cur ? 'on' : ''}"></i>`).join('')}</div>`, W as unknown as Record<string, string>);
+  const html = themed(`<div class="dpages">${page(1, 'Acusação', p1)}${page(2, 'Réplica e tréplica', p2)}${page(3, 'Veredito da mesa', p3)}</div><div class="ddots">${[0, 1, 2].map(k => `<i class="${k === cur ? 'on' : ''}"></i>`).join('')}</div>`, W as unknown as Record<string, string>);
+  // D93: a repaint that changes nothing leaves the buttons in place: replacing them under a finger (iPhone) lost the tap,
+  // so a single answer seemed not to work while a combo (several taps) did
+  if (el.isConnected && lastDebate === html && el.childElementCount) return;
+  lastDebate = html; el.innerHTML = html;
   const pages = el.querySelector('.dpages') as HTMLElement, dots = [...el.querySelectorAll('.ddots i')];
   pages.scrollLeft = keep;
   const want = cur * pages.clientWidth;
@@ -1152,6 +1157,7 @@ export function swayReasonsShow(g: Game, to: number, reasons: { id: string; labe
   const box = document.getElementById('swayopts'), el = document.getElementById('ballot');
   if (!box || !el) return;
   el.querySelectorAll('.b-seat').forEach(s => s.classList.toggle('picked', (s as HTMLElement).dataset.i === String(to)));
+  el.classList.add('sway-paused');   // D93: the clock stops while the person picks a reason
   const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.25 ? '<i class="pw m">média</i>' : '<i class="pw w">fraca</i>';
   box.innerHTML = `<p class="sway-to">Convencer <b>${name(g, to)}</b>:</p>${reasons.map(r => `<button class="krow" data-act="swaysay" data-v="${r.id}"><span><b>${esc(r.label)}</b><small>“${esc(r.text)}”</small></span>${pw(r.power)}</button>`).join('')}`;
 }
