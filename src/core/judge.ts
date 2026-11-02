@@ -158,8 +158,14 @@ export function defend(g: Game, me: number, kind: Defense): Game {
   return { ...g, hist, log: [...g.log, `${g.players[me].name}: "${words_[kind]}"`, ...(ok ? [] : kind === 'quiet' ? [] : ['A mesa não comprou a defesa.'])] };
 }
 
-/** NPC statements use a public target and recorded context, never a private party or hand. */
+/** D90: each personality has its own way of opening a line, now and then, so they read apart in the log. */
+const TIC: Record<Persona, string[]> = { certinho: ['', 'Com todo respeito: '], desconfiado: ['Hmm. ', '', 'Sei não… '], cetico: ['', 'Prova? Então: '], critico: ['Pela ata: ', ''], centrado: ['', ''], blefador: ['Confia em mim: ', 'Pode escrever: ', ''], caotico: ['Sei lá, ', 'Vai na fé: ', 'Olha só: '] };
 function npcStatement(g: Game, by: number, about: number, trust: boolean): string {
+  const t = TIC[g.players[by].persona || 'centrado'], tic = t[(by * 5 + g.hist.length) % t.length], line = npcLine(g, by, about, trust);
+  return tic ? tic + lower(g, line) : line;
+}
+/** NPC statements use a public target and recorded context, never a private party or hand. */
+function npcLine(g: Game, by: number, about: number, trust: boolean): string {
   const n = g.players[about].name, prior = g.hist.filter(e => e.k === 'talk' && e.by === by && e.say !== 'quiet');
   if (g.phase === 'vote') return speech(trust ? [`Eu daria uma chance a ${n} nesse governo. Quem vem comigo?`, `Antes de rejeitar, considerem ${n}. Esse governo pode ajudar a mesa.`, `Estou com ${n} nessa.`, `${n} até aqui jogou limpo. Vou de ${words(g.pack, g.region).ja}`, `Melhor ${n} do que arriscar outra rodada.`, ...((g.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === about || e.chanc === about)).length) ? [`${n} já aprovou lei liberal. Tá valendo.`] : [])] : [`Não aprovem só por pressa. Ainda desconfio de ${n} nesse governo.`, `Quero que ${n} explique melhor antes de ganhar nosso voto.`, `Com ${n} aí eu não voto.`, `${n} no governo? Passo.`, `Tem coisa mal contada com ${n}.`], g, by, g.hist.length, 'talk');
   const vote = [...g.hist].reverse().find(e => e.k === 'vote');
@@ -1059,7 +1065,10 @@ export function debateArgs(g: Game, at: number): DebArg[] {
         : { id: 'nochoice', label: 'Não tive escolha: recebi duas', text: `Recebi 2 ${W.fs}: não tinha o que fazer. ${gov.pc === 3 ? `O presidente ${nm(gov.pres)} confirma que tirou 3.` : `Quem escolheu foi o presidente ${nm(gov.pres)}.`}`, power: 0.75 });
       if (pres && gov.k === 'gov' && gov.law === 'F' && gov.pc === 3 && !clash) { const p3 = threeOdds(g, proof ? proof.at : at); out.push({ id: 'nochoice', label: 'Não tive escolha: tirei três', text: `Tirei 3 ${W.fs} e o chanceler confirma: não havia liberal para passar.`, power: 0.3 + 0.6 * p3 }); }   // D82: as believable as drawing three was
       if (clash) out.push({ id: 'blame', label: `Aponta a história de ${nm(pres ? gov.chanc : gov.pres)}`, text: `As histórias não batem: quem mente é ${nm(pres ? gov.chanc : gov.pres)}.`, power: 0.45 });
-      if (gov.k === 'gov' && gov.law === 'F' && !clash) out.push({ id: 'deck', label: 'Diz que foi o baralho', text: 'O baralho veio assim, não tive escolha.', power: 0.35 });
+      // D90: "the deck came like that" only for one whose own story leaves it no choice (or who said nothing): a chancellor
+      // who said it got a liberal had one
+      const choseF = pres ? gov.pc !== undefined && gov.pc >= 0 && gov.pc < 3 && gov.cc === 2 : gov.cc !== undefined && gov.cc >= 0 && gov.cc < 2;
+      if (gov.k === 'gov' && gov.law === 'F' && !clash && !choseF) out.push({ id: 'deck', label: 'Diz que foi o baralho', text: 'O baralho veio assim, não tive escolha.', power: 0.35 });
     }
     // D76: whatever the proof, a government where the accused had no choice speaks for it
     if (!isGov || (gov && gov.k === 'gov' && gov.law !== 'F')) {

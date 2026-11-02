@@ -1135,3 +1135,6 @@ svg.glyph .sk{stroke:var(--halo)}svg.glyph .teeth{stroke:var(--halo)}
 /* D88: the short notices sit above the dock, not on its buttons */
 body:has(.dock-gap) .toast{bottom:calc(var(--dock) + 8px + env(safe-area-inset-bottom))}
 .tut{border-color:var(--lib);background:color-mix(in srgb,var(--lib) 12%,var(--surface))}.tut p{margin:0;font-size:16px;line-height:1.45}
+/* D90: seat badges and log icons */
+.av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;margin-right:6px;font:800 11px/1 var(--display);font-style:normal;color:#fff;background:hsl(var(--h) 35% 38%);border:2px solid var(--line);vertical-align:middle;flex:0 0 auto}
+.log li{display:flex;gap:6px;align-items:baseline}.li-ic{font-style:normal;flex:0 0 1.4em;text-align:center}

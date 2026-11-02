@@ -158,6 +158,9 @@ const kd = (g: Game, i: number): string => {
   for (const e of g.hist) if (e.k === 'gov' && e.law === 'F') { if (e.pres === i) pr++; if (e.chanc === i) ch++; }
   return pr + ch ? `<i class="kd" title="Leis ${esc(W.fs)} que aprovou: ${pr} como presidente, ${ch} como chanceler" aria-label="${pr} como presidente, ${ch} como chanceler">${pr}P·${ch}C</i>` : '';
 };
+/** D90: a small badge for each seat, its initials on a colour of its own (never the colour of a side): faces to tell
+ *  the seats apart at a glance. */
+const av = (g: Game, i: number): string => { const n = g.players[i]?.name || '?', h = 30 + [...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 150, 7); return `<i class="av" style="--h:${h}" aria-hidden="true">${esc(n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</i>`; };
 const AI_TAG = '<small class="ai">IA</small>';
 /** What each level does, in a line (D10). */
 export const LEVEL: Record<Level, [string, string]> = {
@@ -469,7 +472,7 @@ function vPlayers(g: Game): string {
   return `<section class="card" id="players"><span class="label">Jogadores</span>${live ? `<p class="hint">A barra é quanto cada IA desconfia de você agora.</p>${vCrux(g, me, 'live')}` : ''}<ul class="names">${g.players.map((p, i) => {
     const tag = g.phase === 'over' ? `<span class="role ${Core.partyOf(p.role)}${unveil ? ' unveil' : ''}" style="--k:${order.indexOf(i)}">${role(p.role)}</span>` : i === g.pres ? '<span class="tag">Pres.</span>' : i === g.chanc ? '<span class="tag">Chanc.</span>' : '';
     const mark = kit && i !== kit.me ? notes[i] || '' : '';
-    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who"><button class="name-btn" data-act="sheet" data-i="${i}" aria-label="Ficha de ${esc(p.name)}">${name(g, i)}</button>${kd(g, i)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
+    return `<li class="${p.alive ? '' : 'dead'}${fresh.includes(p.name) ? ' struck' : ''}${mark ? ` ${mark}` : ''}"><span class="who">${av(g, i)}<button class="name-btn" data-act="sheet" data-i="${i}" aria-label="Ficha de ${esc(p.name)}">${name(g, i)}</button>${kd(g, i)}${p.ai ? ` ${AI_TAG}` : ''}${p.alive ? '' : ' <small>(eliminado)</small>'} ${tag}${g.phase === 'over' && p.persona ? ` <small class="persona" title="${PERSONA_W[p.persona][1]}">${PERSONA_W[p.persona][0]}</small>` : ''}</span>${meter(i)}${kit ? kit.cell(i, false) : ''}</li>`;
   }).join('')}</ul></section>`;
 }
 /** The live suspicion (D14), worked out once per state of the game: the same state paints many times. */
@@ -862,7 +865,11 @@ function logRounds(g: Game): string {
     if (/ indicou .+ para chanceler\.$/.test(l)) rounds.push({ head: `Rodada ${rounds.length} · ${l.replace(/\.$/, '')}`, lines: [l] });
     else rounds[rounds.length - 1].lines.push(l);
   }
-  return rounds.filter(r => r.lines.some(logKeep)).reverse().map(r => `<section class="round"><h4>${esc(r.head)}</h4><ol class="log">${[...r.lines].reverse().filter(logKeep).map(l => `<li>${esc(l)}</li>`).join('')}</ol></section>`).join('');
+  return rounds.filter(r => r.lines.some(logKeep)).reverse().map(r => `<section class="round"><h4>${esc(r.head)}</h4><ol class="log">${[...r.lines].reverse().filter(logKeep).map(l => `<li><i class="li-ic" aria-hidden="true">${logIcon(l)}</i>${esc(l)}</li>`).join('')}</ol></section>`).join('');
+}
+/** D90: an icon for each kind of line, so the record reads at a glance. */
+function logIcon(l: string): string {
+  return /^Lei .* aprovada/.test(l) ? (/Lei liberal/.test(l) ? '⚖️' : '☠️') : /^Votos\./.test(l) ? '🗳️' : / eleito\.$/.test(l) ? '✅' : / rejeitado\.$/.test(l) ? '❌' : / indicou /.test(l) ? '👉' : / investigou /.test(l) ? '🔍' : / eliminou /.test(l) ? '💀' : /Veredito|A mesa (comprou|não comprou)/.test(l) ? '⚖' : /é (fascista|comunista)\."$|explica isso|Desconfio/.test(l) ? '📣' : /: "/.test(l) ? '💬' : '•';
 }
 
 /** How far the game has gone, counting what changes a phase and not what is said beside it (a claim, a talk): the

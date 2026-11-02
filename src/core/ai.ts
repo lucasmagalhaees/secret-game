@@ -93,7 +93,7 @@ export const DECISIVE_SLIP = 0.1;
  *  later: how often a fascist with the choice lets the liberal law through, per level (a burnt fascist is voted down). */
 /** D52: from HITLER_ZONE fascist laws on, the easiest way for the hidden side to win is the leader as chancellor, so a
  *  liberal votes Nein unless it is fairly sure the chancellor is liberal: the most chance of the hidden side it accepts. */
-export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.75, extremo: 0.8 };
+export const ZONE_SURE: Record<Level, number> = { facil: 1, medio: 0.7, dificil: 0.75, extremo: 0.9 };
 /** D62: how much the votes already cast weigh on a liberal's vote, by how much it trusts each voter (the sceptic less). */
 export const CASCADE_W = 0.15;
 /** D65: how much a plea for its vote moves a liberal, times how much it trusts whoever asks. */
@@ -116,7 +116,11 @@ const dirtyCount = (v: View, i: number): number => v.hist.filter(e => e.k === 'g
 const together = (v: View, a: number, b: number): boolean => v.hist.some(e => e.k === 'gov' && e.law === 'F' && ((e.pres === a && e.chanc === b) || (e.pres === b && e.chanc === a)));
 /** D82: an investigator is believed only with a record: at least this many liberal laws passed in its governments. */
 export const INV_CRED = 2;
-const credible = (v: View, by: number, i: number): boolean => v.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === by || e.chanc === by)).length >= INV_CRED && dirtyCount(v, by) < ZONE_DIRTY && !together(v, by, i);
+/** D90: a story that did not add up, or an accusation with a proof the table upheld, is harder evidence than someone's
+ *  word that an investigation said liberal: no investigation clears it. */
+const marked = (v: View, i: number): boolean => v.hist.some(e => ((e.k === 'gov' || e.k === 'veto') && (e.pres === i || e.chanc === i) && e.pc !== undefined && e.cc !== undefined && e.pc >= 0 && e.cc >= 0 && Math.max(0, e.pc - 1) !== e.cc && !(e.pc === 1 && e.cc === 1))
+  || (e.k === 'talk' && e.say === 'acc' && e.about === i && !!e.hit && !!e.verdict && e.verdict.filter(x => x[1] === 1).length > e.verdict.filter(x => x[1] === 0).length));
+const credible = (v: View, by: number, i: number): boolean => !marked(v, i) && v.hist.filter(e => e.k === 'gov' && e.law === 'L' && (e.pres === by || e.chanc === by)).length >= INV_CRED && dirtyCount(v, by) < ZONE_DIRTY && !together(v, by, i);
 const dirtyIn = (v: View, i: number): boolean => {
   // an investigation that said "liberal" clears it only if the investigator is not dirty itself: in the exported games
   // the hidden side covered its allies in 14 of its investigations
@@ -128,7 +132,13 @@ const dirtyIn = (v: View, i: number): boolean => {
 export const barred = (v: View, i: number): boolean => v.laws.F >= HITLER_ZONE - 1
   && !v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && (e.by === v.me || credible(v, e.by, i)))
   && v.hist.some(e => e.k === 'talk' && e.say === 'acc' && e.about === i && (e.proofs?.length ?? 0) > 1 && !!e.verdict && e.verdict.filter(x => x[1] === 1).length > e.verdict.filter(x => x[1] === 0).length);
-export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.3, extremo: 0.25 };
+/** D90: whether this player accused `i` since the last government (its words this round). */
+const saidAgainst = (v: View, i: number): boolean => {
+  let from = 0;
+  for (let k = v.hist.length - 1; k >= 0; k--) { const e = v.hist[k]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') { from = k + 1; break; } }
+  return v.hist.slice(from).some(e => e.k === 'talk' && e.by === v.me && e.say === 'acc' && e.about === i);
+};
+export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.3, extremo: 0.35 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
 export const ALLY_PICK = 1.5;
@@ -716,6 +726,8 @@ function liberal(v: View, rand: () => number): number {
       return 0;
     }
     if (v.pres === v.me || v.chanc === v.me) { why('Está no governo: {ja}'); return 1; }
+    // D90: what it said this round binds its vote: it does not vote Ja on the chancellor it just accused
+    if (saidAgainst(v, v.chanc as number)) { why(`Acabou de dizer que desconfia de ${P(v.chanc as number)}: {nein}, para o voto bater com a fala.`); return 0; }
     return liberalJa(v, b) ? 1 : 0;
   }
   if (v.ask === 'nominate') {
@@ -898,6 +910,7 @@ function fascist(v: View, rand: () => number, allies: number[], hitler: number):
       if (k.count && !liberalJa(v, pub) && rand() < 0.8) { why('Há um aliado no governo, mas a mesa desconfia dele: votou {nein} para não aparecer junto.'); return 0; }
       why('Há um aliado no governo: {ja}'); return 1;
     }
+    if (saidAgainst(v, v.chanc as number)) { why('Acusou o chanceler nesta rodada: {nein}, para o voto bater com a fala.'); return 0; }   // D90
     if (v.tracker === TRACKER_MAX - 1 && rand() < 0.5) { why('Mais uma rejeição traz o caos, que costuma tirar lei {f}: {nein}'); return 0; }   // the chaos plays for the fascists
     why('Nenhum aliado no governo: votou como um liberal votaria pelo que a mesa viu, para não destoar.');
     return liberalJa(v, pub) ? 1 : 0;

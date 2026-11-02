@@ -428,6 +428,21 @@ export function initEvents(): void {
   });
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target as HTMLElement).id === 'name') addName(); });
   // a secret never stays on screen when the app goes to the background or the phone is put face down
+  // D90: gestures on a phone: a long press on a seat opens its sheet; a sideways swipe opens or closes the notes
+  let press: ReturnType<typeof setTimeout> | undefined, x0 = 0, y0 = 0;
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY;
+    const seat = (e.target as Element).closest?.('[data-seat]') as HTMLElement | null;
+    clearTimeout(press);
+    if (seat && S.game) press = setTimeout(() => { ui.sheet = Number(seat.dataset.seat); render(); }, 550);
+  }, { passive: true });
+  document.addEventListener('touchmove', () => clearTimeout(press), { passive: true });
+  document.addEventListener('touchend', e => {
+    clearTimeout(press);
+    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0, g = S.game;
+    if (!g || g.phase === 'over' || Math.abs(dx) < 90 || Math.abs(dy) > 40 || g.players.filter(p => !p.ai).length !== 1 || ui.debate != null || document.getElementById('court') || document.getElementById('sheet')) return;
+    if ((dx < 0) !== !!S.notesOpen) { const next = { ...S }; if (S.notesOpen) delete next.notesOpen; else next.notesOpen = true; setS(next); saveS(); render(); }
+  }, { passive: true });
   document.addEventListener('visibilitychange', () => { if (document.hidden) hide('Segredo escondido: o app saiu da tela.'); });
   // face down closes a secret only when the person turned it on (D20): lying down, the phone looks face down too
   window.addEventListener('deviceorientation', e => { if (S.flip && e.beta !== null && Math.abs(e.beta) > 150) hide('Segredo escondido: o celular foi virado para baixo.'); });
