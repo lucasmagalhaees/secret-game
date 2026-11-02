@@ -584,7 +584,16 @@ function famous(nameOf: string, skin0: string): string | null {
   const skin = l.skin || skin0;
   return `<svg class="face" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#2b241f"/>${BODY[l.body] || BODY.suit}<path d="M27 40h10v7c-3 2-7 2-10 0z" fill="${skin}" stroke="#15110e" stroke-width="2"/>${l.back ? BACK[l.back] : ''}<ellipse cx="32" cy="28" rx="11" ry="13" fill="${skin}" ${FK}/>${(l.extra || []).filter(x => x.includes('beard') || x === 'mustache').map(x => EXTRA[x]).join('')}${TOP[l.top] || TOP.short}${(l.extra || []).filter(x => !(x.includes('beard') || x === 'mustache')).map(x => EXTRA[x]).join('')}</svg>`;
 }
+const faceCache = new Map<string, string>();
+/** D92: drawn once per name, then taken from memory: the screen is repainted often. */
 export function face(nameOf: string, region = 'mundo', me = false): string {
+  const key = `${nameOf}|${region}|${me ? 1 : 0}`, hit = faceCache.get(key);
+  if (hit) return hit;
+  const out = drawFace(nameOf, region, me);
+  faceCache.set(key, out);
+  return out;
+}
+function drawFace(nameOf: string, region = 'mundo', me = false): string {
   const known = me ? null : famous(nameOf, '#e0ad86');
   if (known) return known;
   const h = hashOf(nameOf), pick = <T>(xs: T[], k: number): T => xs[(h >>> k) % xs.length];

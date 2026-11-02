@@ -160,7 +160,14 @@ const kd = (g: Game, i: number): string => {
 };
 /** D90: a small badge for each seat, its initials on a colour of its own (never the colour of a side): faces to tell
  *  the seats apart at a glance. */
-const av = (g: Game, i: number): string => `<i class="av" aria-hidden="true">${face(g.players[i]?.name || '?', g.region || 'mundo', !g.players[i]?.ai)}</i>`;   // D92: a flat, faceless face
+/** D92: the face of a seat, in one of three sizes (s 24, m 32, l 48; xl 64 on the full screens), with its state on it: a
+ *  gold ring for the president, a light one for the chancellor, grey when out. Never the colour of a side. */
+const av = (g: Game, i: number, size: 's' | 'm' | 'l' | 'xl' = 'm'): string => {
+  const p = g.players[i];
+  if (!p) return '';
+  const st = !p.alive ? ' out' : g.phase !== 'over' && i === g.pres ? ' pres' : g.phase !== 'over' && i === g.chanc ? ' chanc' : '';
+  return `<i class="av av-${size}${st}" aria-hidden="true">${face(p.name, g.region || 'mundo', !p.ai)}</i>`;
+};
 const AI_TAG = '<small class="ai">IA</small>';
 /** What each level does, in a line (D10). */
 export const LEVEL: Record<Level, [string, string]> = {
@@ -333,7 +340,7 @@ const DOING: Record<string, string> = {
   see: 'está olhando em segredo', special: 'está escolhendo o próximo presidente', execute: 'está escolhendo quem eliminar'
 };
 function vBot(g: Game, seat: number, ask: string): string {
-  const who = ask === 'votes' ? '' : `<b>${name(g, seat)}</b> ${AI_TAG} `;
+  const who = ask === 'votes' ? '' : `${av(g, seat, 'l')}<b>${name(g, seat)}</b> ${AI_TAG} `;
   return `<section class="card" id="phase"><span class="label">Vez da IA</span><p class="big thinking" id="thinking">${who}${DOING[ask]}<span class="dots-wait" aria-hidden="true"><i></i><i></i><i></i></span></p>${vAskNow(g, seat, ask)}</section>`;
 }
 /** D67: while an app player presides and is choosing, the person can ask it right there, before it decides: pick me,
@@ -675,7 +682,7 @@ function vSeats(g: Game): string {
   return `<ul class="seats" id="seats" aria-label="A mesa">${g.players.map((p, i) => {
     const mark = kit && i !== me ? kit.party(i) : '', f = live?.get(i);
     const tags = `${i === g.pres ? '<i>Pres.</i>' : ''}${i === g.chanc ? '<i>Chanc.</i>' : ''}${i === me ? '<i class="you">você</i>' : ''}${f !== undefined ? `<i class="sus">${pct(f)}</i>` : ''}${S.rep && p.alive ? (r => `<i class="rep r${r}" title="Reputação na mesa" aria-label="Reputação ${r} de 3">${'★'.repeat(r)}${'☆'.repeat(3 - r)}</i>`)(Core.reputation(g, i)) : ''}`;
-    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === g.pres ? ` pres-sash${i === sash ? ' sash' : ''}${newPres ? ' in' : ''}` : ''}${i === chanc ? ` medal${newChanc ? ' in' : ''}` : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${name(g, i)}${kd(g, i)}${tags}</button>` : `${name(g, i)}${kd(g, i)}${tags}`}</li>`;
+    return `<li data-seat="${i}" class="seat${mark ? ` ${mark}` : ''}${kit?.sure(i) ? ' sure' : ''}${p.alive ? '' : ' dead'}${i === g.pres ? ` pres-sash${i === sash ? ' sash' : ''}${newPres ? ' in' : ''}` : ''}${i === chanc ? ` medal${newChanc ? ' in' : ''}` : ''}${i >= g.players.length / 2 ? ' rt' : ''}">${kit && i !== me ? `<button class="seat-btn" data-act="seatnote" data-i="${i}" aria-label="Anotar ${esc(p.name)}">${av(g, i, 's')}${name(g, i)}${kd(g, i)}${tags}</button>` : `${av(g, i, 's')}${name(g, i)}${kd(g, i)}${tags}`}</li>`;
   }).join('')}</ul>`;
 }
 /** Room kept at the end of the game screen: the bar at the bottom and the notes that pop up sit there, over nothing. */
@@ -985,7 +992,7 @@ export function clearFlash(): void { const f = part('flash'); f.hidden = true; f
 export function flash(who = '', wasBoss = false, why = ''): void {
   const f = part('flash');
   // a shot (D45): the muzzle flashes, the screen cracks from where it hit, then the name and the stamp
-  f.innerHTML = who ? `<svg class="gun" viewBox="0 0 220 120" aria-hidden="true"><path d="M8 30 h150 l10 -8 h22 v22 h-30 v10 h-60 l-6 18 h-20 l-8 44 h-40 l12 -50 h-30 z" fill="#1a1714" stroke="#f3e8d0" stroke-width="3" stroke-linejoin="round"/><circle cx="96" cy="52" r="9" fill="none" stroke="#f3e8d0" stroke-width="3"/><path class="bang" d="M196 33 l18 -14 -4 14 10 4 -12 6 12 10 -18 -4" fill="#ffd678" stroke="#fff" stroke-width="2"/></svg><div class="muzzle"></div><svg class="crack" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M230 300 L305 299 L378 277 L454 290 L528 275 M230 300 L326 320 L417 358 L517 362 L613 385 M230 300 L314 384 L394 472 L450 580 L494 695 M230 300 L238 390 L285 473 L261 571 L320 652 M230 300 L225 372 L202 443 L221 518 L190 588 M230 300 L171 367 L128 446 L77 519 L16 585 M230 300 L146 339 L57 368 L-26 410 L-105 459 M230 300 L120 297 L10 277 L-100 269 L-205 222 M230 300 L162 250 L78 231 L9 180 L-50 117 M230 300 L155 239 L100 157 L40 81 L-37 19 M230 300 L224 215 L215 130 L206 45 L188 -39 M230 300 L270 180 L320 64 L313 -70 L415 -171 M230 300 L322 209 L390 96 L477 0 L586 -76 M230 300 L304 241 L377 180 L448 117 L558 109 M270 304 L264 321 L252 334 L235 340 L217 338 L202 329 L192 314 L190 296 L196 279 L208 266 L225 260 L243 262 L258 271 L268 286 L270 304 M325 309 L311 350 L282 380 L242 394 L200 390 L164 368 L141 332 L135 291 L149 250 L178 220 L218 206 L260 210 L296 232 L319 268 L325 309"/><circle cx="230" cy="300" r="9"/></svg><div class="exec"><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span>${why ? `<p class="exec-why">“${esc(why)}”</p>` : ''}</div>${wasBoss ? `<div class="tear-boss" aria-hidden="true"><div class="tb-half l">${portrait('hitler', P, R)}</div><div class="tb-half r">${portrait('hitler', P, R)}</div></div><div class="fate boss"><div class="rays"></div><div class="birds">${'<i></i>'.repeat(7)}</div><b class="exec-card boss">Era o ${W.boss}!</b><span>Os liberais chegam ao poder</span></div>` : `<div class="fate on"><i class="sweep"></i><b class="exec-card">Não era o ${W.boss}</b><span>O jogo continua</span></div>`}` : '';
+  f.innerHTML = who ? `<svg class="gun" viewBox="0 0 220 120" aria-hidden="true"><path d="M8 30 h150 l10 -8 h22 v22 h-30 v10 h-60 l-6 18 h-20 l-8 44 h-40 l12 -50 h-30 z" fill="#1a1714" stroke="#f3e8d0" stroke-width="3" stroke-linejoin="round"/><circle cx="96" cy="52" r="9" fill="none" stroke="#f3e8d0" stroke-width="3"/><path class="bang" d="M196 33 l18 -14 -4 14 10 4 -12 6 12 10 -18 -4" fill="#ffd678" stroke="#fff" stroke-width="2"/></svg><div class="muzzle"></div><svg class="crack" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M230 300 L305 299 L378 277 L454 290 L528 275 M230 300 L326 320 L417 358 L517 362 L613 385 M230 300 L314 384 L394 472 L450 580 L494 695 M230 300 L238 390 L285 473 L261 571 L320 652 M230 300 L225 372 L202 443 L221 518 L190 588 M230 300 L171 367 L128 446 L77 519 L16 585 M230 300 L146 339 L57 368 L-26 410 L-105 459 M230 300 L120 297 L10 277 L-100 269 L-205 222 M230 300 L162 250 L78 231 L9 180 L-50 117 M230 300 L155 239 L100 157 L40 81 L-37 19 M230 300 L224 215 L215 130 L206 45 L188 -39 M230 300 L270 180 L320 64 L313 -70 L415 -171 M230 300 L322 209 L390 96 L477 0 L586 -76 M230 300 L304 241 L377 180 L448 117 L558 109 M270 304 L264 321 L252 334 L235 340 L217 338 L202 329 L192 314 L190 296 L196 279 L208 266 L225 260 L243 262 L258 271 L268 286 L270 304 M325 309 L311 350 L282 380 L242 394 L200 390 L164 368 L141 332 L135 291 L149 250 L178 220 L218 206 L260 210 L296 232 L319 268 L325 309"/><circle cx="230" cy="300" r="9"/></svg><div class="exec"><i class="av av-xl out" aria-hidden="true">${face(who, S.game?.region || 'mundo', !S.game?.players.find(p => p.name === who)?.ai)}</i><b class="exec-name">${esc(who)}</b><span class="exec-stamp">Eliminado</span>${why ? `<p class="exec-why">“${esc(why)}”</p>` : ''}</div>${wasBoss ? `<div class="tear-boss" aria-hidden="true"><div class="tb-half l">${portrait('hitler', P, R)}</div><div class="tb-half r">${portrait('hitler', P, R)}</div></div><div class="fate boss"><div class="rays"></div><div class="birds">${'<i></i>'.repeat(7)}</div><b class="exec-card boss">Era o ${W.boss}!</b><span>Os liberais chegam ao poder</span></div>` : `<div class="fate on"><i class="sweep"></i><b class="exec-card">Não era o ${W.boss}</b><span>O jogo continua</span></div>`}` : '';
   f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   freeze(who ? (wasBoss ? 4800 : 3600) : 900);   // D88: shorter; a tap skips it
   f.classList.toggle('tap', !!who); f.onclick = who ? () => { f.hidden = true; f.innerHTML = ''; ui.frozen = 0; } : null;
@@ -1051,7 +1058,7 @@ export function ballot(g: Game, e: Extract<Event, { k: 'vote' }>, elected: boole
   const danger = elected && g.players[e.chanc]?.role === 'hitler' && g.laws.F >= Core.HITLER_ZONE;
   const R = 112, seats = alive.map(i => {
     const a = -Math.PI / 2 + (2 * Math.PI * i) / n, ja = e.ja.includes(i), k = order.indexOf(i);
-    return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${450 + k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div><b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
+    return `<div class="b-seat${i === me ? ' me' : ''}" style="left:calc(50% + ${(R * Math.cos(a)).toFixed(0)}px);top:calc(50% + ${(R * Math.sin(a)).toFixed(0)}px)"><div class="b-card ${ja ? 'ja' : 'nein'}" style="animation-delay:${450 + k * gap}ms"><span>${ja ? '✔' : '✖'}<small>${ja ? W.ja : W.nein}</small></span></div>${av(g, i, 'm')}<b title="${esc(g.players[i].name)}">${esc(g.players[i].name.slice(0, 3).toUpperCase())}</b></div>`;
   }).join('');
   const el = document.createElement('div');
   el.className = `ballot${danger && !hold ? ' danger' : ''}${hold ? ' hold' : ''}`; el.id = 'ballot'; el.style.setProperty('--danger-at', `${450 + alive.length * gap + 200}ms`);
@@ -1095,7 +1102,7 @@ export function debateSheet(g: Game, at: number): void {
   if (!t || t.k !== 'talk') return;
   const me = solo(g), who = Core.debateNext(g, at), lines = t.deb || [];
   const stars = (i: number): string => g.players[i]?.ai ? ` <span class="lab">${'★'.repeat(Core.eloq(g, i))}${'☆'.repeat(3 - Core.eloq(g, i))} lábia</span>` : '';
-  const who_ = (i: number): string => `${name(g, i)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
+  const who_ = (i: number): string => `${av(g, i, 'm')}${name(g, i)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
   const proof = t.proof !== undefined ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about, t.by).find(x => x.at === t.proof) : undefined;
   const say = (i: number, text: string, tag: string): string => `<div class="dsay ${i === t.by ? 'acc' : 'def'}"><b>${who_(i)} · ${tag}${stars(i)}</b><p>“${esc(text)}”</p></div>`;
   const line = (k: number, tag: string): string => lines[k] ? say(lines[k].who, lines[k].text, tag) : '';
