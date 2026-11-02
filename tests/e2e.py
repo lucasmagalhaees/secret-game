@@ -221,6 +221,8 @@ with sync_playwright() as p:
     assert G()['pres'] == 0; nominate(2); votes(False); assert G()['pres'] == 2
     nominate(0); votes(True)
     g = G(); assert g['phase'] == 'over' and g['winner'] == 'F' and 'fascistas venceram' in txt('#phase')
+    # D85: the end waits for the elimination screen, so the confetti comes a beat later: wait for it, do not race it
+    pg.wait_for_function("document.querySelectorAll('#confetti i').length > 0", timeout=8000)
     assert pg.locator('#confetti i').count() > 0 and pg.locator('#phase .cheer svg.art').count() == 1, 'confetti and the winners cheering'
     assert pg.locator('#players .role').count() == 7 and 'Hitler' in txt('#players'), 'the roles are shown at the end'
     # D18: the end in tabs: the result first, the whole game and the record one tap away
