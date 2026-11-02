@@ -1,7 +1,7 @@
 import { Core } from '../core';
 import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, Role, Talk } from '../core';
 import type { EndTab } from './state';
-import { animalOf, portrait, seal } from './art';
+import { animalOf, face, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { thud } from './fx';
 import { S, ui } from './state';
@@ -160,7 +160,7 @@ const kd = (g: Game, i: number): string => {
 };
 /** D90: a small badge for each seat, its initials on a colour of its own (never the colour of a side): faces to tell
  *  the seats apart at a glance. */
-const av = (g: Game, i: number): string => { const n = g.players[i]?.name || '?', h = 30 + [...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 150, 7); return `<i class="av" style="--h:${h}" aria-hidden="true">${esc(n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</i>`; };
+const av = (g: Game, i: number): string => `<i class="av" aria-hidden="true">${face(g.players[i]?.name || '?', g.region || 'mundo', !g.players[i]?.ai)}</i>`;   // D92: a flat, faceless face
 const AI_TAG = '<small class="ai">IA</small>';
 /** What each level does, in a line (D10). */
 export const LEVEL: Record<Level, [string, string]> = {
@@ -281,7 +281,8 @@ function vGallery(): string {
   const back = '<button class="btn ghost block" data-act="gallery" id="galleryback">Voltar</button>';
   const cell = (r: Role, k: Pack, reg: Region, label: string): string => `<figure>${portrait(r, k, reg)}<figcaption><b>${label}</b>${animalOf(r, k, reg)}</figcaption></figure>`;
   const block = (reg: Region): string => `<section class="card gallery" id="gallery-${reg}"><span class="label">${Core.REGION_NAMES[reg]}</span>
-    ${Core.PACKS.map(k => `<p class="hint">${Core.WORDS[k].theme}</p><div class="cast">${cell('liberal', k, reg, 'Liberal')}${cell('fascista', k, reg, Core.WORDS[k].F)}${cell('hitler', k, reg, Core.WORDS[k].boss)}</div>`).join('')}</section>`;
+    ${Core.PACKS.map(k => `<p class="hint">${Core.WORDS[k].theme}</p><div class="cast">${cell('liberal', k, reg, 'Liberal')}${cell('fascista', k, reg, Core.WORDS[k].F)}${cell('hitler', k, reg, Core.WORDS[k].boss)}</div>`).join('')}
+    <p class="hint">Rostos da mesa</p><div class="faces">${[...new Set([...Core.NAMES_BY.fascismo[reg], ...Core.NAMES_BY.comunismo[reg]])].map(n => `<figure>${face(n, reg)}<figcaption>${esc(n)}</figcaption></figure>`).join('')}</div></section>`;   // D92
   return `<section class="card" id="gallery"><span class="label">Todos os desenhos</span><p class="hint">Cada continente com os bichos dos dois temas. O de cima é o do jogo original.</p>${back}</section>${Core.REGIONS.filter(r => r !== 'brasil' || S.dlc).map(block).join('')}<section class="card">${back}</section>`;
 }
 function vRules(): string {
