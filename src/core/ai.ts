@@ -138,6 +138,21 @@ const saidAgainst = (v: View, i: number): boolean => {
   for (let k = v.hist.length - 1; k >= 0; k--) { const e = v.hist[k]; if (e.k === 'gov' || e.k === 'veto' || e.k === 'chaos') { from = k + 1; break; } }
   return v.hist.slice(from).some(e => e.k === 'talk' && e.by === v.me && e.say === 'acc' && e.about === i);
 };
+/** D91: "pass two liberals early, then put the leader in as chancellor" is the oldest trick of the hidden side. From the
+ *  danger zone on, the levels that read the long game (difícil, extremo) only trust as chancellor someone who proved
+ *  itself after the game heated up (a liberal law passed in its government from the 2nd law of the hidden side on) or
+ *  whom a credible investigation said is liberal; early liberal laws alone are what the trick looks like. Not with
+ *  the chaos one rejection away: that would hand the hidden side a law. */
+export const LATE_FROM = 2;
+const provedLate = (v: View, i: number): boolean => {
+  let F = 0;
+  for (const e of v.hist) {
+    if ((e.k === 'gov' || e.k === 'chaos') && e.law === 'F') F++;
+    else if (e.k === 'gov' && e.law === 'L' && F >= LATE_FROM && (e.pres === i || e.chanc === i)) return true;
+  }
+  return v.hist.some(e => e.k === 'inv' && e.target === i && e.said === 'L' && credible(v, e.by, i));
+};
+const unproven = (v: View, i: number): boolean => AI[v.level].plan && v.laws.F >= HITLER_ZONE && v.tracker < TRACKER_MAX - 1 && i !== v.me && !provedLate(v, i);
 export const EARLY_CLEAN: Record<Level, number> = { facil: 0, medio: 0.1, dificil: 0.3, extremo: 0.35 };
 /** What the levels that read the long game see in a nomination (D22): a fascist president who knows its team picks a
  *  teammate for chancellor this many times more often than chance would. */
@@ -508,6 +523,10 @@ function liberalJa(v: View, b: Beliefs): boolean {
     why(`Já há ${HITLER_ZONE} leis {fs}: eleger o {boss} chanceler perde o jogo. A chance de ${P(gov[1])} ser o {boss} é ${pc(b.pH[gov[1]])}, acima do limite do nível (${pc(k.wary)}): {nein}`);
     return false;
   }
+  if (unproven(v, gov[1])) {
+    why(`Já há ${HITLER_ZONE} leis {fs} e ${P(gov[1])} nunca provou nada depois que o jogo esquentou: lei liberal no começo é o disfarce mais velho do {boss}. {nein}`);
+    return false;
+  }
   if (gov[1] !== v.me && barred(v, gov[1])) {
     why(`A mesa aceitou a acusação com várias provas contra ${P(gov[1])}, e a mesa está perto das ${HITLER_ZONE} leis {fs}: {nein}`);
     return false;
@@ -749,7 +768,7 @@ function liberal(v: View, rand: () => number): number {
       return govRisk + leaderLoss + chaos + rejection - learning;
     };
     const pick = requests(v, b, 'pick'), avoid = requests(v, b, 'avoid'), base = score;
-    const scored = (i: number): number => base(i) - pick(i) + avoid(i) + ((zone && dirtyIn(v, i)) || barred(v, i) ? 10 : 0);   // D66: what the table asked; D75: never a dirty chancellor in the zone
+    const scored = (i: number): number => base(i) - pick(i) + avoid(i) + ((zone && dirtyIn(v, i)) || barred(v, i) ? 10 : 0) + (unproven(v, i) ? 3 : 0);   // D91   // D66: what the table asked; D75: never a dirty chancellor in the zone
     rows(b, o, scored);
     why(strategic
       ? `Comparou governos completos: risco de ter alguém do lado escondido, ${zone ? 'risco imediato de eleger o {boss}' : 'informação que uma nova rodada pode revelar'}${v.tracker === TRACKER_MAX - 1 ? ' e perigo de chegar ao caos' : ''}. Considerou a maioria dos votos e a próxima presidência. Escolheu o menor risco estratégico.`
