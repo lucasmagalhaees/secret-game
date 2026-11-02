@@ -468,3 +468,171 @@ const SEALS: Record<'L' | 'F' | 'C', string> = {
   C: '<path fill="currentColor" stroke-width="1.5" d="M15.4 41A21 21 0 1 1 52.6 41L48.4 35A14 14 0 1 0 24 34z"/><path d="M18 39 9 52" stroke-width="6" stroke-linecap="round"/><path class="sk" d="M51 53 23 25" stroke-width="6.5" stroke-linecap="round"/><path d="M51 53 23 25" stroke-width="5" stroke-linecap="round"/><g transform="rotate(-45 21 23)"><rect class="sk" x="9" y="18" width="24" height="10" fill="currentColor" stroke-width="2.5"/></g>'
 };
 export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="glyph seal-${p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F'}" viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">${SEALS[p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F']}</svg>`;
+
+/* D92: a face for each seat, flat and faceless (no eyes, no mouth: just the shape of a person), dressed the way people
+ * dress where the names come from: coats, scarves and fur hats in Europe; bright patterned cloth, caps and head wraps in
+ * Africa; ponchos, woven bands and wide hats in the Americas; high collars in Asia; flowered shirts and sun hats in
+ * Oceania. Chosen by the name, always the same for a name, and never by the role. Drawn here: no outside art. */
+/** D92: some names get the dress of their own country: the Russians the fur hat and coat; the leaders of Arab
+ *  countries the keffiyeh and the white robe; Khomeini the cleric's turban. */
+const RUSSIAN = new Set(['Lenin', 'Trotsky', 'Gorbachev', 'Putin']);
+const ARAB = new Set(['Gaddafi', 'Nasser', 'Mubarak', 'Saddam Hussein', 'Bin Laden']);
+const CLERIC = new Set(['Khomeini']);
+const FEMALE = new Set(['Thatcher', 'Merkel', 'Rainha Vitória', 'Rainha Elizabeth', 'Cleópatra', 'Nefertiti', 'Dilma', 'Manuela']);
+const SKINS: Record<string, string[]> = {
+  europa: ['#f3cfb0', '#ecc19c', '#e0ad86'], africa: ['#8a5634', '#6e4126', '#a8693f', '#5a3420'], americas: ['#c68a5d', '#d9a27a', '#a8693f', '#f0c8a6', '#7a4a2a'],
+  asia: ['#ecc79f', '#e3b88b', '#c99566'], oceania: ['#e9be98', '#9c6440', '#c68a5d'], brasil: ['#f0c8a6', '#c68a5d', '#8a5634', '#a8693f'], mundo: ['#f0c8a6', '#c68a5d', '#8a5634', '#e3b88b']
+};
+const CLOTH: Record<string, string[]> = {
+  europa: ['#3b4a63', '#5a3b2e', '#2f4f4f', '#6b2d2d'], africa: ['#d35400', '#1e8449', '#c0392b', '#7d3c98', '#d4ac0d'], americas: ['#a0522d', '#2e86ab', '#8e44ad', '#c0392b'],
+  asia: ['#1f3a5f', '#8b1e3f', '#2d6a4f', '#3d3d3d'], oceania: ['#16a085', '#e67e22', '#2980b9', '#c0392b'], brasil: ['#f1c40f', '#27ae60', '#2980b9', '#e74c3c'], mundo: ['#2f6690', '#5a3b2e', '#6b4f8a', '#556b2f']
+};
+const HAIR = ['#1a1310', '#2a1d15', '#4a3020', '#7a5a3a', '#9a9a9a'];
+const hashOf = (s: string): number => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+/* D92: the famous ones get their own look: an outfit made of parts (the body, what goes behind the head, the hat or
+ * hair, extras), still faceless. Historical figures in the dress of their time; modern leaders in what they wore. */
+type Look = { skin?: string; body: string; back?: string; top: string; extra?: string[] };
+const FK = 'stroke="#15110e" stroke-width="2.5" stroke-linejoin="round"';
+const BODY: Record<string, string> = {
+  suit: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#2c3440" ${FK}/><path d="M26 45l6 8 6-8" fill="#f2efe6" ${FK}/>`,
+  suitblue: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#1f3a5f" ${FK}/><path d="M26 45l6 8 6-8" fill="#f2efe6" ${FK}/>`,
+  military: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#4b5320" ${FK}/><path d="M32 46v18" stroke="#15110e" stroke-width="2"/><circle cx="35" cy="52" r="1.3" fill="#d4ac0d"/><circle cx="35" cy="58" r="1.3" fill="#d4ac0d"/>`,
+  imperial: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#1f2f5f" ${FK}/><path d="M9 52c3-4 7-6 11-6l-1 5c-4 0-7 1-10 3zM55 52c-3-4-7-6-11-6l1 5c4 0 7 1 10 3z" fill="#d4ac0d" ${FK}/><path d="M26 44l6 6 6-6v4l-6 6-6-6z" fill="#f2efe6" ${FK}/>`,
+  toga: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#f2efe6" ${FK}/><path d="M18 47c8 4 18 10 26 17h-8C30 58 24 53 16 50z" fill="#8b1e3f" ${FK}/>`,
+  egypt: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#f2efe6" ${FK}/><path d="M14 50c5-5 11-7 18-7s13 2 18 7l-3 6c-4-3-9-5-15-5s-11 2-15 5z" fill="#d4ac0d" ${FK}/><path d="M17 52c4-3 9-4 15-4s11 1 15 4" fill="none" stroke="#1f6fb2" stroke-width="2.5"/>`,
+  mongol: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#7a3b2e" ${FK}/><path d="M24 45l16 19" stroke="#d4ac0d" stroke-width="3"/>`,
+  assyrian: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#8b1e3f" ${FK}/><path d="M10 58h44" stroke="#d4ac0d" stroke-width="3" stroke-dasharray="3 2"/>`,
+  hanfu: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#2d4a6b" ${FK}/><path d="M24 45l12 19M40 45 30 58" stroke="#f2efe6" stroke-width="3"/>`,
+  carthage: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#9a7b4f" ${FK}/><path d="M6 64c2-8 6-14 12-17l4 17zM58 64c-2-8-6-14-12-17l-4 17z" fill="#8b1e3f" ${FK}/>`,
+  shawl: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#f2efe6" ${FK}/><path d="M12 54c8-6 22-8 34-2l4 12H8z" fill="#e8e1cf" ${FK}/>`,
+  maosuit: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#5b6260" ${FK}/><path d="M26 43h12v5c-4 2-8 2-12 0zM32 48v16" fill="#5b6260" ${FK}/>`,
+  fatigue: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#556b2f" ${FK}/><path d="M24 45l8 7 8-7" fill="#556b2f" ${FK}/>`,
+  gown: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#2a2a3a" ${FK}/><path d="M24 46c5 3 11 3 16 0" fill="none" stroke="#f2efe6" stroke-width="2.5" stroke-dasharray="1.5 2.5"/>`,
+  blazer: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#c0392b" ${FK}/><path d="M27 45l5 6 5-6" fill="#f2efe6" ${FK}/>`,
+  regal: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#5b2c6f" ${FK}/><path d="M12 56c6-4 13-6 20-6s14 2 20 6" fill="none" stroke="#f2efe6" stroke-width="4" stroke-dasharray="1 3"/><path d="M22 46l20 18" stroke="#1f6fb2" stroke-width="3"/>`
+};
+const TOP: Record<string, string> = {
+  short: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#2a1d15" ${FK}/>`,
+  grey: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#b8b8b8" ${FK}/>`,
+  blond: `<path d="M20 25c0-9 6-14 12-14s13 3 13 12c-6-3-14-4-25 2z" fill="#e8c26a" ${FK}/>`,
+  bald: `<path d="M21 24c1-5 5-9 11-9s10 4 11 9" fill="none" stroke="#15110e" stroke-width="1.5" opacity=".5"/>`,
+  laurel: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#3a2a1a" ${FK}/><path d="M19 22c4-5 9-7 13-7s9 2 13 7" fill="none" stroke="#3f8f3f" stroke-width="4" stroke-dasharray="3 1.5"/>`,
+  bicorne: `<path d="M10 20c6-9 15-13 22-13s16 4 22 13c-6-2-14-3-22-3s-16 1-22 3z" fill="#15110e" ${FK}/><circle cx="32" cy="12" r="2.5" fill="#c0392b"/>`,
+  nemes: `<path d="M18 22c0-10 6-15 14-15s14 5 14 15l4 22c-4 1-7 0-9-3l-1-14H24l-1 14c-2 3-5 4-9 3z" fill="#d4ac0d" ${FK}/><path d="M20 14h24M19 19h26M47 26l2 10M17 26l-2 10" stroke="#1f6fb2" stroke-width="2.5"/>`,
+  egyptcrown: `<path d="M20 20 18 3h28l-2 17c-3-2-7-3-12-3s-9 1-12 3z" fill="#1f6fb2" ${FK}/><path d="M19 13h26" stroke="#d4ac0d" stroke-width="3"/>`,
+  bob: `<path d="M18 28c0-11 7-16 14-16s14 5 14 16v12h-6V24H24v16h-6z" fill="#15110e" ${FK}/><path d="M20 18h24" stroke="#d4ac0d" stroke-width="3"/>`,
+  helmet: `<path d="M19 24c0-9 6-14 13-14s13 5 13 14v4h-5v-6H24v6h-5z" fill="#b08d57" ${FK}/><path d="M24 10c2-6 14-6 16 0l-8 2z" fill="#c0392b" ${FK}/>`,
+  mongol: `<path d="M17 22c2-3 8-5 15-5s13 2 15 5l-2 4c-3-2-8-3-13-3s-10 1-13 3z" fill="#8a7458" ${FK}/><path d="M22 18c0-7 4-12 10-14 6 2 10 7 10 14z" fill="#7a3b2e" ${FK}/>`,
+  assyrian: `<path d="M21 21 23 5h18l2 16c-3-2-7-3-11-3s-8 1-11 3z" fill="#f2efe6" ${FK}/><path d="M22 12h20" stroke="#d4ac0d" stroke-width="2.5"/>`,
+  scholar: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#b8b8b8" ${FK}/><path d="M23 15V7h18v8z" fill="#15110e" ${FK}/><path d="M19 15h26" stroke="#15110e" stroke-width="3"/>`,
+  crown: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#b8b8b8" ${FK}/><path d="M23 15l-1-8 5 4 5-6 5 6 5-4-1 8z" fill="#d4ac0d" ${FK}/>`,
+  tophat: `<path d="M23 15V1h18v14z" fill="#15110e" ${FK}/><path d="M17 16h30v3H17z" fill="#15110e" ${FK}/>`,
+  tricorne: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13" fill="#e8e1cf" ${FK}/><path d="M14 18c6-8 12-10 18-10s12 2 18 10l-7 2c-3-2-7-3-11-3s-8 1-11 3z" fill="#15110e" ${FK}/>`,
+  homburg: `<path d="M22 18c0-7 4-10 10-10s10 3 10 10z" fill="#2c2c2c" ${FK}/><path d="M17 18h30v3H17z" fill="#2c2c2c" ${FK}/>`,
+  peaked: `<path d="M19 18c0-6 6-9 13-9s13 3 13 9z" fill="#4b5320" ${FK}/><path d="M20 18h24v3H20z" fill="#4b5320" ${FK}/><path d="M22 21h20l-3 3H25z" fill="#15110e"/><circle cx="32" cy="14" r="2" fill="#d4ac0d"/>`,
+  peakedblue: `<path d="M19 18c0-6 6-9 13-9s13 3 13 9z" fill="#1f2f5f" ${FK}/><path d="M20 18h24v3H20z" fill="#1f2f5f" ${FK}/><path d="M22 21h20l-3 3H25z" fill="#15110e"/><circle cx="32" cy="14" r="2" fill="#d4ac0d"/>`,
+  beret: `<path d="M18 19c2-6 8-9 15-8s12 4 12 9c-8 1-18 1-27-1z" fill="#15110e" ${FK}/><path d="M30 13l1.5 3 3 .5-2 2 .5 3-3-1.5-3 1.5.5-3-2-2 3-.5z" fill="#d4ac0d"/>`,
+  redberet: `<path d="M18 19c2-6 8-9 15-8s12 4 12 9c-8 1-18 1-27-1z" fill="#c0392b" ${FK}/>`,
+  fatigue: `<path d="M20 20c0-7 5-10 12-10s12 3 12 10z" fill="#556b2f" ${FK}/><path d="M30 20h18l-2 3H30z" fill="#556b2f" ${FK}/>`,
+  maocap: `<path d="M19 18c0-6 6-9 13-9s13 3 13 9z" fill="#5b6260" ${FK}/><path d="M20 18h24v3H20z" fill="#5b6260" ${FK}/><path d="M22 21h20l-3 3H25z" fill="#15110e"/><circle cx="32" cy="14" r="2" fill="#c0392b"/>`,
+  sides: `<path d="M21 22c0-7 5-10 11-10s11 3 11 10c-4-2-7-3-11-3s-7 1-11 3z" fill="#15110e" ${FK}/>`,
+  long: `<path d="M21 25c1-8 5-12 11-12s10 4 11 12c-5-1-9-4-11-7-2 3-6 6-11 7z" fill="#5a3a22" ${FK}/>`
+};
+const BACK: Record<string, string> = { longhair: `<path d="M17 28c0-12 8-17 15-17s15 5 15 17v16c-4 2-8 2-10 0H27c-2 2-6 2-10 0z" fill="#b8b8b8" ${FK}/>`, veil: `<path d="M16 26c0-12 8-17 16-17s16 5 16 17l2 22c-6 2-11 1-14-3l-1-15H27l-1 15c-3 4-8 5-14 3z" fill="#2a2a3a" ${FK}/>` };
+const EXTRA: Record<string, string> = {
+  glasses: '<circle cx="27" cy="28" r="3.2" fill="none" stroke="#15110e" stroke-width="1.8"/><circle cx="37" cy="28" r="3.2" fill="none" stroke="#15110e" stroke-width="1.8"/><path d="M30 28h4" stroke="#15110e" stroke-width="1.8"/>',
+  beard: '<path d="M21 31c1 8 5 11 11 11s10-3 11-11c-3 3-7 4-11 4s-8-1-11-4z" fill="#2a1d15" stroke="#15110e" stroke-width="2"/>',
+  greybeard: '<path d="M21 31c1 8 5 11 11 11s10-3 11-11c-3 3-7 4-11 4s-8-1-11-4z" fill="#b8b8b8" stroke="#15110e" stroke-width="2"/>',
+  chinbeard: '<path d="M22 34c2 5 5 8 10 8s8-3 10-8" fill="none" stroke="#2a1d15" stroke-width="4"/>',
+  longbeard: '<path d="M22 32c0 10 4 16 10 18 6-2 10-8 10-18-3 3-6 4-10 4s-7-1-10-4z" fill="#15110e" stroke="#15110e" stroke-width="2"/><path d="M26 38h12M27 43h10" stroke="#3a3a3a" stroke-width="1.5"/>',
+  mustache: '<path d="M26 33c2-1 4-1 6 0 2-1 4-1 6 0" fill="none" stroke="#15110e" stroke-width="2.5"/>',
+  tie: '<path d="M30 49h4l1 15h-6z" fill="#c0392b" stroke="#15110e" stroke-width="1.5"/>',
+  bluetie: '<path d="M30 49h4l1 15h-6z" fill="#1f6fb2" stroke="#15110e" stroke-width="1.5"/>',
+  bowtie: '<path d="M27 47l5 2 5-2v5l-5-2-5 2z" fill="#1f6fb2" stroke="#15110e" stroke-width="1.5"/>',
+  pearls: '<path d="M24 47c5 3 11 3 16 0" fill="none" stroke="#f2efe6" stroke-width="3" stroke-dasharray="1 2"/>'
+};
+const LOOKS: Record<string, Look> = {
+  'Júlio César': { body: 'toga', top: 'laurel' }, 'Napoleão': { body: 'imperial', top: 'bicorne' },
+  'Cleópatra': { skin: '#c99566', body: 'egypt', top: 'bob' }, 'Nefertiti': { skin: '#a8693f', body: 'egypt', top: 'egyptcrown' },
+  'Ramsés': { skin: '#a8693f', body: 'egypt', top: 'nemes' }, 'Tutancâmon': { skin: '#a8693f', body: 'egypt', top: 'nemes' },
+  'Aníbal': { skin: '#c68a5d', body: 'carthage', top: 'helmet', extra: ['beard'] }, 'Gengis Khan': { skin: '#e3b88b', body: 'mongol', top: 'mongol', extra: ['chinbeard'] },
+  'Tiglate-Pileser': { skin: '#c99566', body: 'assyrian', top: 'assyrian', extra: ['longbeard'] }, 'Confúcio': { skin: '#ecc79f', body: 'hanfu', top: 'scholar', extra: ['greybeard'] },
+  'Imperador Meiji': { skin: '#ecc79f', body: 'imperial', top: 'peakedblue', extra: ['beard'] }, 'Haile Selassie': { skin: '#6e4126', body: 'military', top: 'peaked', extra: ['beard'] },
+  'Rainha Vitória': { body: 'gown', back: 'veil', top: 'crown' }, 'Rainha Elizabeth': { body: 'regal', top: 'crown', extra: ['pearls'] },
+  'Lincoln': { body: 'suit', top: 'tophat', extra: ['chinbeard', 'bowtie'] }, 'Washington': { body: 'imperial', top: 'tricorne' },
+  'Churchill': { body: 'suit', top: 'homburg', extra: ['bowtie'] }, 'Gandhi': { skin: '#a8693f', body: 'shawl', top: 'bald', extra: ['glasses'] },
+  'Netanyahu': { body: 'suitblue', top: 'grey', extra: ['bluetie'] }, 'Obama': { skin: '#7a4a2a', body: 'suitblue', top: 'short', extra: ['bluetie'] },
+  'Kennedy': { body: 'suit', top: 'long', extra: ['tie'] }, 'Trump': { body: 'suitblue', top: 'blond', extra: ['tie'] }, 'Biden': { body: 'suitblue', top: 'grey', extra: ['bluetie'] },
+  'Clinton': { body: 'suit', top: 'grey', extra: ['tie'] }, 'Bush': { body: 'suit', top: 'grey', extra: ['tie'] }, 'Nixon': { body: 'suit', top: 'short', extra: ['tie'] },
+  'Reagan': { body: 'suit', top: 'short', extra: ['tie'] }, 'Roosevelt': { body: 'suit', top: 'grey', extra: ['glasses', 'tie'] }, 'Truman': { body: 'suit', top: 'grey', extra: ['glasses', 'bowtie'] },
+  'Macron': { body: 'suitblue', top: 'short', extra: ['bluetie'] }, 'Merkel': { body: 'blazer', top: 'long' }, 'Thatcher': { body: 'suitblue', back: 'longhair', top: 'grey', extra: ['pearls'] },
+  'Mao': { skin: '#ecc79f', body: 'maosuit', top: 'maocap' }, 'Xi Jinping': { skin: '#ecc79f', body: 'suit', top: 'short', extra: ['tie'] }, 'Kim Jong-un': { skin: '#ecc79f', body: 'maosuit', top: 'sides' },
+  'Kim Il-sung': { skin: '#ecc79f', body: 'maosuit', top: 'short' }, 'Pol Pot': { skin: '#c99566', body: 'maosuit', top: 'short' }, 'Nehru': { skin: '#a8693f', body: 'shawl', top: 'scholar' },
+  'Hirohito': { skin: '#ecc79f', body: 'military', top: 'peaked', extra: ['glasses', 'mustache'] }, 'Tojo': { skin: '#ecc79f', body: 'military', top: 'peaked', extra: ['glasses', 'mustache'] },
+  'Fidel': { skin: '#e0ad86', body: 'fatigue', top: 'fatigue', extra: ['beard'] }, 'Che': { skin: '#e0ad86', body: 'fatigue', top: 'beret', extra: ['beard'] }, 'Chávez': { skin: '#a8693f', body: 'fatigue', top: 'redberet' },
+  'Marulanda': { skin: '#a8693f', body: 'fatigue', top: 'fatigue', extra: ['mustache'] },
+  'Mussolini': { body: 'military', top: 'bald' }, 'Franco': { body: 'military', top: 'peaked', extra: ['mustache'] }, 'Pinochet': { body: 'military', top: 'peaked', extra: ['mustache'] },
+  'Perón': { body: 'military', top: 'peaked' }, 'Médici': { body: 'military', top: 'peaked' }, 'Geisel': { body: 'military', top: 'peaked' }, 'Castelo Branco': { body: 'military', top: 'peaked' },
+  'Figueiredo': { body: 'military', top: 'peaked' }, 'Ustra': { body: 'military', top: 'peaked' }, 'Salazar': { body: 'suit', top: 'grey', extra: ['tie'] },
+  'Lula': { body: 'suit', top: 'grey', extra: ['greybeard', 'tie'] }, 'Enéas': { body: 'suit', top: 'bald', extra: ['longbeard', 'glasses'] }, 'Getúlio': { body: 'suit', top: 'grey', extra: ['tie'] },
+  'JK': { body: 'suit', top: 'short', extra: ['tie'] }, 'FHC': { body: 'suit', top: 'grey', extra: ['tie'] }, 'Mandela': { skin: '#6e4126', body: 'mongol', top: 'grey' },
+  'Kofi Annan': { skin: '#6e4126', body: 'suit', top: 'grey', extra: ['greybeard', 'tie'] }, 'Lenin': { body: 'suit', top: 'bald', extra: ['beard', 'tie'] }, 'Trotsky': { body: 'suit', top: 'grey', extra: ['glasses', 'beard'] }
+};
+function famous(nameOf: string, skin0: string): string | null {
+  const l = LOOKS[nameOf];
+  if (!l) return null;
+  const skin = l.skin || skin0;
+  return `<svg class="face" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#2b241f"/>${BODY[l.body] || BODY.suit}<path d="M27 40h10v7c-3 2-7 2-10 0z" fill="${skin}" stroke="#15110e" stroke-width="2"/>${l.back ? BACK[l.back] : ''}<ellipse cx="32" cy="28" rx="11" ry="13" fill="${skin}" ${FK}/>${(l.extra || []).filter(x => x.includes('beard') || x === 'mustache').map(x => EXTRA[x]).join('')}${TOP[l.top] || TOP.short}${(l.extra || []).filter(x => !(x.includes('beard') || x === 'mustache')).map(x => EXTRA[x]).join('')}</svg>`;
+}
+const faceCache = new Map<string, string>();
+/** D92: drawn once per name, then taken from memory: the screen is repainted often. */
+export function face(nameOf: string, region = 'mundo', me = false): string {
+  const key = `${nameOf}|${region}|${me ? 1 : 0}`, hit = faceCache.get(key);
+  if (hit) return hit;
+  const out = drawFace(nameOf, region, me);
+  faceCache.set(key, out);
+  return out;
+}
+function drawFace(nameOf: string, region = 'mundo', me = false): string {
+  const known = me ? null : famous(nameOf, '#e0ad86');
+  if (known) return known;
+  const h = hashOf(nameOf), pick = <T>(xs: T[], k: number): T => xs[(h >>> k) % xs.length];
+  const reg0 = region === 'mundo' ? pick(['europa', 'africa', 'americas', 'asia', 'oceania'], 3) : region, fem = FEMALE.has(nameOf);
+  const own = RUSSIAN.has(nameOf) ? 'russo' : ARAB.has(nameOf) ? 'arabe' : CLERIC.has(nameOf) ? 'clerigo' : '', reg = own === 'russo' ? 'europa' : own ? 'asia' : reg0;
+  const skin = pick(SKINS[reg] || SKINS.mundo, 1), cloth = me ? '#5b5b5b' : pick(CLOTH[reg] || CLOTH.mundo, 5), hair = pick(HAIR, 9), alt = pick(CLOTH[reg] || CLOTH.mundo, 13);
+  const id = `fp${h.toString(36)}`, S = 'stroke="#15110e" stroke-width="2.5" stroke-linejoin="round"';
+  const v = own === 'russo' ? 0 : (h >>> 17) % 3, out: string[] = ['<circle cx="32" cy="32" r="31" fill="#2b241f"/>'];
+  // the pattern of the cloth, by region
+  const pat = reg === 'africa' ? `<pattern id="${id}" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="${cloth}"/><path d="M0 8 4 2 8 8" fill="none" stroke="${alt}" stroke-width="2"/><circle cx="4" cy="1.5" r="1" fill="#f7e9c4"/></pattern>`
+    : reg === 'americas' ? `<pattern id="${id}" width="64" height="7" patternUnits="userSpaceOnUse"><rect width="64" height="7" fill="${cloth}"/><rect y="3" width="64" height="2" fill="${alt}"/><path d="M0 3 2 1 4 3 6 1 8 3" stroke="#f7e9c4" stroke-width="1" fill="none"/></pattern>`
+    : reg === 'oceania' ? `<pattern id="${id}" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="${cloth}"/><circle cx="3" cy="3" r="2" fill="#f7e9c4"/><circle cx="8" cy="8" r="1.5" fill="${alt}"/></pattern>` : '';
+  if (pat) out.push(`<defs>${pat}</defs>`);
+  const fill = own === 'arabe' ? '#f2efe6' : own === 'clerigo' ? '#3a3a3a' : pat ? `url(#${id})` : cloth;
+  if (own === 'arabe') out.push(`<defs><pattern id="${id}k" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#f2efe6"/><path d="M0 0h3v3H0zM3 3h3v3H3z" fill="#b8322a"/></pattern></defs>`);
+  if (reg === 'americas' && v === 0 && !fem) out.push(`<path d="M4 64 16 44h32l12 20z" fill="${fill}" ${S}/>`);   // a poncho
+  else out.push(`<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="${fill}" ${S}/>`);
+  out.push(`<path d="M27 40h10v7c-3 2-7 2-10 0z" fill="${skin}" stroke="#15110e" stroke-width="2"/>`);
+  // collars
+  if (reg === 'europa') out.push(v === 1 ? `<path d="M22 44c6 5 14 5 20 0l1 5c-7 5-15 5-22 0z" fill="${alt}" ${S}/>` : `<path d="M14 50c6-5 12-6 18-6s12 1 18 6l-4 4c-4-3-9-4-14-4s-10 1-14 4z" fill="#d8c4a0" ${S}/>`);
+  if (reg === 'asia' && !own) out.push(`<path d="M25 42h14v5c-4 2-10 2-14 0z" fill="${cloth}" ${S}/><path d="M32 47v17" stroke="#15110e" stroke-width="2"/>`);
+  if (own === 'arabe' || own === 'clerigo') out.push(`<path d="M28 46l4 6 4-6" fill="none" stroke="#15110e" stroke-width="2"/>`);
+  if (own === 'clerigo') out.push(`<path d="M14 64c2-10 6-16 10-19l8 19zM50 64c-2-10-6-16-10-19l-8 19z" fill="#2a2420" ${S}/>`);
+  if (reg === 'africa' && v !== 0) out.push(`<path d="M23 45c5 4 13 4 18 0" fill="none" stroke="#f1c40f" stroke-width="3"/><path d="M23 45c5 4 13 4 18 0" fill="none" stroke="#15110e" stroke-width="1" stroke-dasharray="2 2"/>`);
+  if (reg === 'brasil' || reg === 'mundo') out.push(`<path d="M26 45l6 7 6-7" fill="none" stroke="#15110e" stroke-width="2"/>`);
+  // long hair goes behind the head
+  if (fem && !(reg === 'africa' && v !== 2)) out.push(`<path d="M17 28c0-12 8-17 15-17s15 5 15 17v16c-4 2-8 2-10 0H27c-2 2-6 2-10 0z" fill="${hair}" ${S}/>`);
+  if (own === 'arabe') out.push(`<path d="M17 22c0-9 7-14 15-14s15 5 15 14l3 24c-5 2-9 1-12-2V30H26v14c-3 3-7 4-12 2z" fill="url(#${id}k)" ${S}/>`);
+  out.push(`<ellipse cx="32" cy="28" rx="11" ry="13" fill="${skin}" ${S}/>`);
+  // hair and hats
+  const short = `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="${hair}" ${S}/>`;
+  const fringe = `<path d="M21 25c1-8 5-12 11-12s10 4 11 12c-5-1-9-4-11-7-2 3-6 6-11 7z" fill="${hair}" ${S}/>`;
+  if (own === 'arabe') out.push(`<path d="M19 21c0-8 6-12 13-12s13 4 13 12c-4-2-9-3-13-3s-9 1-13 3z" fill="url(#${id}k)" ${S}/><path d="M19 15c4-2 22-2 26 0" fill="none" stroke="#15110e" stroke-width="3.5"/>`);
+  else if (own === 'clerigo') out.push(`<path d="M18 20c0-9 6-14 14-14s14 5 14 14c-4-3-9-4-14-4s-10 1-14 4z" fill="#15110e" ${S}/><path d="M20 15c6-3 18-3 24 0" fill="none" stroke="#3a3a3a" stroke-width="1.5"/>`);
+  else if (reg === 'europa') out.push(own === 'russo' ? `<path d="M14 23c0-11 8-17 18-17s18 6 18 17v10c0 3-6 3-6 0v-9c-3-2-7-3-12-3s-9 1-12 3v9c0 3-6 3-6 0z" fill="#8a7458" ${S}/><path d="M21 13c2-4 6-6 11-6s9 2 11 6c-3-1-7-2-11-2s-8 1-11 2z" fill="#4a3a2a" stroke="#15110e" stroke-width="1.5"/><circle cx="32" cy="9" r="1.8" fill="#c0392b"/>` : v === 0 && !fem ? `<path d="M22 19c0-7 4-10 10-10s10 3 10 10z" fill="#222" ${S}/><path d="M17 19h30v3H17z" fill="#222" ${S}/>` : fem ? fringe : v === 1 ? `<path d="M20 20c2-6 7-8 13-8s10 2 11 6c-6 2-15 3-24 2z" fill="${alt}" ${S}/><circle cx="33" cy="11" r="1.6" fill="#15110e"/>` : short);
+  else if (reg === 'africa') out.push(fem ? `<path d="M18 22c0-9 6-14 14-14s14 5 14 14c-2 0-3-2-5-2-3 2-15 2-18 0-2 0-3 2-5 2z" fill="${fill}" ${S}/><path d="M38 9c5-1 9 2 9 6-3-1-6-1-9 0z" fill="${alt}" ${S}/>` : v === 0 ? short : `<path d="M21 20c0-6 5-8 11-8s11 2 11 8z" fill="${fill}" ${S}/>`);
+  else if (reg === 'americas') out.push(v === 1 ? `<path d="M14 21h36v3H14z" fill="#8b5a2b" ${S}/><path d="M22 21c0-7 4-10 10-10s10 3 10 10z" fill="#8b5a2b" ${S}/>` : `${fem ? fringe : short}<path d="M20 22h24v4H20z" fill="url(#${id})" ${S}/>`);
+  else if (reg === 'asia') out.push(fem ? `${fringe}<circle cx="32" cy="12" r="4.5" fill="${hair}" ${S}/><path d="M26 10 40 13" stroke="#c0392b" stroke-width="2"/>` : v === 2 ? `<path d="M20 21c0-7 5-10 12-10s12 3 12 10z" fill="#3d3d3d" ${S}/><path d="M18 21h28v3H18z" fill="#3d3d3d" ${S}/>` : short);
+  else if (reg === 'oceania') out.push(v !== 2 ? `<path d="M15 23c3-2 8-3 17-3s14 1 17 3l-2 3c-4-1-9-2-15-2s-11 1-15 2z" fill="#d8b66a" ${S}/><path d="M22 21c0-7 4-10 10-10s10 3 10 10z" fill="#d8b66a" ${S}/>` : fem ? fringe : short);
+  else out.push(fem ? fringe : v === 0 ? `<path d="M20 22c0-8 5-11 12-11s12 3 12 11z" fill="${alt}" ${S}/><path d="M30 22h20l-2 3H30z" fill="${alt}" ${S}/>` : short);
+  return `<svg class="face" viewBox="0 0 64 64" aria-hidden="true">${out.join('')}</svg>`;
+}
