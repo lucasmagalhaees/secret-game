@@ -489,7 +489,104 @@ const CLOTH: Record<string, string[]> = {
 };
 const HAIR = ['#1a1310', '#2a1d15', '#4a3020', '#7a5a3a', '#9a9a9a'];
 const hashOf = (s: string): number => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+/* D92: the famous ones get their own look: an outfit made of parts (the body, what goes behind the head, the hat or
+ * hair, extras), still faceless. Historical figures in the dress of their time; modern leaders in what they wore. */
+type Look = { skin?: string; body: string; back?: string; top: string; extra?: string[] };
+const FK = 'stroke="#15110e" stroke-width="2.5" stroke-linejoin="round"';
+const BODY: Record<string, string> = {
+  suit: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#2c3440" ${FK}/><path d="M26 45l6 8 6-8" fill="#f2efe6" ${FK}/>`,
+  suitblue: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#1f3a5f" ${FK}/><path d="M26 45l6 8 6-8" fill="#f2efe6" ${FK}/>`,
+  military: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#4b5320" ${FK}/><path d="M32 46v18" stroke="#15110e" stroke-width="2"/><circle cx="35" cy="52" r="1.3" fill="#d4ac0d"/><circle cx="35" cy="58" r="1.3" fill="#d4ac0d"/>`,
+  imperial: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#1f2f5f" ${FK}/><path d="M9 52c3-4 7-6 11-6l-1 5c-4 0-7 1-10 3zM55 52c-3-4-7-6-11-6l1 5c4 0 7 1 10 3z" fill="#d4ac0d" ${FK}/><path d="M26 44l6 6 6-6v4l-6 6-6-6z" fill="#f2efe6" ${FK}/>`,
+  toga: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#f2efe6" ${FK}/><path d="M18 47c8 4 18 10 26 17h-8C30 58 24 53 16 50z" fill="#8b1e3f" ${FK}/>`,
+  egypt: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#f2efe6" ${FK}/><path d="M14 50c5-5 11-7 18-7s13 2 18 7l-3 6c-4-3-9-5-15-5s-11 2-15 5z" fill="#d4ac0d" ${FK}/><path d="M17 52c4-3 9-4 15-4s11 1 15 4" fill="none" stroke="#1f6fb2" stroke-width="2.5"/>`,
+  mongol: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#7a3b2e" ${FK}/><path d="M24 45l16 19" stroke="#d4ac0d" stroke-width="3"/>`,
+  assyrian: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#8b1e3f" ${FK}/><path d="M10 58h44" stroke="#d4ac0d" stroke-width="3" stroke-dasharray="3 2"/>`,
+  hanfu: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#2d4a6b" ${FK}/><path d="M24 45l12 19M40 45 30 58" stroke="#f2efe6" stroke-width="3"/>`,
+  carthage: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#9a7b4f" ${FK}/><path d="M6 64c2-8 6-14 12-17l4 17zM58 64c-2-8-6-14-12-17l-4 17z" fill="#8b1e3f" ${FK}/>`,
+  shawl: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#f2efe6" ${FK}/><path d="M12 54c8-6 22-8 34-2l4 12H8z" fill="#e8e1cf" ${FK}/>`,
+  maosuit: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#5b6260" ${FK}/><path d="M26 43h12v5c-4 2-8 2-12 0zM32 48v16" fill="#5b6260" ${FK}/>`,
+  fatigue: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#556b2f" ${FK}/><path d="M24 45l8 7 8-7" fill="#556b2f" ${FK}/>`,
+  gown: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#2a2a3a" ${FK}/><path d="M24 46c5 3 11 3 16 0" fill="none" stroke="#f2efe6" stroke-width="2.5" stroke-dasharray="1.5 2.5"/>`,
+  blazer: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#c0392b" ${FK}/><path d="M27 45l5 6 5-6" fill="#f2efe6" ${FK}/>`,
+  regal: `<path d="M6 64c1-14 11-20 26-20s25 6 26 20z" fill="#5b2c6f" ${FK}/><path d="M12 56c6-4 13-6 20-6s14 2 20 6" fill="none" stroke="#f2efe6" stroke-width="4" stroke-dasharray="1 3"/><path d="M22 46l20 18" stroke="#1f6fb2" stroke-width="3"/>`
+};
+const TOP: Record<string, string> = {
+  short: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#2a1d15" ${FK}/>`,
+  grey: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#b8b8b8" ${FK}/>`,
+  blond: `<path d="M20 25c0-9 6-14 12-14s13 3 13 12c-6-3-14-4-25 2z" fill="#e8c26a" ${FK}/>`,
+  bald: `<path d="M21 24c1-5 5-9 11-9s10 4 11 9" fill="none" stroke="#15110e" stroke-width="1.5" opacity=".5"/>`,
+  laurel: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#3a2a1a" ${FK}/><path d="M19 22c4-5 9-7 13-7s9 2 13 7" fill="none" stroke="#3f8f3f" stroke-width="4" stroke-dasharray="3 1.5"/>`,
+  bicorne: `<path d="M10 20c6-9 15-13 22-13s16 4 22 13c-6-2-14-3-22-3s-16 1-22 3z" fill="#15110e" ${FK}/><circle cx="32" cy="12" r="2.5" fill="#c0392b"/>`,
+  nemes: `<path d="M18 22c0-10 6-15 14-15s14 5 14 15l4 22c-4 1-7 0-9-3l-1-14H24l-1 14c-2 3-5 4-9 3z" fill="#d4ac0d" ${FK}/><path d="M20 14h24M19 19h26M47 26l2 10M17 26l-2 10" stroke="#1f6fb2" stroke-width="2.5"/>`,
+  egyptcrown: `<path d="M20 20 18 3h28l-2 17c-3-2-7-3-12-3s-9 1-12 3z" fill="#1f6fb2" ${FK}/><path d="M19 13h26" stroke="#d4ac0d" stroke-width="3"/>`,
+  bob: `<path d="M18 28c0-11 7-16 14-16s14 5 14 16v12h-6V24H24v16h-6z" fill="#15110e" ${FK}/><path d="M20 18h24" stroke="#d4ac0d" stroke-width="3"/>`,
+  helmet: `<path d="M19 24c0-9 6-14 13-14s13 5 13 14v4h-5v-6H24v6h-5z" fill="#b08d57" ${FK}/><path d="M24 10c2-6 14-6 16 0l-8 2z" fill="#c0392b" ${FK}/>`,
+  mongol: `<path d="M17 22c2-3 8-5 15-5s13 2 15 5l-2 4c-3-2-8-3-13-3s-10 1-13 3z" fill="#8a7458" ${FK}/><path d="M22 18c0-7 4-12 10-14 6 2 10 7 10 14z" fill="#7a3b2e" ${FK}/>`,
+  assyrian: `<path d="M21 21 23 5h18l2 16c-3-2-7-3-11-3s-8 1-11 3z" fill="#f2efe6" ${FK}/><path d="M22 12h20" stroke="#d4ac0d" stroke-width="2.5"/>`,
+  scholar: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#b8b8b8" ${FK}/><path d="M23 15V7h18v8z" fill="#15110e" ${FK}/><path d="M19 15h26" stroke="#15110e" stroke-width="3"/>`,
+  crown: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-3-4-6-6-11-6s-8 2-11 6z" fill="#b8b8b8" ${FK}/><path d="M23 15l-1-8 5 4 5-6 5 6 5-4-1 8z" fill="#d4ac0d" ${FK}/>`,
+  tophat: `<path d="M23 15V1h18v14z" fill="#15110e" ${FK}/><path d="M17 16h30v3H17z" fill="#15110e" ${FK}/>`,
+  tricorne: `<path d="M21 26c0-9 5-13 11-13s11 4 11 13" fill="#e8e1cf" ${FK}/><path d="M14 18c6-8 12-10 18-10s12 2 18 10l-7 2c-3-2-7-3-11-3s-8 1-11 3z" fill="#15110e" ${FK}/>`,
+  homburg: `<path d="M22 18c0-7 4-10 10-10s10 3 10 10z" fill="#2c2c2c" ${FK}/><path d="M17 18h30v3H17z" fill="#2c2c2c" ${FK}/>`,
+  peaked: `<path d="M19 18c0-6 6-9 13-9s13 3 13 9z" fill="#4b5320" ${FK}/><path d="M20 18h24v3H20z" fill="#4b5320" ${FK}/><path d="M22 21h20l-3 3H25z" fill="#15110e"/><circle cx="32" cy="14" r="2" fill="#d4ac0d"/>`,
+  peakedblue: `<path d="M19 18c0-6 6-9 13-9s13 3 13 9z" fill="#1f2f5f" ${FK}/><path d="M20 18h24v3H20z" fill="#1f2f5f" ${FK}/><path d="M22 21h20l-3 3H25z" fill="#15110e"/><circle cx="32" cy="14" r="2" fill="#d4ac0d"/>`,
+  beret: `<path d="M18 19c2-6 8-9 15-8s12 4 12 9c-8 1-18 1-27-1z" fill="#15110e" ${FK}/><path d="M30 13l1.5 3 3 .5-2 2 .5 3-3-1.5-3 1.5.5-3-2-2 3-.5z" fill="#d4ac0d"/>`,
+  redberet: `<path d="M18 19c2-6 8-9 15-8s12 4 12 9c-8 1-18 1-27-1z" fill="#c0392b" ${FK}/>`,
+  fatigue: `<path d="M20 20c0-7 5-10 12-10s12 3 12 10z" fill="#556b2f" ${FK}/><path d="M30 20h18l-2 3H30z" fill="#556b2f" ${FK}/>`,
+  maocap: `<path d="M19 18c0-6 6-9 13-9s13 3 13 9z" fill="#5b6260" ${FK}/><path d="M20 18h24v3H20z" fill="#5b6260" ${FK}/><path d="M22 21h20l-3 3H25z" fill="#15110e"/><circle cx="32" cy="14" r="2" fill="#c0392b"/>`,
+  sides: `<path d="M21 22c0-7 5-10 11-10s11 3 11 10c-4-2-7-3-11-3s-7 1-11 3z" fill="#15110e" ${FK}/>`,
+  long: `<path d="M21 25c1-8 5-12 11-12s10 4 11 12c-5-1-9-4-11-7-2 3-6 6-11 7z" fill="#5a3a22" ${FK}/>`
+};
+const BACK: Record<string, string> = { longhair: `<path d="M17 28c0-12 8-17 15-17s15 5 15 17v16c-4 2-8 2-10 0H27c-2 2-6 2-10 0z" fill="#b8b8b8" ${FK}/>`, veil: `<path d="M16 26c0-12 8-17 16-17s16 5 16 17l2 22c-6 2-11 1-14-3l-1-15H27l-1 15c-3 4-8 5-14 3z" fill="#2a2a3a" ${FK}/>` };
+const EXTRA: Record<string, string> = {
+  glasses: '<circle cx="27" cy="28" r="3.2" fill="none" stroke="#15110e" stroke-width="1.8"/><circle cx="37" cy="28" r="3.2" fill="none" stroke="#15110e" stroke-width="1.8"/><path d="M30 28h4" stroke="#15110e" stroke-width="1.8"/>',
+  beard: '<path d="M21 31c1 8 5 11 11 11s10-3 11-11c-3 3-7 4-11 4s-8-1-11-4z" fill="#2a1d15" stroke="#15110e" stroke-width="2"/>',
+  greybeard: '<path d="M21 31c1 8 5 11 11 11s10-3 11-11c-3 3-7 4-11 4s-8-1-11-4z" fill="#b8b8b8" stroke="#15110e" stroke-width="2"/>',
+  chinbeard: '<path d="M22 34c2 5 5 8 10 8s8-3 10-8" fill="none" stroke="#2a1d15" stroke-width="4"/>',
+  longbeard: '<path d="M22 32c0 10 4 16 10 18 6-2 10-8 10-18-3 3-6 4-10 4s-7-1-10-4z" fill="#15110e" stroke="#15110e" stroke-width="2"/><path d="M26 38h12M27 43h10" stroke="#3a3a3a" stroke-width="1.5"/>',
+  mustache: '<path d="M26 33c2-1 4-1 6 0 2-1 4-1 6 0" fill="none" stroke="#15110e" stroke-width="2.5"/>',
+  tie: '<path d="M30 49h4l1 15h-6z" fill="#c0392b" stroke="#15110e" stroke-width="1.5"/>',
+  bluetie: '<path d="M30 49h4l1 15h-6z" fill="#1f6fb2" stroke="#15110e" stroke-width="1.5"/>',
+  bowtie: '<path d="M27 47l5 2 5-2v5l-5-2-5 2z" fill="#1f6fb2" stroke="#15110e" stroke-width="1.5"/>',
+  pearls: '<path d="M24 47c5 3 11 3 16 0" fill="none" stroke="#f2efe6" stroke-width="3" stroke-dasharray="1 2"/>'
+};
+const LOOKS: Record<string, Look> = {
+  'Júlio César': { body: 'toga', top: 'laurel' }, 'Napoleão': { body: 'imperial', top: 'bicorne' },
+  'Cleópatra': { skin: '#c99566', body: 'egypt', top: 'bob' }, 'Nefertiti': { skin: '#a8693f', body: 'egypt', top: 'egyptcrown' },
+  'Ramsés': { skin: '#a8693f', body: 'egypt', top: 'nemes' }, 'Tutancâmon': { skin: '#a8693f', body: 'egypt', top: 'nemes' },
+  'Aníbal': { skin: '#c68a5d', body: 'carthage', top: 'helmet', extra: ['beard'] }, 'Gengis Khan': { skin: '#e3b88b', body: 'mongol', top: 'mongol', extra: ['chinbeard'] },
+  'Tiglate-Pileser': { skin: '#c99566', body: 'assyrian', top: 'assyrian', extra: ['longbeard'] }, 'Confúcio': { skin: '#ecc79f', body: 'hanfu', top: 'scholar', extra: ['greybeard'] },
+  'Imperador Meiji': { skin: '#ecc79f', body: 'imperial', top: 'peakedblue', extra: ['beard'] }, 'Haile Selassie': { skin: '#6e4126', body: 'military', top: 'peaked', extra: ['beard'] },
+  'Rainha Vitória': { body: 'gown', back: 'veil', top: 'crown' }, 'Rainha Elizabeth': { body: 'regal', top: 'crown', extra: ['pearls'] },
+  'Lincoln': { body: 'suit', top: 'tophat', extra: ['chinbeard', 'bowtie'] }, 'Washington': { body: 'imperial', top: 'tricorne' },
+  'Churchill': { body: 'suit', top: 'homburg', extra: ['bowtie'] }, 'Gandhi': { skin: '#a8693f', body: 'shawl', top: 'bald', extra: ['glasses'] },
+  'Netanyahu': { body: 'suitblue', top: 'grey', extra: ['bluetie'] }, 'Obama': { skin: '#7a4a2a', body: 'suitblue', top: 'short', extra: ['bluetie'] },
+  'Kennedy': { body: 'suit', top: 'long', extra: ['tie'] }, 'Trump': { body: 'suitblue', top: 'blond', extra: ['tie'] }, 'Biden': { body: 'suitblue', top: 'grey', extra: ['bluetie'] },
+  'Clinton': { body: 'suit', top: 'grey', extra: ['tie'] }, 'Bush': { body: 'suit', top: 'grey', extra: ['tie'] }, 'Nixon': { body: 'suit', top: 'short', extra: ['tie'] },
+  'Reagan': { body: 'suit', top: 'short', extra: ['tie'] }, 'Roosevelt': { body: 'suit', top: 'grey', extra: ['glasses', 'tie'] }, 'Truman': { body: 'suit', top: 'grey', extra: ['glasses', 'bowtie'] },
+  'Macron': { body: 'suitblue', top: 'short', extra: ['bluetie'] }, 'Merkel': { body: 'blazer', top: 'long' }, 'Thatcher': { body: 'suitblue', back: 'longhair', top: 'grey', extra: ['pearls'] },
+  'Mao': { skin: '#ecc79f', body: 'maosuit', top: 'maocap' }, 'Xi Jinping': { skin: '#ecc79f', body: 'suit', top: 'short', extra: ['tie'] }, 'Kim Jong-un': { skin: '#ecc79f', body: 'maosuit', top: 'sides' },
+  'Kim Il-sung': { skin: '#ecc79f', body: 'maosuit', top: 'short' }, 'Pol Pot': { skin: '#c99566', body: 'maosuit', top: 'short' }, 'Nehru': { skin: '#a8693f', body: 'shawl', top: 'scholar' },
+  'Hirohito': { skin: '#ecc79f', body: 'military', top: 'peaked', extra: ['glasses', 'mustache'] }, 'Tojo': { skin: '#ecc79f', body: 'military', top: 'peaked', extra: ['glasses', 'mustache'] },
+  'Fidel': { skin: '#e0ad86', body: 'fatigue', top: 'fatigue', extra: ['beard'] }, 'Che': { skin: '#e0ad86', body: 'fatigue', top: 'beret', extra: ['beard'] }, 'Chávez': { skin: '#a8693f', body: 'fatigue', top: 'redberet' },
+  'Marulanda': { skin: '#a8693f', body: 'fatigue', top: 'fatigue', extra: ['mustache'] },
+  'Mussolini': { body: 'military', top: 'bald' }, 'Franco': { body: 'military', top: 'peaked', extra: ['mustache'] }, 'Pinochet': { body: 'military', top: 'peaked', extra: ['mustache'] },
+  'Perón': { body: 'military', top: 'peaked' }, 'Médici': { body: 'military', top: 'peaked' }, 'Geisel': { body: 'military', top: 'peaked' }, 'Castelo Branco': { body: 'military', top: 'peaked' },
+  'Figueiredo': { body: 'military', top: 'peaked' }, 'Ustra': { body: 'military', top: 'peaked' }, 'Salazar': { body: 'suit', top: 'grey', extra: ['tie'] },
+  'Lula': { body: 'suit', top: 'grey', extra: ['greybeard', 'tie'] }, 'Enéas': { body: 'suit', top: 'bald', extra: ['longbeard', 'glasses'] }, 'Getúlio': { body: 'suit', top: 'grey', extra: ['tie'] },
+  'JK': { body: 'suit', top: 'short', extra: ['tie'] }, 'FHC': { body: 'suit', top: 'grey', extra: ['tie'] }, 'Mandela': { skin: '#6e4126', body: 'mongol', top: 'grey' },
+  'Kofi Annan': { skin: '#6e4126', body: 'suit', top: 'grey', extra: ['greybeard', 'tie'] }, 'Lenin': { body: 'suit', top: 'bald', extra: ['beard', 'tie'] }, 'Trotsky': { body: 'suit', top: 'grey', extra: ['glasses', 'beard'] }
+};
+function famous(nameOf: string, skin0: string): string | null {
+  const l = LOOKS[nameOf];
+  if (!l) return null;
+  const skin = l.skin || skin0;
+  return `<svg class="face" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#2b241f"/>${BODY[l.body] || BODY.suit}<path d="M27 40h10v7c-3 2-7 2-10 0z" fill="${skin}" stroke="#15110e" stroke-width="2"/>${l.back ? BACK[l.back] : ''}<ellipse cx="32" cy="28" rx="11" ry="13" fill="${skin}" ${FK}/>${(l.extra || []).filter(x => x.includes('beard') || x === 'mustache').map(x => EXTRA[x]).join('')}${TOP[l.top] || TOP.short}${(l.extra || []).filter(x => !(x.includes('beard') || x === 'mustache')).map(x => EXTRA[x]).join('')}</svg>`;
+}
 export function face(nameOf: string, region = 'mundo', me = false): string {
+  const known = me ? null : famous(nameOf, '#e0ad86');
+  if (known) return known;
   const h = hashOf(nameOf), pick = <T>(xs: T[], k: number): T => xs[(h >>> k) % xs.length];
   const reg0 = region === 'mundo' ? pick(['europa', 'africa', 'americas', 'asia', 'oceania'], 3) : region, fem = FEMALE.has(nameOf);
   const own = RUSSIAN.has(nameOf) ? 'russo' : ARAB.has(nameOf) ? 'arabe' : CLERIC.has(nameOf) ? 'clerigo' : '', reg = own === 'russo' ? 'europa' : own ? 'asia' : reg0;
