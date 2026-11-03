@@ -77,7 +77,7 @@ export type Event =
 /** `re`: how the players run by the app took it, when a person said it (D26): seat and answer (REACT). */
 export type Talk = { k: 'talk'; by: number; about: number; say: 'acc' | 'trust' | 'quiet'; stage?: 'campaign'; re?: [number, number][]; tone?: 'soft' | 'firm' | 'proof'; proof?: number; hit?: boolean; def?: Defense; ok?: boolean; deb?: DebLine[]; verdict?: [number, number][]; backfire?: boolean; proofs?: number[]; sharp?: number };
 /** A line of a debate (D57): who spoke, the argument it chose, what it said and how strong it was by the record. */
-export type DebLine = { who: number; id: string; text: string; power: number };
+export type DebLine = { who: number; id: string; text: string; power: number; roll?: { skill: string; label: string; val: number; d: number; level: 'crit' | 'extreme' | 'hard' | 'ok' | 'fail' | 'fumble' } };
 /** How the one accused answered (D40): the deck came like that, it was a chancellor test, the accuser lies, or silence. */
 export type Defense = 'deck' | 'test' | 'lie' | 'quiet' | 'debate';
 /** An elected government: the law it made (or a veto, with no law). `drew` are the 3 laws the president drew and `got`
@@ -88,6 +88,9 @@ export type Gov = { k: 'gov' | 'veto'; pres: number; chanc: number; law?: Law; d
 
 /** Private notebook context, never passed to a bot's View. */
 export interface NoteDetail { reason: string; kind: 'fact' | 'guess' }
+/** D94: a Call of Cthulhu character sheet: each characteristic and skill (by its English name) with its value, and the
+ *  native language. */
+export interface Sheet { vals: Record<string, number>; native: string }
 export interface Game {
   players: Player[];
   /** The draw pile, top first, and the discarded laws. */
@@ -123,6 +126,8 @@ export interface Game {
   region?: Region;
   /** Every decision of the players run by the app, with its reason (D16). */
   trace?: Trace[];
+  /** D94: the Call of Cthulhu sheet of each seat, from the source (by seat); a seat without one uses a local sheet. */
+  sheets?: Record<number, Sheet>;
   /** D89: a tutorial game: the tips the person already read (present, even empty, means tutorial). */
   tut?: string[];
   /** The notebook of the one person at the table (D12), as it was when the game ended (D28): seat → the party marked. */

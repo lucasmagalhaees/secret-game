@@ -39,7 +39,8 @@ with sync_playwright() as p:
         return _click(sel, **kw)
     pg.click = _safe_click
     pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
+    # D95: the sheets API is unreachable here (no network): its failed calls are the breaker's business, not a script error
+    pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'cthulhu-caracter-sheet' not in (m.location or {}).get('url', '') else None)
     cov.start(pg)
     pg.goto((ROOT / 'dist' / 'index.html').as_uri()); pg.wait_for_function('window.__APP && window.__APP.S')
     txt = lambda sel: pg.text_content(sel).replace('\xa0', ' ')      # the words in the page; CSS may show them in capitals

@@ -1150,3 +1150,18 @@ body:has(.dock-gap) .toast{bottom:calc(var(--dock) + 8px + env(safe-area-inset-b
 .seat i.av{padding:0;background:none;border:0;font-size:0;letter-spacing:0}
 .sway-paused .sway-bar i{animation-play-state:paused;opacity:.4}
 .dargs button{touch-action:manipulation}
+/* D94: the d100 */
+.dice{display:flex;align-items:center;gap:10px;margin:8px 0 2px;padding:6px 10px;border:2px solid var(--line);background:color-mix(in srgb,var(--surface) 85%,var(--bg))}
+.dice .die{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;font:900 18px/1 var(--display);border:3px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);box-shadow:3px 3px 0 var(--shadow)}
+.dice-txt{display:grid;gap:2px}.dice-txt small{font-size:11px;opacity:.8}.dice-txt strong{font:900 14px/1 var(--display);text-transform:uppercase;letter-spacing:.06em}
+.dice.good strong{color:#2f9a55}.dice.bad strong{color:var(--fas)}.dice.crit strong{color:#d4ac0d}
+.dice.spin .die{animation:dieSpin .16s linear infinite}
+.dice.land.good .die{animation:dieWin .6s ease-out}.dice.land.crit .die{animation:dieCrit .9s ease-out;border-color:#d4ac0d;box-shadow:0 0 0 3px #d4ac0d,0 0 18px #d4ac0d}
+.dice.land.bad .die{animation:dieFail .45s ease-in-out}.dice.land.fumble .die{background:repeating-linear-gradient(135deg,var(--bg) 0 6px,color-mix(in srgb,var(--fas) 35%,var(--bg)) 6px 8px)}
+.dice.land.good{border-color:#2f9a55}.dice.land.bad{border-color:var(--fas)}
+@keyframes dieSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes dieWin{0%{transform:scale(1.35)}60%{transform:scale(.95)}100%{transform:scale(1)}}
+@keyframes dieCrit{0%{transform:scale(1.6) rotate(-12deg)}50%{transform:scale(.9) rotate(6deg)}100%{transform:none}}
+@keyframes dieFail{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){.dice .die{animation:none!important}}
+.sheet-skills{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.sheet-skills span{border:2px solid var(--line);padding:6px 2px;text-align:center;font-size:11px}.sheet-skills b{display:block;font-size:20px}

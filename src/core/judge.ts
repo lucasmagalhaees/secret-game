@@ -6,6 +6,7 @@
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
 import { INV_CRED, backed, earlyGov, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
+import { roll, ROLL_BONUS, skillForArg, type Roll, type RollLevel } from './dice';
 import { WIN, seeded, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, TRACKER_MAX, vote } from './game';
 import { words } from './words';
 import type { Ask, DebLine, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
@@ -1118,13 +1119,16 @@ export function debateArgs(g: Game, at: number): DebArg[] {
   return out.filter(a => !said.includes(a.id) || a.id === 'quiet' || a.id === 'drop').filter(a => !seen.has(a.id) && seen.add(a.id)).sort((a, b) => b.power - a.power);
 }
 /** The speaker makes an argument; an unknown one is not a move. */
-export function debateSay(g: Game, at: number, id: string | string[]): Game {
+export function debateSay(g: Game, at: number, id: string | string[], rand?: () => number): Game {
   const who = debateNext(g, at), all = debateArgs(g, at), ids = Array.isArray(id) ? id : [id];
   // D82: several arguments at once, a combo: each adds what the others left; keeping quiet or backing down goes alone
   const picked = ids.map(x => all.find(a => a.id === x)).filter((a): a is DebArg => !!a && (ids.length === 1 || (a.id !== 'quiet' && a.id !== 'drop')));
   if (who < 0 || !picked.length || picked.length !== ids.length) return g;
   const arg = picked.length === 1 ? picked[0] : { id: picked.map(a => a.id).join('+'), label: '', text: picked.map(a => a.text).join(' '), power: stack(picked.map(a => a.power)) };
-  const t = g.hist[at] as Talk, line: DebLine = { who, id: arg.id, text: arg.text, power: arg.power };
+  // D94: what is said is rolled against the speaker's sheet (d100): the level of success adds to or takes from it
+  const best = picked.reduce((a, b) => (b.power > a.power ? b : a)), sk = rand ? skillForArg(best.id) : null, r = sk && rand ? roll(g, who, sk, rand) : undefined;
+  const power = r ? Math.max(0, Math.min(0.95, arg.power + ROLL_BONUS[r.level])) : arg.power;
+  const t = g.hist[at] as Talk, line: DebLine = { who, id: arg.id, text: arg.text, power, ...(r ? { roll: r } : {}) };
   const hist = [...g.hist]; hist[at] = { ...t, deb: [...(t.deb || []), line] };
   return { ...g, hist, log: [...g.log, `${g.players[who].name}: "${arg.text}"`] };
 }
@@ -1133,9 +1137,9 @@ export function debateBot(g: Game, at: number, rand: () => number): Game {
   const who = debateNext(g, at);
   if (who < 0 || !g.players[who].ai) return g;
   const args = debateArgs(g, at).filter(a => a.id !== 'quiet' && a.id !== 'drop'), e = eloq(g, who);
-  if (!args.length) return debateSay(g, at, who === (g.hist[at] as Talk).about ? 'quiet' : 'drop');
+  if (!args.length) return debateSay(g, at, who === (g.hist[at] as Talk).about ? 'quiet' : 'drop', rand);
   const k = e >= 3 ? 0 : e === 2 ? (rand() < 0.8 ? 0 : 1) : Math.floor(rand() * args.length);
-  return debateSay(g, at, args[Math.min(k, args.length - 1)].id);
+  return debateSay(g, at, args[Math.min(k, args.length - 1)].id, rand);
 }
 /** The verdict: each app player who watched says whether the accusation stands (1), falls (0, not sure: 2). Weighed:
  *  the strength of each side's arguments times its way with words, what that player already believed, its temper; the
@@ -1254,15 +1258,17 @@ export function swayReasons(g: Game, me: number, to: number, cast: [number, bool
 /** The person tries to turn `to`'s vote with a reason. The app player turns by the strength of the reason times how much
  *  it trusts the person; the hidden side turns only when it suits its own side. Returns the new votes, whether it
  *  turned, and what was said. */
-export function sway(g: Game, me: number, to: number, cast: [number, boolean][], id: string, rand: () => number): { cast: [number, boolean][]; flipped: boolean; said: string[] } {
+export function sway(g: Game, me: number, to: number, cast: [number, boolean][], id: string, rand: () => number): { cast: [number, boolean][]; flipped: boolean; said: string[]; roll?: Roll } {
   const r = swayReasons(g, me, to, cast).find(x => x.id === id), v = cast.find(([j]) => j === to);
   if (!r || !v) return { cast, flipped: false, said: [] };
   const p = g.players[to], trust = 1 - believe(viewOf(g, to, 'vote', [1, 0]), true).pF[me];
   let chance = r.power * (0.4 + trust) * (p.persona === 'cetico' ? 0.5 : p.persona === 'certinho' ? 1.2 : 1);
   if (partyOf(p.role) === 'F') { const ally = (i: number): boolean => partyOf(g.players[i].role) === 'F'; const govAlly = ally(g.pres) || ally(g.chanc as number); chance = v[1] === govAlly ? 0.05 : chance * 1.3; }
-  const flipped = rand() < Math.min(0.9, chance);
+  // D94: the person rolls Persuade: a good roll makes the reason land, a bad one sinks it
+  const dr = roll(g, me, 'Persuade', rand), mult: Record<RollLevel, number> = { crit: 3, extreme: 1.8, hard: 1.4, ok: 1, fail: 0.5, fumble: 0 };
+  const flipped = dr ? dr.level !== 'fumble' && (dr.level === 'crit' || rand() < Math.min(0.9, chance * mult[dr.level])) : rand() < Math.min(0.9, chance);   // D95: no sheet, as before
   const nm = (i: number): string => g.players[i].name;
-  return { cast: flipped ? cast.map(([j, x]) => [j, j === to ? !x : x] as [number, boolean]) : cast, flipped, said: [`${nm(me)}: "${nm(to)}, ${lower(g, r.text)}"`, `${nm(to)}: "${flipped ? 'Tá bom, mudo meu voto.' : 'Não, mantenho meu voto.'}"`] };
+  return { cast: flipped ? cast.map(([j, x]) => [j, j === to ? !x : x] as [number, boolean]) : cast, flipped, said: [`${nm(me)}: "${nm(to)}, ${lower(g, r.text)}"`, `${nm(to)}: "${flipped ? 'Tá bom, mudo meu voto.' : 'Não, mantenho meu voto.'}"`], ...(dr ? { roll: dr } : {}) };
 }
 /** What the person can show when it says it is liberal: what the record has for it, each with its strength. */
 export function selfProofs(g: Game, me: number): Reason[] {

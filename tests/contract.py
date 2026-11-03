@@ -12,6 +12,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIX = ROOT / 'tests' / 'fixtures' / 'source'
 # one entry per recorded file: the reader it goes through, and what must be true of what comes out (a JS expression of `r`)
 EXPECT = {
+    'random-char_eastern-europe_2026-11-03.json': ('normSheet', "r && r.native === 'Russian' && r.vals['Persuade'] === 10 && r.vals['Fast Talk'] === 5 && r.vals['Charm'] === 15 && r.vals['Psychology'] === 10 && r.vals['Luck'] === 65"),
     # 'entries_2026-01-01.json': ('normEntries', 'r.length > 0 && r.every(e => e.id && e.name && Number.isFinite(e.value))'),
 }
 files = sorted(p.name for p in FIX.glob('*.json'))
