@@ -19,7 +19,8 @@ Idioma da interface: português do Brasil, informal. Comentários no código: in
 - Não adicionar backend, login nem banco sem pedido. O app é uma página estática.
 - Um aparelho só, passando de mão: sem partida pela internet, sem um celular por jogador. Os jogadores da IA rodam no próprio aparelho, sem servidor e sem modelo de linguagem: são regras e contas no `src/core/` (D10).
 - As regras são as do Secret Hitler original (D6). A única diferença é de meio: a votação é em voz alta e o celular só registra o resultado (com IA na mesa, cada pessoa toca no próprio voto: requisito 20).
-- Sem servidor, nem para guardar partidas: as partidas terminadas ficam só no aparelho, e a pessoa exporta um arquivo quando quiser (D23). Fora por enquanto: uma tela de histórico.
+- A única chamada de rede é a das fichas (D94), opcional: sem ela o jogo funciona igual.
+- Sem servidor próprio, nem para guardar partidas: as partidas terminadas ficam só no aparelho, e a pessoa exporta um arquivo quando quiser (D23). Fora por enquanto: uma tela de histórico.
 
 ## Regras contra alucinação (valem para qualquer IA trabalhando aqui)
 
@@ -100,6 +101,8 @@ O que cada peça do harness cobre:
 37. Jogadas boas e ruins (D19, `review`): no fim, com a assistência ligada, a aba Resultado mostra para cada pessoa na mesa as jogadas que foram claramente boas e claramente ruins, as de mais peso primeiro (4 de cada, e "Ver todas"). Cada uma é julgada pelo que deu (agora que os papéis estão abertos) e pelo que dava para saber na hora, com as contas do extremo feitas só com o que aquele lugar sabia: o que deu errado sem ter como saber não conta como ruim. O liberal é julgado pelas leis que passou ou jogou fora, por mentir, e por onde pôs a confiança (indicação, voto, investigação, eliminação, eleição especial); o lado escondido, pelas leis que empurrou e por quanto a mesa desconfiou dele depois (o que todos viram), pela história que não fechou com a do parceiro, e por cobrir ou entregar aliados. Quem jogou sozinho ganha também, como jogada boa, cada papel que acertou no caderno (D28). Com a assistência desligada, um botão a liga ali mesmo.
 38. Partidas guardadas (D23): toda partida que termina fica guardada no aparelho, com tudo (papéis, mãos, votos, falas, o caderno e o motivo de cada decisão das IAs), as últimas 30. O cartão "Suas partidas" na tela inicial diz quantas são, exporta um arquivo (`historyFile`: o app, a versão, a hora e as partidas; pelo compartilhar do celular quando ele aceita arquivo, senão baixando) e apaga todas com dois toques. Nada sai do aparelho sozinho. O arquivo serve para calibrar as IAs pelo jeito que as pessoas jogam de verdade, sem que elas aprendam o estilo de uma pessoa (isso seria metajogo).
 
+39. Fichas e dados (D94): cada lugar tem uma ficha de investigador do Call of Cthulhu, pedida à API do `cthulhu-caracter-sheet` pela região do continente da partida (e do país, para os nomes que têm o seu). Sem resposta, nada muda: o jogo é o de antes, sem dado (D95, com disjuntor). O que se fala rola d100 contra a perícia da ficha: cada argumento do debate (Persuasão para as provas, Lábia para virar o jogo, Charme para chamar a mesa) e o motivo para virar um voto (Persuasão). Crítico, extremo, difícil e sucesso somam à força do que foi dito; falha e desastre tiram. O dado gira na tela e cai no número, com o resultado em dourado, verde ou vermelho. As regras e as leis não têm sorte nenhuma, como no original. A ficha aparece na ficha do jogador.
+
 ## Arquitetura
 
 TypeScript em módulos, build pelo Vite 8.3.3 com TypeScript 7.0.2 (versões exatas no `package.json`). O build junta tudo num arquivo só, `dist/index.html`, com o script e o estilo dentro (plugin `single-file` no `vite.config.js`) e **sem minificar**: o que os testes medem, por nome de função e linha, é o arquivo que vai para o ar. A página gerada leva o commit de origem em `<meta name="app-commit">`. O único outro arquivo que o build emite é `dist/sw.js`, o service worker.
@@ -117,6 +120,8 @@ Sem DOM, sem rede e sem armazenamento (conferido pelo `docs_check.py`, e pelo `t
 | `src/core/judge.ts` | O juiz entre a partida e as IAs: `viewOf` (o que cada lugar pode saber), `turn`/`botTurn` (de quem é a vez), `botStep` (a jogada da IA, pelas regras), `castVotes` (os votos um a um), `claims`/`say` (o que cada um diz à mesa), `talker`/`talk` (a conversa entre as rodadas), `coach` (as dicas do treinador), `thoughts` (o que as IAs pensavam da pessoa), `suspicion` (a desconfiança ao vivo), `crux` (o ponto crucial) e `trail` (o que uma IA pensou de cada um, momento a momento). Único código que segura a partida inteira e pergunta algo às IAs |
 | `src/core/ai.ts` | As IAs, cegas de propósito: `decide` responde a pergunta da visão (`decideWhy` dá a mesma resposta com o motivo); `believe` pesa todas as divisões de papéis possíveis pelo que aconteceu (leis, falas, investigações; no extremo, contando o baralho com `drawOdds`); os níveis em `AI` |
 | `src/core/words.ts` | As palavras de cada tema (`WORDS`, `words`, `PACKS`): o lado escondido, o líder, os votos, as abreviações |
+| `src/core/dice.ts` | As rolagens de d100 do Call of Cthulhu (D94): `roll`, `levelOf` (crítico, extremo, difícil, sucesso, falha, desastre), `ROLL_BONUS`, a ficha de cada lugar (`sheetOf`, vazia quando a fonte não respondeu) e a perícia de cada argumento (`skillForArg`) |
+| `src/core/breaker.ts` | O disjuntor da API de fichas (D95): `breakerState` (fechado, aberto, meio aberto), `breakerAllows`, `breakerFail`, `breakerOk`, `readBreaker`, com o relógio entrando como `now` |
 | `src/core/save.ts` | `readGame` e `readState`: lê o que foi guardado, descartando a partida que não fecha |
 | `src/core/source.ts` | Os leitores da fonte de dados (`normEntry`, `normEntries`). Único lugar que conhece o formato dela |
 | `src/core/index.ts` | O objeto `Core`, que a página usa e os testes exercitam |
@@ -152,7 +157,7 @@ Renderização é `innerHTML` a partir do estado. Todo texto que não veio do pr
 ## Fonte de dados
 
 
-Ainda não há. `SOURCE` em `src/app/api.ts` está vazio. Quando houver, toda leitura passa pelas funções `norm*` de `src/core/source.ts`, e cada resposta real usada vai para `tests/fixtures/source/`, com a checagem dela em `tests/contract.py`.
+As fichas de investigador (D94) vêm da API do `cthulhu-caracter-sheet` (`SHEETS` em `src/app/api.ts`): uma por lugar, pedida pela região do continente (`sheetRegion`), lida por `normSheet` de `src/core/source.ts`, com a resposta real gravada em `tests/fixtures/source/` e checada em `tests/contract.py`. O jogo nunca espera por ela, e ela é um adicional: sem resposta, a partida segue como antes das fichas, sem dado e sem ficha na tela. Um disjuntor (D95, `src/core/breaker.ts`, guardado em `secrethitler.sheets.v1`) para de chamar a API depois de falhas seguidas, testa de novo com uma chamada só depois de um tempo, e religa as fichas quando ela volta. `SOURCE`, a outra fonte, continua vazio. Toda leitura passa pelas funções `norm*`.
 
 ## App guardado no aparelho (offline e versão nova)
 

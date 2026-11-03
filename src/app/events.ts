@@ -2,6 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
+import { loadSheets } from './api';
 import { tutTip, ballot, beat, blurField, bossWin, claimFx, freeze, swayOpen, swayReasonsShow, swayResult, swayClose, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
@@ -21,6 +22,18 @@ const rand = (): number => {
 
 /** A new game state: saved, and whatever was picked, opened or half-counted on screen is let go. The end of a game
  *  gets its confetti and its fanfare here, whatever ended it. */
+/** D94: the sheets of a new game come from the API in the background; the game never waits for them (a seat without
+ *  one rolls on its local sheet), and they are kept only if the same game is still on. */
+let sheetsFor = '';
+function fetchSheets(g: Game): void {
+  const key = g.players.map(p => p.name).join('|');
+  sheetsFor = key;
+  loadSheets(g).then(sh => {
+    const cur = S.game;
+    if (!sh || !cur || cur.sheets || cur.players.map(p => p.name).join('|') !== key) return;
+    setS({ ...S, game: { ...cur, sheets: sh } }); saveS(); render();
+  }).catch(() => {});
+}
 function play(ended: Game, msg?: string, undo: Game | null = null): void {
   // D87: an app player has just investigated: it tells the table at once, so the envelope plays now, before the game
   // moves on to the next nomination (it used to arrive late and be cut off)
@@ -36,6 +49,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   // an app player only spoke (a claim, a talk): the phase is the same, so what the person opened, picked or voted stays (D21)
   const spoke = !!before && changed && next.phase === before.phase && beat(next) === beat(before) && next.pres === before.pres && next.chanc === before.chanc;
   setS({ ...S, game: next }); saveS();
+  if (!next.sheets && next.phase !== 'over' && sheetsFor !== next.players.map(p => p.name).join('|')) fetchSheets(next);   // D94
   if (changed && !spoke) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
   if (before && changed) {
@@ -354,15 +368,15 @@ export function initEvents(): void {
     else if (a === 'note') { const notes: Record<string, Law> = Object.fromEntries(Object.entries(S.notes || {}).filter(([k]) => k !== String(i))); if (d.v === 'L' || d.v === 'F') notes[i] = d.v; const next = { ...S }; if (Object.keys(notes).length) next.notes = notes; else delete next.notes; setS(next); saveS(); render(); }
     else if (a === 'notekind' && (d.v === 'fact' || d.v === 'guess')) { saveNote(i, { kind: d.v }); blurField(); render(); }
     else if (a === 'contraclose') document.getElementById('contra')?.remove();
-    else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || ''); ui.dpick = []; if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
+    else if (a === 'darg' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, d.v || '', rand); ui.dpick = []; if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
     else if (a === 'dcombo') { const p = ui.dpick || [], v = d.v || ''; ui.dpick = p.includes(v) ? p.filter(x => x !== v) : [...p, v]; runDebate(); }   // D82
-    else if (a === 'dall' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, ui.dpick || []); ui.dpick = []; if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
+    else if (a === 'dall' && ui.debate !== null && ui.debate !== undefined) { const next = Core.debateSay(g, ui.debate, ui.dpick || [], rand); ui.dpick = []; if (next !== g) { setS({ ...S, game: next }); saveS(); runDebate(); } }
     else if (a === 'tself') { ui.proof = !ui.proof; if (ui.proof) { ui.diary = false; delete S.notesOpen; saveS(); } render(); }
     else if (a === 'tproof') { const me = g.players.findIndex(p => !p.ai), next = Core.selfClaimProof(g, me, d.v || ''); ui.proof = false; const e = next.hist[next.hist.length - 1]; const re = e && e.k === 'self' ? e.re || [] : []; play(next, `Você disse que é liberal: ${re.filter(r => r[1] === 0).length} acreditam, ${re.filter(r => r[1] === 2).length} duvidam.`); reactions(re.map(r => r[1])); }
     else if (a === 'tpick') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, 'pick', me), 'Pedido feito a quem presidir.'); }
     else if (a === 'swayskip' && swaying) swayEnd();
     else if (a === 'swayto' && swaying && !swaying.done) { const s = swaying; s.to = i; const me = s.g.players.findIndex(p => !p.ai); swayReasonsShow(s.g, i, Core.swayReasons(s.g, me, i, s.cast)); clearTimeout(s.timer); s.timer = undefined; }   // D93: once a vote is picked the clock stops: the person chooses the reason at ease
-    else if (a === 'swaysay' && swaying && !swaying.done && swaying.to !== null) { const s = swaying, me = s.g.players.findIndex(p => !p.ai), r = Core.sway(s.g, me, s.to as number, s.cast, d.v || '', rand); s.cast = r.cast; s.said = r.said; s.done = true; swayResult(s.g, s.to as number, r.flipped); clearTimeout(s.timer); s.timer = setTimeout(swayEnd, 1600); }
+    else if (a === 'swaysay' && swaying && !swaying.done && swaying.to !== null) { const s = swaying, me = s.g.players.findIndex(p => !p.ai), r = Core.sway(s.g, me, s.to as number, s.cast, d.v || '', rand); s.cast = r.cast; s.said = r.said; s.done = true; swayResult(s.g, s.to as number, r.flipped, r.roll); clearTimeout(s.timer); s.timer = setTimeout(swayEnd, 1600); }
     else if (a === 'tkill') { const me = g.players.findIndex(p => !p.ai); play(Core.askTable(g, me, 'kill', i), `Você sugeriu eliminar ${g.players[i].name}.`); }
     else if (a === 'tavoid' || a === 'tinv') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askTable(g, me, a === 'tavoid' ? 'avoid' : 'inv', i), 'Pedido feito à mesa.'); }
     else if (a === 'twhy') { const me = g.players.findIndex(p => !p.ai); ui.talk = false; play(Core.askWhy(g, me, i)); ui.diary = true; render(); }

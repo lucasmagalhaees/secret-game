@@ -52,6 +52,7 @@ def check(name, cond, detail=''):
 with sync_playwright() as p:
     browser = p.chromium.launch()
     ctx = browser.new_context(viewport=dict(width=393, height=852), locale='pt-BR', timezone_id='America/Sao_Paulo', service_workers='allow')
+    ctx.add_init_script("try { localStorage.setItem('secrethitler.sheets.v1', JSON.stringify({ fails: 9, until: 9e15, wait: 3600000 })) } catch (e) {}")   # D95: no call to the sheets API from this test
     ctx.route('**/*', lambda r: r.continue_() if r.request.url.startswith(BASE) else r.abort())      # the site is real; nothing else is reached
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))

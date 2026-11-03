@@ -475,9 +475,9 @@ export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="gl
  * Oceania. Chosen by the name, always the same for a name, and never by the role. Drawn here: no outside art. */
 /** D92: some names get the dress of their own country: the Russians the fur hat and coat; the leaders of Arab
  *  countries the keffiyeh and the white robe; Khomeini the cleric's turban. */
-const RUSSIAN = new Set(['Lenin', 'Trotsky', 'Gorbachev', 'Putin']);
-const ARAB = new Set(['Gaddafi', 'Nasser', 'Mubarak', 'Saddam Hussein', 'Bin Laden']);
-const CLERIC = new Set(['Khomeini']);
+export const RUSSIAN = new Set(['Lenin', 'Trotsky', 'Gorbachev', 'Putin']);
+export const ARAB = new Set(['Gaddafi', 'Nasser', 'Mubarak', 'Saddam Hussein', 'Bin Laden']);
+export const CLERIC = new Set(['Khomeini']);
 const FEMALE = new Set(['Thatcher', 'Merkel', 'Rainha Vitória', 'Rainha Elizabeth', 'Cleópatra', 'Nefertiti', 'Dilma', 'Manuela']);
 const SKINS: Record<string, string[]> = {
   europa: ['#f3cfb0', '#ecc19c', '#e0ad86'], africa: ['#8a5634', '#6e4126', '#a8693f', '#5a3420'], americas: ['#c68a5d', '#d9a27a', '#a8693f', '#f0c8a6', '#7a4a2a'],

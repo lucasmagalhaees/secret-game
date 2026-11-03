@@ -11,6 +11,9 @@ with sync_playwright() as p:
     b = p.chromium.launch()
     ctx = b.new_context(viewport={'width': 393, 'height': 852}, color_scheme='dark')
     ctx.add_init_script('window.__SEED = 11')
+    # D94: the sheets API answers with the recorded sample (no network in tests): every seat gets a sheet and the debate rolls
+    SHEET = (ROOT / 'tests/fixtures/source/random-char_eastern-europe_2026-11-03.json').read_text()
+    ctx.route('https://cthulhu-caracter-sheet.vercel.app/**', lambda r: r.fulfill(status=200, content_type='application/json', body=SHEET, headers={'access-control-allow-origin': '*'}))
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     cov.start(pg)
@@ -63,6 +66,7 @@ with sync_playwright() as p:
     for k in range(2): pg.locator('#debate [data-act=dcombo]').nth(k).dispatch_event('click')
     pg.locator('[data-act=dall]').dispatch_event('click'); pg.wait_for_function("(() => { const t = window.__APP.S.game.hist.filter(e => e.k === 'talk').at(-1); return (t.deb || []).some(l => l.id.includes('+')); })()")
     pg.wait_for_timeout(300); pg.screenshot(path=str(ROOT / 'tests/shots/social-debate-force.png'))
+    assert G().get('sheets') and pg.locator('#debate .dice').count() >= 1, 'with the sheets, what is said in the debate is rolled (D94)'
     # a player's sheet (D84): a tap on a name in the players list
     pg.evaluate("document.getElementById('debate')?.remove(); window.__APP.ui.debate = null; window.__APP.ui.frozen = 0")
     pg.locator('#players [data-act=sheet]').nth(1).dispatch_event('click'); pg.wait_for_selector('#sheet')

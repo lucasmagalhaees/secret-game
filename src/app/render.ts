@@ -116,6 +116,26 @@ function sashOf(g: Game): number {
 /** D70: an investigator told the table what it saw: the card of the side it named turns over, on the whole screen. It
  *  is only what was said (the investigator may lie), and the screen says so. */
 let lastDebate = '';
+/** D94: a d100 roll as the table sees it: the die, the skill and its value, and how it went. The die lands on its number
+ *  with a short spin (rollDice), once per roll; the level then flashes: gold for a critical, green for a success, red
+ *  shaking for a failure, cracked for a fumble. */
+type DiceRoll = { label: string; val: number; d: number; level: 'crit' | 'extreme' | 'hard' | 'ok' | 'fail' | 'fumble' };
+const rolled = new Set<string>();
+function diceHtml(r: DiceRoll, key: string): string {
+  const good = r.level === 'crit' || r.level === 'extreme' || r.level === 'hard' || r.level === 'ok';
+  return `<div class="dice ${r.level} ${good ? 'good' : 'bad'}${rolled.has(key) ? ' done' : ''}" data-key="${key}" data-d="${r.d}" aria-label="${esc(r.label)} ${r.val}: tirou ${r.d}, ${Core.ROLL_NAME[r.level]}"><b class="die" aria-hidden="true">${rolled.has(key) ? String(r.d).padStart(2, '0') : '??'}</b><span class="dice-txt"><small>🎲 d100 · ${esc(r.label)} ${r.val}</small><strong>${Core.ROLL_NAME[r.level]}</strong></span></div>`;
+}
+export function rollDice(root: ParentNode): void {
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.querySelectorAll<HTMLElement>('.dice:not(.done)').forEach(el => {
+    const key = el.dataset.key || '', d = Number(el.dataset.d), die = el.querySelector('.die') as HTMLElement;
+    rolled.add(key);
+    if (calm) { die.textContent = String(d).padStart(2, '0'); el.classList.add('done', 'land'); return; }
+    el.classList.add('spin');
+    let n = 0;
+    const t = setInterval(() => { die.textContent = String(1 + ((d * 37 + n * 53) % 100)).padStart(2, '0'); if (++n >= 14) { clearInterval(t); die.textContent = String(d).padStart(2, '0'); el.classList.remove('spin'); el.classList.add('done', 'land'); } }, 55);
+  });
+}
 export function claimFx(g: Game, by: number, target: number, said: 'L' | 'F' | '-', quick = false): void {
   // D74: one piece: the envelope with the name on it opens and the card comes out of it and turns to the side the
   // investigator named (or stays face down if it said nothing). Only what was said: it may be a lie.
@@ -796,6 +816,7 @@ function vSheet(g: Game): string {
   const row = (e: Gov): string => `<li class="${e.k === 'veto' ? 'rej' : e.law}">${e.pres === i ? 'Presidente' : 'Chanceler'} com ${nmj(e.pres === i ? e.chanc : e.pres)} · ${e.k === 'veto' ? 'veto' : e.law === 'L' ? 'liberal' : W.f}</li>`;
   return `<div class="court-back" data-act="sheetclose"></div><section class="court sheet" id="sheet" role="dialog" aria-label="Ficha de ${esc(g.players[i].name)}"><span class="label">Ficha</span><h2>${nmj(i)}${kd(g, i)}</h2>
     <div class="sheet-stats"><span><b>${L.length}</b>leis liberais</span><span><b>${F.length}</b>leis {fs}</span><span><b>${jaF}</b>{ja} em governo {f}</span></div>
+    ${(() => { const sh = Core.sheetOf(g, i); if (!sh) return ''; return `<span class="label">Ficha de investigador</span><div class="sheet-skills">${Object.entries(Core.SKILLS).map(([k, l]) => `<span><b>${sh.vals[k] ?? '—'}</b>${l}</span>`).join('')}</div>${sh.native ? `<p class="hint">Língua materna: ${esc(sh.native)}</p>` : ''}`; })()}
     ${govs.length ? `<span class="label">Governos</span><ul class="sheet-list">${govs.map(row).join('')}</ul>` : '<p class="hint">Ainda não governou.</p>'}
     ${invs.length ? `<span class="label">Investigações</span><ul class="sheet-list">${invs.map(e => `<li>${e.by === i ? `Investigou ${nmj(e.target)}` : `Investigado por ${nmj(e.by)}`}: ${e.said === 'L' ? 'disse liberal' : e.said === 'F' ? `disse ${W.f}` : 'não disse'}</li>`).join('')}</ul>` : ''}
     ${accs.length ? `<span class="label">Acusações</span><ul class="sheet-list">${accs.map(t => `<li>${t.by === i ? `Acusou ${nmj(t.about)}` : `Acusado por ${nmj(t.by)}`}${verdict(t)}</li>`).join('')}</ul>` : ''}
@@ -1106,7 +1127,7 @@ export function debateSheet(g: Game, at: number): void {
   const who_ = (i: number): string => `${av(g, i, 'm')}${name(g, i)}${i === me ? ' (você)' : g.players[i].ai ? ` · ${PERSONA_W[g.players[i].persona || 'centrado'][0].toLowerCase()}` : ''}`;
   const proof = t.proof !== undefined ? Core.evidence({ ...g, hist: g.hist.slice(0, at) }, t.about, t.by).find(x => x.at === t.proof) : undefined;
   const say = (i: number, text: string, tag: string): string => `<div class="dsay ${i === t.by ? 'acc' : 'def'}"><b>${who_(i)} · ${tag}${stars(i)}</b><p>“${esc(text)}”</p></div>`;
-  const line = (k: number, tag: string): string => lines[k] ? say(lines[k].who, lines[k].text, tag) : '';
+  const line = (k: number, tag: string): string => lines[k] ? say(lines[k].who, lines[k].text, tag).replace(/<\/div>$/, `${lines[k].roll ? diceHtml(lines[k].roll, `d${at}-${k}`) : ''}</div>`) : '';
   const args = (): string => who === me ? `<div class="dargs"><b>${lines.length === 0 ? 'Sua defesa' : lines.length === 1 ? 'Sua réplica' : 'Sua tréplica'}</b>${(() => { const all = Core.debateArgs(g, at), dp = (ui.dpick || []).filter(x => all.some(a => a.id === x)), comb = (a: { id: string }): boolean => a.id !== 'quiet' && a.id !== 'drop';
     const pw = (p: number): string => `<i class="pw ${p >= 0.45 ? 'f' : p >= 0.25 ? 'm' : 'w'}">${p >= 0.45 ? 'forte' : p >= 0.25 ? 'média' : p > 0 ? 'fraca' : '—'}</i>`;
     const sum = Math.min(0.95, 1 - all.filter(a => dp.includes(a.id)).reduce((m, a) => m * (1 - a.power), 1));
@@ -1130,7 +1151,7 @@ export function debateSheet(g: Game, at: number): void {
   // D93: a repaint that changes nothing leaves the buttons in place: replacing them under a finger (iPhone) lost the tap,
   // so a single answer seemed not to work while a combo (several taps) did
   if (el.isConnected && lastDebate === html && el.childElementCount) return;
-  lastDebate = html; el.innerHTML = html;
+  lastDebate = html; el.innerHTML = html; rollDice(el);
   const pages = el.querySelector('.dpages') as HTMLElement, dots = [...el.querySelectorAll('.ddots i')];
   pages.scrollLeft = keep;
   const want = cur * pages.clientWidth;
@@ -1161,12 +1182,13 @@ export function swayReasonsShow(g: Game, to: number, reasons: { id: string; labe
   const pw = (p: number): string => p >= 0.45 ? '<i class="pw f">forte</i>' : p >= 0.25 ? '<i class="pw m">média</i>' : '<i class="pw w">fraca</i>';
   box.innerHTML = `<p class="sway-to">Convencer <b>${name(g, to)}</b>:</p>${reasons.map(r => `<button class="krow" data-act="swaysay" data-v="${r.id}"><span><b>${esc(r.label)}</b><small>“${esc(r.text)}”</small></span>${pw(r.power)}</button>`).join('')}`;
 }
-export function swayResult(g: Game, to: number, flipped: boolean): void {
+export function swayResult(g: Game, to: number, flipped: boolean, roll?: DiceRoll): void {
   const box = document.getElementById('swayopts'), el = document.getElementById('ballot');
   if (!box || !el) return;
   const seat = el.querySelector<HTMLElement>(`.b-seat[data-i="${to}"] .b-card`);
   if (seat && flipped) { const ja = seat.classList.contains('ja'); seat.classList.toggle('ja', !ja); seat.classList.toggle('nein', ja); const sp = seat.querySelector('span'); if (sp) sp.textContent = ja ? W.nein : W.ja; seat.classList.add('flipped'); const g1 = el.querySelector('.b-score .g'), r1 = el.querySelector('.b-score .r'); if (g1) g1.textContent = String(el.querySelectorAll('.b-card.ja').length); if (r1) r1.textContent = String(el.querySelectorAll('.b-card.nein').length); }
   el.querySelectorAll('.b-seat').forEach(s => { s.removeAttribute('data-act'); s.classList.remove('tap'); });
-  box.innerHTML = `<p class="sway-res ${flipped ? 'ok' : 'no'}">${flipped ? `✔ ${name(g, to)} virou o voto.` : `✖ ${name(g, to)} manteve o voto.`}</p>`;
+  box.innerHTML = `${roll ? diceHtml(roll, `s${g.hist.length}-${to}`) : ''}<p class="sway-res ${flipped ? 'ok' : 'no'}">${flipped ? `✔ ${name(g, to)} virou o voto.` : `✖ ${name(g, to)} manteve o voto.`}</p>`;
+  rollDice(box);
 }
 export function swayClose(): void { const el = document.getElementById('ballot'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 450); } }
