@@ -767,3 +767,10 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** se a API de fichas cair, não ficar gastando chamada e tempo; um circuit breaker, com o jogo voltando a ser o de antes enquanto ela está fora, e as fichas voltando sozinhas quando ela voltar (feature toggle).
 - **Decisão:** um disjuntor (`src/core/breaker.ts`), guardado no aparelho (`secrethitler.sheets.v1`). Fechado, as chamadas saem. A cada partida nova, a primeira ficha é um teste: se falhar, nenhuma outra sai e a partida é jogada sem fichas. Depois de `BREAK_AFTER` (2) falhas seguidas ele abre e não chama nada por `BREAK_WAIT` (2 min); passado o tempo, deixa uma chamada passar (meio aberto): se ela responde, ele fecha e as fichas voltam; se não, abre de novo, esperando o dobro, até `BREAK_MAX` (1 h). Sem ficha não há dado nem ficha na tela: o jogo é exatamente o de antes (a ficha feita no aparelho, do D94, saiu). Se alguma ficha da mesa falhar, a mesa toda fica sem, para ninguém rolar com vantagem. Cada chamada desiste em 6 s.
+
+## Ideias futuras para os dados (registrado em 2026-11-03, não feito)
+
+A regra continua sem sorte; o dado só mexe no que é dito e em como a mesa recebe.
+- **Psicologia:** quando alguém diz à mesa o que recebeu, cada IA rola Psicologia; sucesso desconfia de uma mentira, extremo tem certeza.
+- **Investigar:** o resultado é sempre o verdadeiro; o que rola é a credibilidade do que o investigador conta (Persuasão contra a Psicologia de quem ouve).
+- **Eliminar:** o tiro nunca erra; rola Intimidação para a justificativa convencer (sem perder confiança) ou pegar mal, com o dado na animação do tiro.
