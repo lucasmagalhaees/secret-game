@@ -1165,3 +1165,4 @@ body:has(.dock-gap) .toast{bottom:calc(var(--dock) + 8px + env(safe-area-inset-b
 @keyframes dieFail{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 @media (prefers-reduced-motion:reduce){.dice .die{animation:none!important}}
 .sheet-skills{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.sheet-skills span{border:2px solid var(--line);padding:6px 2px;text-align:center;font-size:11px}.sheet-skills b{display:block;font-size:20px}
+.packs button.off{opacity:.55}.pack-off{display:block;font-size:11px;color:var(--fas)}

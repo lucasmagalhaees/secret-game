@@ -1,6 +1,7 @@
 import { Core } from '../core';
 import type { Ask, Event, Game, Gov, Law, Level, Pack, Party, Persona, Region, Role, Talk } from '../core';
 import type { EndTab } from './state';
+import { sheetsOn } from './api';
 import { animalOf, face, portrait, seal } from './art';
 import { $, esc, part, themed } from './format';
 import { thud } from './fx';
@@ -295,7 +296,8 @@ function vSolo(): string {
 /** The theme of the game (D12): the same rules, other sides, other names, other drawings. */
 function vPack(): string {
   const cur = S.pack || 'fascismo';
-  const opt = (k: Pack): string => `<button class="${cur === k ? 'on' : ''}" data-act="pack" data-v="${k}" aria-pressed="${cur === k}"><span class="packart">${portrait('liberal', k, S.region)}${portrait('fascista', k, S.region)}${portrait('hitler', k, S.region)}</span>${Core.WORDS[k].theme}</button>`;
+  const off = (k: Pack): boolean => k === 'culto' && !sheetsOn();   // D97
+  const opt = (k: Pack): string => `<button class="${cur === k ? 'on' : ''}${off(k) ? ' off' : ''}" data-act="pack" data-v="${k}" aria-pressed="${cur === k}">${off(k) ? '<small class="pack-off">fora do ar · volta sozinho</small>' : ''}<span class="packart">${portrait('liberal', k, S.region)}${portrait('fascista', k, S.region)}${portrait('hitler', k, S.region)}</span>${Core.WORDS[k].theme}</button>`;
   return `<section class="card" id="pack"><span class="label">Tema do jogo</span><div class="packs" role="group" aria-label="Tema do jogo">${Core.PACKS.map(opt).join('')}</div>
     <p class="hint" id="packtext">${cur === 'culto' ? 'Investigadores contra um culto: os cultistas são o time escondido e o Sumo Sacerdote é o líder deles. As mesmas regras, e os dados valem mais: cada um tem uma ficha do Call of Cthulhu, e a Psicologia fareja mentiras, quem investiga rola para ser acreditado e quem elimina rola Intimidação.' : cur === 'comunismo' ? 'Os comunistas são o time escondido e o Stalin é o líder deles. Vota-se Da! ou Niet!. As regras são as mesmas; as IAs ganham nomes de liberais e comunistas.' : 'O jogo original: os fascistas são o time escondido e o Hitler é o líder deles.'}</p>
     <p class="hint">Nomes da IA</p><div class="segm regions" role="group" aria-label="Nomes da IA">${Core.REGIONS.filter(r => r !== 'brasil').map(r => `<button class="${(S.region || 'mundo') === r ? 'on' : ''}" data-act="region" data-v="${r}" aria-pressed="${(S.region || 'mundo') === r}">${Core.REGION_NAMES[r]}</button>`).join('')}</div>
@@ -309,7 +311,7 @@ function vGallery(): string {
   const back = '<button class="btn ghost block" data-act="gallery" id="galleryback">Voltar</button>';
   const cell = (r: Role, k: Pack, reg: Region, label: string): string => `<figure>${portrait(r, k, reg)}<figcaption><b>${label}</b>${animalOf(r, k, reg)}</figcaption></figure>`;
   const block = (reg: Region): string => `<section class="card gallery" id="gallery-${reg}"><span class="label">${Core.REGION_NAMES[reg]}</span>
-    ${Core.PACKS.map(k => `<p class="hint">${Core.WORDS[k].theme}</p><div class="cast">${cell('liberal', k, reg, 'Liberal')}${cell('fascista', k, reg, Core.WORDS[k].F)}${cell('hitler', k, reg, Core.WORDS[k].boss)}</div>`).join('')}
+    ${Core.PACKS.map(k => `<p class="hint">${Core.WORDS[k].theme}</p><div class="cast">${cell('liberal', k, reg, k === 'culto' ? 'Investigador' : 'Liberal')}${cell('fascista', k, reg, Core.WORDS[k].F)}${cell('hitler', k, reg, Core.WORDS[k].boss)}</div>`).join('')}
     <p class="hint">Rostos da mesa</p><div class="faces">${[...new Set([...Core.NAMES_BY.fascismo[reg], ...Core.NAMES_BY.comunismo[reg]])].map(n => `<figure>${face(n, reg)}<figcaption>${esc(n)}</figcaption></figure>`).join('')}</div></section>`;   // D92
   return `<section class="card" id="gallery"><span class="label">Todos os desenhos</span><p class="hint">Cada continente com os bichos dos dois temas. O de cima é o do jogo original.</p>${back}</section>${Core.REGIONS.filter(r => r !== 'brasil' || S.dlc).map(block).join('')}<section class="card">${back}</section>`;
 }
