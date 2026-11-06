@@ -58,6 +58,8 @@ with sync_playwright() as p:
     pg.on('pageerror', lambda e: errs.append(str(e)))
     cov.start(pg)
     pg.goto(BASE + '/index.html'); pg.wait_for_function('window.__APP && window.__APP.S')
+    # D98: without the expansion's key, the public face is Secret Cultist: no Hitler, no Stalin, no historical themes
+    check('the public face is Secret Cultist', pg.locator('.brand').inner_text().strip().lower() == 'secret cultist' and pg.locator('[data-act=pack]').count() <= 1 and not any(w in pg.locator('#view').inner_text() for w in ('Hitler', 'Stalin', 'fascis', 'comunis')), pg.locator('.brand').inner_text())
 
     # first visit: the worker installs, takes the page, and there is nothing to update from
     pg.wait_for_function('navigator.serviceWorker.controller !== null', timeout=15000)
@@ -72,7 +74,7 @@ with sync_playwright() as p:
     # no connection at all: the page still opens, from the device
     site['down'] = True; before = len(site['hits'])
     cov.reload(pg); pg.wait_for_function('window.__APP && window.__APP.S')
-    check('opens with the site unreachable', pg.title() == 'Secret Hitler' and pg.evaluate('!!document.getElementById("view").textContent'), pg.title())
+    check('opens with the site unreachable', pg.title() == 'Secret Cultist' and pg.evaluate('!!document.getElementById("view").textContent'), pg.title())
     check('the page did not come from the network', '/index.html' not in site['hits'][before:] and '/' not in site['hits'][before:], site['hits'][before:])
     stored = pg.evaluate('caches.keys().then(ks => Promise.all(ks.map(k => caches.open(k).then(c => c.keys())))).then(all => all.flat().map(r => r.url))')
     check('the worker keeps the page and nothing else', stored == [BASE + '/'], stored)

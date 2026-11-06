@@ -784,3 +784,8 @@ A regra continua sem sorte; o dado só mexe no que é dito e em como a mesa rece
 
 - **Pedido:** se o Secret Cultist estiver indisponível (a API de fichas fora), não fazer a pessoa perder tempo: jogar o modo normal, que não depende de integração.
 - **Decisão:** com o disjuntor aberto (D95), o tema aparece apagado no cartão "Tema do jogo", com "fora do ar · volta sozinho", e uma partida nova nele já começa no tema original, com o aviso "O modo Cthulhu está fora do ar agora. Seguimos no modo normal.". Se a API falhar na hora de buscar as fichas, a partida que acabou de começar passa para o tema original, com o mesmo aviso. Quando a API volta, o tema volta sozinho.
+
+## D98. Portfólio: só o Secret Cultist à mostra (2026-11-06)
+
+- **Pedido:** nada de Hitler, Stalin ou nazistas visível no portfólio; isso fica atrás da senha da DLC, e só o Secret Cultist fica disponível.
+- **Decisão:** sem a senha (`S.dlc`), o app é o Secret Cultist: título da página, nome na tela inicial ("Secret Cultist") e no ícone do celular, o único tema no cartão "Tema do jogo", na galeria, na partida rápida e no tutorial. Liberais x Fascistas e Liberais x Comunistas só aparecem depois da senha (a mesma do Brasil). Sem a API de fichas e sem a senha, a partida segue no Secret Cultist, só que sem dados (não cai para um tema histórico). Fica um crédito obrigatório: o jogo é uma adaptação de Secret Hitler, sob CC BY-NC-SA 4.0, que exige citar a obra original pelo nome. Os testes que jogam os temas históricos ligam a senha com `window.__DLC`, como o `window.__SEED`.

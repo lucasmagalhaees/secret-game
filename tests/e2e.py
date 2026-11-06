@@ -24,6 +24,7 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport=dict(width=393, height=852), device_scale_factor=2, color_scheme=THEME, locale='pt-BR', timezone_id='America/Sao_Paulo', has_touch=True, is_mobile=True, reduced_motion='reduce')
     ctx.route('**/*', lambda r: r.abort() if r.request.url.startswith('http') else r.continue_())
     ctx.add_init_script('window.__SEED = 7')   # D68: the same game every run, here and in CI
+    ctx.add_init_script('window.__DLC = true')   # D98: these tests play the historical themes too
     pg = ctx.new_page(); errs = []
     # D57/D60: an app player may accuse the person at any step, and the debate covers the screen until it is answered;
     # a scripted click answers it first (with the first argument each time) and closes it
@@ -567,6 +568,7 @@ with sync_playwright() as p:
     mctx = b.new_context(viewport=dict(width=393, height=852), color_scheme=THEME, locale='pt-BR', reduced_motion='no-preference')
     mctx.route('**/*', lambda r: r.abort() if r.request.url.startswith('http') else r.continue_())
     mctx.add_init_script('window.__SEED = 7')
+    mctx.add_init_script('window.__DLC = true')   # D98: these tests play the historical themes too
     mp = mctx.new_page(); merrs = []
     # D63: while an animation plays, taps wait; a scripted click waits for it to end first
     _mclick = mp.click

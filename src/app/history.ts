@@ -26,7 +26,7 @@ export async function exportGames(): Promise<void> {
   const file = new File([JSON.stringify(Core.historyFile(list(), builtFrom(), now))], `secret-hitler-partidas-${day}.json`, { type: 'application/json' });
   const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
   if (nav.canShare && nav.canShare({ files: [file] })) {
-    try { await nav.share({ files: [file], title: 'Partidas do Secret Hitler' }); return; } catch (e) { if ((e as Error).name === 'AbortError') return; }
+    try { await nav.share({ files: [file], title: 'Partidas do Secret Cultist' }); return; } catch (e) { if ((e as Error).name === 'AbortError') return; }
   }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
