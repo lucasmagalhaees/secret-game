@@ -63,7 +63,7 @@ with sync_playwright() as p:
     assert pg.locator('#ruleslist').count() == 0 and pg.locator('#moreopts').count() == 0 and 'sorteado' in txt('#moresum'), 'the rules and the other choices start closed'
     pg.click('#rulestoggle'); assert pg.locator('#ruleslist li').count() >= 5; pg.click('#rulestoggle'); assert pg.locator('#ruleslist').count() == 0
     # D25: every drawing, in a gallery: each continent, both themes, liberal, member and leader, with the animal's name
-    pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 6 * 2 * 3 and pg.locator('#table').count() == 0, 'the gallery has every drawing'
+    pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 6 * 3 * 3 and pg.locator('#table').count() == 0, 'the gallery has every drawing (3 themes since D96)'
     gal = txt('#view'); assert 'aranha' in gal and 'Stalin' in gal and 'coala' in gal and 'condor' in gal and 'onça' not in gal and overflow() == 0, gal[:300]
     shot(f's0-galeria-{THEME}.png'); pg.click('#galleryback'); assert pg.locator('#table').count() == 1 and pg.locator('.cast').count() == 0
     pg.fill('#name', 'Xu'); pg.press('#name', 'Enter'); assert 'Faltam 4' in txt('[data-act=start]') and 'Completar com 4 da IA' in txt('#fillmin')
@@ -513,21 +513,21 @@ with sync_playwright() as p:
     # D24: names by continent: the app seats change to names of the Americas
     world_art = pg.inner_html('#pack .packart')
     pg.click('[data-act=region][data-v=americas]'); ams = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.americas')
-    assert pg.inner_html('#pack .packart') != world_art and pg.locator('#pack .packart svg').count() == 6, 'the drawings change with the continent'
+    assert pg.inner_html('#pack .packart') != world_art and pg.locator('#pack .packart svg').count() == 9, 'the drawings change with the continent (3 themes since D96)'
     assert pg.evaluate('window.__APP.S.region') == 'americas' and all(x in ams for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and overflow() == 0, 'the app seats take names of the Americas'
     # D27: the Brazil expansion shows up only with the password
     assert pg.locator('[data-act=region][data-v=brasil]').count() == 0
     pg.click('#dlc summary'); pg.fill('#dlckey', 'senha'); pg.click('#dlcgo'); assert pg.locator('[data-act=region][data-v=brasil]').count() == 0 and pg.evaluate('window.__APP.S.dlc') is None, 'a wrong password unlocks nothing'
     pg.fill('#dlckey', 'unlockresenha'); pg.click('#dlcgo'); assert pg.evaluate('window.__APP.S.dlc') is True and pg.locator('#dlcon').count() == 1
-    pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 7 * 2 * 3 and 'polvo' in txt('#gallery-brasil') and 'tucano' in txt('#gallery-brasil'), 'unlocked, the gallery shows Brazil too'; pg.click('#galleryback')
+    pg.click('#gallerytoggle'); assert pg.locator('.cast figure').count() == 7 * 3 * 3 and 'polvo' in txt('#gallery-brasil') and 'tucano' in txt('#gallery-brasil'), 'unlocked, the gallery shows Brazil too'; pg.click('#galleryback')
     pg.click('[data-act=region][data-v=brasil]'); br = pg.evaluate('window.__APP.Core.NAMES_BY.comunismo.brasil')
     assert pg.evaluate('document.documentElement.dataset.region') == 'brasil', 'the continent is set on the page (D29)'
-    assert all(x in br for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and pg.locator('#pack .packart svg').count() == 6 and overflow() == 0, 'the app seats take names of Brazil'
+    assert all(x in br for x in pg.locator('#names li').filter(has=pg.locator('small.ai')).locator('b').all_text_contents()) and pg.locator('#pack .packart svg').count() == 9 and overflow() == 0, 'the app seats take names of Brazil'
     # every continent shows its cast (liberal, member, leader) on both themes, and none of them overflows the screen
-    for pack in ('fascismo', 'comunismo'):
+    for pack in ('fascismo', 'culto', 'comunismo'):
         pg.click(f'[data-act=pack][data-v={pack}]')
         for r in pg.evaluate('window.__APP.Core.REGIONS'):
-            pg.click(f'[data-act=region][data-v={r}]'); assert pg.locator('#pack .packart svg').count() == 6 and overflow() == 0, (pack, r)
+            pg.click(f'[data-act=region][data-v={r}]'); assert pg.locator('#pack .packart svg').count() == 9 and overflow() == 0, (pack, r)
     pg.click('[data-act=region][data-v=mundo]'); assert pg.evaluate('window.__APP.S.region') is None
     assert 'Liberais x Comunistas' in txt('#pack') and 'comunistas' in txt('#rules') and 'Stalin' in txt('#rules') and 'fascis' not in (txt('#table') + txt('#solo') + txt('#rules')).lower()
     for x in list(range(pg.locator('#names li').count())):

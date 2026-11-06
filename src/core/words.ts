@@ -15,20 +15,22 @@ export interface Words {
   /** The name of the theme. */
   theme: string;
 }
-export const PACKS: Pack[] = ['fascismo', 'comunismo'];
+export const PACKS: Pack[] = ['fascismo', 'comunismo', 'culto'];
 export const WORDS: Record<Pack, Words> = {
   fascismo: { f: 'fascista', fs: 'fascistas', F: 'Fascista', boss: 'Hitler', ja: 'Ja!', nein: 'Nein!', libs: 'Libs', short: 'Nazis', theme: 'Liberais x Fascistas' },
-  comunismo: { f: 'comunista', fs: 'comunistas', F: 'Comunista', boss: 'Stalin', ja: 'Da!', nein: 'Niet!', libs: 'Libs', short: 'Coms', theme: 'Liberais x Comunistas' }
+  comunismo: { f: 'comunista', fs: 'comunistas', F: 'Comunista', boss: 'Stalin', ja: 'Da!', nein: 'Niet!', libs: 'Libs', short: 'Coms', theme: 'Liberais x Comunistas' },
+  // D96: Secret Cultist: investigators against a cult, led in secret by its High Priest; the votes in the tongue of the book
+  culto: { f: 'cultista', fs: 'cultistas', F: 'Cultista', boss: 'Sumo Sacerdote', ja: 'Aye!', nein: 'Nay!', libs: 'Invs', short: 'Cult', theme: 'Investigadores x Cultistas' }
 };
 /** The votes in the tongue of the leaders of each continent (D29): the world and Europe keep the original ones
  *  (German for the fascists, Russian for the communists); the Americas vote in Spanish, Brazil in Portuguese, Asia in
  *  Japanese for the fascists and Chinese for the communists, Africa in Swahili, Oceania in English. */
-export const VOTES: Partial<Record<Region, Record<Pack, [string, string]>>> = {
-  americas: { fascismo: ['¡Sí!', '¡No!'], comunismo: ['¡Sí!', '¡No!'] },
-  brasil: { fascismo: ['Sim!', 'Não!'], comunismo: ['Sim!', 'Não!'] },
-  asia: { fascismo: ['Hai!', 'Iie!'], comunismo: ['Shì!', 'Bù!'] },
-  africa: { fascismo: ['Ndiyo!', 'Hapana!'], comunismo: ['Ndiyo!', 'Hapana!'] },
-  oceania: { fascismo: ['Yes!', 'No!'], comunismo: ['Yes!', 'No!'] }
+export const VOTES: Partial<Record<Region, Partial<Record<Pack, [string, string]>>>> = {
+  americas: { fascismo: ['¡Sí!', '¡No!'], comunismo: ['¡Sí!', '¡No!'], culto: ['¡Sí!', '¡No!'] },
+  brasil: { fascismo: ['Sim!', 'Não!'], comunismo: ['Sim!', 'Não!'], culto: ['Sim!', 'Não!'] },
+  asia: { fascismo: ['Hai!', 'Iie!'], comunismo: ['Shì!', 'Bù!'], culto: ['Hai!', 'Iie!'] },
+  africa: { fascismo: ['Ndiyo!', 'Hapana!'], comunismo: ['Ndiyo!', 'Hapana!'], culto: ['Ndiyo!', 'Hapana!'] },
+  oceania: { fascismo: ['Yes!', 'No!'], comunismo: ['Yes!', 'No!'], culto: ['Yes!', 'No!'] }
 };
 /** The words of a theme, with the votes of the continent; without one, the original game's. */
 export const words = (pack?: Pack, region?: Region): Words => {

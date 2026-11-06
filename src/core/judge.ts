@@ -6,7 +6,7 @@
    does more than its turn. It also takes the votes, one by one, where the app plays some of the seats, and what each
    player tells the table about its hand. */
 import { INV_CRED, backed, earlyGov, believe, claimRepeats, socialMemory, decideWhy, drawOdds, QUIET, REACT, temper } from './ai';
-import { roll, ROLL_BONUS, skillForArg, type Roll, type RollLevel } from './dice';
+import { cultDice, RANK, roll, ROLL_BONUS, ROLL_NAME, skillForArg, type Roll, type RollLevel } from './dice';
 import { WIN, seeded, answerVeto, askVeto, canNominate, canTarget, canVeto, chancellorDiscard, DECK_F, DECK_L, endPower, execute, FASCISTS, HITLER_KNOWS_UPTO, HITLER_ZONE, investigate, knows, nominate, partyOf, presidentDiscard, revealNext, SMALL_TABLE, specialElect, TRACKER_MAX, vote } from './game';
 import { words } from './words';
 import type { Ask, DebLine, Defense, Event, Game, Gov, Law, Level, Party, Persona, Role, Seen, Talk, Trace, View } from './types';
@@ -50,6 +50,41 @@ const fN = (n: number, of: number, a: string, b: string): string => {
 };
 /** One seat tells the table what it saw (`v`: fascist laws, or for 'inv' 0 liberal / 1 fascist; -1 keeps quiet). */
 export function say(g: Game, seat: number, what: Ask, v: number): Game {
+  const out = say0(g, seat, what, v);
+  return out === g || v < 0 || !cultDice(g) || what === 'peek' ? out : readLies(out, seat, what, v);
+}
+/** D96: in Secret Cultist, each app player listening rolls Psychology against the speaker's Persuasion: the better
+ *  roll reads the claim right (a lie as a lie, the truth as the truth); an extreme reading is sure. Nothing at the
+ *  table changes; only the reader knows. A person who lied and was read is told someone noticed. */
+function readLies(g: Game, seat: number, what: Ask, v: number): Game {
+  const i = lastIndex(g, what === 'inv' ? ['inv'] : ['gov', 'veto']), e = g.hist[i];
+  let truth: number;
+  if (e.k === 'inv') truth = partyOf(g.players[e.target].role) === 'F' ? 1 : 0;
+  else if ((e.k === 'gov' || e.k === 'veto') && what === 'pc' && e.drew) truth = e.drew.filter(x => x === 'F').length;
+  else if ((e.k === 'gov' || e.k === 'veto') && what === 'cc' && e.got) truth = e.got.filter(x => x === 'F').length;
+  else return g;
+  const lie: boolean = truth !== v, r = seeded(g.hist.length * 131 + seat * 7 + v), sp = roll(g, seat, 'Persuade', r);
+  if (!sp) return g;
+  const reads: Event[] = [];
+  for (const j of seats(g, j => j !== seat && g.players[j].alive && !!g.players[j].ai)) {
+    const ps = roll(g, j, 'Psychology', r);
+    if (ps && RANK[ps.level] > RANK[sp.level] && ps.level !== 'fail' && ps.level !== 'fumble') reads.push({ k: 'psy', by: j, about: seat, lie, sure: RANK[ps.level] >= RANK.extreme });
+  }
+  if (!reads.length) return g;
+  const caught = lie && !g.players[seat].ai && reads.some(x => x.k === 'psy' && x.lie);
+  return { ...g, hist: [...g.hist, ...reads], log: caught ? [...g.log, `🎲 Alguém na mesa franziu a testa com o que você disse.`] : g.log };
+}
+/** D96: in Secret Cultist the eliminator rolls Intimidation: the shot never misses (the rule); the roll says whether
+ *  its reason convinced the table. Said aloud, and every app player takes it into account. */
+export function intimidate(g: Game): Game {
+  const i = lastIndex(g, ['exec']), e = g.hist[i];
+  if (!cultDice(g) || i < 0 || e.k !== 'exec' || e.intim) return g;
+  const r = roll(g, e.by, 'Intimidate', seeded(g.hist.length * 977 + e.target));
+  if (!r) return g;
+  const ok = RANK[r.level] >= RANK.ok;
+  return { ...g, hist: g.hist.map((x, j) => (j === i ? { ...e, intim: r.level } : x)), log: [...g.log, `🎲 ${g.players[e.by].name} rolou Intimidação (${r.d}/${r.val}): ${ROLL_NAME[r.level]}. ${ok ? 'A mesa engoliu a justificativa.' : 'Pegou mal na mesa.'}`] };
+}
+function say0(g: Game, seat: number, what: Ask, v: number): Game {
   if (!claims(g, seat).includes(what) || !(Number.isInteger(v) && v >= -1 && v <= MAX_SAY[what])) return g;
   const who = g.players[seat].name, quiet = v < 0;
   const set = (i: number, patch: object, line: string): Game => ({ ...g, hist: g.hist.map((e, j) => (j === i ? ({ ...e, ...patch } as Event) : e)), log: [...g.log, line] });
@@ -876,7 +911,8 @@ function seenBy(e: Event, me: number): Seen {
     }
     case 'inv': { const { party, ...rest } = e; return e.by === me ? { ...rest, party } : rest; }
     case 'peek': { const { saw, ...rest } = e; return e.by === me && saw ? { ...rest, saw } : rest; }
-    case 'exec': return { k: 'exec', by: e.by, target: e.target, ...(e.why ? { why: e.why } : {}) };
+    case 'exec': return { k: 'exec', by: e.by, target: e.target, ...(e.why ? { why: e.why } : {}), ...(e.intim ? { intim: e.intim } : {}) };
+    case 'psy': return e.by === me ? e : { k: 'psy', by: e.by, about: e.about };   // D96: a reading is only its reader's
     default: return e;
   }
 }
@@ -957,7 +993,7 @@ export function botStep(g: Game, rand: () => number): Game | null {
     case 'veto': return answerVeto(g, a === 1, rand);
     case 'investigate': return investigate(g, a);
     case 'special': return specialElect(g, a);
-    default: return justify(g, execute(g, a));
+    default: return intimidate(justify(g, execute(g, a)));
   }
 }
 /** D53: an app player says why it eliminated someone, from what the whole table saw: the strongest proof in the record,

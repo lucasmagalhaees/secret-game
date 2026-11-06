@@ -2,7 +2,7 @@ import { Core } from '../core';
 import type { Ask, Game, Law, Level, NoteDetail, Pack, Region, Role, Theme } from '../core';
 import { $, valOf } from './format';
 import { buzz, later, reactions, sound } from './fx';
-import { loadSheets } from './api';
+import { loadSheets, sheetsOn } from './api';
 import { tutTip, ballot, beat, blurField, bossWin, claimFx, freeze, swayOpen, swayReasonsShow, swayResult, swayClose, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
 import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
@@ -30,7 +30,9 @@ function fetchSheets(g: Game): void {
   sheetsFor = key;
   loadSheets(g).then(sh => {
     const cur = S.game;
-    if (!sh || !cur || cur.sheets || cur.players.map(p => p.name).join('|') !== key) return;
+    if (!cur || cur.sheets || cur.players.map(p => p.name).join('|') !== key) return;
+    // D97: Secret Cultist needs the sheets; without them, no waiting: the game goes on in the original theme, and says so
+    if (!sh) { if (cur.pack === 'culto' && cur.hist.length < 3) { setS({ ...S, game: { ...cur, pack: undefined } }); saveS(); render(); toast('O modo Cthulhu está fora do ar agora. Seguimos no modo normal.'); } return; }
     setS({ ...S, game: { ...cur, sheets: sh } }); saveS(); render();
   }).catch(() => {});
 }
@@ -49,6 +51,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   // an app player only spoke (a claim, a talk): the phase is the same, so what the person opened, picked or voted stays (D21)
   const spoke = !!before && changed && next.phase === before.phase && beat(next) === beat(before) && next.pres === before.pres && next.chanc === before.chanc;
   setS({ ...S, game: next }); saveS();
+  if (next.pack === 'culto' && !next.sheets && !next.hist.length && !sheetsOn()) { next.pack = undefined; toast('O modo Cthulhu está fora do ar agora. Seguimos no modo normal.'); }   // D97: the breaker is open: do not even try
   if (!next.sheets && next.phase !== 'over' && sheetsFor !== next.players.map(p => p.name).join('|')) fetchSheets(next);   // D94
   if (changed && !spoke) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
@@ -330,7 +333,7 @@ export function initEvents(): void {
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
     else if (a === 'fill') addBots(Number(d.n));
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
-    else if (a === 'pack') setPack(d.v === 'comunismo' ? 'comunismo' : undefined);
+    else if (a === 'pack') setPack(d.v === 'comunismo' || d.v === 'culto' ? d.v : undefined);
     else if (a === 'dlc') { if (valOf('#dlckey').trim().toLowerCase() === Core.DLC_KEY) { S.dlc = true; saveS(); render(); toast('DLC Brasil liberada: escolha "Brasil" nos nomes da IA.'); } else toast('Senha errada.'); }   // D27
     else if (a === 'region') setPack(S.pack, (Core.REGIONS as string[]).includes(d.v || '') ? d.v as Region : 'mundo');   // the app seats take names of that continent (D24)
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
@@ -427,7 +430,7 @@ export function initEvents(): void {
     else if (a === 'special') play(Core.specialElect(g, i), `${g.players[i].name} é o próximo presidente.`);
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) {
-      const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick);
+      const t = g.players[ui.pick].name, next = Core.intimidate(Core.execute(g, ui.pick));   // D96
       flash(t, g.players[ui.pick].role === 'hitler');   // D76: no shot sound: it gave the end away before the screen
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }

@@ -440,6 +440,7 @@ const LABEL: Record<string, string> = {
 };
 /** The animal behind each role, by name, for the gallery (D25). */
 export const animalOf = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+  if (pack === 'culto') return r === 'liberal' ? 'investigador' : r === 'hitler' ? 'sumo sacerdote' : 'cultista';   // D96
   if (region === 'mundo') return r === 'liberal' ? 'pássaro' : pack === 'comunismo' ? (r === 'hitler' ? 'urso' : 'lobo-branco') : r === 'hitler' ? 'naja' : 'jacaré';
   if (r === 'hitler') return LABEL[BOSSES[region][pack === 'comunismo' ? 'S' : 'H']];
   return LABEL[ANIMALS[region][r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F']];
@@ -450,7 +451,15 @@ const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox=
 
 /** The big picture on a role card. In the communist theme (D12) the hidden side is the wolf and its leader the bear;
  *  on a continent (D24), the liberal and the member of the hidden side are that continent's animals. */
+/* D96: Secret Cultist, in the same heavy-outline style: the investigator in trench coat and hat with a lamp, the cultist
+ * in a red hooded robe with no face in the hood, the High Priest in black with a gold mitre and tentacles at the hem. */
+const investigator = (): string => `<circle cx="60" cy="62" r="52" fill="#f2d98a" opacity=".35"/><path d="M20 118c2-30 16-44 40-44s38 14 40 44z" fill="#8a6a3a" ${K}/><path d="M48 76l12 32 12-32" fill="#e8e1cf" ${K}/><path d="M58 80h4l2 30h-8z" fill="#7a2a1a" ${K}/><path d="M40 82l-8 36M80 82l8 36" stroke="#15110e" stroke-width="3"/><ellipse cx="60" cy="54" rx="20" ry="23" fill="#e0ad86" ${K}/><path d="M48 50l7 1M65 51l7-1" stroke="#15110e" stroke-width="3" stroke-linecap="round"/><circle cx="52" cy="56" r="2.6" fill="#15110e"/><circle cx="68" cy="56" r="2.6" fill="#15110e"/><path d="M51 66c4-3 14-3 18 0-3 3-15 3-18 0z" fill="#5a3a22" ${K}/><path d="M24 38h72l-7 6H31z" fill="#3a2a1a" ${K}/><path d="M37 38c0-15 10-23 23-23s23 8 23 23z" fill="#3a2a1a" ${K}/><path d="M39 35h42" stroke="#7a2a1a" stroke-width="4"/><circle cx="94" cy="92" r="11" fill="#cfe6ee" ${K}/><path d="M86 100 72 116" stroke="#15110e" stroke-width="5" stroke-linecap="round"/><path d="M90 88c2-2 5-2 7 0" stroke="#fff" stroke-width="2" fill="none"/>`;
+// the cultist: a red hood with a goat skull for a face (horns curling out of the hood)
+const cultist = (): string => `<circle cx="60" cy="62" r="52" fill="#c4381f" opacity=".25"/><path d="M18 118c4-40 18-78 42-90 24 12 38 50 42 90z" fill="#9e2414" ${K}/><path d="M36 74c0-24 10-38 24-38s24 14 24 38c-6 6-14 9-24 9s-18-3-24-9z" fill="#2a0f0a" ${K}/><path d="M44 48c-10-6-16-2-18 6 6-3 10-2 14 2M76 48c10-6 16-2 18 6-6-3-10-2-14 2" fill="#efe6d2" ${K}/><path d="M46 50c2-6 8-8 14-8s12 2 14 8l-3 16c-2 8-6 14-11 16-5-2-9-8-11-16z" fill="#efe6d2" ${K}/><path d="M50 56l6 3-5 3zM70 56l-6 3 5 3z" fill="#15110e"/><path d="M57 70h6l-3 5z" fill="#15110e"/><path d="M55 78h10M57 82h6" stroke="#15110e" stroke-width="2"/><path d="M48 118l12-26 12 26" fill="#2a0f0a" ${K}/>`;
+// the High Priest: black robe and gold mitre over a face of tentacles, more of them crawling out from under the robe
+const priest = (): string => `<circle cx="60" cy="62" r="52" fill="#3c6e71" opacity=".3"/><path d="M14 118c4-40 18-74 46-86 28 12 42 46 46 86z" fill="#1d1a24" ${K}/><path d="M40 74c0-22 9-34 20-34s20 12 20 34c-6 5-13 8-20 8s-14-3-20-8z" fill="#2f5a5c" ${K}/><circle cx="52" cy="58" r="3.5" fill="#d4ac0d"/><circle cx="68" cy="58" r="3.5" fill="#d4ac0d"/><path d="M46 66c-2 10 0 18-6 26M53 68c0 10 2 18-2 28M60 68c0 12 2 20 0 30M67 68c0 10-2 18 2 28M74 66c2 10 0 18 6 26" fill="none" stroke="#3c8a8c" stroke-width="5" stroke-linecap="round"/><path d="M46 66c-2 10 0 18-6 26M53 68c0 10 2 18-2 28M60 68c0 12 2 20 0 30M67 68c0 10-2 18 2 28M74 66c2 10 0 18 6 26" fill="none" stroke="#15110e" stroke-width="1.5" stroke-dasharray="1 4" stroke-linecap="round"/><path d="M44 38 50 6l10 14 10-14 6 32c-5-3-10-4-16-4s-11 1-16 4z" fill="#d4ac0d" ${K}/><circle cx="60" cy="24" r="4" fill="#3c6e71" ${K}/><path d="M18 116c4-10 10-12 12-4s8 6 10-4M80 112c2-10 8-10 10-2s8 4 10-6" fill="none" stroke="#3c8a8c" stroke-width="6" stroke-linecap="round"/>`;
 export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+  if (pack === 'culto') return svg(r === 'liberal' ? investigator() : r === 'hitler' ? priest() : cultist(), 'art');
   if (r === 'hitler' && region !== 'mundo' && BOSSES[region]) return svg(leader(pack, region), 'art');
   if (r !== 'hitler' && region !== 'mundo' && ANIMALS[region]) {
     const a = ANIMALS[region], s: Side = r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F';
@@ -462,12 +471,16 @@ export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mun
 /** The seal of a party on law cards and on the board: a symbol, not a character (the scales; the fasces, or the hammer and sickle in
  *  the communist theme). */
 // D86: drawn, not emoji: the phone's emoji (a glossy skull, a coloured scale) clashed with the poster
-const SEALS: Record<'L' | 'F' | 'C', string> = {
+const SEALS: Record<'L' | 'F' | 'C' | 'K' | 'E', string> = {
+  // D96: the cult: an eye in a tentacled circle; the investigators: the elder sign (a star with an eye of flame)
+  K: '<circle cx="32" cy="30" r="15" fill="currentColor" stroke-width="2.5"/><ellipse class="sk" cx="32" cy="30" rx="9" ry="5" fill="var(--halo)" stroke="none"/><circle cx="32" cy="30" r="3" fill="currentColor" stroke="none"/><path d="M20 42c-4 6-10 8-12 14M28 45c-1 6-4 10-6 15M36 45c1 6 4 10 6 15M44 42c4 6 10 8 12 14" stroke-width="4" stroke-linecap="round"/>',
+  E: '<path d="M32 6l6 18h19l-15 11 6 18-16-11-16 11 6-18L7 24h19z" fill="none" stroke-width="3" stroke-linejoin="round"/><path d="M32 18c5 6 5 12 0 18-5-6-5-12 0-18z" fill="currentColor" stroke-width="1.5"/>',
   L: '<path d="M32 9v40M18 15h28" stroke-width="4"/><circle cx="32" cy="10" r="3.5" fill="currentColor" stroke="none"/><path d="M18 15 10 33M18 15l8 18M46 15l-8 18M46 15l8 18" stroke-width="2.2"/><path d="M8 33h20c0 6-4.5 9-10 9s-10-3-10-9zM36 33h20c0 6-4.5 9-10 9s-10-3-10-9z" fill="currentColor" stroke-width="2"/><path d="M22 55h20l-3-6H25z" fill="currentColor" stroke-width="2"/>',
   F: '<path class="sk" fill="currentColor" stroke-width="3" d="M38 8c11 0 19 6 21 16-8-3-14-3-21 0z"/><path d="M22 12h20v40H22z" fill="currentColor" stroke-width="2.5"/><path d="M27 12v40M32 12v40M37 12v40" stroke="var(--halo)" stroke-width="1.8"/><path class="sk" d="M19 20h26M19 44h26" stroke-width="7" stroke-linecap="round"/><path d="M19 20h26M19 44h26" stroke-width="4.5" stroke-linecap="round"/><path d="M29 6h6v6h-6z" fill="currentColor" stroke-width="2"/><path d="M26 52h12l3 7H23z" fill="currentColor" stroke-width="2"/>',
   C: '<path fill="currentColor" stroke-width="1.5" d="M15.4 41A21 21 0 1 1 52.6 41L48.4 35A14 14 0 1 0 24 34z"/><path d="M18 39 9 52" stroke-width="6" stroke-linecap="round"/><path class="sk" d="M51 53 23 25" stroke-width="6.5" stroke-linecap="round"/><path d="M51 53 23 25" stroke-width="5" stroke-linecap="round"/><g transform="rotate(-45 21 23)"><rect class="sk" x="9" y="18" width="24" height="10" fill="currentColor" stroke-width="2.5"/></g>'
 };
-export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="glyph seal-${p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F'}" viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">${SEALS[p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F']}</svg>`;
+const sealKey = (p: Law, pack: Pack): 'L' | 'F' | 'C' | 'K' | 'E' => pack === 'culto' ? (p === 'L' ? 'E' : 'K') : p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F';
+export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="glyph seal-${sealKey(p, pack)}" viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">${SEALS[sealKey(p, pack)]}</svg>`;
 
 /* D92: a face for each seat, flat and faceless (no eyes, no mouth: just the shape of a person), dressed the way people
  * dress where the names come from: coats, scarves and fur hats in Europe; bright patterned cloth, caps and head wraps in

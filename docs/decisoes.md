@@ -767,3 +767,20 @@ A sugestão de crédito social virou reputação na mesa, sem pontuação única
 
 - **Pedido:** se a API de fichas cair, não ficar gastando chamada e tempo; um circuit breaker, com o jogo voltando a ser o de antes enquanto ela está fora, e as fichas voltando sozinhas quando ela voltar (feature toggle).
 - **Decisão:** um disjuntor (`src/core/breaker.ts`), guardado no aparelho (`secrethitler.sheets.v1`). Fechado, as chamadas saem. A cada partida nova, a primeira ficha é um teste: se falhar, nenhuma outra sai e a partida é jogada sem fichas. Depois de `BREAK_AFTER` (2) falhas seguidas ele abre e não chama nada por `BREAK_WAIT` (2 min); passado o tempo, deixa uma chamada passar (meio aberto): se ela responde, ele fecha e as fichas voltam; se não, abre de novo, esperando o dobro, até `BREAK_MAX` (1 h). Sem ficha não há dado nem ficha na tela: o jogo é exatamente o de antes (a ficha feita no aparelho, do D94, saiu). Se alguma ficha da mesa falhar, a mesa toda fica sem, para ninguém rolar com vantagem. Cada chamada desiste em 6 s.
+
+## Ideias futuras para os dados (registrado em 2026-11-03, não feito)
+
+A regra continua sem sorte; o dado só mexe no que é dito e em como a mesa recebe.
+- **Psicologia:** quando alguém diz à mesa o que recebeu, cada IA rola Psicologia; sucesso desconfia de uma mentira, extremo tem certeza.
+- **Investigar:** o resultado é sempre o verdadeiro; o que rola é a credibilidade do que o investigador conta (Persuasão contra a Psicologia de quem ouve).
+- **Eliminar:** o tiro nunca erra; rola Intimidação para a justificativa convencer (sem perder confiança) ou pegar mal, com o dado na animação do tiro.
+
+## D96. Secret Cultist (2026-11-06)
+
+- **Pedido:** um modo novo, "Secret Cultist", com as rolagens de Psicologia, de investigar e de eliminar (as ideias futuras do D94).
+- **Decisão:** um tema novo (`culto`): Investigadores x Cultistas, o líder escondido é o Sumo Sacerdote (Cthulhu fica como o deus invocado, não como jogador), votos Aye!/Nay!, no alto "Secret Cultist", desenhos próprios (investigador de sobretudo e chapéu com lampião, cultista de capuz vermelho sem rosto, Sumo Sacerdote de preto com mitra dourada e tentáculos) e símbolos próprios nas leis (o Sinal Ancião para os investigadores, um olho com tentáculos para o culto); as IAs com nomes dos dois lados. As rolagens novas valem só nesse tema e só com fichas (D95): quando alguém diz à mesa o que tirou, recebeu ou investigou, cada IA viva rola Psicologia contra a Persuasão de quem falou; ganhando (com sucesso), lê certo, mentira como mentira e verdade como verdade, e com extremo tem certeza; a leitura é só dela e pesa no que ela acha (uma mentira lida aponta forte para o lado escondido). A pessoa que mentiu e foi lida vê "alguém na mesa franziu a testa". Quem elimina rola Intimidação, dita no registro: convencendo, a mesa não desconfia dele por isso; falhando, pega mal. A regra não muda: o tiro nunca erra e a investigação mostra sempre o partido verdadeiro.
+
+## D97. Modo Cthulhu fora do ar: segunda chance no modo normal (2026-11-06)
+
+- **Pedido:** se o Secret Cultist estiver indisponível (a API de fichas fora), não fazer a pessoa perder tempo: jogar o modo normal, que não depende de integração.
+- **Decisão:** com o disjuntor aberto (D95), o tema aparece apagado no cartão "Tema do jogo", com "fora do ar · volta sozinho", e uma partida nova nele já começa no tema original, com o aviso "O modo Cthulhu está fora do ar agora. Seguimos no modo normal.". Se a API falhar na hora de buscar as fichas, a partida que acabou de começar passa para o tema original, com o mesmo aviso. Quando a API volta, o tema volta sozinho.
