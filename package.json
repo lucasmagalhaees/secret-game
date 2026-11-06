@@ -2,7 +2,7 @@
   "name": "secret-hitler",
   "private": true,
   "version": "0.23.0",
-  "description": "Jogo de dedução social: liberais contra fascistas, num celular passando de mão em mão.",
+  "description": "Secret Cultist: jogo de dedução social, investigadores contra um culto, num celular passando de mão em mão.",
   "type": "module",
   "engines": {
     "node": ">=22.12"

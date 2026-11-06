@@ -1,6 +1,6 @@
-# Secret Hitler
+# Secret Cultist
 
-Jogo de cartas de dedução social no estilo Secret Hitler, liberais contra fascistas (ou contra comunistas, D12), jogado em um celular só que passa de mão em mão (5 a 10 lugares na mesma sala). Dá para jogar sozinho ou com poucas pessoas: a IA ocupa os outros lugares (D10).
+Jogo de cartas de dedução social, investigadores contra cultistas (D96, a cara pública desde o D98; os temas históricos do original, liberais contra fascistas ou contra comunistas, D12, ficam atrás da senha da expansão), jogado em um celular só que passa de mão em mão (5 a 10 lugares na mesma sala). Dá para jogar sozinho ou com poucas pessoas: a IA ocupa os outros lugares (D10).
 
 
 Idioma da interface: português do Brasil, informal. Comentários no código: inglês.
