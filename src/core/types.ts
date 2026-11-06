@@ -8,7 +8,7 @@ export type Theme = 'light' | 'dark';
 /** How fast the players run by the app act (D13). */
 export type Speed = 'lenta' | 'normal' | 'rapida';
 /** The theme of the game (D12): liberals against fascists (the original), or against communists. Same rules. */
-export type Pack = 'fascismo' | 'comunismo';
+export type Pack = 'fascismo' | 'comunismo' | 'culto';
 /** Where the names of the app players come from (D24). */
 /** 'brasil' is the unlockable expansion (D27): only offered once the password was typed. */
 export type Region = 'mundo' | 'americas' | 'europa' | 'asia' | 'africa' | 'oceania' | 'brasil';
@@ -61,7 +61,9 @@ export type Event =
   | { k: 'inv'; by: number; target: number; party: Party; said?: Party | '-' }
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
-  | { k: 'exec'; by: number; target: number; role: Role; why?: string }
+  | { k: 'exec'; by: number; target: number; role: Role; why?: string; intim?: RollLevel }
+  /** D96: an app player read what someone told the table (Psychology against Persuasion): only it knows the verdict. */
+  | { k: 'psy'; by: number; about: number; lie: boolean; sure: boolean }
   /** D65: someone says its own side out loud; someone asks another for its vote on this government. */
   | { k: 'self'; by: number; proof?: string; power?: number; re?: [number, number][] }
   | { k: 'plea'; by: number; about: number; ja: boolean }
@@ -90,6 +92,7 @@ export type Gov = { k: 'gov' | 'veto'; pres: number; chanc: number; law?: Law; d
 export interface NoteDetail { reason: string; kind: 'fact' | 'guess' }
 /** D94: a Call of Cthulhu character sheet: each characteristic and skill (by its English name) with its value, and the
  *  native language. */
+export type RollLevel = 'crit' | 'extreme' | 'hard' | 'ok' | 'fail' | 'fumble';
 export interface Sheet { vals: Record<string, number>; native: string }
 export interface Game {
   players: Player[];
@@ -172,7 +175,8 @@ export type Seen =
   | { k: 'inv'; by: number; target: number; party?: Party; said?: Party | '-' }
   | { k: 'peek'; by: number; saw?: Law[]; said?: number }
   | { k: 'special'; by: number; target: number }
-  | { k: 'exec'; by: number; target: number; why?: string }
+  | { k: 'exec'; by: number; target: number; why?: string; intim?: RollLevel }
+  | { k: 'psy'; by: number; about: number; lie?: boolean; sure?: boolean }
   | { k: 'self'; by: number; proof?: string; power?: number; re?: [number, number][] }
   | { k: 'plea'; by: number; about: number; ja: boolean }
   /** D66: a request to whoever presides (pick me / do not pick someone / investigate someone), a question to an app

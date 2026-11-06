@@ -440,6 +440,7 @@ const LABEL: Record<string, string> = {
 };
 /** The animal behind each role, by name, for the gallery (D25). */
 export const animalOf = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+  if (pack === 'culto') return r === 'liberal' ? 'investigador' : r === 'hitler' ? 'sumo sacerdote' : 'cultista';   // D96
   if (region === 'mundo') return r === 'liberal' ? 'pássaro' : pack === 'comunismo' ? (r === 'hitler' ? 'urso' : 'lobo-branco') : r === 'hitler' ? 'naja' : 'jacaré';
   if (r === 'hitler') return LABEL[BOSSES[region][pack === 'comunismo' ? 'S' : 'H']];
   return LABEL[ANIMALS[region][r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F']];
@@ -450,7 +451,13 @@ const svg = (body: string, cls: string): string => `<svg class="${cls}" viewBox=
 
 /** The big picture on a role card. In the communist theme (D12) the hidden side is the wolf and its leader the bear;
  *  on a continent (D24), the liberal and the member of the hidden side are that continent's animals. */
+/* D96: Secret Cultist, in the same heavy-outline style: the investigator in trench coat and hat with a lamp, the cultist
+ * in a red hooded robe with no face in the hood, the High Priest in black with a gold mitre and tentacles at the hem. */
+const investigator = (): string => `<circle cx="60" cy="62" r="52" fill="#f2d98a" opacity=".35"/><path d="M22 118c2-30 16-44 38-44s36 14 38 44z" fill="#8a6a3a" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M50 76l10 30 10-30" fill="#e8e1cf" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M58 80h4l2 30h-8z" fill="#7a2a1a" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><ellipse cx="60" cy="52" rx="20" ry="23" fill="#e0ad86" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M26 36h68l-6 6H32z" fill="#3a2a1a" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M38 36c0-14 10-22 22-22s22 8 22 22z" fill="#3a2a1a" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M40 33h40" stroke="#7a2a1a" stroke-width="4"/><path d="M92 86v20M86 92h12v18H86z" fill="#f2d98a" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/>`;
+const cultist = (): string => `<circle cx="60" cy="62" r="52" fill="#c4381f" opacity=".25"/><path d="M18 118c4-40 18-78 42-90 24 12 38 50 42 90z" fill="#9e2414" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M38 70c0-22 10-36 22-36s22 14 22 36c-6 6-14 9-22 9s-16-3-22-9z" fill="#15110e" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M60 82v36M48 96h24" stroke="#d4ac0d" stroke-width="3"/>`;
+const priest = (): string => `<circle cx="60" cy="62" r="52" fill="#3c6e71" opacity=".3"/><path d="M14 118c4-40 18-74 46-86 28 12 42 46 46 86z" fill="#1d1a24" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M40 72c0-20 9-32 20-32s20 12 20 32c-6 5-13 8-20 8s-14-3-20-8z" fill="#0b0a0e" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M44 36 50 6l10 14 10-14 6 30c-5-3-10-4-16-4s-11 1-16 4z" fill="#d4ac0d" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/><path d="M24 118c2-8 8-10 10-4s6 6 8-2M52 118c2-8 8-10 10-4s6 6 8-2M80 118c2-8 8-10 10-4" fill="none" stroke="#3c6e71" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="96" r="5" fill="#3c6e71" stroke="#15110e" stroke-width="3" stroke-linejoin="round"/>`;
 export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mundo'): string => {
+  if (pack === 'culto') return svg(r === 'liberal' ? investigator() : r === 'hitler' ? priest() : cultist(), 'art');
   if (r === 'hitler' && region !== 'mundo' && BOSSES[region]) return svg(leader(pack, region), 'art');
   if (r !== 'hitler' && region !== 'mundo' && ANIMALS[region]) {
     const a = ANIMALS[region], s: Side = r === 'liberal' ? 'L' : pack === 'comunismo' ? 'C' : 'F';
@@ -462,12 +469,16 @@ export const portrait = (r: Role, pack: Pack = 'fascismo', region: Region = 'mun
 /** The seal of a party on law cards and on the board: a symbol, not a character (the scales; the fasces, or the hammer and sickle in
  *  the communist theme). */
 // D86: drawn, not emoji: the phone's emoji (a glossy skull, a coloured scale) clashed with the poster
-const SEALS: Record<'L' | 'F' | 'C', string> = {
+const SEALS: Record<'L' | 'F' | 'C' | 'K' | 'E', string> = {
+  // D96: the cult: an eye in a tentacled circle; the investigators: the elder sign (a star with an eye of flame)
+  K: '<circle cx="32" cy="30" r="15" fill="currentColor" stroke-width="2.5"/><ellipse class="sk" cx="32" cy="30" rx="9" ry="5" fill="var(--halo)" stroke="none"/><circle cx="32" cy="30" r="3" fill="currentColor" stroke="none"/><path d="M20 42c-4 6-10 8-12 14M28 45c-1 6-4 10-6 15M36 45c1 6 4 10 6 15M44 42c4 6 10 8 12 14" stroke-width="4" stroke-linecap="round"/>',
+  E: '<path d="M32 6l6 18h19l-15 11 6 18-16-11-16 11 6-18L7 24h19z" fill="none" stroke-width="3" stroke-linejoin="round"/><path d="M32 18c5 6 5 12 0 18-5-6-5-12 0-18z" fill="currentColor" stroke-width="1.5"/>',
   L: '<path d="M32 9v40M18 15h28" stroke-width="4"/><circle cx="32" cy="10" r="3.5" fill="currentColor" stroke="none"/><path d="M18 15 10 33M18 15l8 18M46 15l-8 18M46 15l8 18" stroke-width="2.2"/><path d="M8 33h20c0 6-4.5 9-10 9s-10-3-10-9zM36 33h20c0 6-4.5 9-10 9s-10-3-10-9z" fill="currentColor" stroke-width="2"/><path d="M22 55h20l-3-6H25z" fill="currentColor" stroke-width="2"/>',
   F: '<path class="sk" fill="currentColor" stroke-width="3" d="M38 8c11 0 19 6 21 16-8-3-14-3-21 0z"/><path d="M22 12h20v40H22z" fill="currentColor" stroke-width="2.5"/><path d="M27 12v40M32 12v40M37 12v40" stroke="var(--halo)" stroke-width="1.8"/><path class="sk" d="M19 20h26M19 44h26" stroke-width="7" stroke-linecap="round"/><path d="M19 20h26M19 44h26" stroke-width="4.5" stroke-linecap="round"/><path d="M29 6h6v6h-6z" fill="currentColor" stroke-width="2"/><path d="M26 52h12l3 7H23z" fill="currentColor" stroke-width="2"/>',
   C: '<path fill="currentColor" stroke-width="1.5" d="M15.4 41A21 21 0 1 1 52.6 41L48.4 35A14 14 0 1 0 24 34z"/><path d="M18 39 9 52" stroke-width="6" stroke-linecap="round"/><path class="sk" d="M51 53 23 25" stroke-width="6.5" stroke-linecap="round"/><path d="M51 53 23 25" stroke-width="5" stroke-linecap="round"/><g transform="rotate(-45 21 23)"><rect class="sk" x="9" y="18" width="24" height="10" fill="currentColor" stroke-width="2.5"/></g>'
 };
-export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="glyph seal-${p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F'}" viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">${SEALS[p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F']}</svg>`;
+const sealKey = (p: Law, pack: Pack): 'L' | 'F' | 'C' | 'K' | 'E' => pack === 'culto' ? (p === 'L' ? 'E' : 'K') : p === 'L' ? 'L' : pack === 'comunismo' ? 'C' : 'F';
+export const seal = (p: Law, pack: Pack = 'fascismo'): string => `<svg class="glyph seal-${sealKey(p, pack)}" viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">${SEALS[sealKey(p, pack)]}</svg>`;
 
 /* D92: a face for each seat, flat and faceless (no eyes, no mouth: just the shape of a person), dressed the way people
  * dress where the names come from: coats, scarves and fur hats in Europe; bright patterned cloth, caps and head wraps in

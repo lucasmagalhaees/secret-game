@@ -330,7 +330,7 @@ export function initEvents(): void {
     else if (a === 'addbot') addBots(S.names.length + (valOf('#name').trim() ? 2 : 1));
     else if (a === 'fill') addBots(Number(d.n));
     else if (a === 'level') { setS({ ...S, level: d.v as Level }); saveS(); render(); }
-    else if (a === 'pack') setPack(d.v === 'comunismo' ? 'comunismo' : undefined);
+    else if (a === 'pack') setPack(d.v === 'comunismo' || d.v === 'culto' ? d.v : undefined);
     else if (a === 'dlc') { if (valOf('#dlckey').trim().toLowerCase() === Core.DLC_KEY) { S.dlc = true; saveS(); render(); toast('DLC Brasil liberada: escolha "Brasil" nos nomes da IA.'); } else toast('Senha errada.'); }   // D27
     else if (a === 'region') setPack(S.pack, (Core.REGIONS as string[]).includes(d.v || '') ? d.v as Region : 'mundo');   // the app seats take names of that continent (D24)
     else if (a === 'train') { const next = { ...S }; if (d.v) next.train = d.v as Role; else delete next.train; setS(next); saveS(); render(); }
@@ -427,7 +427,7 @@ export function initEvents(): void {
     else if (a === 'special') play(Core.specialElect(g, i), `${g.players[i].name} é o próximo presidente.`);
     else if (a === 'endpower') play(Core.endPower(g));
     else if (a === 'execute' && ui.pick !== null) {
-      const t = g.players[ui.pick].name, next = Core.execute(g, ui.pick);
+      const t = g.players[ui.pick].name, next = Core.intimidate(Core.execute(g, ui.pick));   // D96
       flash(t, g.players[ui.pick].role === 'hitler');   // D76: no shot sound: it gave the end away before the screen
       play(next, next.phase === 'over' ? lawMsg(g, next) : `${t} foi eliminado.`);
     }

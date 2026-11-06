@@ -381,6 +381,18 @@ export function believe(v: View, outside = false): Beliefs {
     const gone = new Set<number>(), knowsTeam = (j: number): boolean => roles[j] === 'fascista' || (roles[j] === 'hitler' && v.n <= HITLER_KNOWS_UPTO);
     v.hist.forEach((e, i) => {
       const fresh = i >= remember;
+      // D96: a reading of its own (Psychology): a lie read points hard at the hidden side; the truth read clears a little
+      if (e.k === 'psy') {
+        if (e.by !== v.me || e.lie === undefined || mine(e.about)) return;
+        const f = fasc(roles[e.about]);
+        weight(e.lie ? (f ? (e.sure ? 4 : 2.2) : (e.sure ? 0.25 : 0.5)) : f ? (e.sure ? 0.4 : 0.7) : 1.15);
+        return;
+      }
+      // D96: the eliminator's Intimidation: a roll that convinced keeps it clean; one that failed looks bad
+      if (e.k === 'exec' && e.intim && !mine(e.by)) {
+        const f = fasc(roles[e.by]), bad = e.intim === 'fail' ? 1.3 : e.intim === 'fumble' ? 1.6 : 0.85;
+        weight(f ? bad : 1 / bad);
+      }
       if (e.k === 'vote' && k.count && fresh) {
         // the extreme level reads the votes: a fascist votes Ja for a government with a teammate in it
         const team = fasc(roles[e.pres]) || fasc(roles[e.chanc]);

@@ -129,7 +129,7 @@ export default function cases(Core) {
   const BN = Core.BOT_NAMES.fascismo;
   eq('names for the app players: well-known politicians, at random among the free ones; Hitler is a role, not a name', [BN.length >= Core.MAX_PLAYERS - 1, BN.includes('Hitler'), BN.includes(Core.botName(['Churchill'], Core.seeded(4))), Core.botName(['Churchill'], () => 0), Core.botName(BN)], [true, false, true, 'Mussolini', `IA ${BN.length + 1}`]);
   /* the communist theme (D12): the same rules, other words */
-  eq('themes: the words of each; an unknown theme is the original', [Core.PACKS, Core.words().boss, Core.words('comunismo').boss, Core.words('comunismo').f, Core.words('comunismo').ja, Core.words('x').f], [['fascismo', 'comunismo'], 'Hitler', 'Stalin', 'comunista', 'Da!', 'fascista']);
+  eq('themes: the words of each; an unknown theme is the original', [Core.PACKS, Core.words().boss, Core.words('comunismo').boss, Core.words('comunismo').f, Core.words('comunismo').ja, Core.words('x').f], [['fascismo', 'comunismo', 'culto'], 'Hitler', 'Stalin', 'comunista', 'Da!', 'fascista']);
   eq('themes: names of liberals and communists, Stalin left out; the theme picks the list', [Core.BOT_NAMES.comunismo.length >= Core.MAX_PLAYERS - 1, Core.BOT_NAMES.comunismo.includes('Stalin'), Core.botName([], () => 0, 'comunismo'), Core.BOT_NAMES.comunismo.includes(Core.botName(['Lenin'], Core.seeded(2), 'comunismo'))], [true, false, 'Kennedy', true]);
   const red = Core.newGame(NAMES, Core.seeded(3), { pack: 'comunismo' }).game;
   const redStacked = { ...red, players: base.players, pres: 3, phase: 'vote', chanc: 4, reveal: 7, deck: deck('FFFLLL') };
@@ -312,6 +312,15 @@ export default function cases(Core) {
     const dg = ai7({ hist: [{ k: 'gov', pres: 1, chanc: 2, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 2, chanc: 1, law: 'L', pc: 1, cc: 0 }, { k: 'gov', pres: 5, chanc: 0, law: 'F', pc: 2, cc: 1 }, { k: 'talk', by: 4, about: 0, say: 'acc', tone: 'proof', proof: 2 }] }), dsg = { ...dg, sheets: { 0: sh } };
     const a = Core.debateArgs(dsg, 3)[0], said = Core.debateSay(dsg, 3, a.id, () => 0.005).hist[3].deb[0], plain = Core.debateSay(dg, 3, a.id, () => 0.005).hist[3].deb[0];
     eq('D94, D95: with a sheet, what is said in the debate is rolled (a critical adds to it); without one, as before', [said.roll.level, said.power > a.power, plain.roll, plain.power === a.power], ['crit', true, undefined, true]);
+  }
+  { // D96: Secret Cultist: Psychology reads a lie; the eliminator rolls Intimidation; only in that theme, only with sheets
+    const mk = (pers, psy, intim = 50) => ({ vals: { Persuade: pers, 'Fast Talk': 5, Charm: 5, Psychology: psy, Intimidate: intim }, native: '' });
+    const base = ai7({ phase: 'nominate', pres: 2, hist: [{ k: 'gov', pres: 1, chanc: 2, law: 'F', drew: ['F', 'F', 'L'], got: ['F', 'L'] }] });
+    const cg = { ...base, pack: 'culto', sheets: Object.fromEntries(base.players.map((_, i) => [i, i === 1 ? mk(1, 5) : mk(5, 99)])) };
+    const lied = Core.say(cg, 1, 'pc', 3), reads = lied.hist.filter(e => e.k === 'psy');
+    eq('D96: the president who lies about its hand is read by Psychology (only in Secret Cultist, with sheets)', [Core.cultDice(cg), reads.length > 0 && reads.every(e => e.lie && e.about === 1), Core.say({ ...cg, pack: 'fascismo' }, 1, 'pc', 3).hist.some(e => e.k === 'psy'), Core.viewOf(lied, reads[0].by, 'vote', [1, 0]).hist.filter(e => e.k === 'psy' && e.lie).length >= 1, Core.RANK.crit > Core.RANK.ok], [true, true, false, true, true]);
+    const ex = Core.intimidate({ ...cg, hist: [...cg.hist, { k: 'exec', by: 2, target: 5, role: 'liberal' }] });
+    eq('D96: the eliminator rolls Intimidation, said aloud', [!!ex.hist.at(-1).intim, ex.log.at(-1).startsWith('🎲')], [true, true]);
   }
   const allyHand = (over) => Core.decide(view({ me: 1, role: 'fascista', level: 'dificil', known: knowAll, pres: 0, chanc: 1, ...over }), hi);
   const allyGov = (pc) => ({ k: 'gov', pres: 0, chanc: 1, law: 'F', drew: deck('FFL'), got: deck('FL'), ...(pc === undefined ? {} : { pc }) });
@@ -566,7 +575,7 @@ export default function cases(Core) {
   const lists = Core.PACKS.flatMap(p => Core.REGIONS.map(r => Core.NAMES_BY[p][r]));
   eq('names by continent: every theme and continent has enough different names for a full table', lists.every(l => new Set(l).size === l.length && l.length >= Core.MAX_PLAYERS - 1), true);
   eq('Brazil expansion (D27): its own names, enough for a full table, kept unlocked when saved; nonsense dropped', [Core.REGIONS.includes('brasil'), new Set(Core.NAMES_BY.fascismo.brasil).size >= 9, new Set(Core.NAMES_BY.comunismo.brasil).size >= 9, Core.readState({ dlc: true }).dlc, 'dlc' in Core.readState({ dlc: 'x' }), Core.readState({ region: 'brasil' }).region, Core.DLC_KEY], [true, true, true, true, false, 'brasil', 'unlockresenha']);
-  eq('names by continent: Lula only in the expansion, and no Polvo any more; the Americas have Fidel, Chávez, Maduro and Pinochet', [lists.filter(l => l !== Core.NAMES_BY.comunismo.brasil).some(l => l.includes('Lula')), !Core.NAMES_BY.comunismo.americas.includes('Polvo'), ['Fidel', 'Chávez', 'Maduro'].every(x => Core.NAMES_BY.comunismo.americas.includes(x)), Core.NAMES_BY.fascismo.americas.includes('Pinochet')], [false, true, true, true]);
+  eq('names by continent: Lula only in the expansion, and no Polvo any more; the Americas have Fidel, Chávez, Maduro and Pinochet', [lists.filter(l => l !== Core.NAMES_BY.comunismo.brasil && l !== Core.NAMES_BY.culto.brasil).some(l => l.includes('Lula')), !Core.NAMES_BY.comunismo.americas.includes('Polvo'), ['Fidel', 'Chávez', 'Maduro'].every(x => Core.NAMES_BY.comunismo.americas.includes(x)), Core.NAMES_BY.fascismo.americas.includes('Pinochet')], [false, true, true, true]);
   const nm = Array.from({ length: 9 }).reduce((acc) => [...acc, Core.botName(acc, Core.seeded(acc.length + 1), 'comunismo', 'americas')], ['Lu']);
   eq('names by continent: a table filled from one continent takes names from its list only, never twice', [nm.slice(1).every(x => Core.NAMES_BY.comunismo.americas.includes(x)), new Set(nm).size], [true, 10]);
   const rg = Core.newGame(NAMES, Core.seeded(2), { ai: [false, true, true, true, true, true, true], region: 'africa' }).game;

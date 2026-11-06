@@ -39,10 +39,10 @@ export const LEVELS: Level[] = ['facil', 'medio', 'dificil', 'extremo'];
 /** Names for the players run by the app (D11, D12): well-known politicians of each theme, the two sides mixed. The name
  *  says nothing about the role: roles are dealt at random, so Churchill may well be the fascist. The leader of the
  *  hidden side (Hitler, Stalin) is not among them: it is a role. */
-export const BOT_NAMES: Record<Pack, string[]> = {
+export const BOT_NAMES: Record<Pack, string[]> = (b => ({ ...b, culto: [...new Set([...b.fascismo, ...b.comunismo])] }))({
   fascismo: ['Churchill', 'Mussolini', 'Roosevelt', 'Franco', 'Gandhi', 'Goebbels', 'Truman', 'Júlio César', 'Lincoln', 'Himmler', 'Kennedy', 'Salazar', 'Tiglate-Pileser', 'Gengis Khan'],
   comunismo: ['Kennedy', 'Lenin', 'Reagan', 'Mao', 'Thatcher', 'Fidel', 'Churchill', 'Che', 'Truman', 'Trotsky', 'Roosevelt', 'Kim Jong-un', 'Pol Pot', 'Marulanda']
-};
+});   // D96: the cult theme takes the names of both sides
 /** A name for one more player run by the app: one of the theme's names not yet at the table, at random (`rand`) or the
  *  first. */
 /** Where the names of the app players come from (D24): the whole world (BOT_NAMES), or one continent. In each list,
@@ -51,7 +51,7 @@ export const REGIONS: Region[] = ['mundo', 'americas', 'europa', 'asia', 'africa
 /** The password that unlocks the Brazil expansion (D27). Written in the page on purpose: a joke among friends, not a lock. */
 export const DLC_KEY = 'unlockresenha';
 export const REGION_NAMES: Record<Region, string> = { mundo: 'Mundo', americas: 'Américas', europa: 'Europa', asia: 'Ásia', africa: 'África', oceania: 'Oceania', brasil: 'Brasil' };
-export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
+export const NAMES_BY: Record<Pack, Record<Region, string[]>> = (n => ({ ...n, culto: Object.fromEntries(Object.keys(n.fascismo).map(r => [r, [...new Set([...n.fascismo[r as Region], ...n.comunismo[r as Region]])]])) as Record<Region, string[]> }))({
   fascismo: {
     mundo: BOT_NAMES.fascismo,
     oceania: BOT_NAMES.fascismo,                // few names from there are known on both sides: the world's (D24)
@@ -70,7 +70,7 @@ export const NAMES_BY: Record<Pack, Record<Region, string[]>> = {
     africa: ['Mandela', 'Gaddafi', 'Nasser', 'Mubarak', 'Haile Selassie', 'Cleópatra', 'Ramsés', 'Tutancâmon', 'Aníbal', 'Nefertiti', 'Kofi Annan'],
     brasil: ['Amoêdo', 'Lula', 'Zema', 'Jones Manoel', 'Aécio', 'Boulos', 'Enéas', 'Dilma', 'Serra', 'Manuela', 'FHC', 'Renan Santos']
   }
-};
+});
 export function botName(names: string[], rand?: () => number, pack: Pack = 'fascismo', region: Region = 'mundo'): string {
   const free = ((NAMES_BY[pack] || NAMES_BY.fascismo)[region] || BOT_NAMES[pack] || BOT_NAMES.fascismo).filter(b => !names.some(x => x.toLocaleLowerCase('pt-BR') === b.toLocaleLowerCase('pt-BR')));
   return free.length ? free[rand ? Math.floor(rand() * free.length) : 0] : `IA ${names.length + 1}`;
