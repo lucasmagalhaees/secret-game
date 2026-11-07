@@ -17,6 +17,7 @@ try:
         browser = getattr(p, engine).launch()
         context = browser.new_context(viewport={'width': 393, 'height': 852}, device_scale_factor=3, is_mobile=True, has_touch=True, reduced_motion='reduce', color_scheme='dark')
         context.add_init_script('window.__SEED = 7')   # D68
+        context.add_init_script('window.__DLC = true')   # D98: these tests play the historical themes too
         context.add_init_script("try { localStorage.setItem('secrethitler.sheets.v1', JSON.stringify({ fails: 9, until: 9e15, wait: 3600000 })) } catch (e) {}")   # D95: the sheets API is off here (breaker open): the game as before the sheets
         page = context.new_page(); errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))

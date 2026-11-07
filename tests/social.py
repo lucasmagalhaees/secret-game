@@ -11,6 +11,7 @@ with sync_playwright() as p:
     b = p.chromium.launch()
     ctx = b.new_context(viewport={'width': 393, 'height': 852}, color_scheme='dark')
     ctx.add_init_script('window.__SEED = 11')
+    ctx.add_init_script('window.__DLC = true')   # D98: these tests play the historical themes too
     # D94: the sheets API answers with the recorded sample (no network in tests): every seat gets a sheet and the debate rolls
     SHEET = (ROOT / 'tests/fixtures/source/random-char_eastern-europe_2026-11-03.json').read_text()
     ctx.route('https://cthulhu-caracter-sheet.vercel.app/**', lambda r: r.fulfill(status=200, content_type='application/json', body=SHEET, headers={'access-control-allow-origin': '*'}))

@@ -1,5 +1,5 @@
 import { Core } from '../core';
-import type { AppState, Game, Speed, Theme } from '../core';
+import type { AppState, Game, Speed, Theme, Pack } from '../core';
 
 /* ================= what is kept, and what is on screen =================
    This module is one of the two that run code while loading (the other is src/main.ts): it reads what is saved and
@@ -11,6 +11,10 @@ export const LS = {
 };
 /** Everything kept on the device: the table and the game in course. Replacing it goes through setS. */
 export let S: AppState = Core.readState(LS.get('secrethitler.v1'));
+/** D98: the public face of the app is Secret Cultist; the historical themes (Hitler, Stalin) are behind the expansion's
+ *  key (S.dlc). The tests turn them on with window.__DLC, like window.__SEED. */
+export const dlcOn = (): boolean => !!S.dlc || !!(globalThis as { __DLC?: boolean }).__DLC;
+export const packNow = (): Pack => (dlcOn() ? S.pack || 'fascismo' : 'culto');
 export const saveS = (): boolean => LS.set('secrethitler.v1', S);
 export function setS(next: AppState): void { S = next; }
 

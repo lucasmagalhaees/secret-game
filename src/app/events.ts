@@ -5,7 +5,7 @@ import { buzz, later, reactions, sound } from './fx';
 import { loadSheets, sheetsOn } from './api';
 import { tutTip, ballot, beat, blurField, bossWin, claimFx, freeze, swayOpen, swayReasonsShow, swayResult, swayClose, debateSheet, confetti, decree, clearFlash, flash, frozenFor, render, stamp, toast, powerEffect } from './render';
 import { exportGames, keep, shareResult, wipe } from './history';
-import { CLAIM_HOLD, S, SPEEDS, applyTheme, saveS, setS, ui } from './state';
+import { CLAIM_HOLD, S, dlcOn, packNow, SPEEDS, applyTheme, saveS, setS, ui } from './state';
 import { applyUpdate, checkNow } from './update';
 
 /* ================= events =================
@@ -32,7 +32,7 @@ function fetchSheets(g: Game): void {
     const cur = S.game;
     if (!cur || cur.sheets || cur.players.map(p => p.name).join('|') !== key) return;
     // D97: Secret Cultist needs the sheets; without them, no waiting: the game goes on in the original theme, and says so
-    if (!sh) { if (cur.pack === 'culto' && cur.hist.length < 3) { setS({ ...S, game: { ...cur, pack: undefined } }); saveS(); render(); toast('O modo Cthulhu está fora do ar agora. Seguimos no modo normal.'); } return; }
+    if (!sh) { if (cur.pack === 'culto' && cur.hist.length < 3 && dlcOn()) { setS({ ...S, game: { ...cur, pack: undefined } }); saveS(); render(); toast('O modo Cthulhu está fora do ar agora. Seguimos no modo normal.'); } return; }
     setS({ ...S, game: { ...cur, sheets: sh } }); saveS(); render();
   }).catch(() => {});
 }
@@ -51,7 +51,7 @@ function play(ended: Game, msg?: string, undo: Game | null = null): void {
   // an app player only spoke (a claim, a talk): the phase is the same, so what the person opened, picked or voted stays (D21)
   const spoke = !!before && changed && next.phase === before.phase && beat(next) === beat(before) && next.pres === before.pres && next.chanc === before.chanc;
   setS({ ...S, game: next }); saveS();
-  if (next.pack === 'culto' && !next.sheets && !next.hist.length && !sheetsOn()) { next.pack = undefined; toast('O modo Cthulhu está fora do ar agora. Seguimos no modo normal.'); }   // D97: the breaker is open: do not even try
+  if (next.pack === 'culto' && !next.sheets && !next.hist.length && !sheetsOn() && dlcOn()) { next.pack = undefined; toast('O modo Cthulhu está fora do ar agora. Seguimos no modo normal.'); }   // D97: the breaker is open: do not even try
   if (!next.sheets && next.phase !== 'over' && sheetsFor !== next.players.map(p => p.name).join('|')) fetchSheets(next);   // D94
   if (changed && !spoke) { ui.open = ''; ui.pick = null; ui.confirmEnd = false; ui.undo = undo; ui.votes = {}; }
   render();
@@ -222,7 +222,7 @@ function addBots(n: number): void {
   if (!ai.some(x => !x) && !valOf('#name').trim()) { ui.msg = 'Ponha o seu nome primeiro: a IA completa a mesa.'; render(); return; }
   if (valOf('#name').trim()) { const r = Core.addName(names, valOf('#name')); if (r.ok) { names = r.names; ai = [...ai, false]; ui.name = ''; } }
   blurField();
-  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, S.pack, S.region)]; ai = [...ai, true]; }
+  while (names.length < n && names.length < Core.MAX_PLAYERS) { names = [...names, Core.botName(names, rand, packNow(), S.region)]; ai = [...ai, true]; }
   while (names.length > n && ai.lastIndexOf(true) >= 0) { const k = ai.lastIndexOf(true); names = names.filter((_, j) => j !== k); ai = ai.filter((_, j) => j !== k); }
   ui.msg = names.length > n ? `São ${names.length} pessoas na mesa: tire alguém pelo × para ficar com ${n}.` : '';
   setTable(names, ai); render();
@@ -245,7 +245,7 @@ function tutorial(): void {
   let names = [me];
   while (names.length < 7) names = [...names, Core.botName(names, rand, 'fascismo', 'mundo')];
   clearFlash();
-  const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'facil', train: 'liberal', pack: 'fascismo', region: 'mundo' });
+  const r = Core.newGame(names, rand, { ai: names.map((_, i) => i > 0), level: 'facil', train: 'liberal', pack: packNow(), region: 'mundo' });   // D98
   if (!r.ok) return;
   const next = { ...S }; delete next.notes; delete next.noteDetails; setS(next); saveS();
   ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play({ ...r.game, tut: [] }, 'Tutorial: siga as dicas.');
@@ -254,7 +254,7 @@ function quickGame(prev?: Game | null): void {
   const me = S.names.find((_, i) => !S.ai?.[i]) || 'Você';
   const regions = Core.REGIONS.filter(r => r !== 'brasil' || S.dlc), region = Core.freshPick(regions, prev?.region || (prev ? 'mundo' : undefined), rand);
   const lastRole = prev ? prev.players.find(p => !p.ai)?.role : undefined;
-  const pack = Core.PACKS[Math.floor(rand() * Core.PACKS.length)];
+  const pack = dlcOn() ? Core.PACKS[Math.floor(rand() * Core.PACKS.length)] : 'culto';   // D98
   let names = [me];
   while (names.length < 7) names = [...names, Core.botName(names, rand, pack, region)];
   // the table set up by hand stays as it was: the quick game is built apart from it
@@ -269,7 +269,7 @@ function quickGame(prev?: Game | null): void {
 function start(): void {
   if (S.names.length && flags().every(Boolean)) { ui.msg = 'Precisa de pelo menos uma pessoa na mesa.'; render(); return; }
   clearFlash();
-  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: S.pack, region: S.region });
+  const r = Core.newGame(S.names, rand, { ai: flags(), level: S.level, train: S.train, pack: packNow(), region: S.region });
   if (!r.ok) { ui.msg = ERR[r.why]; render(); return; }
   if (S.notes || S.noteDetails) { const next = { ...S }; delete next.notes; delete next.noteDetails; setS(next); }     // a new game starts a clean notebook
   ui.msg = ''; ui.help = false; ui.diary = false; ui.endTab = 'res'; play(r.game, 'Jogo novo. Cada um vê seu papel em segredo.');
