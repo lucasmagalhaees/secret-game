@@ -1,32 +1,21 @@
-# Secret Hitler
+# Secret Cultist
 
-Jogo de dedução social no estilo Secret Hitler: liberais contra fascistas (com um Hitler escondido), num celular que passa de mão em mão. 5 a 10 lugares; dá para jogar sozinho contra a IA, em quatro níveis.
+Jogo de dedução social para celular: investigadores contra um culto secreto, liderado em segredo pelo Sumo Sacerdote. Um celular só passa de mão em mão (5 a 10 lugares), ou você joga sozinho contra a IA, em quatro níveis.
 
-Feito a partir do modelo de arquitetura do Oito Lados: página estática em TypeScript, um arquivo só no ar, núcleo puro testado no Node e no navegador, testes ponta a ponta com Playwright, deploy na Vercel a cada merge e um conjunto de regras para trabalhar com IA sem que ela diga que funciona sem ter rodado.
+**Jogar:** https://secret-game-gamma.vercel.app
 
-Baseado em [Secret Hitler](https://www.secrethitler.com), de Goat, Wolf, & Cabbage, licenciado em [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Este app herda a licença: uso não comercial, com crédito, e adaptações sob a mesma licença.
+## O que tem de interessante
 
-## Começar um app novo com este modelo
+- **IA sem modelo de linguagem.** Cada jogador da IA é regra e conta (inferência bayesiana sobre as divisões de papéis possíveis), com personalidade, memória e níveis calibrados para que nenhum lado leve vantagem, medidos por simulação (`scripts/ai_bench.mjs`).
+- **Um juiz entre a partida e as IAs.** Nenhuma IA vê mais do que o lugar dela veria: o juiz (`src/core/judge.ts`) monta a visão de cada uma e só aceita as jogadas permitidas.
+- **Fichas do Call of Cthulhu e dados d100.** Cada jogador ganha uma ficha de investigador vinda de uma API própria ([cthulhu-caracter-sheet](https://github.com/lucasmagalhaees/cthulhu-caracter-sheet), Spring Boot em container na Vercel). Acusar, defender, mentir e virar votos rolam d100 contra as perícias da ficha, com animação.
+- **Resiliência.** A API é um adicional: um circuit breaker para de chamá-la quando ela cai, testa de novo depois de um tempo e religa a feature sozinho. Sem ela, o jogo funciona igual.
+- **Debate e social.** Acusações com provas tiradas da ata (em combo), réplica e tréplica, veredito da mesa, pedidos às IAs, ficha de cada jogador.
+- **PWA.** Abre sem internet depois da primeira vez e avisa quando sai versão nova.
 
-1. Copie a pasta e dê o nome: `python3 scripts/rename.py "Nome do App" nome-do-app`. Troca "Secret Hitler", o slug (pacote, endereço na Vercel, caches) e a chave do `localStorage`.
-2. `git init -b main && git add -A && git commit -m "chore: começa do modelo"` (o build carimba o commit; o `tests/pwa.py` confere esse carimbo).
-3. `npm install`, `pip install -r tests/requirements.txt && playwright install chromium`, e `scripts/verify.sh`: tem que terminar em "tudo passou".
-4. Crie o repositório no GitHub e faça o push da `main`.
-5. Na Vercel: importe o repositório. O `vercel.json` já diz o que fazer (`npm ci`, `npm run build`, publicar `dist/`). O endereço de produção vira `https://nome-do-app.vercel.app`; se for outro, troque em `scripts/check_production.py` (ou defina `APP_PROD_URL`) e no `CLAUDE.md`.
-6. No GitHub, proteja a `main`: exigir PR e os checks `checks`, `e2e (dark)` e `e2e (light)`. A Vercel publica o que chega na `main` sem olhar o CI; é essa proteção que segura código não testado.
-7. Preencha o `CLAUDE.md` (o que é o app, o escopo, os requisitos) e troque a lista de exemplo pelo app de verdade, mantendo a divisão entre `src/core/` e `src/app/`.
+## Arquitetura
 
-## O que faz
-
-- Monta a mesa, sorteia os papéis e mostra cada um em segredo ("passe o celular para…").
-- Conduz as rodadas: indicação, votação, mão do presidente e do chanceler, poderes, veto, caos e fim de jogo. As regras completas estão nos requisitos do [`CLAUDE.md`](CLAUDE.md) e na tela inicial do app.
-- Joga sozinho ou com poucos: a IA ocupa os lugares vazios, em quatro níveis, e cada IA só sabe o que o lugar dela saberia. Dá para treinar escolhendo o próprio papel, ligar uma ata com quem aprovou cada lei e anotar quem é quem.
-- As IAs conversam entre as rodadas; há dicas do treinador, e no fim dá para ver o que cada IA pensava de você.
-- Dois temas: liberais x fascistas (o original) e liberais x comunistas.
-- A partida fica guardada no aparelho. Abre sem internet depois da primeira vez, e avisa quando sai versão nova.
-- Tema automático, claro ou escuro.
-
-Para rodar: `npm install` e `npm run dev`. Para testar tudo: `scripts/verify.sh`.
+TypeScript estrito, sem framework, empacotado num único `index.html` pelo Vite. O núcleo (`src/core/`) é lógica pura, sem DOM, rede nem armazenamento, testado no Node e no navegador; a página (`src/app/`) só desenha e reage. Detalhes, requisitos e decisões em [`CLAUDE.md`](CLAUDE.md) e [`docs/decisoes.md`](docs/decisoes.md).
 
 ## Estrutura
 
@@ -60,4 +49,12 @@ docs/decisoes.md
 docs/verificacao.md
 ```
 
-As regras de trabalho estão em [`CLAUDE.md`](CLAUDE.md) e em [`CONTRIBUTING.md`](CONTRIBUTING.md).
+## Qualidade
+
+`scripts/verify.sh` roda tudo antes de cada PR: tipos, build, checagem da documentação contra o código, casos do núcleo, contrato da API com respostas reais gravadas, testes ponta a ponta com Playwright (partidas inteiras pela tela), PWA offline e cobertura medida no navegador (mínimo de 95% das funções). Cada merge na `main` publica na Vercel, e um workflow confere que a produção está servindo o commit certo.
+
+Para rodar: `npm install` e `npm run dev`. Para testar tudo: `scripts/verify.sh`.
+
+## Créditos
+
+Adaptação de [Secret Hitler](https://www.secrethitler.com), de Goat, Wolf, & Cabbage, licenciado em [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Este app herda a licença: uso não comercial, com crédito, e adaptações sob a mesma licença. Os temas históricos do jogo original ficam numa expansão, atrás de senha.
